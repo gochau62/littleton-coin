@@ -1,6 +1,6 @@
 # lcc
 
-projects i worked on during my internship /n
+projects i worked on during my internship
 
 **not open source**
 
