@@ -8,3 +8,5 @@ projects i worked on during my internship
 2. wavepicksearch program used to search for a specific sku within the database
 3. wavepicksearch display used to display the site and perform the search
 4. Included documentation I researched and wrote up
+
+![WavePickSearch](WavePickSearch.png)
