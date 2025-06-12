@@ -10,3 +10,10 @@ projects i worked on during my internship
 4. Included documentation I researched and wrote up
 
 ![WavePickSearch](WavePickSearch.png)
+
+1. controller model MVC Paradigm for Invoice print program, calls all printers and displays invoices
+2. Update invoices with update functionallity form control, and printer availability through ajax
+3. invoice print display for printers available, invoices ready, moving invoices to printers
+4. javascript calls to build functional buttons and reload the page through ajax calls
+
+![Print_Invoices][Print_Invoices.png)
