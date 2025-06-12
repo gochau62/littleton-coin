@@ -16,4 +16,4 @@ projects i worked on during my internship
 3. invoice print display for printers available, invoices ready, moving invoices to printers
 4. javascript calls to build functional buttons and reload the page through ajax calls
 
-![Print_Invoices][Print_Invoices.png)
+![Print_Invoices](Print_Invoices.png)
