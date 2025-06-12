@@ -1,9 +1,8 @@
-# lcc
+## Projects I worked on during my internship at littleton-coin
 
-projects i worked on during my internship
+❗❗❗ **NOT OPEN SOURCE** ❗❗❗
 
-**not open source**
-
+---
 1. model for my import order file program, includes db2 function calls to database
 2. wavepicksearch program used to search for a specific sku within the database
 3. wavepicksearch display used to display the site and perform the search
@@ -11,6 +10,7 @@ projects i worked on during my internship
 
 ![WavePickSearch](WavePickSearch/WavePickSearch.png)
 
+---
 1. controller model MVC Paradigm for Invoice print program, calls all printers and displays invoices
 2. Update invoices with update functionallity form control, and printer availability through ajax
 3. invoice print display for printers available, invoices ready, moving invoices to printers
