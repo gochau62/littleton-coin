@@ -2,6 +2,7 @@
 
 ❗❗❗ **NOT OPEN SOURCE** ❗❗❗
 
+### WavePick Search
 ---
 1. model for my import order file program, includes db2 function calls to database
 2. wavepicksearch program used to search for a specific sku within the database
@@ -10,6 +11,7 @@
 
 ![WavePickSearch](WavePickSearch/WavePickSearch.png)
 
+### Print Invoices
 ---
 1. controller model MVC Paradigm for Invoice print program, calls all printers and displays invoices
 2. Update invoices with update functionallity form control, and printer availability through ajax
