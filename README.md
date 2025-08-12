@@ -1,5 +1,5 @@
 <p align="center">
-<img src="littletoncoin.png" alt="(LCC)" width="500" height="200">
+<img src="littletoncoin.png" alt="(LCC)" width="500" height="300">
 </p>
 
 ## Projects I worked on during my internship at littleton-coin
