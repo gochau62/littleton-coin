@@ -33,4 +33,10 @@
 
 ---
 ### Upload GiftCard
+1. mvc paradigm with model stored procedure functions
+2. created sql scripts to create store procedures from the database using mocha/acs
+3. swal alerts and css for styling and error checking as well as setting parameters
+4. using phpSpreadsheet to read in the file as well as look for duplicates by sorting through data
+5. checking for duplicates after event handler to automatically alert users for duplicates highlighted red
+6. read all sheets using phpSpreadsheet iterating through the entire workbook.
 ![Upload GiftCard](UploadGiftCard/UploadGiftCard.png)
