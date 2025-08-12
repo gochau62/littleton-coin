@@ -1,4 +1,6 @@
-<img src="littletoncoin.png" alt="(LCC)" width="400" height="200">
+<p align="center">
+<img src="littletoncoin.png" alt="(LCC)" width="500" height="200">
+</p>
 
 ## Projects I worked on during my internship at littleton-coin
 
