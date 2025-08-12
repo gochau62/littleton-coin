@@ -1,3 +1,5 @@
+<img src="png/littletoncoin.png" alt="(LCC)" width="800" height="400">
+
 ## Projects I worked on during my internship at littleton-coin
 
 ❗❗❗ **NOT OPEN SOURCE** ❗❗❗
