@@ -1,0 +1,47 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - GFTCRD002                                     */
+/*                                                                   */
+/* Program Narrative - Check if duplicate entry in file              */
+/*                                                                   */
+/* Author            - G. Chau                                       */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/29/25                                      */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(GFTCRDCVP)                             */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* |                                                                |*/
+/* | Author   -                                                     |*/
+/* |  Date    -                                                     |*/
+/* |  Purpose -                                                     |*/
+/* |                                                                |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+ Create or Replace Procedure PLAYGROUND/GFTCRD002(
+        IN INCVCARD# CHAR(9)
+)
+        Result Set 1
+        Language SQL
+        Modifies SQL Data
+        Set Option DBGVIEW=*SOURCE, DynUsrPrf = *Owner
+Begin
+
+        -- Return any existing records that match the given card number
+        Declare C1 Scroll Cursor for
+            Select *
+            From PLAYGROUND.GFTCRDCVP
+            Where CVCARD# = INCVCARD#;
+
+        Open C1;
+
+End;
