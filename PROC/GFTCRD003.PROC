@@ -1,0 +1,48 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - GFTCRD003                                     */
+/*                                                                   */
+/* Program Narrative - Update GTFCRDCVP file record                  */
+/*                                                                   */
+/* Author            - G. Chau                                       */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 7/31/25                                       */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(GFTCRDCVP)                             */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* |                                                                |*/
+/* | Author   -                                                     |*/
+/* |  Date    -                                                     |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+
+ Create or Replace Procedure PLAYGROUND/GFTCRD003(
+        IN INCVBTCH# CHAR(3),
+        IN INCVCARD# CHAR(9),
+        IN INCVCVV# CHAR(3),
+        IN INCVSKU# CHAR(10)
+)
+
+        Language SQL
+        Modifies SQL Data
+        Set Option DBGVIEW=*SOURCE, DynUsrPrf = *Owner
+Begin
+
+        Update PLAYGROUND.GFTCRDCVP
+        Set CVBTCH# = INCVBTCH#,
+            CVCVV# = INCVCVV#,
+            CVSKU# = INCVSKU#
+        Where CVCARD# = INCVCARD#;
+
+End;
