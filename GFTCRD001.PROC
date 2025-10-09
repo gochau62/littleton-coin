@@ -1,0 +1,49 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - GFTCRD001                                     */
+/*                                                                   */
+/* Program Narrative - Insert into PLAYGROUND.GFTCRDCVP              */
+/*                                                                   */
+/* Author            - G. Chau                                       */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/29/25                                      */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(GFTCRDCVP)                             */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* |                                                                |*/
+/* | Author   -                                                     |*/
+/* |  Date    -                                                     |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+
+ Create or Replace Procedure PLAYGROUND/GFTCRD001(
+        IN INCVBTCH# CHAR(3),
+        IN INCVCARD# CHAR(9),
+        IN INCVCVV# CHAR(3),
+        IN INCVSKU# CHAR(10)
+)
+
+        Language SQL
+        Modifies SQL Data
+        Set Option DBGVIEW=*SOURCE, DynUsrPrf = *Owner
+Begin
+
+
+        -- Insert record in GFTCRDCVP file
+        INSERT INTO PLAYGROUND.GFTCRDCVP
+        (CVBTCH#, CVCARD#, CVCVV#, CVSKU#)
+        VALUES(INCVBTCH#, INCVCARD#, INCVCVV#, INCVSKU#);
+
+End;
+
