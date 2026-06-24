@@ -1,0 +1,89 @@
+2026-06-18 15:16:12 ClarioSFTP_pull Begin
+2026-06-18 15:16:12 Authentication successful
+2026-06-18 15:16:13 Newest file on server: customer_segments_20260613.txt
+2026-06-18 15:16:13 Already pulled: customer_segments_20260613.txt
+
+2026-06-18 12:01:40 ClarioSFTP_pull Begin
+2026-06-18 12:01:40 Authentication successful
+2026-06-18 12:01:41 Newest file on server: customer_segments_20260613.txt
+2026-06-18 12:01:41 Already pulled: customer_segments_20260613.txt
+2026-06-18 12:02:40 Script is already running. Exiting to prevent overlap.
+2026-06-18 12:06:51 Week from rpt_date 2026-06-13: From 20260614 To 20260620
+2026-06-18 12:08:17 Loaded 931143 rows into LSCDEVLIBP.CLRCUSSEGT (0 errors)
+2026-06-18 12:08:17 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-18 12:14:53 ClarioSFTP_pull Begin
+2026-06-18 12:14:53 Authentication successful
+2026-06-18 12:14:53 Newest file on server: customer_segments_20260613.txt
+2026-06-18 12:14:53 Already pulled: customer_segments_20260613.txt
+2026-06-18 12:15:53 Script is already running. Exiting to prevent overlap.
+2026-06-18 12:21:06 Week from rpt_date 2026-06-13: From 20260614 To 20260620
+2026-06-18 12:22:30 Loaded 931143 rows into LSCDEVLIBP.CLRCUSSEGT (0 errors)
+2026-06-18 12:22:30 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-19 11:18:25 \nClarioSFTP_pull Begin
+2026-06-19 11:18:26 Authentication successful
+2026-06-19 11:18:26 Newest file on server: customer_segments_20260613.txt
+2026-06-19 11:18:26 Already pulled: customer_segments_20260613.txt
+2026-06-19 11:19:25 Script is already running. Exiting to prevent overlap.
+2026-06-19 11:23:37 Week from rpt_date 2026-06-13: From 20260614 To 20260620
+2026-06-19 11:29:28 Loaded 931143 rows into LSCDEVLIBP.CLRCUSSEGT, 931143 new records into LSCDEVLIBP.CLRHSTSEGT (0 errors)
+2026-06-19 11:29:28 Purged LSCDEVLIBP.CLRCUSSEGT rows with To Date older than 6 months
+2026-06-19 11:29:28 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-19 11:43:34 \nClarioSFTP_pull Begin
+2026-06-19 11:43:34 Authentication successful
+2026-06-19 11:43:34 Newest file on server: customer_segments_20260613.txt
+2026-06-19 11:43:34 Already pulled: customer_segments_20260613.txt
+2026-06-19 11:44:34 Script is already running. Exiting to prevent overlap.
+2026-06-19 11:48:43 Week from rpt_date 2026-06-13: From 20260614 To 20260620
+2026-06-19 11:51:56 Loaded 931143 rows into LSCDEVLIBP.CLRCUSSEGT (0 errors)
+2026-06-19 11:51:56 Inserted 931143 new records into LSCDEVLIBP.CLRHSTSEGT (0 errors)
+2026-06-19 11:51:56 Purged 3 rows from LSCDEVLIBP.CLRCUSSEGT (To Date older than 6 months)
+2026-06-19 11:51:56 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-19 12:23:45 ClarioSFTP_pull Begin
+2026-06-19 12:23:45 Authentication successful
+2026-06-19 12:23:46 Newest file on server: customer_segments_20260613.txt
+2026-06-19 12:23:46 Already pulled: customer_segments_20260613.txt
+2026-06-19 12:23:46 Purged 3 rows from LSCDEVLIBP.CLRCUSSEGT (To Date older than 6 months)
+2026-06-19 12:23:46 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-19 12:28:33 ClarioSFTP_pull Begin
+2026-06-19 12:28:34 Authentication successful
+2026-06-19 12:28:34 Newest file on server: customer_segments_20260613.txt
+2026-06-19 12:28:34 Already pulled: customer_segments_20260613.txt
+2026-06-19 12:29:33 Script is already running. Exiting to prevent overlap.
+2026-06-19 12:33:28 Week from rpt_date 2026-06-13: From 20260614 To 20260620
+2026-06-19 12:36:44 Loaded 931143 rows into LSCDEVLIBP.CLRCUSSEGT (0 errors)
+2026-06-19 12:36:44 Inserted 0 new records into LSCDEVLIBP.CLRHSTSEGT (0 errors)
+2026-06-19 12:36:44 Purged 0 rows from LSCDEVLIBP.CLRCUSSEGT (To Date older than 6 months)
+2026-06-19 12:36:44 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-19 13:05:56 ClarioSFTP_pull Begin
+2026-06-19 13:05:56 Authentication successful
+2026-06-19 13:05:57 Newest file on server: customer_segments_20260613.txt
+2026-06-19 13:05:57 Already pulled: customer_segments_20260613.txt
+2026-06-19 13:05:57 Purged 3 rows from LSCDEVLIBP.CLRCUSSEGT (To Date older than 6 months)
+2026-06-19 13:05:57 ClarioSFTP_pull End  (pulled=0)
+
+2026-06-22 16:12:48 ClarioSFTP_pull Begin
+2026-06-22 16:12:49 Authentication successful
+2026-06-22 16:12:49 Newest file on server: customer_segments_20260620.txt
+2026-06-22 16:13:48 Script is already running. Exiting to prevent overlap.
+2026-06-22 16:14:11 Pulled customer_segments_20260620.txt (22276944 bytes)
+2026-06-22 16:19:19 Week from rpt_date 2026-06-20: From 20260621 To 20260627
+2026-06-22 16:22:26 Loaded 928703 rows into LSCDEVLIBP.CLRCUSSEGT (0 errors)
+2026-06-22 16:22:26 Inserted 13368 new records into LSCDEVLIBP.CLRHSTSEGT (0 errors)
+2026-06-22 16:22:27 Purged 0 rows from LSCDEVLIBP.CLRCUSSEGT (To Date older than 6 months)
+2026-06-22 16:22:27 ClarioSFTP_pull End  (pulled=1)
+
+2026-06-23 11:36:54 ClarioSFTP_pull Begin
+2026-06-23 11:36:54 Authentication successful
+2026-06-23 11:36:55 Newest file on server: customer_segments_20260620.txt
+2026-06-23 11:36:55 Already pulled: customer_segments_20260620.txt
+2026-06-23 11:42:25 Week from rpt_date 2026-06-20: From 20260621 To 20260627
+2026-06-23 11:44:55 Loaded 928703 rows into LSCDEVLIBP.CLRCUSSEGT (0 errors)
+2026-06-23 11:44:55 Inserted 0 new records into LSCDEVLIBP.CLRHSTSEGT (0 errors)
+2026-06-23 11:44:55 ClarioSFTP_pull End  (pulled=0)
+

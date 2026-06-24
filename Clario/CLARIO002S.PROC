@@ -1,0 +1,40 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - CLARIO002S                                    */
+/*                                                                   */
+/* Program Narrative - Query file on cust#/segment code existance    */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 06/18/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCARCLIB/QSQLSRC)          */
+/*                     SRCMBR(CLARIO002S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE CLARIO002S (
+        IN  INCUST DECIMAL(9, 0),
+        IN  INSEG  CHAR(10),
+        OUT OUTCNT INTEGER
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        SELECT COUNT(*) INTO OUTCNT
+          FROM CLRHSTSEGT
+         WHERE CSCUST# = INCUST AND CSSEGC = INSEG;
+    END;

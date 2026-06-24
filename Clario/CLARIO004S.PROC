@@ -1,0 +1,42 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - CLARIO004S                                    */
+/*                                                                   */
+/* Program Narrative - Purge the Clario Customer Segment table       */
+/*                     Delete rows whose week-end date keeping a     */
+/*                     rolling ~6 months of data.                    */
+/*                                                                   */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 06/22/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCARCLIB/QSQLSRC)          */
+/*                     SRCMBR(CLARIO004S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE CLARIO004S (
+        OUT OUTCNT INTEGER
+        )
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DELETE FROM CLRCUSSEGT
+         WHERE CSTODT < (YEAR(CURRENT DATE - 6 MONTHS) * 10000
+                       + MONTH(CURRENT DATE - 6 MONTHS) * 100
+                       + DAY(CURRENT DATE - 6 MONTHS));
+
+        GET DIAGNOSTICS OUTCNT = ROW_COUNT;
+    END;
+

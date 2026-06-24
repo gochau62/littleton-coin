@@ -1,0 +1,42 @@
+
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - CLARIO003S                                    */
+/*                                                                   */
+/* Program Narrative - Insert in Clario historical segment table     */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 06/18/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCARCLIB/QSQLSRC)          */
+/*                     SRCMBR(CLARIO003S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE CLARIO003S (
+        IN INFRDT DECIMAL(8, 0),
+        IN INTODT DECIMAL(8, 0),
+        IN INCUST DECIMAL(9, 0),
+        IN INSEG  CHAR(10)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        INSERT INTO CLRHSTSEGT
+            (CSFRDT, CSTODT, CSCUST#, CSSEGC)
+        VALUES (INFRDT, INTODT, INCUST, INSEG);
+    END;

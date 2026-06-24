@@ -1,0 +1,34 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - CLARIO001C                                    */
+/*                                                                   */
+/* Program Narrative - Clario CL Wrapper Programs                    */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 06/23/26                                      */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+             PGM
+             DCL        VAR(&COMPARM) TYPE(*CHAR) LEN(32767) +
+                          VALUE('PHPRC=/www/seidenphp/phpconf  +
+                          PHP_INI_SCAN_DIR=/www/seidenphp/phpconf/conf.d/  +
+                          /QOpenSys/pkgs/bin/php ClarioSFTP_pull.php')
+             ADDENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT) VALUE(NONE) +
+                            LEVEL(*JOB) REPLACE(*YES)
+             CD         DIR('/www/seidenphp/htdocs/utils/')
+             STRQSH     CMD(&COMPARM)
+             ENDPGM
