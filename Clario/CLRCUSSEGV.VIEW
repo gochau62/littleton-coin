@@ -1,0 +1,44 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - CLRCUSSEGV                                    */
+/*                                                                   */
+/* Program Narrative - Create Clario Customer Segment SAS View       */
+/*                                                                   */
+/* Author            - Gordon Chau                                   */
+/*                                                                   */
+/* Date Written      - 06/25/2026                                    */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* |                                                                |*/
+/* | Author   -                                                     |*/
+/* |  Date    -                                                     |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE VIEW CLRCUSSEGV AS
+ SELECT
+        CASE WHEN CSFRDT = 0
+                THEN cast(NULL AS DATE)
+          ELSE
+                 cast( SUBSTR(CSFRDT, 1, 4) || '-' ||
+                       SUBSTR(CSFRDT, 5, 2) || '-' ||
+                       SUBSTR(CSFRDT, 7, 2)  as DATE   )
+          END as CSFRDT,
+        CASE WHEN CSTODT = 0
+                THEN cast(NULL AS DATE)
+          ELSE
+                 cast( SUBSTR(CSTODT, 1, 4) || '-' ||
+                       SUBSTR(CSTODT, 5, 2) || '-' ||
+                       SUBSTR(CSTODT, 7, 2)  as DATE   )
+          END as CSTODT,
+        CSCUST#,
+        CSSEGC
+    FROM CLRCUSSEGT
