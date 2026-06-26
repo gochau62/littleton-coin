@@ -35,7 +35,7 @@ require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema (column lis
 
 if (!defined('SBL_TABLE')) {
     // SQL naming (schema.table). Matches how the other LCC tools reference DB2 objects.
-    define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODT');
+    define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
 
 /** Open (once) and reuse a DB2 connection from the session credentials. */
