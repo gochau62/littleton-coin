@@ -128,7 +128,7 @@ CREATE TABLE LSCDEVLIBP/SBLPRODUCT (
 )
 RCDFMT SBLPRODUCR;
 
-LABEL ON COLUMN LSCDEVLIBP/SBLPRODUCT (
+LABEL ON LSCDEVLIBP/SBLPRODUCT (
    id      TEXT IS 'Record ID',
    sku                             TEXT IS 'SKU',
    category_name                   TEXT IS 'Sellbrite Category Name',
