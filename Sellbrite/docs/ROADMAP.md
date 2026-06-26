@@ -50,8 +50,8 @@ The Sellbrite screen follows the same **MVC pattern** as the other LCC tools in 
                                 │ reads                       │ calls
                                 ▼                             ▼
                 ┌──────────────────────────┐   ┌────────────────────────────┐
-                │  sbl_data/*.json          │   │  _model.php  DB2 for i      │
-                │  schema / valid_values /  │   │  CALL stored procs:         │
+                │  _data.php (one PHP file) │   │  _model.php  DB2 for i      │
+                │  schema / values /        │   │  inline parameterized SQL:  │
                 │  lookups  (from the .ods) │   │  getAll/find/save/delete    │
                 └──────────────────────────┘   └──────────────┬─────────────┘
                                                                ▼
@@ -62,8 +62,11 @@ The Sellbrite screen follows the same **MVC pattern** as the other LCC tools in 
 ```
 
 **Plain-English data flow:** you type → `compute` redraws the auto fields and validation live →
-`save` writes the row to **SBLPRODT** via a stored procedure → the list view reads rows back →
+`save` writes the row to **SBLPRODT** via parameterized SQL → the list view reads rows back →
 `export` streams the 3-header Sellbrite CSV.
+
+**File naming:** every file uses the **`SellbriteBulkLoader_*`** base name —
+`_ctl` / `_dsp` / `_ajax` / `_logic` / `_model` / `_data`.
 
 ---
 
@@ -77,28 +80,26 @@ I read every file in `Sellbrite/` plus the reference tools and the `.ods`. Statu
 | `_dsp.php` | ✅ Solid | List grid + grouped add/edit form + live preview + validation checklist. Green `#CCFFCC` LCC styling, matches house look. |
 | `_ajax.php` | ✅ Solid | `compute / save / find / delete / export` endpoints. |
 | `_logic.php` | ✅ Strong | `Schema`, `Computer` (title/description/image-URL/default formulas), `Validator`, `Exporter` (3-row CSV). This is the spreadsheet's brain, already in PHP. |
-| `_model.php` | ❌ **Empty stub** | Only a header. **No DB2 code yet** — `sblGetAll/sblFind/sblSave/sblDelete` are referenced but undefined. Built next, once the table exists. |
-| `sbl_data/schema.json` | ✅ **Generated** | 85 columns (name/label/required/auto/dropdown), built from rows 2–3 of the Bulk Import Sheet. |
-| `sbl_data/valid_values.json` | ✅ **Generated** | 26 dropdown lists from the "Valid Values" sheet (formulas filtered out, `--- separators ---` kept). |
-| `sbl_data/lookups.json` | ✅ **Generated** | `category_copy` (242), `category_meta` (242), `grade_circ` (274) from the "VLOOKUP" sheet. |
-| DB2 table | ❌ **Not created** | SQL is ready in `sql/SBLPRODT.sql` (Phase 1) — waiting on you to run it. |
+| `_model.php` | ✅ **Built** | Inline parameterized SQL: `sblGetAll/sblFind/sblSave/sblDelete`. Columns come from `Schema::columns()`; lower-cases DB2's keys; coerces blanks/`***`/bad input to NULL. Needs the table to run (smoke-tested without DB). |
+| `_data.php` | ✅ **Built** | One PHP file holding `schema` (85 cols), `values` (26 dropdown lists), `lookups` (category_copy 242 / category_meta 242 / grade_circ 274). Generated from the `.ods`; **replaces the old JSON files**. |
+| DB2 table | ❌ **Not created** | SQL is ready in `sql/SBLPRODT.sql` (Phase 1) — waiting on you to run it. See §5.1. |
 
-### Three issues to fix early
-1. ✅ **Filename mismatch — FIXED.** The 5 files were renamed from `SellbriteBulkLoader_*.php` to
-   the `SBL_BulkLoader_*.php` prefix the includes already reference. All includes now resolve.
-2. ❌ **Empty model — still open.** All DB2 access has to be built (Phase 2) against `SBLPRODT`.
-   This is the one piece that needs the table to exist before it can be tested.
-3. ✅ **JSON data files — GENERATED.** All three were generated directly from the `.ods` (the
-   three sheets map 1:1 to the three JSON files) and live in `sbl_data/`.
+### Issues found early — all resolved
+1. ✅ **Filename mismatch — FIXED.** Everything now uses the **`SellbriteBulkLoader_*`** base name;
+   all includes and AJAX URLs point to those. `php -l` passes on every file.
+2. ✅ **Model — BUILT.** DB2 access written as inline parameterized SQL against `SBLPRODT`.
+   It runs the moment the table exists (verified the non-DB pipeline already works).
+3. ✅ **Data — CONSOLIDATED into one PHP file.** No external JSON: the three sheets were folded
+   into `SellbriteBulkLoader_data.php`, loaded once by `Schema`. The `sbl_data/` folder is gone.
 
 ### Spreadsheet structure (the source spec)
-The `.ods` has **3 sheets**, which map exactly onto the three JSON files:
+The `.ods` has **3 sheets**, which map onto the three sections of `SellbriteBulkLoader_data.php`:
 
-| Sheet | Rows | Becomes | Purpose |
+| Sheet | Rows | Becomes (`_data.php` key) | Purpose |
 | --- | --- | --- | --- |
-| **Bulk Import Sheet** | 3 header rows + data | `schema.json` | Row 2 = human labels, **row 3 = machine column names** (the 85 fields), banner row 1. |
-| **Valid Values** | 46 columns | `valid_values.json` | Dropdown lists (Mint Mark, Grade, Composition, …). Some cells are live formulas. |
-| **VLOOKUP** | lookup tables | `lookups.json` | Category → default copy/weight/metadata, grade → circulated/uncirculated, etc. |
+| **Bulk Import Sheet** | 3 header rows + data | `schema` | Row 2 = human labels, **row 3 = machine column names** (the 85 fields), banner row 1. |
+| **Valid Values** | 46 columns | `values` | Dropdown lists (Mint Mark, Grade, Composition, …). Some cells are live formulas (filtered out). |
+| **VLOOKUP** | lookup tables | `lookups` | Category → default copy/weight/metadata, grade → circulated/uncirculated, etc. |
 
 ---
 
@@ -108,7 +109,7 @@ The `.ods` has **3 sheets**, which map exactly onto the three JSON files:
 | --- | --- | --- |
 | **0** | Orient: read repo, `.ods`, reference screens; summarize | ✅ **Done** (this doc + meeting notes) |
 | **1** | Data model + SQL `CREATE TABLE` (DB2 for i) | ✅ **Script delivered** → ⏸ **waiting on you to create the table** |
-| **2** | M-Power files: generate JSON from `.ods`, build `_model.php` (DB2), wire up, fix naming | 🔄 **In progress** — JSON ✅, naming ✅; model pending the table |
+| **2** | M-Power files: data from `.ods`, build `_model.php` (DB2), wire up, fix naming | ✅ **Code complete** — data ✅, naming ✅, model ✅; just needs the table created to run live |
 | **3** | Website assembly: standalone screen vs. menu integration | ⛔ Blocked on scope decision |
 | **4** | Meeting notes → markdown + readable plan | ✅ **Done** (this doc + `MEETING-NOTES.md`) |
 | **5** | Agentic automation: pick 1 of 3 options, then scaffold | ⛔ Blocked on your pick |
@@ -145,8 +146,30 @@ created **CCSID 1208 (UTF-8)**.
 finalized — no further edits needed before you run it. (If `CREATE` ever reports *row too long*,
 switch `description` to `CLOB(1M)`; everything else fits comfortably.)
 
-➡️ **Action for you:** run `RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLPRODT) COMMIT(*NONE)`
-to create the table, then tell me it exists. I won't start Phase 2 until then.
+### 5.1 How to actually create the table (your question, answered)
+
+The table does **not** exist yet — `sql/SBLPRODT.sql` is the script that *creates* it. **Yes, you
+build it straight from that file.** You don't name anything by hand; the script already names it:
+- **Object name:** `SBLPRODT`  •  **Library:** `LSCDEVLIBP`  •  **Record format:** `SBLPRODTR`
+
+Two ways to run it (either works — pick what you normally use):
+
+**Option A — RUNSQLSTM (the house way, matches `CLRCUSSEGT.TABLE` / `GFTCRD001.PROC`):**
+1. Copy the contents of `SBLPRODT.sql` into a source member named **`SBLPRODT`** in
+   **`LSCDEVLIBP/QSQLSRC`** (same place your other table/proc sources live).
+2. Run:
+   ```
+   RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLPRODT) COMMIT(*NONE)
+   ```
+3. Verify: `WRKOBJ LSCDEVLIBP/SBLPRODT` (or `SELECT * FROM LSCDEVLIBP.SBLPRODT FETCH FIRST 1 ROW`).
+
+**Option B — ACS "Run SQL Scripts" (GUI, fastest):** open IBM i Access Client Solutions →
+**Run SQL Scripts**, paste the whole `SBLPRODT.sql`, and **Run All**. The script uses system-naming
+(`LSCDEVLIBP/SBLPRODT`, `FOR COLUMN`, `LABEL ON`, `RCDFMT`), so set the connection to
+**system naming** (or just run as-is — these statements are system-naming syntax).
+
+➡️ **Action for you:** create the table with A or B, then tell me it exists. The app code is already
+finished and waiting — the model points at `LSCDEVLIBP.SBLPRODT`.
 
 ---
 
@@ -154,25 +177,23 @@ to create the table, then tell me it exists. I won't start Phase 2 until then.
 
 Once `SBLPRODT` exists, in this order:
 
-1. ✅ **DONE — Generate the data files from the `.ods`** → `sbl_data/schema.json`,
-   `valid_values.json`, `lookups.json`. This makes the existing `_logic.php` and `_dsp.php` run.
-   - `schema.json`: 85 entries `{name, label, required, auto, dropdown?}` from rows 2–3.
-   - `valid_values.json`: 26 dropdown option lists (formula cells skipped, `---` separators kept).
-   - `lookups.json`: `category_copy` (242), `category_meta` (242), `grade_circ` (274) from VLOOKUP.
-2. **Build `_model.php` (DB2 for i)** — the only truly missing code. Four functions matching the
-   AJAX contract, following the `GFTCRDCVP_model.php` pattern (`db2_prepare` → `db2_bind_param` →
-   `db2_execute`):
-   - `sblGetAll($q)` — list/search (SELECT with optional `WHERE` on sku/category/name).
+1. ✅ **DONE — Data from the `.ods`** → consolidated into **`SellbriteBulkLoader_data.php`**
+   (one PHP file, no JSON). `Schema` loads it once via `require`.
+   - `schema`: 85 entries `{name, label, required, auto, dropdown?}` from rows 2–3.
+   - `values`: 26 dropdown option lists (formula cells skipped, `---` separators kept).
+   - `lookups`: `category_copy` (242), `category_meta` (242), `grade_circ` (274) from VLOOKUP.
+2. ✅ **DONE — Built `SellbriteBulkLoader_model.php` (DB2 for i)** — **inline parameterized SQL**
+   (chosen over stored procs because the table is 85 columns wide; no extra IBM i objects to create):
+   - `sblGetAll($q)` — list/search (`SELECT` with optional `WHERE` on sku/category/name).
    - `sblFind($id)` — one row for the edit form.
-   - `sblSave($row)` — insert or update (by `id`), coercing blanks/placeholders to `NULL`.
+   - `sblSave($row)` — insert or update (by `id`), coercing blanks/`***`/bad input to `NULL`.
    - `sblDelete($id)`.
-   - **Two house options:** (a) inline parameterized SQL in the model, or (b) **stored procedures**
-     `SBLPROD001/002/003…` like `GFTCRD001.PROC`. _Recommendation: stored procs_ — consistent with
-     the repo and keeps SQL on the IBM i side. I'll generate the `.PROC` sources for you to create.
-   - **Key gotcha:** DB2 returns column keys **uppercase**; the model will
-     `array_change_key_case($row, CASE_LOWER)` so PHP keeps using lowercase names.
-3. ✅ **DONE — Fixed the filename mismatch** — the 5 files were renamed to the `SBL_BulkLoader_*`
-   prefix the includes expect, and each file's header comment updated to match.
+   - Column list comes from `Schema::columns()`; **DB2's UPPERCASE keys are lower-cased** via
+     `array_change_key_case(... CASE_LOWER)`. Errors are logged (no `die()`), so AJAX still returns JSON.
+   - Smoke-tested end-to-end without DB: Schema→Computer→Validator→Exporter all green; it runs live
+     as soon as `SBLPRODT` exists.
+3. ✅ **DONE — Filenames aligned** — all files use the **`SellbriteBulkLoader_*`** base name;
+   includes, AJAX URLs, and header comments all match. `php -l` clean across the board.
 4. **SQL Composer runtime-parameter pattern** — for any list filtering (date range, category,
    "needs attention" status), use the seed-column + `${R00X}` placeholder pattern (the Cory McBeth
    report structure) so filters are swapped into the `WHERE` clause at runtime.
@@ -239,8 +260,9 @@ scaffold — no agent code runs without your go-ahead.
 | 2 | **CCSID** for text columns | ✅ **UTF-8 `1208`** |
 | 3 | **Website scope** (Phase 3) | ✅ **Integrate into LCCOnline menu** |
 | 4 | **First agentic automation** (Phase 5) | ✅ **A — AI Listing-Copy Generator** |
-| 5 | **Model style** (Phase 2) | 🔵 Proposing **stored procedures** (`.PROC`), like GFTCRD — confirm at Phase 2 |
-| 6 | Sellbrite vs **Cellbrite** — same system or two? | ❓ Confirm when convenient (not blocking) |
+| 5 | **Model style** (Phase 2) | ✅ **Inline parameterized SQL** (best fit for an 85-column table) |
+| 6 | **Data storage** (no external JSON) | ✅ Consolidated into one PHP file, `SellbriteBulkLoader_data.php` |
+| 7 | Sellbrite vs **Cellbrite** — same system or two? | ❓ Confirm when convenient (not blocking) |
 
 ---
 

@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - SBL_BulkLoader_ctl.php           *  -->
+<!--  * Program Name - SellbriteBulkLoader_ctl.php      *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -36,7 +36,7 @@
         $("#formView").toggle(view === 'form');
     }
     function sblBackToList(){ sblShow('list'); }
-    function sblExport(){ window.location = 'SBL_BulkLoader_ajax.php?action=export'; }
+    function sblExport(){ window.location = 'SellbriteBulkLoader_ajax.php?action=export'; }
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
     /* ---- new / edit ---- */
@@ -53,7 +53,7 @@
         sblRecompute();
     }
     function sblEdit(id){
-        $.post('SBL_BulkLoader_ajax.php', { action:'find', id:id }, function(res){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'find', id:id }, function(res){
             if (res.returnClass !== 'success' || !res.row){ swal('Not found','That record could not be loaded.','error'); return; }
             sblClearForm();
             $.each(res.row, function(k,v){
@@ -70,7 +70,7 @@
     /* ---- save / delete ---- */
     function sblSave(){
         var data = $('#sku-form').serialize() + '&action=save';
-        $.post('SBL_BulkLoader_ajax.php', data, function(res){
+        $.post('SellbriteBulkLoader_ajax.php', data, function(res){
             if (res.returnClass === 'success'){
                 swal({title:'Saved', text:'SKU saved and derived fields recomputed.', icon:'success', timer:1500, buttons:false});
             } else {
@@ -84,7 +84,7 @@
                icon:'warning', buttons:['Cancel','Delete'], dangerMode:true })
         .then(function(ok){
             if (!ok) return;
-            $.post('SBL_BulkLoader_ajax.php', { action:'delete', id:id }, function(){
+            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(){
                 window.location = '?';
             }, 'json');
         });
@@ -93,7 +93,7 @@
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
     function sblRecompute(){
         var data = $('#sku-form').serialize() + '&action=compute';
-        $.post('SBL_BulkLoader_ajax.php', data, function(res){
+        $.post('SellbriteBulkLoader_ajax.php', data, function(res){
             var active = document.activeElement;
             $('#sku-form [data-auto="1"]').each(function(){
                 if (this === active) return;
@@ -163,12 +163,12 @@ if ($authorized != "yes") {
     echo '<script>showNotAuthorized();</script>';
 } else {
 
-    require_once __DIR__ . '/SBL_BulkLoader_logic.php';
-    require_once __DIR__ . '/SBL_BulkLoader_model.php';
+    require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
+    require_once __DIR__ . '/SellbriteBulkLoader_model.php';
 
     $screenData = ['skus' => sblGetAll($_GET['q'] ?? '')];
 
-    include "SBL_BulkLoader_dsp.php";
+    include "SellbriteBulkLoader_dsp.php";
     dspBulkLoader($screenData);
 ?>
 <!--  End Content Here -->

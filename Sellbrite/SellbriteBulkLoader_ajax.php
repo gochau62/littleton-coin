@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - SBL_BulkLoader_ajax.php          *  -->
+<!--  * Program Name - SellbriteBulkLoader_ajax.php     *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -13,7 +13,7 @@
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
-require_once __DIR__ . '/SBL_BulkLoader_model.php';   // also pulls in the logic file
+require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // also pulls in the logic file
 
 if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }

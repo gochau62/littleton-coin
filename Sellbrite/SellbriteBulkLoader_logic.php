@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - SBL_BulkLoader_logic.php         *  -->
+<!--  * Program Name - SellbriteBulkLoader_logic.php    *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -12,9 +12,6 @@
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }
-if (!defined('SBL_DATA_DIR')) {
-    define('SBL_DATA_DIR', __DIR__ . '/sbl_data');
-}
 
 /** HTML-escape helper (guarded so it never clashes with framework helpers). */
 if (!function_exists('sbl_e')) {
@@ -23,13 +20,21 @@ if (!function_exists('sbl_e')) {
 
 final class Schema
 {
+    private static $data = null;
     private static $schema = null;
     private static $values = null;
     private static $lookups = null;
 
+    /** Load the consolidated reference data (schema/values/lookups) once. */
+    private static function data(): array
+    {
+        if (self::$data === null) { self::$data = require __DIR__ . '/SellbriteBulkLoader_data.php'; }
+        return is_array(self::$data) ? self::$data : [];
+    }
+
     public static function columns(): array
     {
-        if (self::$schema === null) { self::$schema = self::load('schema.json'); }
+        if (self::$schema === null) { self::$schema = self::data()['schema'] ?? []; }
         return self::$schema;
     }
     public static function byName(): array
@@ -40,7 +45,7 @@ final class Schema
     }
     public static function values(): array
     {
-        if (self::$values === null) { self::$values = self::load('valid_values.json'); }
+        if (self::$values === null) { self::$values = self::data()['values'] ?? []; }
         return self::$values;
     }
     public static function optionsFor(array $col): array
@@ -50,7 +55,7 @@ final class Schema
     }
     public static function lookups(): array
     {
-        if (self::$lookups === null) { self::$lookups = self::load('lookups.json'); }
+        if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
     }
     public static function groups(): array
@@ -80,12 +85,6 @@ final class Schema
                 'package_weight','condition_note','total_precious_metal_content',
             ],
         ];
-    }
-    private static function load(string $file): array
-    {
-        $json = file_get_contents(SBL_DATA_DIR . '/' . $file);
-        $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
     }
 }
 
