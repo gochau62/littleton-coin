@@ -11,7 +11,7 @@
 <?php
 function dspBulkLoader(&$screenData)
 {
-    require_once __DIR__ . '/SBL_BulkLoader_logic.php';
+    require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
     $skus      = $screenData['skus'] ?? [];
     $byName    = Schema::byName();
     $groups    = Schema::groups();

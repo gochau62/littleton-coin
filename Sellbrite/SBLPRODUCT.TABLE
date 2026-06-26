@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - SBLPRODT.TABLE                                */
+/* Program Name      - SBLPRODUCT.TABLE                              */
 /*                                                                   */
 /* Program Narrative - Create Sellbrite Bulk Loader product staging  */
 /*                     table.  One row = one product/SKU being       */
@@ -11,7 +11,7 @@
 /*                                                                   */
 /* Date Written      - 06/26/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(SBLPRODT) COMMIT(*NONE)                */
+/*                     SRCMBR(SBLPRODUCT) COMMIT(*NONE)              */
 /*                                                                   */
 /* Notes             - Long SQL column names match the spreadsheet   */
 /*                     machine names so db2_fetch_assoc() returns    */
@@ -32,7 +32,7 @@
 /* ------------------------------------------------------------------*/
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE LSCDEVLIBP/SBLPRODT (
+CREATE TABLE LSCDEVLIBP/SBLPRODUCT (
    id        FOR COLUMN ID        INTEGER GENERATED ALWAYS AS IDENTITY
              (START WITH 1, INCREMENT BY 1) NOT NULL,
    sku                             FOR COLUMN SKU        VARCHAR(40) CCSID 1208     NOT NULL,
@@ -123,12 +123,12 @@ CREATE TABLE LSCDEVLIBP/SBLPRODT (
    created_at FOR COLUMN CREATTS  TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
    updated_at FOR COLUMN UPDATETS TIMESTAMP NOT NULL
              GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
-   CONSTRAINT SBLPRODT_PK  PRIMARY KEY (id),
-   CONSTRAINT SBLPRODT_SKU UNIQUE (sku)
+   CONSTRAINT SBLPRODUCT_PK  PRIMARY KEY (id),
+   CONSTRAINT SBLPRODUCT_SKU UNIQUE (sku)
 )
-RCDFMT SBLPRODTR;
+RCDFMT SBLPRODUCR;
 
-LABEL ON COLUMN LSCDEVLIBP/SBLPRODT (
+LABEL ON COLUMN LSCDEVLIBP/SBLPRODUCT (
    id      TEXT IS 'Record ID',
    sku                             TEXT IS 'SKU',
    category_name                   TEXT IS 'Sellbrite Category Name',
@@ -218,4 +218,4 @@ LABEL ON COLUMN LSCDEVLIBP/SBLPRODT (
    created_at TEXT IS 'Created Timestamp',
    updated_at TEXT IS 'Updated Timestamp');
 
-LABEL ON TABLE LSCDEVLIBP/SBLPRODT IS 'Sellbrite Bulk Loader Product Staging';
+LABEL ON TABLE LSCDEVLIBP/SBLPRODUCT IS 'Sellbrite Bulk Loader Product Staging';
