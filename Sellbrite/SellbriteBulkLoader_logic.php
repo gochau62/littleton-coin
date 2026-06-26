@@ -108,25 +108,28 @@ final class Computer
         }
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
+        // Category-driven fields recompute from the category's lookup whenever it
+        // provides a value, so changing the category (or coin type) updates them live
+        // — this mirrors the spreadsheet's formula cells. Fields the category doesn't
+        // define are left as the user entered them.
         $copyVal = static fn(string $k): string => self::lookupValue($copy[$k] ?? '', '');
         $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
-        if ($g('composition') === '' && $copyVal('composition') !== '') { $row['composition'] = $copyVal('composition'); }
-        if ($g('fineness') === '' && $copyVal('fineness') !== '') { $row['fineness'] = $copyVal('fineness'); }
-        if ($g('country_of_manufacture') === '') { $row['country_of_manufacture'] = $copyVal('country') ?: 'United States'; }
-        if ($g('brand') === '' && $copyVal('brand') !== '') { $row['brand'] = $copyVal('brand'); }
-        if ($g('coin_type') === '' && $copyVal('coin_type') !== '') { $row['coin_type'] = $copyVal('coin_type'); }
-        if ($g('denomination') === '' && $copyVal('denomination') !== '') { $row['denomination'] = $copyVal('denomination'); }
+        foreach (['composition', 'fineness', 'coin_type', 'denomination', 'brand'] as $f) {
+            if ($copyVal($f) !== '') { $row[$f] = $copyVal($f); }
+        }
+        $country = $copyVal('country');
+        if ($country !== '') { $row['country_of_manufacture'] = $country; }
+        elseif ($g('country_of_manufacture') === '') { $row['country_of_manufacture'] = 'United States'; }
 
         $grade = $g('grade');
-        if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
-            $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
+        if ($grade !== '') {
+            $circ = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
+            if ($circ !== '') { $row['circulated_or_uncirculated'] = $circ; }
         }
 
-        $weight = $g('package_weight');
-        if ($weight === '') {
-            $weight = self::lookupValue($meta['weight_lb'] ?? '', '');
-            if ($weight !== '') { $row['package_weight'] = $weight; }
-        }
+        $weight     = $g('package_weight');
+        $metaWeight = self::lookupValue($meta['weight_lb'] ?? '', '');
+        if ($metaWeight !== '') { $row['package_weight'] = $weight = $metaWeight; }
         if (is_numeric($weight)) {
             $w = (float) $weight;
             $row['package_length'] = $w < 0.5 ? '9' : '11';
