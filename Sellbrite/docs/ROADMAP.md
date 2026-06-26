@@ -77,21 +77,19 @@ I read every file in `Sellbrite/` plus the reference tools and the `.ods`. Statu
 | `_dsp.php` | ✅ Solid | List grid + grouped add/edit form + live preview + validation checklist. Green `#CCFFCC` LCC styling, matches house look. |
 | `_ajax.php` | ✅ Solid | `compute / save / find / delete / export` endpoints. |
 | `_logic.php` | ✅ Strong | `Schema`, `Computer` (title/description/image-URL/default formulas), `Validator`, `Exporter` (3-row CSV). This is the spreadsheet's brain, already in PHP. |
-| `_model.php` | ❌ **Empty stub** | Only a header. **No DB2 code yet** — `sblGetAll/sblFind/sblSave/sblDelete` are referenced but undefined. |
-| `sbl_data/schema.json` | ❌ **Missing** | `Schema` loads it; defines the 85 columns (name/label/required/dropdown/auto). |
-| `sbl_data/valid_values.json` | ❌ **Missing** | Dropdown options (from the "Valid Values" sheet). |
-| `sbl_data/lookups.json` | ❌ **Missing** | `category_meta` / `category_copy` / `grade_circ` maps (from the "VLOOKUP" sheet). |
-| DB2 table | ❌ **Not created** | SQL is now ready in `sql/SBLPRODT.sql` (Phase 1). |
+| `_model.php` | ❌ **Empty stub** | Only a header. **No DB2 code yet** — `sblGetAll/sblFind/sblSave/sblDelete` are referenced but undefined. Built next, once the table exists. |
+| `sbl_data/schema.json` | ✅ **Generated** | 85 columns (name/label/required/auto/dropdown), built from rows 2–3 of the Bulk Import Sheet. |
+| `sbl_data/valid_values.json` | ✅ **Generated** | 26 dropdown lists from the "Valid Values" sheet (formulas filtered out, `--- separators ---` kept). |
+| `sbl_data/lookups.json` | ✅ **Generated** | `category_copy` (242), `category_meta` (242), `grade_circ` (274) from the "VLOOKUP" sheet. |
+| DB2 table | ❌ **Not created** | SQL is ready in `sql/SBLPRODT.sql` (Phase 1) — waiting on you to run it. |
 
 ### Three issues to fix early
-1. **Filename mismatch.** The files are named `SellbriteBulkLoader_*.php`, but the includes
-   reference `SBL_BulkLoader_*.php` (e.g. `_ctl.php` requires `SBL_BulkLoader_logic.php`,
-   `_dsp.php`, `_model.php`; `_ajax.php` exports to `SBL_BulkLoader_ajax.php`). **We must pick one
-   naming scheme** and make includes consistent, or the app won't load. _Recommendation: rename
-   files to the `SBL_BulkLoader_*` prefix the code already expects._
-2. **Empty model.** All DB2 access has to be built (Phase 2) against the new `SBLPRODT` table.
-3. **Missing JSON data files.** They can be **generated directly from the `.ods`** (the three
-   sheets map 1:1 to the three JSON files). This is the first Phase 2 task.
+1. ✅ **Filename mismatch — FIXED.** The 5 files were renamed from `SellbriteBulkLoader_*.php` to
+   the `SBL_BulkLoader_*.php` prefix the includes already reference. All includes now resolve.
+2. ❌ **Empty model — still open.** All DB2 access has to be built (Phase 2) against `SBLPRODT`.
+   This is the one piece that needs the table to exist before it can be tested.
+3. ✅ **JSON data files — GENERATED.** All three were generated directly from the `.ods` (the
+   three sheets map 1:1 to the three JSON files) and live in `sbl_data/`.
 
 ### Spreadsheet structure (the source spec)
 The `.ods` has **3 sheets**, which map exactly onto the three JSON files:
@@ -110,7 +108,7 @@ The `.ods` has **3 sheets**, which map exactly onto the three JSON files:
 | --- | --- | --- |
 | **0** | Orient: read repo, `.ods`, reference screens; summarize | ✅ **Done** (this doc + meeting notes) |
 | **1** | Data model + SQL `CREATE TABLE` (DB2 for i) | ✅ **Script delivered** → ⏸ **waiting on you to create the table** |
-| **2** | M-Power files: generate JSON from `.ods`, build `_model.php` (DB2), wire up, fix naming | ⏳ Next, after the table exists |
+| **2** | M-Power files: generate JSON from `.ods`, build `_model.php` (DB2), wire up, fix naming | 🔄 **In progress** — JSON ✅, naming ✅; model pending the table |
 | **3** | Website assembly: standalone screen vs. menu integration | ⛔ Blocked on scope decision |
 | **4** | Meeting notes → markdown + readable plan | ✅ **Done** (this doc + `MEETING-NOTES.md`) |
 | **5** | Agentic automation: pick 1 of 3 options, then scaffold | ⛔ Blocked on your pick |
@@ -156,11 +154,11 @@ to create the table, then tell me it exists. I won't start Phase 2 until then.
 
 Once `SBLPRODT` exists, in this order:
 
-1. **Generate the data files from the `.ods`** → `sbl_data/schema.json`,
+1. ✅ **DONE — Generate the data files from the `.ods`** → `sbl_data/schema.json`,
    `valid_values.json`, `lookups.json`. This makes the existing `_logic.php` and `_dsp.php` run.
-   - `schema.json`: 85 entries `{name, label, required, dropdown?, auto?}` from rows 2–3.
-   - `valid_values.json`: each dropdown's option list (skipping the spreadsheet's formula cells).
-   - `lookups.json`: `category_meta`, `category_copy`, `grade_circ` from the VLOOKUP sheet.
+   - `schema.json`: 85 entries `{name, label, required, auto, dropdown?}` from rows 2–3.
+   - `valid_values.json`: 26 dropdown option lists (formula cells skipped, `---` separators kept).
+   - `lookups.json`: `category_copy` (242), `category_meta` (242), `grade_circ` (274) from VLOOKUP.
 2. **Build `_model.php` (DB2 for i)** — the only truly missing code. Four functions matching the
    AJAX contract, following the `GFTCRDCVP_model.php` pattern (`db2_prepare` → `db2_bind_param` →
    `db2_execute`):
@@ -173,8 +171,8 @@ Once `SBLPRODT` exists, in this order:
      the repo and keeps SQL on the IBM i side. I'll generate the `.PROC` sources for you to create.
    - **Key gotcha:** DB2 returns column keys **uppercase**; the model will
      `array_change_key_case($row, CASE_LOWER)` so PHP keeps using lowercase names.
-3. **Fix the filename mismatch** — rename to the `SBL_BulkLoader_*` prefix the includes expect
-   (or update every include). One consistent scheme.
+3. ✅ **DONE — Fixed the filename mismatch** — the 5 files were renamed to the `SBL_BulkLoader_*`
+   prefix the includes expect, and each file's header comment updated to match.
 4. **SQL Composer runtime-parameter pattern** — for any list filtering (date range, category,
    "needs attention" status), use the seed-column + `${R00X}` placeholder pattern (the Cory McBeth
    report structure) so filters are swapped into the `WHERE` clause at runtime.

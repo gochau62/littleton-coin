@@ -1,0 +1,3127 @@
+{
+  "category_copy": {
+    "Liberty Cap Half Cent": {
+      "coin_type": "Liberty Cap",
+      "denomination": "1/2C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Draped Bust Half Cent": {
+      "coin_type": "Draped Bust",
+      "denomination": "1/2C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 200 years ago, this scarce copper half cent bears Robert Scot's classic Draped Bust design. The obverse shows Liberty with a ribbon in her flowing hair and a plunging neckline draped with linen. The reverse bears UNITED STATES OF AMERICA and the fraction 1/200 beneath a laurel wreath and HALF CENT."
+    },
+    "Classic Head Half Cent": {
+      "coin_type": "Classic Head",
+      "denomination": "1/2C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 180 years ago, this scarce copper half cent bears John Reich's Classic Head design. The obverse depicts Liberty with curly hair held by a band inscribed LIBERTY. The reverse bears HALF CENT surrounded by a laurel wreath and UNITED STATES OF AMERICA."
+    },
+    "Braided Hair Half Cent": {
+      "coin_type": "Braided Hair",
+      "denomination": "1/2C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This scarce copper Braided Hair half cent was struck over 150 years ago. It bears Christian Gobrecht's classic design. The obverse depicts Liberty wearing a diadem, her long hair in a bun held by beaded cords. The reverse shows HALF CENTS surrounded by a wreath and UNITED STATES OF AMERICA."
+    },
+    "Flowing Hair Large Cent": {
+      "coin_type": "Flowing Hair",
+      "denomination": "1C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Liberty Cap Large Cent": {
+      "coin_type": "Liberty Cap",
+      "denomination": "1C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Draped Bust Large Cent": {
+      "coin_type": "Draped Bust",
+      "denomination": "1C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 200 years ago, this copper Draped Bust large cent is 50% larger than today's cents. Its classic obverse by Robert Scot depicts Liberty with a plunging neckline and flowing hair held by a ribbon. The reverse shows ONE CENT, surrounded by a wreath, UNITED STATES OF AMERICA and the fraction 1/100."
+    },
+    "Classic Head Large Cent": {
+      "coin_type": "Classic Head",
+      "denomination": "1C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 200 years ago, this copper Classic Head large cent is 50% larger than today's cents. Its classic obverse by John Reich depicts 13 stars around Liberty, her curly hair held by a band inscribed LIBERTY. The reverse bears ONE CENT inside a laurel wreath and UNITED STATES OF AMERICA."
+    },
+    "Coronet Head Large Cent": {
+      "coin_type": "Coronet Head",
+      "denomination": "1C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 180 years ago, this copper Coronet Head large cent - also called the Matron Head large cent - is 50% larger than today's cents. It depicts a more serious Liberty, with a diadem inscribed LIBERTY and long hair in a bun held by plain cords. The reverse shows ONE CENT surrounded by a laurel wreath and UNITED STATES OF AMERICA."
+    },
+    "Braided Hair Large Cent": {
+      "coin_type": "Braided Hair",
+      "denomination": "1C",
+      "composition": "Copper",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 150 years ago, this copper Braided Hair large cent bears Christian Gobrecht's classic design. Its obverse depicts Liberty in a diadem, her long tresses held in a bun held by two beaded cords. The reverse bears ONE CENT encircled by a wreath and UNITED STATES OF AMERICA."
+    },
+    "Flying Eagle Small Cent": {
+      "coin_type": "Flying Eagle",
+      "denomination": "1C",
+      "composition": "Copper-Nickel",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Briefly minted from 1856-1858, Flying Eagle cents were America's first small-size 1c coins. Struck in 88% copper and 12% nickel, these coins feature an eagle in flight on the obverse and a wreath of corn, wheat, cotton and tobacco on the reverse."
+    },
+    "Indian Head Small Cent": {
+      "coin_type": "Indian Head",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck from 1859-1864, copper-nickel Indian Head cents depict Liberty with an Indian headdress and not an actual Native American. The reverse of first-year coins featured a laurel wreath, which changed in 1860 to an oak wreath and small shield."
+    },
+    "Lincoln Wheat Small Cent": {
+      "coin_type": "Lincoln Wheat",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Lincoln cents with the original Wheat Ears reverse were introduced in 1909 on the 100th anniversary of Abraham Lincoln's birth and were struck until 1958. These bronze cents were the first circulating U.S. coins to depict an actual person."
+    },
+    "Lincoln Memorial Small Cent": {
+      "coin_type": "Lincoln Memorial",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The Lincoln cent was redesigned in 1959 to celebrate the 150th anniversary of Abraham Lincoln's birth. The obverse continued to depict Lincoln's portrait, while Frank Gasparro's new reverse depicted the Lincoln Memorial."
+    },
+    "Lincoln Bicentennial Small Cent": {
+      "coin_type": "Lincoln Bicentennial",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "In honor of the bicentennial of Abraham Lincoln's birth and the 100th anniversary of the Lincoln cent, this special one-year-only cent bears a special reverse design depicting the first of four major stages in Abraham Lincoln's life."
+    },
+    "Lincoln Shield Small Cent": {
+      "coin_type": "Lincoln Shield",
+      "denomination": "1C",
+      "composition": "Copper-Plated Zinc",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Lincoln cents issued 2010-date bear a new reverse by Lyndall Bass, which depicts a \"Union Shield\" to represent President Lincoln's preservation of the United States as a single, unified nation. The obverse bears Victor D. Brenner's original portrait design."
+    },
+    "Two Cent": {
+      "denomination": "2C",
+      "composition": "Bronze",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This century-old bronze two-cent piece is from the first U.S. coin series to bear IN GOD WE TRUST. The motto appears on the obverse, on a ribbon above the Union Shield. Behind the shield are two crossed arrows and an encircling wreath. The reverse bears 2 CENTS surrounded by two sheaves of wheat tied by a ribbon and UNITED STATES OF AMERICA."
+    },
+    "Three Cent Silver": {
+      "coin_type": "Silver",
+      "denomination": "3C",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This century-old silver three-cent piece (or \"Trime\") is the smallest-denomination silver coin ever issued by the U.S. Mint. Its obverse depicts a Union Shield atop a six-pointed star. UNITED STATES OF AMERICA and the date encircle the design. The reverse features the Roman numeral III surrounded by a large, stylized letter C and 13 stars."
+    },
+    "Three Cent Nickel": {
+      "coin_type": "Nickel",
+      "denomination": "3C",
+      "composition": "Copper-Nickel",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 130 years ago, this nickel three-cent piece bears James B. Longacre's classic design. It depicts Liberty in a diadem inscribed LIBERTY, her long hair in an intricate braid. The reverse bears the Roman numeral III inside by a laurel wreath."
+    },
+    "Flowing Hair Half Dime": {
+      "coin_type": "Flowing Hair",
+      "denomination": "5C",
+      "composition": "Silver",
+      "fineness": "0.8924",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 200 years ago, this silver Flowing Hair half dime is one of America's oldest federal-issue coins. Its obverse bears Robert Scot's classic image of Liberty with long hair flowing to her shoulders. Surrounding her are 13 stars, with the date below. The reverse depicts an American eagle encircled by a laurel wreath and UNITED STATES OF AMERICA."
+    },
+    "Draped Bust Half Dime": {
+      "coin_type": "Draped Bust",
+      "denomination": "5C",
+      "composition": "Silver",
+      "fineness": "0.8924",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Capped Bust Half Dime": {
+      "coin_type": "Capped Bust",
+      "denomination": "5C",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 180 years ago, this silver Capped Bust half dime bears John Reich's classic design. It depicts 13 stars around Liberty in a cloth cap, her curly hair reaching her shoulder where a brooch secures her gown. The reverse bears UNITED STATES OF AMERICA around an American eagle with Union Shield holding an olive branch and three arrows. The denomination 5 c. is below the eagle, with E PLURIBUS UNUM on a banner above."
+    },
+    "Seated Half Dime": {
+      "coin_type": "Seated Liberty",
+      "denomination": "5C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This century-old, 90% silver Liberty Seated half dime is from the final series before the denomination was retired. Its obverse depicts Liberty seated on a rock holding a Union Shield and a Liberty cap atop a pole. The reverse bears HALF DIME surrounded by a laurel wreath and UNITED STATES OF AMERICA."
+    },
+    "Shield Nickel": {
+      "coin_type": "Shield",
+      "denomination": "5C",
+      "composition": "Copper-Nickel",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The classic Shield nickel of 1866-1883 replaced the silver half dimes of 1794-1873. The coin's obverse depicts a shield and wreath, while the reverse features a large numeral \"5\" inside a circle of 13 stars above the word CENTS."
+    },
+    "Liberty Nickel": {
+      "coin_type": "Liberty",
+      "denomination": "5C",
+      "composition": "Copper-Nickel",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "When first issued in 1883, Liberty Head Nickels (or \"V\" nickels) bore just a large Roman numeral \"V\" for the denomination. So the Mint soon added the word CENTS to stop con artists from gold plating them and passing them off as $5 gold pieces."
+    },
+    "Buffalo Nickel": {
+      "coin_type": "Buffalo",
+      "denomination": "5C",
+      "composition": "Copper-Nickel",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Also called the Indian Head nickel, the prized Buffalo nickel is considered the most uniquely American coin. Designed by sculptor James E. Fraser, the obverse depicts a proud Native American. The distinctive reverse features an American bison."
+    },
+    "Jefferson Nickel": {
+      "coin_type": "Jefferson",
+      "denomination": "5C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.35",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The Jefferson nickel offers collectors an affordable way to build a complete collection. The obverse bears a striking portrait of America's founding father and 3rd president, while the reverse depicts his home, Monticello."
+    },
+    "Draped Bust Dime": {
+      "coin_type": "Draped Bust",
+      "denomination": "10C",
+      "composition": "Silver",
+      "fineness": "0.8924",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 200 years ago, this classic Draped Bust silver dime designed by Robert Scot depicts Liberty with a plunging neckline and a ribbon in her flowing hair. 13 stars surround her, with LIBERTY above and the date below. The reverse bears a large heraldic eagle patterned after the Great Seal of the United States."
+    },
+    "Capped Bust Dime": {
+      "coin_type": "Capped Bust",
+      "denomination": "10C",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by John Reich, this classic silver dime depicts Liberty on the obverse with hair beneath a cloth cap surrounded by 13 stars. Its reverse features the denomination 10 c. beneath an eagle with shield on a branch holding three arrows."
+    },
+    "Seated Liberty Dime": {
+      "coin_type": "Seated Liberty",
+      "denomination": "10C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by Christian Gobrecht, this 90% silver dime depicts Liberty seated on a rock, holding a shield in her right hand and a Liberty cap on a pole in her left. The reverse displays a wreath, the denomination and UNITED STATES OF AMERICA."
+    },
+    "Barber Dime": {
+      "coin_type": "Barber",
+      "denomination": "10C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Known as the Barber dime after its designer, this classic Liberty Head dime was struck in 90% silver. Its obverse depicts Liberty facing right wearing a Phrygian cap and laurel wreath, while the reverse shows a wreath and the denomination ONE DIME."
+    },
+    "Mercury Dime": {
+      "coin_type": "Mercury",
+      "denomination": "10C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This 90% silver Mercury dime was designed by A.A. Weinman, who also created the Liberty Walking half dollars of 1916-1947. Its obverse features Liberty in a winged cap to symbolize freedom of thought. The reverse depicts a fasces against a branch in the background."
+    },
+    "Roosevelt Dime": {
+      "coin_type": "Roosevelt",
+      "denomination": "10C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This dime honors America's 32nd and only four-term president, Franklin D. Roosevelt, Designed by John R. Sinnock, the obverse depicts Roosevelt's portrait. The reverse shows a torch between olive and oak branches, symbolizing peace, strength and independence."
+    },
+    "Semiquincentennial Dime": {
+      "coin_type": "Semiquincentennial",
+      "denomination": "10C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.999",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Twenty Cent": {
+      "coin_type": "Seated Liberty",
+      "denomination": "20C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The Liberty Seated twenty-cent piece was the shortest-lived U.S. coin denomination. This century-old, 90% silver coin depicts 13 stars around Liberty, who sits on a rock with a Union Shield and a Liberty cap on a pole. The reverse shows an eagle with an olive branch and three arrows. Encircling the reverse are UNITED STATES OF AMERICA and TWENTY CENTS."
+    },
+    "Draped Bust Quarter": {
+      "coin_type": "Draped Bust",
+      "denomination": "25C",
+      "composition": "Silver",
+      "fineness": "0.8924",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 200 years ago, this silver Draped Bust quarter bears Robert Scot's classic designs. The obverse shows 13 stars around Liberty with a plunging neckline, her long hair held by a ribbon. The reverse is the second design to appear on a U.S. quarter. It bears a heraldic eagle surrounded by UNITED STATES OF AMERICA and the denomination 20 c."
+    },
+    "Capped Bust Quarter": {
+      "coin_type": "Capped Bust",
+      "denomination": "25C",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck around 200 years ago, this silver Capped Bust quarter bears John Reich's classic Capped Bust design. It depicts Liberty in a cloth cap, surrounded by 13 stars and the date of issue. The reverse shows a banner with the motto E PLURIBUS UNUM above an eagle with Union Shield, an olive branch and three arrows. Encircling the eagle are 25 c. and UNITED STATES OF AMERICA."
+    },
+    "Seated Liberty Quarter": {
+      "coin_type": "Seated Liberty",
+      "denomination": "25C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by Christian Gobrecht, this classic 90% silver quarter features Liberty seated on a rock surrounded by 13 stars. Her left hand holds a liberty cap atop a pole; her right, a shield inscribed LIBERTY. The reverse depicts an eagle on an olive branch holding three arrows."
+    },
+    "Barber Quarter": {
+      "coin_type": "Barber",
+      "denomination": "25C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by Charles E. Barber, this 90% silver Liberty Head quarter (or Barber quarter) depicts Liberty wearing a laurel wreath and Phrygian cap with a band inscribed LIBERTY. The reverse bears an adaptation of the Great Seal of the United States."
+    },
+    "Standing Liberty Quarter": {
+      "coin_type": "Standing Liberty",
+      "denomination": "25C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Considered one of America's most beautiful coinage designs, this Standing Liberty quarter depicts Liberty standing in a gateway, holding an olive branch and uncovering a shield. The reverse features 13 stars surrounding a majestic eagle in flight."
+    },
+    "Washington Quarter": {
+      "coin_type": "Washington",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The obverse of this Washington quarter bears John Flanagan's familiar portrait of America's first president. Its reverse features his depiction of a proud eagle with spread wings, perched on a bundle of arrows above two olive branches."
+    },
+    "State Quarter": {
+      "coin_type": "State",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The Statehood quarters of 1999-2008 honored the 50 states in order of statehood, with reverse designs representing the featured state. John Flanagan's original Washington portrait obverse was slightly modified to make room for the new, changing reverse designs."
+    },
+    "DC & US Territories Quarter": {
+      "coin_type": "DC & US Territories",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "In 2009, the U.S. Mint followed its Statehood quarter program with six new quarters bearing reverse designs honoring the District of Columbia and the five U.S. territories. Each bore John Flanagan's modified Washington portrait obverse."
+    },
+    "America the Beautiful Quarter": {
+      "coin_type": "National Park",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "The National Park quarters series honors a national park or historic site in each of the 50 states, the District of Columbia and the five U.S. territories. Each coin bears John Flanagan's modified Washington portrait obverse and a special reverse design representing the featured site."
+    },
+    "American Women Quarter": {
+      "coin_type": "American Women",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.999",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Semiquincentennial Quarter": {
+      "coin_type": "Semiquincentennial",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.999",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Draped Bust Half Dollar": {
+      "coin_type": "Draped Bust",
+      "denomination": "50C",
+      "composition": "Silver",
+      "fineness": "0.8924",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Capped Bust Half Dollar": {
+      "coin_type": "Capped Bust",
+      "denomination": "50C",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck over 180 years ago, this 89% silver Capped Bust half dollar bears John Reich's classic design. It depicts Liberty with long, curling hair and a cloth cap, surrounded by 13 stars and the date. The reverse shows an American eagle with Union Shield, an olive branch and three arrows. A banner above the eagle reads E PLURIBUS UNUM, with 50 c. below and UNITED STATES OF AMERICA surrounding. Inscribed along the coin's edge is FIFTY CENTS or HALF A DOLLAR."
+    },
+    "Seated Liberty Half Dollar": {
+      "coin_type": "Seated Liberty",
+      "denomination": "50C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This 90% silver Liberty Seated half dollar was struck over a century ago. Its classic obverse shows Liberty seated on a rock, holding a Union Shield, a ribbon inscribed LIBERTY and a Liberty cap atop a pole. 13 stars and the date surround her. The reverse depicts an American eagle with Union Shield, an olive branch and three arrows. Encircling the reverse are UNITED STATES OF AMERICA and HALF DOLLAR."
+    },
+    "Barber Half Dollar": {
+      "coin_type": "Barber",
+      "denomination": "50C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This 90% silver Liberty Head half dollar (or Barber half dollar) bears Charles E. Barber's classic depiction of Liberty wearing a laurel wreath and Phrygian cap held by a band inscribed LIBERTY. The reverse bears an adaptation of the Great Seal of the United States."
+    },
+    "Liberty Walking Half Dollar": {
+      "coin_type": "Liberty Walking",
+      "denomination": "50C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by Adolph A. Weinman, this 90% silver Liberty Walking half dollar is one of America's most beautiful coins. The obverse shows Liberty with arm outstretched, striding towards the dawn of a new day. The reverse depicts an eagle on a rocky crag, where a pine branch grows to symbolize strength."
+    },
+    "Franklin Half Dollar": {
+      "coin_type": "Franklin",
+      "denomination": "50C",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This Franklin half dollar is from America's last circulating half dollar series struck entirely in 90% silver. Its obverse bears John R. Sinnock's portrait of Benjamin Franklin, while the reverse depicts the Liberty Bell and a small eagle."
+    },
+    "Kennedy Half Dollar": {
+      "coin_type": "Kennedy",
+      "denomination": "50C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This Kennedy half dollar honors America's 35th president, John F. Kennedy. The obverse designed by Gilroy Roberts features a left-facing portrait of Kennedy, while Frank Gasparro's reverse displays the presidential coat of arms."
+    },
+    "Semiquincentennial Half Dollar": {
+      "coin_type": "Semiquincentennial",
+      "denomination": "50C",
+      "composition": "*** SELECT ***",
+      "fineness": "0.999",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Draped Bust Dollar": {
+      "coin_type": "Draped Bust",
+      "denomination": "$1",
+      "composition": "Silver",
+      "fineness": "0.8924",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Seated Liberty Dollar": {
+      "coin_type": "Seated Liberty",
+      "denomination": "$1",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This century-old 90% silver Liberty Seated dollar bears Christian Gobrecht's classic design. On the obverse, Liberty sits on a rock surrounded by 13 stars. She holds a Union Shield with banner that reads LIBERTY and a Liberty cap atop a pole. The reverse bears an American eagle with shield, olive branch and 3 arrows. Encircling the eagle are the denomination ONE DOL. and UNITED STATES OF AMERICA."
+    },
+    "Trade Dollar": {
+      "coin_type": "Trade",
+      "denomination": "$1",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by William Barber, this 90% silver Trade dollar was struck over a century ago for use in trade with Asia. Its obverse depicts 13 stars around Liberty, who sits on a bale of merchandise by the sea. Her right hand extends an olive branch; her left rests atop a sheaf of wheat and a ribbon inscribed LIBERTY. The reverse shows an American eagle holding three arrows and an olive branch. Below the eagle is 420 GRAINS, 900 FINE., while a banner above reads E PLURIBUS UNUM. UNITED STATES OF AMERICA and TRADE DOLLAR encircle the reverse."
+    },
+    "Morgan Dollar": {
+      "coin_type": "Morgan",
+      "denomination": "$1",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This large 90% silver Morgan dollar bears George T. Morgan's classic depiction of Liberty facing left in a Phrygian cap and a spray of leaves held by a ribbon inscribed LIBERTY. The reverse features an eagle clutching a branch and three arrows."
+    },
+    "Morgan Dollar Toned": {
+      "coin_type": "Morgan",
+      "denomination": "$1",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This large 90% silver Morgan dollar bears George T. Morgan's classic depiction of Liberty facing left in a Phrygian cap and a spray of leaves held by a ribbon inscribed LIBERTY. The reverse features an eagle clutching a branch and three arrows."
+    },
+    "Peace Dollar": {
+      "coin_type": "Peace",
+      "denomination": "$1",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Designed by Anthony de Francisci, this 90% silver Peace depicts a left-facing Liberty wearing a diadem of spikes. The reverse shows an eagle perched on a rock with a laurel branch above the word PEACE, facing the rays of a rising sun."
+    },
+    "Eisenhower Dollar": {
+      "coin_type": "Eisenhower",
+      "denomination": "$1",
+      "composition": "*** SELECT ***",
+      "fineness": "0.4",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This large dollar coin depicts 34th President Dwight D. Eisenhower, with LIBERTY above and the date below. Next to the portrait is the motto IN GOD WE TRUST. Adapted from the Apollo 11 mission patch, the reverse shows an eagle landing on the moon's surface, with the earth and E PLURIBUS UNUM above. Encircling the design are UNITED STATES OF AMERICA and ONE DOLLAR."
+    },
+    "Susan B Anthony Dollar": {
+      "coin_type": "Susan B Anthony",
+      "denomination": "$1",
+      "composition": "Copper-Nickel Clad",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This historic coin is from the America's first small-size dollar series. Its obverse depicts women's rights pioneer Susan B. Anthony. Surrounding her portrait are by 13 stars, LIBERTY, IN GOD WE TRUST and the date. Adapted from the Apollo 11 mission patch, the reverse shows an eagle landing on the moon with the earth in the background. Above the eagle are UNITED STATES OF AMERICA and E PLURIBUS UNUM, with ONE DOLLAR below."
+    },
+    "Native American Dollar": {
+      "coin_type": "Native American",
+      "denomination": "$1",
+      "composition": "Manganese-Brass",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This historic Sacagawea dollar honors Lewis and Clark's young Shoshone guide. The obverse depicts Sacagawea holding her infant son, Jean Baptiste. LIBERTY is inscribed above the pair, with IN GOD WE TRUST on the left and the date at right. The reverse bears a soaring American eagle and E PLURIBUS UNUM. Encircling the reverse are 13 stars, UNITED STATES OF AMERICA and ONE DOLLAR."
+    },
+    "Presidential Dollar": {
+      "coin_type": "Presidential",
+      "denomination": "$1",
+      "composition": "Manganese-Brass",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Presidential dollars honor America's presidents in order of service. Each obverse depicts the featured president, while a common reverse shows the Statue of Liberty and the denomination $1. Edge inscriptions bear each coin's date, mint mark and the mottoes IN GOD WE TRUST and E PLURIBUS UNUM."
+    },
+    "American Innovation Dollar": {
+      "coin_type": "American Innovation",
+      "denomination": "$1",
+      "composition": "Manganese-Brass",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Gold $1": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$1",
+      "composition": "Gold",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Gold $2.50 Quarter Eagle": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$2.50",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This gold Classic Head quarter eagle was designed by William Kneass. Its obverse is based on John Reich's classic image of Liberty with flowing hair held by a band inscribed LIBERTY. The date is below, with 13 stars surrounding. The reverse depicts UNITED STATES OF AMERICA and 2 1/2 D. around an American eagle with Union shield, olive branch and three arrows."
+    },
+    "Gold $3": {
+      "coin_type": "Indian Princess Head",
+      "denomination": "$3",
+      "composition": "Gold",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This Indian Princess three-dollar gold piece was designed by James B. Longacre. His classic obverse depicts Liberty in a crown of feathers, on which is a band inscribed LIBERTY. Surrounding her is the inscription UNITED STATES OF AMERICA. The reverse features a wreath of corn, wheat, cotton and tobacco around 3 DOLLARS and the date of issue."
+    },
+    "Gold $5 Half Eagle": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$5",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This gold Classic Head half eagle was designed by William Kneass. Its obverse is based on John Reich's classic image of Liberty with flowing hair held by a band inscribed LIBERTY. The date is below, with 13 stars surrounding. The reverse depicts UNITED STATES OF AMERICA and 2 1/2 D. around an American eagle with Union shield, olive branch and three arrows."
+    },
+    "Gold $10 Eagle": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$10",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "This gold Liberty Head eagle - also called a Coronet Head or Braided Hair eagle - bears Christian Gobrecht's classic designs. The obverse shows 13 stars around Liberty, who wears a diadem and her long hair in a bun held by a string of beads. On the reverse, a proud American eagle with Union Shield holds an olive branch and three arrows. The denomination TEN D. and UNITED STATES OF AMERICA encircle the reverse."
+    },
+    "Gold $20 Double Eagle": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$20",
+      "composition": "Gold",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint",
+      "copy_description": "Struck in 90% gold over a century ago, this gold Liberty Head double eagle is larger than a Kennedy half dollar and weighs over 1 troy ounce. It bears James B. Longacre's classic design. The obverse shows Liberty in a diadem with her long hair up in a bun, surrounded by 13 stars and the date of issue. The reverse bears a stylish heraldic eagle beneath a circle of 13 stars and series of rays. The denomination and UNITED STATES OF AMERICA encircle the design."
+    },
+    "Fractional Pioneer Gold": {
+      "coin_type": "California Fractional",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "country": "United States",
+      "brand": "*** SELECT ***",
+      "copy_description": "Struck during the California gold rush, this privately minted gold piece helped ease the shortage of small-denomination coins. Containing up to 85% of face value in real, California gold, these unique and historic issues quickly became collector favorites."
+    },
+    "Colonial": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Post Colonial": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "U.S. Philippine Coin": {
+      "coin_type": "U.S. Philippines",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Error Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Classic Silver Commemorative": {
+      "coin_type": "Commemorative",
+      "denomination": "*** SELECT ***",
+      "composition": "Silver",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Modern Silver/Clad Commemorative": {
+      "coin_type": "Commemorative",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Classic Gold Commemorative": {
+      "coin_type": "Commemorative",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Modern Gold Commemorative": {
+      "coin_type": "Commemorative",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "0.9",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Mint Set": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Proof Set": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Small Cent Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Nickel Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "5C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Half Dollar Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "50C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Dollar Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$1",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Gold Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Coin Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "US Rolls": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Other US Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "*** SELECT ***"
+    },
+    "Silver Bullion Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***",
+      "copy_description": "Struck in 1 troy ounce of 99.9% pure silver, this hefty American silver eagle bears the series' original designs. The obverse bears Adolph A. Weinman's beloved image of Liberty striding to greet the dawn of a new day. She wears a billowing gown of stars and stripes, and carries oak and laurel branches for military and civic glory. John Mercanti's striking reverse shows a heraldic eagle under a triangle of 13 stars. Encircling the reverse are UNITED STATES OF AMERICA and 1 OZ. FINE SILVER-ONE DOLLAR."
+    },
+    "Silver Bar or Round": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Silver Bullion": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Silver",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Gold Bullion Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***",
+      "copy_description": "This hefty $5 American Buffalo gold bullion coin contains 1/10 ounce of 99.99% pure gold. Only issued in 2008, it's from the first 24K gold coin series produced by the U.S. Mint. The coin bears James E. Fraser's iconic Buffalo nickel (or Indian Head) nickel designs. The obverse depicts a proud Native American, while the reverse shows an American bison."
+    },
+    "Gold Bar or Round": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Gold Leaf or Flake": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Gold Nugget": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Gold",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Platinum Bullion Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Platinum",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Platinum Bar or Round": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Platinum",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Palladium Bullion Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Palladium",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Titanium Bar or Round": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Titanium",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Copper Bar or Round": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Copper",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Bullion": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Large Size Federal Reserve Bank Note": {
+      "coin_type": "Large Size Federal Reserve Bank Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Large Size Federal Reserve Note": {
+      "coin_type": "Large Size Federal Reserve Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Large Size Gold Certificate": {
+      "coin_type": "Large Size Gold Certificate Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Large Size Legal Tender Note": {
+      "coin_type": "Large Size Legal Tender Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Large Size National Banknote": {
+      "coin_type": "Large Size National Banknote",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Large Size Silver Certificate": {
+      "coin_type": "Large Size Silver Certificate Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Large Size Paper Money Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size Federal Reserve Bank Note": {
+      "coin_type": "Small Size Federal Reserve Bank Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size Federal Reserve Note": {
+      "coin_type": "Small Size Federal Reserve Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size Gold Certificate": {
+      "coin_type": "Small Size Gold Certificate Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size Legal Tender Note": {
+      "coin_type": "Small Size Legal Tender Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size National Banknote": {
+      "coin_type": "Small Size National Banknote",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size Silver Certificate": {
+      "coin_type": "Small Size Silver Certificate Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size WWII Emergency Note": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Small Size Paper Money Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Colonial Currency": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Confederate Currency": {
+      "coin_type": "Confederate Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "*** SELECT ***"
+    },
+    "Fractional Currency": {
+      "coin_type": "Fractional Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Military Payment Certificate": {
+      "coin_type": "Military Payment Certificate",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "Department of War"
+    },
+    "Obsolete Currency": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "*** SELECT ***"
+    },
+    "Obsolete Bank Check": {
+      "coin_type": "Obsolete Bank Check",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "*** SELECT ***"
+    },
+    "Treasury Note": {
+      "coin_type": "Treasury Note",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Other US Paper Money": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "*** SELECT ***"
+    },
+    "Paper Money Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "United States",
+      "brand": "The Bureau of Engraving & Printing"
+    },
+    "Australia Collection": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Australia",
+      "brand": "*** SELECT ***"
+    },
+    "Australia Commemorative": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Australia",
+      "brand": "*** SELECT ***"
+    },
+    "Australia Proof Set": {
+      "coin_type": "Australian Proof Set",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Australia",
+      "brand": "Royal Australian Mint"
+    },
+    "Austria Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Austria",
+      "brand": "*** SELECT ***"
+    },
+    "British India Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "India",
+      "brand": "*** SELECT ***"
+    },
+    "Cameroon Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Cayman Islands Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Canada Large Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Small Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "1C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Five Cent Silver": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "5C",
+      "composition": "Silver",
+      "fineness": "0.925",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Five Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "5C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Ten Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "10C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Twenty Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "20C",
+      "composition": "Silver",
+      "fineness": "0.925",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Twenty Five Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "25C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Fifty Cent": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "50C",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Dollar": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$1",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Two Dollar": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "$2",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Commemorative": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Mint Set": {
+      "coin_type": "Canadian Mint Set",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Proof Set": {
+      "coin_type": "Canadian Proof Set",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Specimen Set": {
+      "coin_type": "Canadian Specimen Set",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Canada Pre-Confederation Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Canada Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Canada",
+      "brand": "Royal Canadian Mint"
+    },
+    "Other Canada Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Canada Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Cook Islands Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "East Germany Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Germany",
+      "brand": "*** SELECT ***"
+    },
+    "Egypt Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Fiji Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "German States Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Germany",
+      "brand": "*** SELECT ***"
+    },
+    "German Empire Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Germany",
+      "brand": "*** SELECT ***"
+    },
+    "Germany Weimar Republic Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Germany",
+      "brand": "*** SELECT ***"
+    },
+    "Germany Third Reich Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Germany",
+      "brand": "*** SELECT ***"
+    },
+    "Germany West & Unified Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Germany",
+      "brand": "*** SELECT ***"
+    },
+    "Ghana Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Hawaiian Coin": {
+      "coin_type": "Hawaiian",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Indonesia Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Indonesia",
+      "brand": "*** SELECT ***"
+    },
+    "Isle of Man Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Isle of Man",
+      "brand": "Pobjoy Mint"
+    },
+    "Italy Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Liberia Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Maldives Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Malta Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico Colonial Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico War of Independence Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico Empire of Iturbide Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico First Republic Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico Empire of Maximilian Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico Second Republic Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Mexico Modern Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "Mexican Mint"
+    },
+    "Mexico Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Mexico",
+      "brand": "*** SELECT ***"
+    },
+    "Nepal Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Netherlands Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Russia Empire Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Russia",
+      "brand": "*** SELECT ***"
+    },
+    "Russia USSR Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Russia",
+      "brand": "*** SELECT ***"
+    },
+    "Russia Federation Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Russia",
+      "brand": "*** SELECT ***"
+    },
+    "Solomon Islands Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Spanish Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Sweden Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "Sweden",
+      "brand": "*** SELECT ***"
+    },
+    "Swiss Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Tuvalu Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "UK / Great Britain Penny": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United Kingdom",
+      "brand": "The Royal Mint"
+    },
+    "UK / Great Britain Threepence": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United Kingdom",
+      "brand": "The Royal Mint"
+    },
+    "UK / Great Britain Sixpence": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United Kingdom",
+      "brand": "The Royal Mint"
+    },
+    "UK / Great Britain Commemorative": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United Kingdom",
+      "brand": "The Royal Mint"
+    },
+    "Other UK / Great Britain Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United Kingdom",
+      "brand": "The Royal Mint"
+    },
+    "Vanuatu Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Asia Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "World Coin Mixed Lot": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "China Paper Money": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "China",
+      "brand": "*** SELECT ***"
+    },
+    "France Allied Military Currency": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "France",
+      "brand": "*** SELECT ***"
+    },
+    "Italy Allied Military Currency": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "Italy",
+      "brand": "*** SELECT ***"
+    },
+    "Japan Allied Military Currency": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "Japan",
+      "brand": "*** SELECT ***"
+    },
+    "Ancient Byzantine Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Ancient Gaulish Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Ancient Greek Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Ancient Roman Imperial Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Ancient Roman Provincial Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Ancient Roman Republic Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Other Ancient Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***"
+    },
+    "Car Wash Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Civil War Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Good Luck Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Hard Times Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Love Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Parking Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Recovery Program Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Tax Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Transit Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "US Trade Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Token": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Hobo Nickel": {
+      "coin_type": "Hobo Buffalo",
+      "denomination": "5C",
+      "composition": "Copper-Nickel",
+      "country": "United States",
+      "brand": "U.S. Mint"
+    },
+    "Medal": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Native American Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "fineness": "*** SELECT ***",
+      "country": "United States",
+      "brand": "Native American Mint"
+    },
+    "Snuff Opium Coin": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "So-Called Dollar": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Exonumia": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Advent Calendar": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Challenge Coin": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Christmas Nativity Items": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Christmas Tree Ornaments": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Disney Dollars": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "*** SELECT ***",
+      "brand": "Disney"
+    },
+    "Gift Box": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Keychain": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Necklace": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Novelty US Paper Money": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "Paper",
+      "country": "United States",
+      "brand": "*** SELECT ***"
+    },
+    "Other Historical Memorabilia": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Star Trek Collectible": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Palm Stone": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Postcards": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Role Playing Game Accessories": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "United States Postage Stamp": {
+      "coin_type": "*** SELECT ***",
+      "denomination": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Wristwatches": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Coin Album": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Other Coin & Money Supplies": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    },
+    "Earring": {
+      "coin_type": "*** SELECT ***",
+      "composition": "*** SELECT ***",
+      "country": "*** SELECT ***",
+      "brand": "*** SELECT ***"
+    }
+  },
+  "category_meta": {
+    "Liberty Cap Half Cent": {
+      "search_terms": "liberty cap half cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Draped Bust Half Cent": {
+      "search_terms": "draped bust half cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.011875"
+    },
+    "Classic Head Half Cent": {
+      "search_terms": "classic head half cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.01125"
+    },
+    "Braided Hair Half Cent": {
+      "search_terms": "braided hair half cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.011875"
+    },
+    "Flowing Hair Large Cent": {
+      "search_terms": "flowing hair large cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Liberty Cap Large Cent": {
+      "search_terms": "liberty cap large cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.029"
+    },
+    "Draped Bust Large Cent": {
+      "search_terms": "draped bust large cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.0225"
+    },
+    "Classic Head Large Cent": {
+      "search_terms": "classic head large cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.0225"
+    },
+    "Coronet Head Large Cent": {
+      "search_terms": "coronet head large cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.023125"
+    },
+    "Braided Hair Large Cent": {
+      "search_terms": "braided hair large cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.023125"
+    },
+    "Flying Eagle Small Cent": {
+      "search_terms": "flying eagle small cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.01"
+    },
+    "Indian Head Small Cent": {
+      "search_terms": "indian head small cent penny type united states mint coin coinage numismatics money",
+      "weight_lb": "0.006875"
+    },
+    "Lincoln Wheat Small Cent": {
+      "search_terms": "lincoln wheat small cent penny united states mint coin coinage numismatics money",
+      "weight_lb": "0.006875"
+    },
+    "Lincoln Memorial Small Cent": {
+      "search_terms": "lincoln memorial small cent penny united states mint coin coinage numismatics money",
+      "weight_lb": "0.006875"
+    },
+    "Lincoln Bicentennial Small Cent": {
+      "search_terms": "lincoln bicentennial small cent penny united states mint coin coinage numismatics money",
+      "weight_lb": "0.006875"
+    },
+    "Lincoln Shield Small Cent": {
+      "search_terms": "lincoln shield small cent penny united states mint coin coinage numismatics money",
+      "weight_lb": "0.006875"
+    },
+    "Two Cent": {
+      "search_terms": "two cent shield type united states mint coin coinage numismatics money",
+      "weight_lb": "0.01375"
+    },
+    "Three Cent Silver": {
+      "search_terms": "three cent silver trime type united states mint coin coinage numismatics money",
+      "weight_lb": "0.001875"
+    },
+    "Three Cent Nickel": {
+      "search_terms": "three cent nickel type united states mint coin coinage numismatics money",
+      "weight_lb": "0.004375"
+    },
+    "Flowing Hair Half Dime": {
+      "search_terms": "flowing hair half dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Draped Bust Half Dime": {
+      "search_terms": "draped bust half dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Capped Bust Half Dime": {
+      "search_terms": "capped bust half dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.0025"
+    },
+    "Seated Half Dime": {
+      "search_terms": "seated liberty half dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.0025"
+    },
+    "Shield Nickel": {
+      "search_terms": "shield nickel type united states mint coin coinage numismatics money",
+      "weight_lb": "0.010625"
+    },
+    "Liberty Nickel": {
+      "search_terms": "liberty nickel type united states mint coin coinage numismatics money",
+      "weight_lb": "0.01125"
+    },
+    "Buffalo Nickel": {
+      "search_terms": "buffalo nickel indian head type united states mint coin coinage numismatics money",
+      "weight_lb": "0.01125"
+    },
+    "Jefferson Nickel": {
+      "search_terms": "jefferson nickel united states mint coin coinage numismatics money",
+      "weight_lb": "0.01125"
+    },
+    "Draped Bust Dime": {
+      "search_terms": "draped bust dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.005"
+    },
+    "Capped Bust Dime": {
+      "search_terms": "capped bust dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.005"
+    },
+    "Seated Liberty Dime": {
+      "search_terms": "seated liberty dime silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.005"
+    },
+    "Barber Dime": {
+      "search_terms": "barber dime liberty head silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.005"
+    },
+    "Mercury Dime": {
+      "search_terms": "mercury dime winged liberty head silver united states mint coin coinage numismatics money",
+      "weight_lb": "0.005625"
+    },
+    "Roosevelt Dime": {
+      "search_terms": "roosevelt dime united states mint coin coinage numismatics money",
+      "weight_lb": "0.005625"
+    },
+    "Semiquincentennial Dime": {
+      "search_terms": "semiquincentennial dime united states mint coin coinage numismatics money",
+      "weight_lb": "0.005625"
+    },
+    "Twenty Cent": {
+      "search_terms": "twenty cent seated liberty silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.01125"
+    },
+    "Draped Bust Quarter": {
+      "search_terms": "draped bust quarter silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.014"
+    },
+    "Capped Bust Quarter": {
+      "search_terms": "capped bust quarter silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.014375"
+    },
+    "Seated Liberty Quarter": {
+      "search_terms": "seated liberty quarter silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.014375"
+    },
+    "Barber Quarter": {
+      "search_terms": "barber quarter liberty head silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "Standing Liberty Quarter": {
+      "search_terms": "standing liberty quarter silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "Washington Quarter": {
+      "search_terms": "washington quarter united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "State Quarter": {
+      "search_terms": "state statehood quarter united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "DC & US Territories Quarter": {
+      "search_terms": "district columbia dc united states territories quarter mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "America the Beautiful Quarter": {
+      "search_terms": "national park quarter united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "American Women Quarter": {
+      "search_terms": "american women quarter united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "Semiquincentennial Quarter": {
+      "search_terms": "semiquincentennial quarter united states mint coin coinage numismatics money",
+      "weight_lb": "0.013125"
+    },
+    "Draped Bust Half Dollar": {
+      "search_terms": "draped bust half dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Capped Bust Half Dollar": {
+      "search_terms": "capped bust half dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.03"
+    },
+    "Seated Liberty Half Dollar": {
+      "search_terms": "seated liberty half dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.02625"
+    },
+    "Barber Half Dollar": {
+      "search_terms": "barber half dollar liberty head silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.026875"
+    },
+    "Liberty Walking Half Dollar": {
+      "search_terms": "liberty walking half dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.026875"
+    },
+    "Franklin Half Dollar": {
+      "search_terms": "franklin half dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.0275"
+    },
+    "Kennedy Half Dollar": {
+      "search_terms": "kennedy half dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.026"
+    },
+    "Semiquincentennial Half Dollar": {
+      "search_terms": "semiquincentennial half dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.026"
+    },
+    "Draped Bust Dollar": {
+      "search_terms": "draped bust dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Seated Liberty Dollar": {
+      "search_terms": "seated liberty dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.05875"
+    },
+    "Trade Dollar": {
+      "search_terms": "trade dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.06"
+    },
+    "Morgan Dollar": {
+      "search_terms": "morgan dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.05875"
+    },
+    "Morgan Dollar Toned": {
+      "search_terms": "morgan dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.05875"
+    },
+    "Peace Dollar": {
+      "search_terms": "peace dollar silver type united states mint coin coinage numismatics money",
+      "weight_lb": "0.05875"
+    },
+    "Eisenhower Dollar": {
+      "search_terms": "eisenhower ike dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.049"
+    },
+    "Susan B Anthony Dollar": {
+      "search_terms": "susan anthony dollar sba united states mint coin coinage numismatics money",
+      "weight_lb": "0.018"
+    },
+    "Native American Dollar": {
+      "search_terms": "native american sacagawea dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.018"
+    },
+    "Presidential Dollar": {
+      "search_terms": "presidential dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.018"
+    },
+    "American Innovation Dollar": {
+      "search_terms": "american innovation dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.018"
+    },
+    "Gold $1": {
+      "search_terms": "gold dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.00375"
+    },
+    "Gold $2.50 Quarter Eagle": {
+      "search_terms": "quarter eagle gold dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.009"
+    },
+    "Gold $3": {
+      "search_terms": "gold dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.011"
+    },
+    "Gold $5 Half Eagle": {
+      "search_terms": "half eagle gold dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.018"
+    },
+    "Gold $10 Eagle": {
+      "search_terms": "eagle gold dollar united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Gold $20 Double Eagle": {
+      "search_terms": "double eagle gold dollar united states mint coin coinage numismatics money",
+      "weight_lb": "0.074"
+    },
+    "Fractional Pioneer Gold": {
+      "search_terms": "fractional pioneer gold united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Colonial": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "colonial mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Post Colonial": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "post colonial mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "U.S. Philippine Coin": {
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Error Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "error mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Classic Silver Commemorative": {
+      "search_terms": "classic silver commemorative united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Modern Silver/Clad Commemorative": {
+      "search_terms": "modern silver clad commemorative united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Classic Gold Commemorative": {
+      "search_terms": "classic gold commemorative united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Modern Gold Commemorative": {
+      "search_terms": "modern gold commemorative united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mint Set": {
+      "search_terms": "mint set uncirculated united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Proof Set": {
+      "search_terms": "mint proof set united states mint coin coinage numismatics money",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Small Cent Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Nickel Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Half Dollar Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Dollar Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Coin Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Gold Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Rolls": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other US Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Silver Bullion Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "silver bullion mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Silver Bar or Round": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "silver bullion bar round mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Silver Bullion": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "silver bullion bar round mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Gold Bullion Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "gold bullion mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Gold Bar or Round": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "gold bullion bar round mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Gold Leaf or Flake": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "gold bullion leaf flake mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Gold Nugget": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "gold bullion nugget mint coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Platinum Bullion Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "platinum bullion mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Platinum Bar or Round": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "platinum bullion bar round mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Palladium Bullion Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "palladium bullion mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Titanium Bar or Round": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "titanium bar round mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Copper Bar or Round": {
+      "precious_metal_content": "*** SELECT ***",
+      "search_terms": "copper bar round mint coin coinage numismatics money precious metal investment",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Bullion": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size Federal Reserve Bank Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size Federal Reserve Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size Gold Certificate": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size Legal Tender Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size National Banknote": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size Silver Certificate": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Large Size Paper Money Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size Federal Reserve Bank Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size Federal Reserve Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size Gold Certificate": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size Legal Tender Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size National Banknote": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size Silver Certificate": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size WWII Emergency Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Small Size Paper Money Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Colonial Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Confederate Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Fractional Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Military Payment Certificate": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Obsolete Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Obsolete Bank Check": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Treasury Note": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other US Paper Money": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Paper Money Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Australia Collection": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Australia Commemorative": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Australia Proof Set": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Austria Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "British India Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Cameroon Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Cayman Islands Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Large Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Small Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Five Cent Silver": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Five Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Ten Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Twenty Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Twenty Five Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Fifty Cent": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Dollar": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Two Dollar": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Commemorative": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Mint Set": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Proof Set": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Specimen Set": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Pre-Confederation Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Canada Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Canada Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Cook Islands Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "East Germany Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Egypt Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Fiji Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "German States Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "German Empire Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Germany Weimar Republic Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Germany Third Reich Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Germany West & Unified Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ghana Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Hawaiian Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Indonesia Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Isle of Man Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Italy Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Liberia Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Maldives Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Malta Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico Colonial Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico War of Independence Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico Empire of Iturbide Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico First Republic Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico Empire of Maximilian Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico Second Republic Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico Modern Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Mexico Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Nepal Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Netherlands Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Russia Empire Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Russia USSR Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Russia Federation Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Solomon Islands Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Spanish Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Sweden Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Swiss Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Tuvalu Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "UK / Great Britain Penny": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "UK / Great Britain Threepence": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "UK / Great Britain Sixpence": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "UK / Great Britain Commemorative": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other UK / Great Britain Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Vanuatu Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Asia Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "World Coin Mixed Lot": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "China Paper Money": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "France Allied Military Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Italy Allied Military Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Japan Allied Military Currency": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ancient Byzantine Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ancient Gaulish Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ancient Greek Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ancient Roman Imperial Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ancient Roman Provincial Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Ancient Roman Republic Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Ancient Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Car Wash Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Civil War Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Good Luck Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Hard Times Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Love Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Parking Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Recovery Program Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Tax Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Transit Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "US Trade Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Token": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Hobo Nickel": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "0.01125"
+    },
+    "Medal": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Native American Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Snuff Opium Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "So-Called Dollar": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Exonumia": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Advent Calendar": {
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Challenge Coin": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Christmas Nativity Items": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Christmas Tree Ornaments": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Disney Dollars": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Gift Box": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Keychain": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Necklace": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Novelty US Paper Money": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Historical Memorabilia": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Star Trek Collectible": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Palm Stone": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Postcards": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Role Playing Game Accessories": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "United States Postage Stamp": {
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Wristwatches": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Coin Album": {
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Other Coin & Money Supplies": {
+      "weight_lb": "*** NOT FOUND ***"
+    },
+    "Earring": {
+      "precious_metal_content": "*** SELECT ***",
+      "weight_lb": "*** NOT FOUND ***"
+    }
+  },
+  "grade_circ": {
+    "Genuine": "*** SELECT ***",
+    "Ungraded": "*** SELECT ***",
+    "Various Grades": "*** SELECT ***",
+    "1": "Circulated",
+    "2": "Circulated",
+    "3": "Circulated",
+    "3 Details": "Circulated",
+    "4": "Circulated",
+    "4 Details": "Circulated",
+    "6": "Circulated",
+    "6 Details": "Circulated",
+    "8": "Circulated",
+    "8 Details": "Circulated",
+    "10": "Circulated",
+    "10 Details": "Circulated",
+    "12": "Circulated",
+    "12 Details": "Circulated",
+    "15": "Circulated",
+    "15 Details": "Circulated",
+    "20": "Circulated",
+    "20 Details": "Circulated",
+    "25": "Circulated",
+    "25 Details": "Circulated",
+    "30": "Circulated",
+    "30 Details": "Circulated",
+    "35": "Circulated",
+    "35 Details": "Circulated",
+    "40": "Circulated",
+    "40 Details": "Circulated",
+    "45": "Circulated",
+    "45 Details": "Circulated",
+    "50": "Circulated",
+    "50 Details": "Circulated",
+    "53": "Circulated",
+    "53 Details": "Circulated",
+    "55": "Circulated",
+    "55 Details": "Circulated",
+    "58": "Circulated",
+    "58 Details": "Circulated",
+    "60": "Uncirculated",
+    "60 Details": "Uncirculated",
+    "61": "Uncirculated",
+    "62": "Uncirculated",
+    "63": "Uncirculated",
+    "64": "Uncirculated",
+    "65": "Uncirculated",
+    "66": "Uncirculated",
+    "67": "Uncirculated",
+    "68": "Uncirculated",
+    "69": "Uncirculated",
+    "70": "Uncirculated",
+    "About Fine": "Circulated",
+    "About Fine Details": "Circulated",
+    "About Good": "Circulated",
+    "About Good / Good": "Circulated",
+    "About Good Details": "Circulated",
+    "About Uncirculated": "Circulated",
+    "About Uncirculated / Crisp Uncirculated": "Circulated",
+    "About Uncirculated / Uncirculated": "Circulated",
+    "About Uncirculated / Uncirculated Details": "Circulated",
+    "About Uncirculated Details": "Circulated",
+    "AG 3": "Circulated",
+    "AG 3 Details": "Circulated",
+    "AG Details": "Circulated",
+    "AU 50": "Circulated",
+    "AU 50 Details": "Circulated",
+    "AU 53": "Circulated",
+    "AU 53 Details": "Circulated",
+    "AU 55": "Circulated",
+    "AU 55 Details": "Circulated",
+    "AU 58": "Circulated",
+    "AU 58 Details": "Circulated",
+    "AU 58+": "Circulated",
+    "AU Details": "Circulated",
+    "Borderline Uncirculated": "Circulated",
+    "Borderline Uncirculated Details": "Circulated",
+    "Brilliant Uncirculated": "Uncirculated",
+    "Choice About Uncirculated": "Circulated",
+    "Choice About Uncirculated Details": "Circulated",
+    "Choice Crisp Uncirculated": "Uncirculated",
+    "Choice Extremely Fine": "Circulated",
+    "Choice Fine": "Circulated",
+    "Choice Mint State": "Uncirculated",
+    "Choice Proof": "Uncirculated",
+    "Choice Uncirculated": "Uncirculated",
+    "Choice Very Fine": "Circulated",
+    "Crisp Uncirculated": "Uncirculated",
+    "EF 40": "Circulated",
+    "EF 40 Details": "Circulated",
+    "EF 45": "Circulated",
+    "EF 45 Details": "Circulated",
+    "EU 60": "Uncirculated",
+    "EU 61": "Uncirculated",
+    "EU 62": "Uncirculated",
+    "EU 63": "Uncirculated",
+    "EU 64": "Uncirculated",
+    "EU 65": "Uncirculated",
+    "EU 66": "Uncirculated",
+    "EU 67": "Uncirculated",
+    "EU 68": "Uncirculated",
+    "EU 69": "Uncirculated",
+    "EU 70": "Uncirculated",
+    "Extremely Fine": "Circulated",
+    "Extremely Fine / About Uncirculated": "Circulated",
+    "Extremely Fine / About Uncirculated Details": "Circulated",
+    "Extremely Fine Details": "Circulated",
+    "Extremely Fine or Better": "Circulated",
+    "F 12": "Circulated",
+    "F 12 Details": "Circulated",
+    "F 15": "Circulated",
+    "F 15 Details": "Circulated",
+    "F Details": "Circulated",
+    "Fair": "Circulated",
+    "Fair Details": "Circulated",
+    "Fine": "Circulated",
+    "Fine / Very Fine": "Circulated",
+    "Fine / Very Fine Details": "Circulated",
+    "Fine Details": "Circulated",
+    "FR 2": "Circulated",
+    "FR 2 Details": "Circulated",
+    "G 4": "Circulated",
+    "G 4 Details": "Circulated",
+    "G 6": "Circulated",
+    "G 6 Details": "Circulated",
+    "G Details": "Circulated",
+    "Gem Proof": "Uncirculated",
+    "Gem Uncirculated": "Uncirculated",
+    "Gem Uncirculated Details": "Uncirculated",
+    "Good": "Circulated",
+    "Good / Very Good": "Circulated",
+    "Good / Very Good Details": "Circulated",
+    "Good Details": "Circulated",
+    "Mint State": "Uncirculated",
+    "MS 60": "Uncirculated",
+    "MS 60 Details": "Uncirculated",
+    "MS 61": "Uncirculated",
+    "MS 62": "Uncirculated",
+    "MS 62*": "Uncirculated",
+    "MS 62+": "Uncirculated",
+    "MS 63": "Uncirculated",
+    "MS 63*": "Uncirculated",
+    "MS 63+": "Uncirculated",
+    "MS 63+*": "Uncirculated",
+    "MS 64": "Uncirculated",
+    "MS 64*": "Uncirculated",
+    "MS 64+": "Uncirculated",
+    "MS 64+*": "Uncirculated",
+    "MS 65": "Uncirculated",
+    "MS 65*": "Uncirculated",
+    "MS 65+": "Uncirculated",
+    "MS 65+*": "Uncirculated",
+    "MS 66": "Uncirculated",
+    "MS 66*": "Uncirculated",
+    "MS 66+": "Uncirculated",
+    "MS 66+*": "Uncirculated",
+    "MS 67": "Uncirculated",
+    "MS 67*": "Uncirculated",
+    "MS 67+": "Uncirculated",
+    "MS 67+*": "Uncirculated",
+    "MS 68": "Uncirculated",
+    "MS 68*": "Uncirculated",
+    "MS 68+": "Uncirculated",
+    "MS 68+*": "Uncirculated",
+    "MS 69": "Uncirculated",
+    "MS 69*": "Uncirculated",
+    "MS 69+": "Uncirculated",
+    "MS 69+*": "Uncirculated",
+    "MS 70": "Uncirculated",
+    "MS 70*": "Uncirculated",
+    "MS 70+": "Uncirculated",
+    "MS 70+*": "Uncirculated",
+    "Nearly Mint State": "Circulated",
+    "Perfect Proof": "Uncirculated",
+    "Perfect Uncirculated": "Uncirculated",
+    "PF 55": "Circulated",
+    "PF 55 Details": "Circulated",
+    "PF 58": "Circulated",
+    "PF 58 Details": "Circulated",
+    "PF 60": "Uncirculated",
+    "PF 60 Details": "Uncirculated",
+    "PF 61": "Uncirculated",
+    "PF 62": "Uncirculated",
+    "PF 63": "Uncirculated",
+    "PF 63*": "Uncirculated",
+    "PF 64": "Uncirculated",
+    "PF 64*": "Uncirculated",
+    "PF 65": "Uncirculated",
+    "PF 65*": "Uncirculated",
+    "PF 66": "Uncirculated",
+    "PF 66*": "Uncirculated",
+    "PF 67": "Uncirculated",
+    "PF 67*": "Uncirculated",
+    "PF 67+": "Uncirculated",
+    "PF 68": "Uncirculated",
+    "PF 68*": "Uncirculated",
+    "PF 69": "Uncirculated",
+    "PF 69*": "Uncirculated",
+    "PF 70": "Uncirculated",
+    "PF 70*": "Uncirculated",
+    "PO 1": "Circulated",
+    "Poor": "Circulated",
+    "PR 60": "Uncirculated",
+    "PR 60 Details": "Uncirculated",
+    "PR 61": "Uncirculated",
+    "PR 62": "Uncirculated",
+    "PR 63": "Uncirculated",
+    "PR 64": "Uncirculated",
+    "PR 65": "Uncirculated",
+    "PR 66": "Uncirculated",
+    "PR 67": "Uncirculated",
+    "PR 68": "Uncirculated",
+    "PR 69": "Uncirculated",
+    "PR 70": "Uncirculated",
+    "PR Details": "Circulated",
+    "Proof": "Uncirculated",
+    "Proof Details": "Uncirculated",
+    "RP 60": "Uncirculated",
+    "RP 61": "Uncirculated",
+    "RP 62": "Uncirculated",
+    "RP 63": "Uncirculated",
+    "RP 64": "Uncirculated",
+    "RP 65": "Uncirculated",
+    "RP 66": "Uncirculated",
+    "RP 67": "Uncirculated",
+    "RP 68": "Uncirculated",
+    "RP 69": "Uncirculated",
+    "RP 70": "Uncirculated",
+    "SP 60": "Uncirculated",
+    "SP 61": "Uncirculated",
+    "SP 62": "Uncirculated",
+    "SP 63": "Uncirculated",
+    "SP 64": "Uncirculated",
+    "SP 65": "Uncirculated",
+    "SP 66": "Uncirculated",
+    "SP 67": "Uncirculated",
+    "SP 68": "Uncirculated",
+    "SP 69": "Uncirculated",
+    "SP 70": "Uncirculated",
+    "Specimen": "Uncirculated",
+    "Superb Gem Proof": "Uncirculated",
+    "Superb Gem Uncirculated": "Uncirculated",
+    "Ultra Cameo Gem Proof": "Uncirculated",
+    "Uncirculated": "Uncirculated",
+    "Uncirculated Details": "Uncirculated",
+    "Very Choice Proof": "Uncirculated",
+    "Very Choice Uncirculated": "Uncirculated",
+    "Very Fine": "Circulated",
+    "Very Fine / Extremely Fine": "Circulated",
+    "Very Fine / Extremely Fine Details": "Circulated",
+    "Very Fine Details": "Circulated",
+    "Very Fine or Better": "Circulated",
+    "Very Good": "Circulated",
+    "Very Good / Fine": "Circulated",
+    "Very Good / Fine Details": "Circulated",
+    "Very Good Details": "Circulated",
+    "VF 20": "Circulated",
+    "VF 20 Details": "Circulated",
+    "VF 25": "Circulated",
+    "VF 25 Details": "Circulated",
+    "VF 30": "Circulated",
+    "VF 30 Details": "Circulated",
+    "VF 35": "Circulated",
+    "VF 35 Details": "Circulated",
+    "VF Details": "Circulated",
+    "VG 10": "Circulated",
+    "VG 10 Details": "Circulated",
+    "VG 8": "Circulated",
+    "VG 8 Details": "Circulated",
+    "VG Details": "Circulated",
+    "XF 40": "Circulated",
+    "XF 40 Details": "Circulated",
+    "XF 45": "Circulated",
+    "XF 45 Details": "Circulated",
+    "XF Details": "Circulated"
+  }
+}
