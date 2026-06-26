@@ -15,9 +15,16 @@
     $password = $_SESSION['password'] ?? '';
 ?>
 
-<!-- includes css and javascript libraries -->
-<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script type="text/javascript" src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+<!-- includes css and javascript libraries (local copies, same as the other LCC tools) -->
+<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
+<script type='text/javascript' src='jQuery/jquery.js'></script>
+<script type='text/javascript' src='jQuery/jquery-ui.js'></script>
+<script type='text/javascript' src='jQuery/jquery.ui.core.js'></script>
+<script type='text/javascript' src='jQuery/jquery.ui.position.js'></script>
+<script type='text/javascript' src='jQuery/jquery.ui.widget.js'></script>
+<script type='text/javascript' src='swal/sweetalert-dev.js'></script>
+<script type='text/javascript' src='swal/sweetalert.min.js'></script>
+<link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
     
     document.title = "Sellbrite Bulk Loader";
