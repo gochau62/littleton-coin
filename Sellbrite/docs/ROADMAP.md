@@ -122,7 +122,8 @@ The `.ods` has **3 sheets**, which map exactly onto the three JSON files:
 
 ## 5. Phase 1 — the table (delivered; your move)
 
-**File:** [`../sql/SBLPRODT.sql`](../sql/SBLPRODT.sql) — DB2 for i `CREATE TABLE PLAYGROUND/SBLPRODT`.
+**File:** [`../sql/SBLPRODT.sql`](../sql/SBLPRODT.sql) — DB2 for i `CREATE TABLE LSCDEVLIBP/SBLPRODT`,
+created **CCSID 1208 (UTF-8)**.
 
 **Design decisions, explained simply:**
 - **85 product columns + `id` + `created_at` + `updated_at`.** One row = one SKU being authored.
@@ -141,11 +142,13 @@ The `.ods` has **3 sheets**, which map exactly onto the three JSON files:
 - **`updated_at`** uses DB2's `ROW CHANGE TIMESTAMP` so it auto-updates on every change (the list
   grid shows "Updated").
 
-**Two choices that affect the script** (see §8 Open Decisions): the **target library** (default
-shown: `PLAYGROUND`) and the **CCSID** (default job CCSID vs. UTF-8 `1208` for foreign-coin
-characters). Tell me your picks and I'll finalize the header before you create it.
+**Decisions locked (06/26):** target library **`LSCDEVLIBP`**; text columns created
+**`CCSID 1208` (UTF-8)** so foreign-coin names and special characters store cleanly. The script is
+finalized — no further edits needed before you run it. (If `CREATE` ever reports *row too long*,
+switch `description` to `CLOB(1M)`; everything else fits comfortably.)
 
-➡️ **Action for you:** create the table, then tell me it exists. I won't start Phase 2 until then.
+➡️ **Action for you:** run `RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLPRODT) COMMIT(*NONE)`
+to create the table, then tell me it exists. I won't start Phase 2 until then.
 
 ---
 
@@ -230,16 +233,16 @@ scaffold — no agent code runs without your go-ahead.
 
 ---
 
-## 9. Open decisions (I need these from you)
+## 9. Decisions (locked 06/26) & still-open items
 
-| # | Decision | Default I'll use if unspecified |
+| # | Decision | Status |
 | --- | --- | --- |
-| 1 | **Target library/schema** for `SBLPRODT` | `PLAYGROUND` (matches GFTCRD dev work) |
-| 2 | **CCSID** for text columns | Job default; switch to **UTF-8 1208** if foreign-coin chars matter |
-| 3 | **Website scope** (Phase 3) | **B** — integrate into LCCOnline menu |
-| 4 | **First agentic automation** (Phase 5) | **A** — AI Listing-Copy Generator |
-| 5 | **Model style** (Phase 2) | Stored procedures (`.PROC`), like GFTCRD |
-| 6 | Sellbrite vs **Cellbrite** — same system or two? | Capture as-is; confirm when convenient |
+| 1 | **Target library/schema** for `SBLPRODT` | ✅ **`LSCDEVLIBP`** |
+| 2 | **CCSID** for text columns | ✅ **UTF-8 `1208`** |
+| 3 | **Website scope** (Phase 3) | ✅ **Integrate into LCCOnline menu** |
+| 4 | **First agentic automation** (Phase 5) | ✅ **A — AI Listing-Copy Generator** |
+| 5 | **Model style** (Phase 2) | 🔵 Proposing **stored procedures** (`.PROC`), like GFTCRD — confirm at Phase 2 |
+| 6 | Sellbrite vs **Cellbrite** — same system or two? | ❓ Confirm when convenient (not blocking) |
 
 ---
 
