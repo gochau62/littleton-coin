@@ -1,0 +1,54 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - SBLLOOKUP.TABLE                               */
+/*                                                                   */
+/* Program Narrative - Create the Sellbrite Bulk Loader VLOOKUP      */
+/*                     auto-fill table.  lookup_name is              */
+/*                     'category_copy', 'category_meta' or           */
+/*                     'grade_circ'.  Nested maps                    */
+/*                     (category_copy[cat][attr]) use attr_name =    */
+/*                     the attribute; scalar maps (grade_circ[grade])*/
+/*                     use attr_name = '' (one value per key).       */
+/*                                                                   */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 06/29/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(SBLLOOKUP) COMMIT(*NONE)               */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |  Author   -                                                    |*/
+/* |   Date    -                                                    |*/
+/* |   Purpose -                                                    |*/
+/* ------------------------------------------------------------------*/
+/*-------------------------------------------------------------------*/
+
+CREATE TABLE LSCDEVLIBP.SBLLOOKUP (
+   id          INTEGER GENERATED ALWAYS AS IDENTITY
+               (START WITH 1, INCREMENT BY 1) NOT NULL,
+   lookup_name FOR COLUMN LKPNAME  VARCHAR(30)   CCSID 1208  NOT NULL,
+   lookup_key  FOR COLUMN LKPKEY   VARCHAR(120)  CCSID 1208  NOT NULL,
+   attr_name   FOR COLUMN LKPATTR  VARCHAR(40)   CCSID 1208  NOT NULL DEFAULT '',
+   attr_value  FOR COLUMN LKPVAL   VARCHAR(6000) CCSID 1208  DEFAULT NULL,
+   created_at FOR COLUMN CREATTS  TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+   updated_at FOR COLUMN UPDATETS TIMESTAMP NOT NULL
+              GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
+   CONSTRAINT SBLLOOKUP_PK PRIMARY KEY (id),
+   CONSTRAINT SBLLOOKUP_UK UNIQUE (lookup_name, lookup_key, attr_name)
+)
+RCDFMT SBLLOOKUPR;
+
+LABEL ON LSCDEVLIBP.SBLLOOKUP (
+   id          TEXT IS 'Record ID',
+   lookup_name TEXT IS 'Lookup Table Name',
+   lookup_key  TEXT IS 'Lookup Key (category/grade)',
+   attr_name   TEXT IS 'Attribute Name',
+   attr_value  TEXT IS 'Attribute Value',
+   created_at  TEXT IS 'Created Timestamp',
+   updated_at  TEXT IS 'Updated Timestamp');
+
+LABEL ON TABLE LSCDEVLIBP.SBLLOOKUP IS 'Sellbrite Bulk Loader Category Lookups';
