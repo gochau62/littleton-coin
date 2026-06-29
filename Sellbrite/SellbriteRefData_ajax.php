@@ -47,32 +47,20 @@ switch ($action) {
         echo sblValueDelete((int) ($_POST['id'] ?? 0)) ? $ok() : $err('Delete failed.');
         break;
 
-    /* ---- category defaults (SBLCATDFT) ---- */
-    case 'catRows':
-        echo $ok(['rows' => sblCatRows()]);
+    /* ---- generic auto-fill rules (SBLAUTOFT) ---- */
+    case 'autoFields':
+        echo $ok(['fields' => sblAutofillFields()]);
         break;
-    case 'catFind':
-        $row = sblCatFind((int) ($_POST['id'] ?? $_GET['id'] ?? 0));
-        echo $row ? $ok(['row' => $row]) : $err('Category not found.');
+    case 'autoRows':
+        echo $ok(['rows' => sblAutofillRows($_GET['when_field'] ?? $_POST['when_field'] ?? '',
+                                            $_GET['q'] ?? $_POST['q'] ?? '')]);
         break;
-    case 'catSave':
-        $id = sblCatSave($_POST);
-        echo $id ? $ok(['id' => $id]) : $err('Save failed (category name required / duplicate).');
+    case 'autoSave':
+        $id = sblAutofillSave($_POST);
+        echo $id ? $ok(['id' => $id]) : $err('Save failed (when/value/set field required, or duplicate).');
         break;
-    case 'catDelete':
-        echo sblCatDelete((int) ($_POST['id'] ?? 0)) ? $ok() : $err('Delete failed.');
-        break;
-
-    /* ---- grade map (SBLGRADET) ---- */
-    case 'gradeRows':
-        echo $ok(['rows' => sblGradeRows()]);
-        break;
-    case 'gradeSave':
-        $id = sblGradeSave($_POST);
-        echo $id ? $ok(['id' => $id]) : $err('Save failed (grade required / duplicate).');
-        break;
-    case 'gradeDelete':
-        echo sblGradeDelete((int) ($_POST['id'] ?? 0)) ? $ok() : $err('Delete failed.');
+    case 'autoDelete':
+        echo sblAutofillDelete((int) ($_POST['id'] ?? 0)) ? $ok() : $err('Delete failed.');
         break;
 
     default:

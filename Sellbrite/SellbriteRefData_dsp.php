@@ -55,8 +55,7 @@ table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:
 
     <div class="rd-tabs">
         <div class="rd-tab active" data-tab="values"  onclick="rdTab('values')">Dropdown Lists</div>
-        <div class="rd-tab"        data-tab="cats"    onclick="rdTab('cats')">Category Defaults</div>
-        <div class="rd-tab"        data-tab="grades"  onclick="rdTab('grades')">Grades</div>
+        <div class="rd-tab"        data-tab="autos"   onclick="rdTab('autos')">Auto-fill Rules</div>
     </div>
 
     <!-- ============ DROPDOWN LISTS ============ -->
@@ -83,39 +82,36 @@ table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:
         </div>
     </div>
 
-    <!-- ============ CATEGORY DEFAULTS ============ -->
-    <div class="rd-pane" id="pane-cats">
-        <p class="rd-hint">Per-category defaults that auto-fill the form (coin type, denomination, composition, copy text, search terms, weight).</p>
+    <!-- ============ AUTO-FILL RULES ============ -->
+    <div class="rd-pane" id="pane-autos">
+        <p class="rd-hint">Every auto-fill / VLOOKUP lives here as a single rule:
+            <strong>when</strong> a field equals a value, <strong>set</strong> another field to a value.
+            Category defaults and the grade map are just rows in this table &mdash; add any new rule with the row below.</p>
         <div class="rd-tools">
-            <button type="button" class="btn btn-green" onclick="rdCatNew()">+ New category</button>
-            <span class="spacer"></span>
-            <input type="search" id="rd-cat-filter" class="rd-in" placeholder="Filter categories&hellip;" style="width:260px" onkeyup="rdCatFilter()">
-        </div>
-        <div class="table-card">
-            <table class="grid">
-                <thead><tr><th>Category</th><th>Coin Type</th><th>Denom.</th><th>Composition</th><th>Weight (lb)</th><th style="width:150px"></th></tr></thead>
-                <tbody id="rd-cat-rows"><tr><td colspan="6" class="empty">Loading&hellip;</td></tr></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- ============ GRADES ============ -->
-    <div class="rd-pane" id="pane-grades">
-        <p class="rd-hint">Maps a grade to Circulated or Uncirculated (used to auto-fill that field).</p>
-        <div class="rd-tools">
-            <input type="text" id="rd-new-grade" class="rd-in" placeholder="Grade (e.g. 64)" style="width:160px">
-            <select id="rd-new-circ" class="rd-pick" style="min-width:180px">
-                <option value="">&mdash; status &mdash;</option>
-                <option>Circulated</option><option>Uncirculated</option>
+            <label style="font-weight:700;color:#1C4532;">When field:</label>
+            <select id="rd-auto-field" class="rd-pick" onchange="rdAutoLoad()">
+                <option value="">&mdash; all &mdash;</option>
             </select>
-            <button type="button" class="btn btn-green" onclick="rdGradeAdd()">+ Add grade</button>
+            <input type="search" id="rd-auto-q" class="rd-in" placeholder="Search value / set field&hellip;" style="width:240px" onkeyup="if(event.key==='Enter')rdAutoLoad()">
+            <button type="button" class="btn btn-ghost" onclick="rdAutoLoad()">Search</button>
             <span class="spacer"></span>
-            <input type="search" id="rd-grade-filter" class="rd-in" placeholder="Filter grades&hellip;" style="width:220px" onkeyup="rdGradeFilter()">
         </div>
         <div class="table-card">
             <table class="grid">
-                <thead><tr><th style="width:240px">Grade</th><th>Circulated / Uncirculated</th><th style="width:150px"></th></tr></thead>
-                <tbody id="rd-grade-rows"><tr><td colspan="3" class="empty">Loading&hellip;</td></tr></tbody>
+                <thead><tr>
+                    <th>When field</th><th>When value</th><th>Set field</th><th>Set value</th>
+                    <th style="width:70px">Prio</th><th style="width:60px">On</th><th style="width:150px"></th>
+                </tr></thead>
+                <tbody id="rd-auto-rows"><tr><td colspan="7" class="empty">Choose a field or search above.</td></tr></tbody>
+                <tfoot><tr class="hdr-row">
+                    <td><input type="text" id="na-wf" placeholder="when_field"></td>
+                    <td><input type="text" id="na-wv" placeholder="when_value"></td>
+                    <td><input type="text" id="na-sf" placeholder="set_field"></td>
+                    <td><input type="text" id="na-sv" placeholder="set_value"></td>
+                    <td><input type="number" id="na-pr" value="0" style="width:55px"></td>
+                    <td></td>
+                    <td style="text-align:right"><button type="button" class="btn btn-green" onclick="rdAutoAdd()">+ Add</button></td>
+                </tr></tfoot>
             </table>
         </div>
     </div>

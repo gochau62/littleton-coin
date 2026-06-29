@@ -23,7 +23,7 @@ final class Schema
     private static $data = null;
     private static $schema = null;
     private static $values = null;
-    private static $lookups = null;
+    private static $autofills = null;
 
     /** Load the consolidated reference data (schema/values/lookups) once. */
     private static function data(): array
@@ -58,13 +58,44 @@ final class Schema
         if (empty($col['dropdown'])) { return []; }
         return self::values()[$col['dropdown']] ?? [];
     }
-    public static function lookups(): array
+    /**
+     * Generic auto-fill rules as [ when_field => [ when_value => [ set_field => set_value ] ] ].
+     * Prefers the live SBLAUTOFT table; falls back to the bundled data file
+     * (its category/grade lookups, reshaped into the same generic map) when
+     * there is no DB.  Adding a new auto-fill is just a new row in the table.
+     */
+    public static function autofills(): array
     {
-        if (self::$lookups === null) {
-            $db = function_exists('sblLoadLookups') ? sblLoadLookups() : [];
-            self::$lookups = $db ?: (self::data()['lookups'] ?? []);
+        if (self::$autofills === null) {
+            $db = function_exists('sblLoadAutofills') ? sblLoadAutofills() : [];
+            self::$autofills = $db ?: self::autofillsFromFile();
         }
-        return self::$lookups;
+        return self::$autofills;
+    }
+    /** Reshape the data file's category_copy/category_meta/grade_circ into the generic map. */
+    private static function autofillsFromFile(): array
+    {
+        $lk = self::data()['lookups'] ?? [];
+        $map = [];
+        $copyMap = ['coin_type' => 'coin_type', 'denomination' => 'denomination',
+            'composition' => 'composition', 'fineness' => 'fineness',
+            'country' => 'country_of_manufacture', 'brand' => 'brand',
+            'copy_description' => 'copy_description', 'collector_note' => 'collector_note'];
+        foreach ($lk['category_copy'] ?? [] as $cat => $vals) {
+            foreach ($copyMap as $k => $f) {
+                if (isset($vals[$k]) && $vals[$k] !== '') { $map['category_name'][$cat][$f] = $vals[$k]; }
+            }
+        }
+        $metaMap = ['search_terms' => 'search_terms', 'weight_lb' => 'package_weight'];
+        foreach ($lk['category_meta'] ?? [] as $cat => $vals) {
+            foreach ($metaMap as $k => $f) {
+                if (isset($vals[$k]) && $vals[$k] !== '') { $map['category_name'][$cat][$f] = $vals[$k]; }
+            }
+        }
+        foreach ($lk['grade_circ'] ?? [] as $grade => $circ) {
+            if ($circ !== '') { $map['grade'][$grade]['circulated_or_uncirculated'] = $circ; }
+        }
+        return $map;
     }
     public static function groups(): array
     {
@@ -102,10 +133,22 @@ final class Computer
     public static function apply(array $row): array
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
-        $sku = $g('sku'); $category = $g('category_name');
-        $lookups = Schema::lookups();
-        $meta = $lookups['category_meta'][$category] ?? [];
-        $copy = $lookups['category_copy'][$category] ?? [];
+        $sku = $g('sku');
+
+        // Resolve every auto-fill rule whose "when" field matches this row into
+        // a flat [set_field => value] map.  This is the generic version of the
+        // old category_copy / category_meta / grade_circ VLOOKUPs — any rule in
+        // SBLAUTOFT participates, so new auto-fills work with no code change.
+        $resolved = [];
+        foreach (Schema::autofills() as $whenField => $byValue) {
+            $cur = $g($whenField);
+            if ($cur === '' || !isset($byValue[$cur])) { continue; }
+            foreach ($byValue[$cur] as $setField => $setValue) {
+                $sv = self::lookupValue((string) $setValue, '');
+                if ($sv !== '' && !isset($resolved[$setField])) { $resolved[$setField] = $sv; }
+            }
+        }
+        $auto = static fn(string $f): string => $resolved[$f] ?? '';
 
         // Image URLs (deterministic — exact workbook formulas)
         if ($sku !== '') {
@@ -116,25 +159,20 @@ final class Computer
         }
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        $copyVal = static fn(string $k): string => self::lookupValue($copy[$k] ?? '', '');
-        $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
-        if ($g('composition') === '' && $copyVal('composition') !== '') { $row['composition'] = $copyVal('composition'); }
-        if ($g('fineness') === '' && $copyVal('fineness') !== '') { $row['fineness'] = $copyVal('fineness'); }
-        if ($g('country_of_manufacture') === '') { $row['country_of_manufacture'] = $copyVal('country') ?: 'United States'; }
-        if ($g('brand') === '' && $copyVal('brand') !== '') { $row['brand'] = $copyVal('brand'); }
-        if ($g('coin_type') === '' && $copyVal('coin_type') !== '') { $row['coin_type'] = $copyVal('coin_type'); }
-        if ($g('denomination') === '' && $copyVal('denomination') !== '') { $row['denomination'] = $copyVal('denomination'); }
+        if ($auto('search_terms') !== '') { $row['search_terms'] = $auto('search_terms'); }
+        if ($g('composition') === '' && $auto('composition') !== '') { $row['composition'] = $auto('composition'); }
+        if ($g('fineness') === '' && $auto('fineness') !== '') { $row['fineness'] = $auto('fineness'); }
+        if ($g('country_of_manufacture') === '') { $row['country_of_manufacture'] = $auto('country_of_manufacture') ?: 'United States'; }
+        if ($g('brand') === '' && $auto('brand') !== '') { $row['brand'] = $auto('brand'); }
+        if ($g('coin_type') === '' && $auto('coin_type') !== '') { $row['coin_type'] = $auto('coin_type'); }
+        if ($g('denomination') === '' && $auto('denomination') !== '') { $row['denomination'] = $auto('denomination'); }
 
-        $grade = $g('grade');
-        if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
-            $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
+        if ($g('circulated_or_uncirculated') === '' && $g('grade') !== '' && $auto('circulated_or_uncirculated') !== '') {
+            $row['circulated_or_uncirculated'] = $auto('circulated_or_uncirculated');
         }
 
         $weight = $g('package_weight');
-        if ($weight === '') {
-            $weight = self::lookupValue($meta['weight_lb'] ?? '', '');
-            if ($weight !== '') { $row['package_weight'] = $weight; }
-        }
+        if ($weight === '' && $auto('package_weight') !== '') { $weight = $row['package_weight'] = $auto('package_weight'); }
         if (is_numeric($weight)) {
             $w = (float) $weight;
             $row['package_length'] = $w < 0.5 ? '9' : '11';
@@ -144,7 +182,7 @@ final class Computer
         if (stripos($sku, '.WS') !== false && $g('price') !== '') { $row['original_retail'] = $g('price'); }
 
         $row['name'] = self::buildTitle($row);
-        $row['description'] = self::buildDescription($row, $copy);
+        $row['description'] = self::buildDescription($row, $resolved);
         return $row;
     }
     private static function lookupValue(string $value, string $fallback): string
@@ -169,15 +207,15 @@ final class Computer
         $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
     }
-    private static function buildDescription(array $row, array $copy): string
+    private static function buildDescription(array $row, array $resolved): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('single_coin_or_set') === 'Set') { return ''; }
         $bits = [];
         $headline = self::buildTitle($row);
         if ($headline !== '') { $bits[] = 'A genuine ' . $headline . '.'; }
-        if (!empty($copy['collector_note'])) { $bits[] = $copy['collector_note']; }
-        elseif (!empty($copy['copy_description'])) { $bits[] = $copy['copy_description']; }
+        if (!empty($resolved['collector_note'])) { $bits[] = $resolved['collector_note']; }
+        elseif (!empty($resolved['copy_description'])) { $bits[] = $resolved['copy_description']; }
         if ($g('composition') !== '') { $bits[] = 'Composition: ' . $g('composition') . '.'; }
         return trim(implode(' ', $bits));
     }

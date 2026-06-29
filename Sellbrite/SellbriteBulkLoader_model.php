@@ -37,12 +37,15 @@ if (!defined('SBL_TABLE')) {
     // SQL naming (schema.table). Matches how the other LCC tools reference DB2 objects.
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
-// Reference / lookup tables that back the dropdowns and the spreadsheet VLOOKUPs.
-// These let the screen's option lists and category defaults be maintained from a
-// web page instead of being hard-coded in SellbriteBulkLoader_data.php.
+// Reference tables that back the dropdowns and the spreadsheet VLOOKUPs, so
+// they can be maintained from a web page instead of being hard-coded in
+// SellbriteBulkLoader_data.php.
+//   SBLVALUET - dropdown option lists
+//   SBLAUTOFT - generic auto-fill rules (when_field=value -> set_field=value),
+//               one table that covers all category defaults + grade lookups and
+//               any new rule you care to add.
 if (!defined('SBL_VALUE_TABLE')) { define('SBL_VALUE_TABLE', 'LSCDEVLIBP.SBLVALUET'); }
-if (!defined('SBL_CAT_TABLE'))   { define('SBL_CAT_TABLE',   'LSCDEVLIBP.SBLCATDFT'); }
-if (!defined('SBL_GRADE_TABLE')) { define('SBL_GRADE_TABLE', 'LSCDEVLIBP.SBLGRADET'); }
+if (!defined('SBL_AUTO_TABLE'))  { define('SBL_AUTO_TABLE',  'LSCDEVLIBP.SBLAUTOFT'); }
 
 /** Open (once) and reuse a DB2 connection from the session credentials. */
 function sbl_conn()
@@ -313,116 +316,79 @@ function sblValueDelete($id)
     return sbl_exec('DELETE FROM ' . SBL_VALUE_TABLE . ' WHERE id = ?', [$id], 'value delete');
 }
 
-/* ---- Category defaults + grade map (SBLCATDFT / SBLGRADET) -------- */
+/* ---- Generic auto-fill rules (SBLAUTOFT) -------------------------- */
 
 /**
- * Load the VLOOKUP tables in the shape Schema expects for 'lookups':
- *   [ 'category_copy' => [cat => [...]], 'category_meta' => [cat => [...]],
- *     'grade_circ'    => [grade => circ_status] ]
- * SBLCATDFT is split back into the copy/meta halves the Computer reads.
- * Returns [] when there is no DB.
+ * Load all active auto-fill rules into a nested map the Computer can resolve:
+ *   [ when_field => [ when_value => [ set_field => set_value ] ] ]
+ * Higher priority wins when two rules target the same set_field.
+ * Returns [] when there is no DB (dev/offline -> Schema falls back to the file).
  */
-function sblLoadLookups()
+function sblLoadAutofills()
 {
-    $conn = sbl_conn();
-    if (!$conn) { return []; }
-    $copy = []; $meta = []; $grade = [];
-    foreach (sblCatRows() as $r) {
-        $cat = $r['category_name'];
-        $c = [];
-        foreach (['coin_type','denomination','composition','fineness','country','brand',
-                  'copy_description','collector_note'] as $k) {
-            if (($r[$k] ?? null) !== null && $r[$k] !== '') { $c[$k] = $r[$k]; }
-        }
-        $copy[$cat] = $c;
-        $m = [];
-        if (($r['search_terms'] ?? null) !== null && $r['search_terms'] !== '') { $m['search_terms'] = $r['search_terms']; }
-        if (($r['weight_lb'] ?? null) !== null && $r['weight_lb'] !== '') { $m['weight_lb'] = $r['weight_lb']; }
-        $meta[$cat] = $m;
+    $rows = sbl_select(
+        'SELECT when_field, when_value, set_field, set_value FROM ' . SBL_AUTO_TABLE
+      . " WHERE active = 'Y' ORDER BY when_field, when_value, set_field, priority"
+    );
+    $map = [];
+    foreach ($rows as $r) {
+        // ORDER BY priority ASC means the last write (highest priority) wins.
+        $map[$r['when_field']][$r['when_value']][$r['set_field']] = $r['set_value'];
     }
-    foreach (sblGradeRows() as $r) { $grade[$r['grade']] = $r['circ_status'] ?? ''; }
-    return ['category_copy' => $copy, 'category_meta' => $meta, 'grade_circ' => $grade];
+    return $map;
 }
 
-/** All category-default rows (for the maintenance grid). */
-function sblCatRows()
+/** Distinct "when" field names (for the maintenance page's filter). */
+function sblAutofillFields()
 {
-    return sbl_select('SELECT * FROM ' . SBL_CAT_TABLE . ' ORDER BY category_name');
+    $rows = sbl_select('SELECT DISTINCT when_field FROM ' . SBL_AUTO_TABLE . ' ORDER BY when_field');
+    return array_column($rows, 'when_field');
 }
 
-/** One category-default row by id, or false. */
-function sblCatFind($id)
+/** Rule rows for the maintenance grid, optionally filtered by when_field / search. */
+function sblAutofillRows($whenField = '', $q = '')
 {
-    $id = (int) $id;
-    if ($id <= 0) { return false; }
-    $rows = sbl_select('SELECT * FROM ' . SBL_CAT_TABLE . ' WHERE id = ?', [$id]);
-    return $rows[0] ?? false;
-}
-
-/** Insert or update a category-default row (by id). Returns id (or false). */
-function sblCatSave(array $row)
-{
-    $cols = ['category_name','coin_type','denomination','composition','fineness','country',
-             'brand','search_terms','weight_lb','copy_description','collector_note'];
-    $vals = [];
-    foreach ($cols as $c) {
-        $v = isset($row[$c]) ? trim((string) $row[$c]) : '';
-        if ($c === 'weight_lb') { $vals[] = ($v === '' || !is_numeric($v)) ? null : $v; }
-        elseif ($c === 'category_name') { $vals[] = $v; }       // NOT NULL
-        else { $vals[] = $v === '' ? null : $v; }
+    $sql = 'SELECT id, when_field, when_value, set_field, set_value, priority, active FROM ' . SBL_AUTO_TABLE;
+    $where = []; $params = [];
+    if (trim((string) $whenField) !== '') { $where[] = 'when_field = ?'; $params[] = trim((string) $whenField); }
+    if (trim((string) $q) !== '') {
+        $like = '%' . strtoupper(trim((string) $q)) . '%';
+        $where[] = '(UPPER(when_value) LIKE ? OR UPPER(set_field) LIKE ? OR UPPER(set_value) LIKE ?)';
+        array_push($params, $like, $like, $like);
     }
-    $id = (int) ($row['id'] ?? 0);
+    if ($where) { $sql .= ' WHERE ' . implode(' AND ', $where); }
+    $sql .= ' ORDER BY when_field, when_value, set_field FETCH FIRST 500 ROWS ONLY';
+    return sbl_select($sql, $params);
+}
+
+/** Insert or update one auto-fill rule (by id). Returns id (or false). */
+function sblAutofillSave(array $row)
+{
+    $wf = trim((string) ($row['when_field'] ?? ''));
+    $wv = trim((string) ($row['when_value'] ?? ''));
+    $sf = trim((string) ($row['set_field'] ?? ''));
+    if ($wf === '' || $wv === '' || $sf === '') { return false; }
+    $sv  = trim((string) ($row['set_value'] ?? '')); $sv = $sv === '' ? null : $sv;
+    $pri = (int) ($row['priority'] ?? 0);
+    $act = (($row['active'] ?? 'Y') === 'N') ? 'N' : 'Y';
+    $id  = (int) ($row['id'] ?? 0);
     $conn = sbl_conn();
     if (!$conn) { return false; }
     if ($id > 0) {
-        $set = implode(', ', array_map(static fn($c) => $c . ' = ?', $cols));
-        $vals[] = $id;
-        return sbl_exec('UPDATE ' . SBL_CAT_TABLE . ' SET ' . $set . ' WHERE id = ?', $vals, 'cat update')
-             ? $id : false;
+        return sbl_exec('UPDATE ' . SBL_AUTO_TABLE
+            . ' SET when_field = ?, when_value = ?, set_field = ?, set_value = ?, priority = ?, active = ? WHERE id = ?',
+            [$wf, $wv, $sf, $sv, $pri, $act, $id], 'autofill update') ? $id : false;
     }
-    $ph = implode(', ', array_fill(0, count($cols), '?'));
-    $ok = sbl_exec('INSERT INTO ' . SBL_CAT_TABLE . ' (' . implode(', ', $cols) . ') VALUES (' . $ph . ')',
-                   $vals, 'cat insert');
+    $ok = sbl_exec('INSERT INTO ' . SBL_AUTO_TABLE
+        . ' (when_field, when_value, set_field, set_value, priority, active) VALUES (?, ?, ?, ?, ?, ?)',
+        [$wf, $wv, $sf, $sv, $pri, $act], 'autofill insert');
     return $ok ? (int) db2_last_insert_id($conn) : false;
 }
 
-/** Delete a category-default row by id. */
-function sblCatDelete($id)
+/** Delete one auto-fill rule by id. */
+function sblAutofillDelete($id)
 {
     $id = (int) $id;
     if ($id <= 0) { return false; }
-    return sbl_exec('DELETE FROM ' . SBL_CAT_TABLE . ' WHERE id = ?', [$id], 'cat delete');
-}
-
-/** All grade rows (for the maintenance grid). */
-function sblGradeRows()
-{
-    return sbl_select('SELECT id, grade, circ_status FROM ' . SBL_GRADE_TABLE . ' ORDER BY grade');
-}
-
-/** Insert or update a grade row (by id). Returns id (or false). */
-function sblGradeSave(array $row)
-{
-    $grade = trim((string) ($row['grade'] ?? ''));
-    if ($grade === '') { return false; }
-    $circ  = trim((string) ($row['circ_status'] ?? ''));
-    $circ  = $circ === '' ? null : $circ;
-    $id    = (int) ($row['id'] ?? 0);
-    $conn  = sbl_conn();
-    if (!$conn) { return false; }
-    if ($id > 0) {
-        return sbl_exec('UPDATE ' . SBL_GRADE_TABLE . ' SET grade = ?, circ_status = ? WHERE id = ?',
-                        [$grade, $circ, $id], 'grade update') ? $id : false;
-    }
-    $ok = sbl_exec('INSERT INTO ' . SBL_GRADE_TABLE . ' (grade, circ_status) VALUES (?, ?)',
-                   [$grade, $circ], 'grade insert');
-    return $ok ? (int) db2_last_insert_id($conn) : false;
-}
-
-/** Delete a grade row by id. */
-function sblGradeDelete($id)
-{
-    $id = (int) $id;
-    if ($id <= 0) { return false; }
-    return sbl_exec('DELETE FROM ' . SBL_GRADE_TABLE . ' WHERE id = ?', [$id], 'grade delete');
+    return sbl_exec('DELETE FROM ' . SBL_AUTO_TABLE . ' WHERE id = ?', [$id], 'autofill delete');
 }
