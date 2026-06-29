@@ -222,21 +222,6 @@
     }
     function sblRuleDel(id){ sblRefPost({ action:'rule_delete', id:id }); }
 
-    function sblSeed(){
-        swal({ title:'Seed reference tables?', text:'Copies the spreadsheet dropdowns, lookups and rules into the DB tables. Tables that already have rows are skipped.',
-               icon:'info', buttons:['Cancel','Seed'] })
-        .then(function(go){
-            if (!go) return;
-            $.post('SellbriteBulkLoader_ajax.php', { action:'ref_seed' }, function(res){
-                if (!res.ok){ swal('Not seeded', res.msg || 'No database connection.', 'error'); return; }
-                var c = res.counts || {};
-                swal('Seeded', 'Values: ' + (c.values||0) + ', Lookups: ' + (c.lookups||0) + ', Rules: ' + (c.rules||0) +
-                     ((c.skipped && c.skipped.length) ? '\nSkipped: ' + c.skipped.join(', ') : ''), 'success');
-                sblRefLoad();
-            }, 'json');
-        });
-    }
-
     /* ---- document ready: spinner + live recompute binding ---- */
     var sblTimer = null;
     jQuery(document).ready(function(){

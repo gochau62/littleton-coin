@@ -14,24 +14,27 @@
  * options, category lookups and the per-coin validation ("red") rules can be
  * maintained from the website instead of editing SellbriteBulkLoader_data.php.
  *
- *   SBLVALUES -> dropdown lists      -> Schema::values()
- *   SBLLOOKUP -> category/grade copy -> Schema::lookups()
- *   SBLRULE   -> validation rules    -> Schema::rules()
+ *   SBLVALUEST -> dropdown lists      -> Schema::values()
+ *   SBLLOOKUPT -> category/grade copy -> Schema::lookups()
+ *   SBLRULEST   -> validation rules    -> Schema::rules()
  *
  * Reuses the connection / error / select helpers from the product model.
- * Every read degrades to [] when the tables do not exist yet (checked once
- * via the catalog), so the screen keeps running off the static data file
- * until you create the SBLVALUES / SBLLOOKUP / SBLRULE tables (one .TABLE
- * source member each) and seed them ("Seed from spreadsheet").
+ * These tables are the ONLY source for dropdowns / lookups / rules
+ * (SellbriteBulkLoader_data.php now holds just the 85-column schema).  Each
+ * table is one .TABLE source member (SBLVALUEST / SBLLOOKUPT / SBLRULEST) and
+ * is loaded once from its companion seed script (*.seed.sql).  Every read
+ * degrades to [] when a table is missing (checked once via the catalog), so
+ * nothing fatals before the tables exist -- the screen simply shows empty
+ * dropdowns until they are created and seeded.
  */
 
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // sbl_conn / sbl_db_err / sbl_select
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema (setOverrides)
 
 if (!defined('SBL_LIB'))          { define('SBL_LIB', 'LSCDEVLIBP'); }
-if (!defined('SBL_VALUES_TABLE')) { define('SBL_VALUES_TABLE', SBL_LIB . '.SBLVALUES'); }
-if (!defined('SBL_LOOKUP_TABLE')) { define('SBL_LOOKUP_TABLE', SBL_LIB . '.SBLLOOKUP'); }
-if (!defined('SBL_RULE_TABLE'))   { define('SBL_RULE_TABLE',   SBL_LIB . '.SBLRULE'); }
+if (!defined('SBL_VALUES_TABLE')) { define('SBL_VALUES_TABLE', SBL_LIB . '.SBLVALUEST'); }
+if (!defined('SBL_LOOKUP_TABLE')) { define('SBL_LOOKUP_TABLE', SBL_LIB . '.SBLLOOKUPT'); }
+if (!defined('SBL_RULE_TABLE'))   { define('SBL_RULE_TABLE',   SBL_LIB . '.SBLRULEST'); }
 
 /** True if a reference table exists (cached). Lets reads/writes no-op pre-create. */
 function sbl_obj_exists($obj)
@@ -58,21 +61,14 @@ function sbl_exec($sql, array $params = [])
     return true;
 }
 
-/** Row count for a reference table (0 when missing / no DB). */
-function sbl_ref_count($table)
-{
-    $rows = sbl_select('SELECT COUNT(*) AS c FROM ' . $table);
-    return (int) ($rows[0]['c'] ?? 0);
-}
-
 /* ------------------------------------------------------------------ */
 /*  Reads -> arrays shaped exactly like the _data.php sections          */
 /* ------------------------------------------------------------------ */
 
-/** ['list_name' => [option, option, ...]] from SBLVALUES. */
+/** ['list_name' => [option, option, ...]] from SBLVALUEST. */
 function sblRefValues()
 {
-    if (!sbl_obj_exists('SBLVALUES')) { return []; }
+    if (!sbl_obj_exists('SBLVALUEST')) { return []; }
     $rows = sbl_select(
         'SELECT list_name, option_value FROM ' . SBL_VALUES_TABLE
         . " WHERE active = 'Y' ORDER BY list_name, sort_order, option_value"
@@ -82,10 +78,10 @@ function sblRefValues()
     return $out;
 }
 
-/** category_copy/category_meta (nested) + grade_circ (scalar) from SBLLOOKUP. */
+/** category_copy/category_meta (nested) + grade_circ (scalar) from SBLLOOKUPT. */
 function sblRefLookups()
 {
-    if (!sbl_obj_exists('SBLLOOKUP')) { return []; }
+    if (!sbl_obj_exists('SBLLOOKUPT')) { return []; }
     $rows = sbl_select(
         'SELECT lookup_name, lookup_key, attr_name, attr_value FROM ' . SBL_LOOKUP_TABLE
     );
@@ -99,10 +95,10 @@ function sblRefLookups()
     return $out;
 }
 
-/** Validation rules (decoded) from SBLRULE, in the shape Validator expects. */
+/** Validation rules (decoded) from SBLRULEST, in the shape Validator expects. */
 function sblRefRules()
 {
-    if (!sbl_obj_exists('SBLRULE')) { return []; }
+    if (!sbl_obj_exists('SBLRULEST')) { return []; }
     $rows = sbl_select(
         'SELECT field_name, rule_type, message, condition_json FROM ' . SBL_RULE_TABLE
         . " WHERE active = 'Y' ORDER BY sort_order, id"
@@ -142,7 +138,7 @@ function sblLoadReferenceOverrides()
 
 function sblValuesGrid($list = '')
 {
-    if (!sbl_obj_exists('SBLVALUES')) { return []; }
+    if (!sbl_obj_exists('SBLVALUEST')) { return []; }
     $sql = 'SELECT id, list_name, option_value, sort_order, active FROM ' . SBL_VALUES_TABLE;
     $params = [];
     if (trim((string) $list) !== '') { $sql .= ' WHERE list_name = ?'; $params = [trim((string) $list)]; }
@@ -167,7 +163,7 @@ function sblValueDelete($id)
 
 function sblLookupsGrid($name = '')
 {
-    if (!sbl_obj_exists('SBLLOOKUP')) { return []; }
+    if (!sbl_obj_exists('SBLLOOKUPT')) { return []; }
     $sql = 'SELECT id, lookup_name, lookup_key, attr_name, attr_value FROM ' . SBL_LOOKUP_TABLE;
     $params = [];
     if (trim((string) $name) !== '') { $sql .= ' WHERE lookup_name = ?'; $params = [trim((string) $name)]; }
@@ -192,7 +188,7 @@ function sblLookupDelete($id)
 
 function sblRulesGrid()
 {
-    if (!sbl_obj_exists('SBLRULE')) { return []; }
+    if (!sbl_obj_exists('SBLRULEST')) { return []; }
     return sbl_select(
         'SELECT id, field_name, rule_type, message, condition_json, active, sort_order '
         . 'FROM ' . SBL_RULE_TABLE . ' ORDER BY sort_order, id'
@@ -216,54 +212,4 @@ function sblRuleDelete($id)
     $id = (int) $id;
     if ($id <= 0) { return false; }
     return sbl_exec('DELETE FROM ' . SBL_RULE_TABLE . ' WHERE id = ?', [$id]);
-}
-
-/**
- * One-time seed: copy values/lookups/rules out of SellbriteBulkLoader_data.php
- * into the tables.  Skips any table that already has rows (so it is safe to
- * click again), and skips tables that do not exist yet.
- */
-function sblRefSeedFromFile()
-{
-    if (!sbl_conn()) { return ['ok' => false, 'msg' => 'No database connection.']; }
-    $data   = require __DIR__ . '/SellbriteBulkLoader_data.php';
-    $counts = ['values' => 0, 'lookups' => 0, 'rules' => 0, 'skipped' => []];
-
-    if (sbl_obj_exists('SBLVALUES')) {
-        if (sbl_ref_count(SBL_VALUES_TABLE) > 0) { $counts['skipped'][] = 'SBLVALUES (not empty)'; }
-        else {
-            foreach (($data['values'] ?? []) as $list => $opts) {
-                $i = 0;
-                foreach ($opts as $opt) { if (sblValueAdd($list, $opt, $i++)) { $counts['values']++; } }
-            }
-        }
-    } else { $counts['skipped'][] = 'SBLVALUES (missing)'; }
-
-    if (sbl_obj_exists('SBLLOOKUP')) {
-        if (sbl_ref_count(SBL_LOOKUP_TABLE) > 0) { $counts['skipped'][] = 'SBLLOOKUP (not empty)'; }
-        else {
-            foreach (($data['lookups'] ?? []) as $name => $keys) {
-                foreach ($keys as $key => $attrs) {
-                    if (is_array($attrs)) {
-                        foreach ($attrs as $attr => $val) { if (sblLookupAdd($name, $key, $attr, $val)) { $counts['lookups']++; } }
-                    } elseif (sblLookupAdd($name, $key, '', $attrs)) { $counts['lookups']++; }
-                }
-            }
-        }
-    } else { $counts['skipped'][] = 'SBLLOOKUP (missing)'; }
-
-    if (sbl_obj_exists('SBLRULE')) {
-        if (sbl_ref_count(SBL_RULE_TABLE) > 0) { $counts['skipped'][] = 'SBLRULE (not empty)'; }
-        else {
-            $i = 0;
-            foreach (($data['rules'] ?? []) as $rule) {
-                $field = $rule['field'] ?? '';
-                if ($field === '') { continue; }
-                if (sblRuleAdd($field, $rule['type'] ?? 'error', (string) ($rule['message'] ?? ''),
-                               json_encode($rule['all'] ?? []), $i++)) { $counts['rules']++; }
-            }
-        }
-    } else { $counts['skipped'][] = 'SBLRULE (missing)'; }
-
-    return ['ok' => true, 'counts' => $counts];
 }

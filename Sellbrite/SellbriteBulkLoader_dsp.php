@@ -211,7 +211,7 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span style="font-weight:700;color:#1C4532;">Manage Lists / Categories</span>
             <span class="spacer"></span>
-            <button type="button" class="btn btn-green" onclick="sblSeed()">Seed from spreadsheet</button>
+            <span style="font-size:11px;color:#5f6b62">Initial data loads once from the <code>*.seed.sql</code> scripts; edits here write straight to DB2.</span>
         </div>
 
         <div class="form-col">
