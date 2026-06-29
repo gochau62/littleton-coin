@@ -81,10 +81,10 @@ I read every file in `Sellbrite/` plus the reference tools and the `.ods`. Statu
 | `_ajax.php` | ✅ Solid | `compute / save / find / delete / export` endpoints. |
 | `_logic.php` | ✅ Strong | `Schema`, `Computer` (title/description/image-URL/default formulas), `Validator`, `Exporter` (3-row CSV). This is the spreadsheet's brain, already in PHP. |
 | `_model.php` | ✅ **Built** | Inline parameterized SQL: `sblGetAll/sblFind/sblSave/sblDelete`. Columns come from `Schema::columns()`; lower-cases DB2's keys; coerces blanks/`***`/bad input to NULL. Needs the table to run (smoke-tested without DB). |
-| `_data.php` | ✅ **Built** | One PHP file holding `schema` (85 cols), `values` (26 dropdown lists), `lookups` (category_copy 242 / category_meta 242 / grade_circ 274), and now `rules` (per-coin "turns red" checks, ported as a starting subset from the conditional formatting). Generated from the `.ods`; **replaces the old JSON files**. |
-| `_admin_model.php` | ✅ **Built** | DB2 read/write for the reference tables; `sblLoadReferenceOverrides()` swaps DB data into `Schema` when the tables exist, else keeps the file. Includes a one-click **seed from `_data.php`**. |
+| `_data.php` | ✅ **Built** | **Schema only** — the fixed 85-column layout the form needs before any DB call. Dropdowns / lookups / rules no longer live here (see DB-only decision, §9 #6). Generated from the `.ods`. |
+| `_admin_model.php` | ✅ **Built** | DB2 read/write for the reference tables; `sblLoadReferenceOverrides()` loads dropdowns/lookups/rules into `Schema` from DB2. The three tables are the **only** source for that data. |
 | DB2 product table | ❌ **Not created** | SQL ready in `SBLPRODUCT.TABLE` (Phase 1) — waiting on you to run it. See §5.1. |
-| DB2 reference tables | ✅ **Created** | `SBLVALUES` / `SBLLOOKUP` / `SBLRULE` — **one `.TABLE` source member each** (house rule: one object per member). Created 06/29. **Seeding pending** — the screen runs off `_data.php` until you click **Seed from spreadsheet**. See §5.2. |
+| DB2 reference tables | ⚠️ **Recreate** | Renamed to the 10-char/`T` convention: **`SBLVALUEST` / `SBLLOOKUPT` / `SBLRULEST`** — one `.TABLE` member each, plus a `*.seed.sql` per table. Drop the old `SBLVALUES`/`SBLLOOKUP`/`SBLRULE`, create these, then run the seeds. See §5.2. |
 
 ### Issues found early — all resolved
 1. ✅ **Filename mismatch — FIXED.** Everything now uses the **`SellbriteBulkLoader_*`** base name;
@@ -112,7 +112,7 @@ The `.ods` has **3 sheets**, which map onto the three sections of `SellbriteBulk
 | **0** | Orient: read repo, `.ods`, reference screens; summarize | ✅ **Done** (this doc + meeting notes) |
 | **1** | Data model + SQL `CREATE TABLE` (DB2 for i) | ✅ **Script delivered** → ⏸ **waiting on you to create the table** |
 | **2** | M-Power files: data from `.ods`, build `_model.php` (DB2), wire up, fix naming | ✅ **Code complete** — data ✅, naming ✅, model ✅; just needs the table created to run live |
-| **3** | Website assembly (menu-integrated, §9) + **Manage Lists / Categories** admin screen | 🚧 **In progress** — admin screen built; reference tables (`SBLVALUES`/`SBLLOOKUP`/`SBLRULE`) created; seeding + menu wiring pending |
+| **3** | Website assembly (menu-integrated, §9) + **Manage Lists / Categories** admin screen | 🚧 **In progress** — DB-only reference data (`SBLVALUEST`/`SBLLOOKUPT`/`SBLRULEST` + `*.seed.sql`); admin screen built; recreate-with-new-names + seed + menu wiring pending |
 | **4** | Meeting notes → markdown + readable plan | ✅ **Done** (this doc + `MEETING-NOTES.md`) |
 | **5** | Agentic automation: pick 1 of 3 options, then scaffold | ⛔ Blocked on your pick |
 
@@ -173,28 +173,46 @@ Two ways to run it (either works — pick what you normally use):
 ➡️ **Action for you:** create the table with A or B, then tell me it exists. The app code is already
 finished and waiting — the model points at `LSCDEVLIBP.SBLPRODUCT`.
 
-### 5.2 Reference tables — make Valid Values / VLOOKUP / rules editable from the web (NEW)
+### 5.2 Reference tables — the editable Valid Values / VLOOKUP / rules (DB-only)
 
-**Files:** one `.TABLE` source member per table (house rule: one object per member, like `SBLPRODUCT.TABLE`):
-- [`../SBLVALUES.TABLE`](../SBLVALUES.TABLE) — **`SBLVALUES`**, one row per dropdown option (`list_name`, `option_value`, `sort_order`, `active`). Feeds `Schema::values()`.
-- [`../SBLLOOKUP.TABLE`](../SBLLOOKUP.TABLE) — **`SBLLOOKUP`**, the VLOOKUP defaults (`lookup_name`, `lookup_key`, `attr_name`, `attr_value`). The nested maps (`category_copy` / `category_meta`) use `attr_name`; the scalar `grade_circ` map uses a blank `attr_name`. Feeds `Schema::lookups()`.
-- [`../SBLRULE.TABLE`](../SBLRULE.TABLE) — **`SBLRULE`**, the per-coin "turns red" rules (`field_name`, `rule_type` = error/action, `message`, `condition_json`). Feeds `Schema::rules()` → the Validator.
+**Decision (§9 #6):** these three tables are the **only** source for dropdowns, lookups and rules.
+`_data.php` keeps just the 85-column schema. One `.TABLE` member per table (10-char/`T` names,
+house rule), each with a companion `*.seed.sql` for the initial load:
 
-**Why:** Des updates dropdowns almost daily and adds coins a few times a month. With these tables that becomes INSERTs from the new **Manage Lists / Categories** screen — no `.ods`, no file edit, no deploy. **An entirely new coin = a new `category_name` option + its `category_copy`/`category_meta` rows + (if it needs special required fields) a few `SBLRULE` rows.**
+| Table | DDL member | Seed script | Feeds |
+| --- | --- | --- | --- |
+| **`SBLVALUEST`** | [`../SBLVALUEST.TABLE`](../SBLVALUEST.TABLE) | [`../SBLVALUEST.seed.sql`](../SBLVALUEST.seed.sql) (2,844 rows) | `Schema::values()` — dropdowns |
+| **`SBLLOOKUPT`** | [`../SBLLOOKUPT.TABLE`](../SBLLOOKUPT.TABLE) | [`../SBLLOOKUPT.seed.sql`](../SBLLOOKUPT.seed.sql) (2,151 rows) | `Schema::lookups()` — VLOOKUP defaults |
+| **`SBLRULEST`** | [`../SBLRULEST.TABLE`](../SBLRULEST.TABLE) | [`../SBLRULEST.seed.sql`](../SBLRULEST.seed.sql) (7 rows) | `Schema::rules()` → Validator |
 
-**Run them (one member each, same mechanism as the product table):**
+`SBLLOOKUPT` nested maps (`category_copy` / `category_meta`) use `attr_name`; the scalar `grade_circ`
+map uses a blank `attr_name`.
+
+**Why:** Des updates dropdowns almost daily and adds coins a few times a month. That becomes INSERTs
+from the **Manage Lists / Categories** screen — no `.ods`, no file edit, no deploy. **An entirely new
+coin = a new `category_name` option + its `category_copy`/`category_meta` rows + (if it needs special
+required fields) a few `SBLRULEST` rows.**
+
+**Heads-up — the first cut used non-compliant names.** Drop the old tables created 06/29, then create
+the renamed ones:
 ```
-RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLVALUES) COMMIT(*NONE)
-RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLLOOKUP) COMMIT(*NONE)
-RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLRULE)   COMMIT(*NONE)
+DROP TABLE LSCDEVLIBP.SBLVALUES;
+DROP TABLE LSCDEVLIBP.SBLLOOKUP;
+DROP TABLE LSCDEVLIBP.SBLRULE;
+
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLVALUEST) COMMIT(*NONE)
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLLOOKUPT) COMMIT(*NONE)
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLRULEST)  COMMIT(*NONE)
 ```
-or paste each into ACS **Run SQL Scripts** → **Run**.  (Created 06/29; the `SQL7905 … not journaled`
-severity-20 message is benign — the dev library isn't journaled and we run `COMMIT(*NONE)`, so no
-commitment control is needed.)
+(The `SQL7905 … not journaled` severity-20 message on create is benign — the dev library isn't
+journaled and we run `COMMIT(*NONE)`, so no commitment control is needed.)
 
-**Then seed once:** open the screen → **Manage Lists** → **Seed from spreadsheet**. This copies everything already in `_data.php` into the tables (it skips any table that already has rows, so it is safe to click again). Until you seed, the screen safely falls back to `_data.php` — nothing breaks if the tables are empty.
+**Then seed once** — the `*.seed.sql` scripts are bulk INSERTs; easiest is ACS **Run SQL Scripts** →
+paste each file → **Run All** (or copy into a QSQLSRC member and `RUNSQLSTM`). Re-running a seed hits
+the `UNIQUE` constraint, so clear a table first if you need to reload it.
 
-➡️ **Action for you:** the tables exist — just click **Seed from spreadsheet** once to populate them.
+➡️ **Action for you:** drop the 3 old tables → create the 3 renamed tables → run the 3 seed scripts.
+After that the screen is fully live; new options/coins/rules are added from **Manage Lists**.
 
 ---
 
@@ -202,11 +220,13 @@ commitment control is needed.)
 
 Once `SBLPRODUCT` exists, in this order:
 
-1. ✅ **DONE — Data from the `.ods`** → consolidated into **`SellbriteBulkLoader_data.php`**
-   (one PHP file, no JSON). `Schema` loads it once via `require`.
-   - `schema`: 85 entries `{name, label, required, auto, dropdown?}` from rows 2–3.
-   - `values`: 26 dropdown option lists (formula cells skipped, `---` separators kept).
-   - `lookups`: `category_copy` (242), `category_meta` (242), `grade_circ` (274) from VLOOKUP.
+1. ✅ **DONE — Data from the `.ods`.** `schema` (85 entries `{name, label, required, auto, dropdown?}`
+   from rows 2–3) stays in **`SellbriteBulkLoader_data.php`**; `Schema` loads it once via `require`.
+   The dropdown/lookup/rule data that used to sit alongside it was **moved to DB2** (DB-only, §9 #6):
+   - `values`: 26 dropdown lists (2,844 options) → **`SBLVALUEST`** (`---` separators dropped).
+   - `lookups`: `category_copy` / `category_meta` / `grade_circ` (2,151 rows) → **`SBLLOOKUPT`**.
+   - `rules`: per-coin "turns red" checks (7 seeded) → **`SBLRULEST`**.
+   - Initial load is from the `*.seed.sql` scripts; `_admin_model.php` reads them back into `Schema`.
 2. ✅ **DONE — Built `SellbriteBulkLoader_model.php` (DB2 for i)** — **inline parameterized SQL**
    (chosen over stored procs because the table is 85 columns wide; no extra IBM i objects to create):
    - `sblGetAll($q)` — list/search (`SELECT` with optional `WHERE` on sku/category/name).
@@ -286,7 +306,7 @@ scaffold — no agent code runs without your go-ahead.
 | 3 | **Website scope** (Phase 3) | ✅ **Integrate into LCCOnline menu** |
 | 4 | **First agentic automation** (Phase 5) | ✅ **A — AI Listing-Copy Generator** |
 | 5 | **Model style** (Phase 2) | ✅ **Inline parameterized SQL** (best fit for an 85-column table) |
-| 6 | **Data storage** (no external JSON) | ✅ Consolidated into one PHP file, `SellbriteBulkLoader_data.php` |
+| 6 | **Reference-data storage** (dropdowns / lookups / rules) | ✅ **DB-only** — `SBLVALUEST`/`SBLLOOKUPT`/`SBLRULEST` are the sole source (seeded from `*.seed.sql`); `_data.php` keeps just the 85-column schema |
 | 7 | Sellbrite vs **Cellbrite** — same system or two? | ❓ Confirm when convenient (not blocking) |
 
 ---

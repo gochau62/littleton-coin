@@ -81,12 +81,18 @@ switch ($action) {
     /* ---- reference-data admin (Manage Lists / Categories) ---- */
 
     case 'ref_grid':
+        // Canonical dropdown list names come from the schema's 'dropdown' keys,
+        // so they show even before the tables are seeded.
+        $lists = array_values(array_unique(array_filter(
+            array_map(static fn($c) => $c['dropdown'] ?? '', Schema::columns())
+        )));
+        sort($lists);
         echo json_encode([
             'returnClass' => 'success',
             'values'      => sblValuesGrid($_POST['list'] ?? ''),
             'lookups'     => sblLookupsGrid($_POST['lookup'] ?? ''),
             'rules'       => sblRulesGrid(),
-            'lists'       => array_keys(Schema::values()),
+            'lists'       => $lists,
             'fields'      => array_column(Schema::columns(), 'name'),
         ]);
         break;
@@ -116,10 +122,6 @@ switch ($action) {
         break;
     case 'rule_delete':
         echo json_encode(['returnClass' => sblRuleDelete($_POST['id'] ?? 0) ? 'success' : 'error']);
-        break;
-
-    case 'ref_seed':
-        echo json_encode(['returnClass' => 'success'] + sblRefSeedFromFile());
         break;
 
     default:

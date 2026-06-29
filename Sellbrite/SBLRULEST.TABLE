@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - SBLRULE.TABLE                                 */
+/* Program Name      - SBLRULEST.TABLE                               */
 /*                                                                   */
 /* Program Narrative - Create the Sellbrite Bulk Loader per-coin     */
 /*                     "turns red" validation rule table.            */
@@ -10,13 +10,14 @@
 /*                     (ALL must match to fire).  A brand-new coin's */
 /*                     special requirements = new rows here, with no */
 /*                     formula or code change.                       */
+/*                     Seed once from SBLRULEST.seed.sql.            */
 /*                                                                   */
 /* Author            - Gordon Chau                                   */
 /*                     Littleton NH                                  */
 /*                                                                   */
 /* Date Written      - 06/29/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(SBLRULE) COMMIT(*NONE)                 */
+/*                     SRCMBR(SBLRULEST) COMMIT(*NONE)               */
 /*                                                                   */
 /*********************************************************************/
 /*                                                                   */
@@ -28,7 +29,7 @@
 /* ------------------------------------------------------------------*/
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE LSCDEVLIBP.SBLRULE (
+CREATE TABLE LSCDEVLIBP.SBLRULEST (
    id             INTEGER GENERATED ALWAYS AS IDENTITY
                   (START WITH 1, INCREMENT BY 1) NOT NULL,
    field_name     FOR COLUMN FLDNAME   VARCHAR(40)   CCSID 1208  NOT NULL,
@@ -40,11 +41,11 @@ CREATE TABLE LSCDEVLIBP.SBLRULE (
    created_at FOR COLUMN CREATTS  TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
    updated_at FOR COLUMN UPDATETS TIMESTAMP NOT NULL
               GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
-   CONSTRAINT SBLRULE_PK PRIMARY KEY (id)
+   CONSTRAINT SBLRULEST_PK PRIMARY KEY (id)
 )
-RCDFMT SBLRULER;
+RCDFMT SBLRULESR;
 
-LABEL ON LSCDEVLIBP.SBLRULE (
+LABEL ON LSCDEVLIBP.SBLRULEST (
    id             TEXT IS 'Record ID',
    field_name     TEXT IS 'Field That Highlights',
    rule_type      TEXT IS 'Rule Type (error/action)',
@@ -55,4 +56,4 @@ LABEL ON LSCDEVLIBP.SBLRULE (
    created_at     TEXT IS 'Created Timestamp',
    updated_at     TEXT IS 'Updated Timestamp');
 
-LABEL ON TABLE LSCDEVLIBP.SBLRULE IS 'Sellbrite Bulk Loader Validation Rules';
+LABEL ON TABLE LSCDEVLIBP.SBLRULEST IS 'Sellbrite Bulk Loader Validation Rules';

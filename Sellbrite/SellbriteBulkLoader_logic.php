@@ -71,11 +71,11 @@ final class Schema
         return self::$rules;
     }
     /**
-     * Override values/lookups/rules with DB-sourced data (called by the model
-     * once the SBLVALUES / SBLLOOKUP / SBLRULE tables exist and hold rows).
-     * Only non-empty arrays replace the static-file defaults, so the screen
-     * keeps working from SellbriteBulkLoader_data.php until the tables are
-     * created and seeded.
+     * Supply values/lookups/rules from DB2 (called by the model once the
+     * SBLVALUEST / SBLLOOKUPT / SBLRULEST tables exist and hold rows).  These
+     * are the only source for that data -- SellbriteBulkLoader_data.php holds
+     * just the 85-column schema -- so until the tables are created and seeded
+     * (from the *.seed.sql scripts), values()/lookups()/rules() return [].
      */
     public static function setOverrides(array $o): void
     {
