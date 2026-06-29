@@ -183,12 +183,54 @@ final class Computer
     }
 }
 
+/**
+ * Live row validation — the PHP version of the workbook's red "Bad" cells.
+ *
+ * The .ods drives ~113 conditional-format rules that turn a cell red to tell
+ * the user something is wrong or still owed.  We reproduce those rule families
+ * here.  Each rule sets a per-field status that the form paints live:
+ *     'error'  -> red    (blocks save; truly invalid input)
+ *     'action' -> amber  (needs attention; matches the spreadsheet's advisory
+ *                         red — the row can still be saved "with warnings")
+ *
+ * Families covered (see docs): required-once-a-SKU-exists, cross-field
+ * conditional requirements, length/format, and key consistency checks.  The
+ * exhaustive per-category year ranges and variety tables are intentionally
+ * left as future data-driven rules (they belong in a lookup table, not code).
+ */
 final class Validator
 {
+    /** Core fields the workbook reddens the moment a SKU is present and they are blank. */
+    private static array $requiredWithSku = [
+        'category_name','year','coin_type','denomination','grade','certification',
+        'circulated_or_uncirculated','strike_type','style','composition','fineness',
+        'precious_metal_content','single_coin_or_set','country_of_manufacture','brand',
+        'exact_image','name','description','red_book_description',
+        'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
+        'price','cost','quantity','modified_item',
+        'product_image_1','product_image_2','product_image_3','product_image_4',
+    ];
+
+    /** Categories that require a Title Suffix even when uncertified (workbook K-column rule). */
+    private static array $titleSuffixCategories = [
+        'Modern Silver/Clad Commemorative','Modern Gold Commemorative','Proof Set','Mint Set',
+        'Gold Bullion Coin','Platinum Bullion Coin','Palladium Bullion Coin','Morgan Dollar Toned',
+    ];
+
     public static function check(array $row): array
     {
         $statuses = []; $messages = [];
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
+
+        // Mark a field, but never downgrade an existing 'error' to 'action'.
+        $mark = static function (string $f, string $st, string $msg) use (&$statuses, &$messages): void {
+            $cur = $statuses[$f] ?? '';
+            if ($cur === 'error' && $st === 'action') { return; }
+            $statuses[$f] = $st; $messages[$f] = $msg;
+        };
+
+        // --- base pass: placeholders, hard-required, valid-value -----------
+        $optionCache = [];
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
             if ($val !== '' && str_starts_with($val, '***')) {
@@ -197,22 +239,127 @@ final class Validator
             if (!empty($col['required']) && $val === '') {
                 $statuses[$name] = 'error'; $messages[$name] = 'Required field'; continue;
             }
+            // Typed a value that is not one of this field's valid options.
+            if ($val !== '' && !empty($col['dropdown'])) {
+                $opts = $optionCache[$name] ??= Schema::optionsFor($col);
+                if ($opts && !in_array($val, $opts, true)) {
+                    $statuses[$name] = 'action'; $messages[$name] = 'Not a valid option for this field'; continue;
+                }
+            }
             $statuses[$name] = $val === '' ? '' : 'ok';
         }
+
+        $hasSku = $g('sku') !== '';
+
+        // --- 1) required once a SKU exists (advisory red) ------------------
+        if ($hasSku) {
+            foreach (self::$requiredWithSku as $f) {
+                if ($g($f) !== '' || ($statuses[$f] ?? '') !== '') { continue; }
+                if ($f === 'coin_type' && $g('category_name') === 'Two Cent') { continue; } // no coin type
+                $mark($f, 'action', 'Required once a SKU is entered');
+            }
+        }
+
+        // --- 2) cross-field conditional requirements ----------------------
+        // Mint mark is owed when this is a U.S. Mint product.
+        $brand = $g('brand');
+        if ($hasSku && $g('mint_mark') === '' && ($brand === '' || $brand === 'U.S. Mint')) {
+            $mark('mint_mark', 'action', 'Mint mark required for U.S. Mint coins');
+        }
+        // Title suffix is owed for the special categories (when uncertified).
+        $cert = $g('certification');
+        if ($g('title_suffix') === '' && ($cert === '' || $cert === 'Uncertified')
+            && in_array($g('category_name'), self::$titleSuffixCategories, true)) {
+            $mark('title_suffix', 'action', 'Title suffix required for this category');
+        }
+        // Set vs. set_count.
+        $isSet = $g('single_coin_or_set') === 'Set';
+        $setCount = $g('set_count');
+        if ($isSet && ($setCount === '' || !ctype_digit($setCount) || (int) $setCount <= 1)) {
+            $mark('set_count', 'action', 'Enter the number of coins in the set (2 or more)');
+        } elseif (!$isSet && $setCount !== '') {
+            $mark('set_count', 'action', 'Set count only applies when this is a Set');
+        }
+        // Certification number is owed for a real certification (single coins).
+        $certNum = $g('certification_number');
+        $isStock = stripos($g('exact_image'), 'stock') !== false;
+        if ($cert !== '' && $cert !== 'Uncertified' && !$isSet && !$isStock) {
+            if ($certNum === '') {
+                $mark('certification_number', 'action', 'Certification number required for a certified coin');
+            } elseif (($cert === 'PCGS' || $cert === 'PCGS & CAC')
+                      && (strpos($certNum, '-') !== false || strlen($certNum) < 7 || strlen($certNum) > 8)) {
+                $mark('certification_number', 'action', 'PCGS number should be 7-8 digits, no dash');
+            } elseif (($cert === 'NGC' || $cert === 'NGC & CAC')
+                      && (strpos($certNum, '-') === false || strlen($certNum) < 10 || strlen($certNum) > 11)) {
+                $mark('certification_number', 'action', 'NGC number should be 10-11 chars incl. the dash');
+            }
+        } elseif ($certNum !== '' && ($cert === '' || $cert === 'Uncertified')) {
+            $mark('certification_number', 'action', 'Remove the number or set a certification');
+        }
+
+        // --- 3) length / format -------------------------------------------
+        $name = $g('name');
+        if (mb_strlen($name) > 70) { $mark('name', 'error', 'Title must be 70 characters or fewer (' . mb_strlen($name) . ')'); }
+        if ($name !== '' && (strpos($name, '  ') !== false)) { $mark('name', 'action', 'Remove the double space in the title'); }
+        $sku = $g('sku');
+        if ($sku !== '') {
+            if (strlen($sku) > 10) { $mark('sku', 'error', 'SKU must be 10 characters or fewer'); }
+            if (strpos($sku, ' ') !== false) { $mark('sku', 'error', 'SKU cannot contain spaces'); }
+        }
         $year = $g('year');
-        if ($year !== '' && (!ctype_digit($year) || strlen($year) !== 4)) {
-            $statuses['year'] = 'action'; $messages['year'] = 'Year should be 4 digits';
+        if ($year !== '') {
+            $ok = (ctype_digit($year) && strlen($year) === 4)
+               || (strpos($year, '-') !== false && strlen($year) === 9);   // e.g. 1878-1879
+            if (!$ok) { $mark('year', 'action', 'Year should be 4 digits (or a 9-char range)'); }
         }
         foreach (['price','cost','original_retail'] as $m) {
             $v = $g($m);
-            if ($v !== '' && !is_numeric($v)) { $statuses[$m] = 'error'; $messages[$m] = 'Must be a number'; }
+            if ($v !== '' && !is_numeric($v)) { $mark($m, 'error', 'Must be a number'); }
         }
         $qty = $g('quantity');
-        if ($qty !== '' && !ctype_digit($qty)) { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Whole number only'; }
-        if ($g('single_coin_or_set') === 'Set' && $g('set_count') === '') {
-            $statuses['set_count'] = 'action'; $messages['set_count'] = 'Enter number of coins in the set';
+        if ($qty !== '' && !ctype_digit($qty)) { $mark('quantity', 'error', 'Whole number only'); }
+        elseif ($hasSku && ($qty === '' || (int) $qty < 1)) { $mark('quantity', 'action', 'Quantity must be at least 1'); }
+        if (ctype_digit($qty) && (int) $qty > 1 && stripos($g('exact_image'), 'exact') === false) {
+            $mark('quantity', 'action', 'Quantity over 1 needs a stock (non-exact) image');
         }
+
+        // --- 4) consistency & pricing -------------------------------------
+        // Strike type says Proof, so the grade must reflect it.
+        $strike = $g('strike_type'); $grade = $g('grade');
+        if (stripos($strike, 'Proof') !== false && $grade !== '' && stripos($grade, 'Ungraded') === false) {
+            $hasProof = preg_match('/proof|PR |PF |RP /i', $grade);
+            if (!$hasProof) { $mark('grade', 'action', 'Proof strike should have a Proof (PR/PF) grade'); }
+        }
+        // Price vs cost sanity (numbers only).
+        $price = $g('price'); $cost = $g('cost');
+        if (is_numeric($price) && is_numeric($cost)) {
+            $p = (float) $price; $c = (float) $cost;
+            if ($p <= $c) { $mark('price', 'action', 'Price should be above cost'); }
+            else {
+                // Margin band by cost tier (workbook AD-column rule).
+                [$lo, $hi] = self::marginBand($c);
+                if ($p < $c * $lo || $p > $c * $hi) {
+                    $mark('price', 'action', 'Price margin looks off for this cost tier');
+                }
+            }
+        }
+        if ($cert === 'Uncertified' && stripos($g('category_name'), 'Bullion') === false
+            && is_numeric($price) && (float) $price >= 2500) {
+            $mark('price', 'action', 'High-value uncertified coin — review before listing');
+        }
+
         return ['statuses' => $statuses, 'messages' => $messages, 'valid' => !in_array('error', $statuses, true)];
+    }
+
+    /** Acceptable [min, max] price multiple of cost, by cost tier (from the workbook). */
+    private static function marginBand(float $c): array
+    {
+        if ($c < 2)    { return [3.7, 26]; }
+        if ($c < 4)    { return [2.3, 4.4]; }
+        if ($c < 10)   { return [1.6, 3]; }
+        if ($c < 41)   { return [1.3, 2]; }
+        if ($c < 1000) { return [1.2, 1.5]; }
+        return [1.2, 1.3];
     }
 }
 
