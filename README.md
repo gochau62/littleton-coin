@@ -40,3 +40,7 @@
 5. checking for duplicates after event handler to automatically alert users for duplicates highlighted red
 6. read all sheets using phpSpreadsheet iterating through the entire workbook.
 ![Upload GiftCard](UploadGiftCard/UploadGiftCard.png)
+
+---
+### Sellbrite
+<img width="1025" height="865" alt="image" src="https://github.com/user-attachments/assets/aa521032-caee-4ca0-9ff7-6aecb5816cc5" />
