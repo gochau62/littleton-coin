@@ -125,6 +125,7 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <span class="spacer"></span>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
             <button type="button" class="btn btn-green" onclick="sblExport()">Export CSV</button>
+            <button type="button" class="btn btn-ghost" onclick="sblAdmin()">Manage Lists</button>
         </div>
 
         <?php if (!$skus): ?>
@@ -201,6 +202,70 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                 <div class="card checklist"><h3>Validation</h3>
                     <ul id="issue-list"><li style="color:#5f6b62">Live as you type&hellip;</li></ul></div>
             </aside>
+        </div>
+    </div>
+
+    <!-- ============ MANAGE LISTS / CATEGORIES (admin) ============ -->
+    <div id="adminView" style="display:none">
+        <div class="sbl-tools">
+            <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
+            <span style="font-weight:700;color:#1C4532;">Manage Lists / Categories</span>
+            <span class="spacer"></span>
+            <button type="button" class="btn btn-green" onclick="sblSeed()">Seed from spreadsheet</button>
+        </div>
+
+        <div class="form-col">
+            <!-- Dropdown options (Valid Values) -->
+            <fieldset class="card group"><legend>Dropdown Lists (Valid Values)</legend>
+                <div class="field-grid">
+                    <div class="field"><label>Filter list</label><select id="rv-filter" onchange="sblRefLoad()"></select></div>
+                    <div class="field"></div>
+                    <div class="field"><label>List</label><select id="rv-list"></select></div>
+                    <div class="field"><label>Option value</label><input type="text" id="rv-option"></div>
+                    <div class="field"><label>Sort</label><input type="text" id="rv-sort" placeholder="0"></div>
+                    <div class="field" style="align-self:end"><button type="button" class="btn" onclick="sblValueAddRow()">Add option</button></div>
+                </div>
+                <div class="table-card" style="margin-top:10px">
+                    <table class="grid"><thead><tr><th>List</th><th>Option</th><th class="num">Sort</th><th>Active</th><th></th></tr></thead>
+                        <tbody id="ref-values-body"></tbody></table>
+                </div>
+            </fieldset>
+
+            <!-- Category lookups (VLOOKUP) -->
+            <fieldset class="card group"><legend>Category Lookups (VLOOKUP defaults)</legend>
+                <div class="field-grid">
+                    <div class="field"><label>Filter lookup</label><select id="rl-filter" onchange="sblRefLoad()"></select></div>
+                    <div class="field"></div>
+                    <div class="field"><label>Lookup</label><select id="rl-name"></select></div>
+                    <div class="field"><label>Key (category / grade)</label><input type="text" id="rl-key"></div>
+                    <div class="field"><label>Attribute <span style="font-weight:400">(blank for grade_circ)</span></label><input type="text" id="rl-attr" placeholder="composition, weight_lb, search_terms…"></div>
+                    <div class="field"><label>Value</label><input type="text" id="rl-val"></div>
+                    <div class="field" style="align-self:end"><button type="button" class="btn" onclick="sblLookupAddRow()">Add lookup</button></div>
+                </div>
+                <div class="table-card" style="margin-top:10px">
+                    <table class="grid"><thead><tr><th>Lookup</th><th>Key</th><th>Attribute</th><th>Value</th><th></th></tr></thead>
+                        <tbody id="ref-lookups-body"></tbody></table>
+                </div>
+            </fieldset>
+
+            <!-- Validation rules (what turns red) -->
+            <fieldset class="card group"><legend>Validation Rules (what turns red)</legend>
+                <div class="field-grid">
+                    <div class="field"><label>Field</label><select id="rr-field"></select></div>
+                    <div class="field"><label>Type</label><select id="rr-type"><option value="error">error (red)</option><option value="action">action (amber)</option></select></div>
+                    <div class="field" style="grid-column:1 / -1"><label>Message</label><input type="text" id="rr-msg"></div>
+                    <div class="field" style="grid-column:1 / -1"><label>Condition JSON &mdash; all predicates must match</label>
+                        <textarea id="rr-cond" rows="2" placeholder='[{"field":"certification","op":"in","value":["PCGS","NGC"]},{"field":"certification_number","op":"blank"}]'></textarea></div>
+                    <div class="field" style="align-self:end"><button type="button" class="btn" onclick="sblRuleAddRow()">Add rule</button></div>
+                </div>
+                <div class="table-card" style="margin-top:10px">
+                    <table class="grid"><thead><tr><th>Field</th><th>Type</th><th>Message</th><th>Condition</th><th></th></tr></thead>
+                        <tbody id="ref-rules-body"></tbody></table>
+                </div>
+                <p style="font-size:11px;color:#5f6b62;margin-top:8px">
+                    Ops: <code>blank, not_blank, eq, ne, in, not_in, len_gt, num, not_num, le_field</code>.
+                    Rules only run once a SKU is present (mirrors the spreadsheet).</p>
+            </fieldset>
         </div>
     </div>
 </div>

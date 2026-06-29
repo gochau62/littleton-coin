@@ -24,6 +24,9 @@ final class Schema
     private static $schema = null;
     private static $values = null;
     private static $lookups = null;
+    private static $rules = null;
+    /** Optional DB-sourced overrides (values/lookups/rules) set by the model. */
+    private static $overrides = [];
 
     /** Load the consolidated reference data (schema/values/lookups) once. */
     private static function data(): array
@@ -45,6 +48,7 @@ final class Schema
     }
     public static function values(): array
     {
+        if (isset(self::$overrides['values'])) { return self::$overrides['values']; }
         if (self::$values === null) { self::$values = self::data()['values'] ?? []; }
         return self::$values;
     }
@@ -55,8 +59,29 @@ final class Schema
     }
     public static function lookups(): array
     {
+        if (isset(self::$overrides['lookups'])) { return self::$overrides['lookups']; }
         if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
+    }
+    /** Per-coin validation rules (the spreadsheet's "turns red" logic, as data). */
+    public static function rules(): array
+    {
+        if (isset(self::$overrides['rules'])) { return self::$overrides['rules']; }
+        if (self::$rules === null) { self::$rules = self::data()['rules'] ?? []; }
+        return self::$rules;
+    }
+    /**
+     * Override values/lookups/rules with DB-sourced data (called by the model
+     * once the SBLVALUES / SBLLOOKUP / SBLRULE tables exist and hold rows).
+     * Only non-empty arrays replace the static-file defaults, so the screen
+     * keeps working from SellbriteBulkLoader_data.php until the tables are
+     * created and seeded.
+     */
+    public static function setOverrides(array $o): void
+    {
+        foreach (['values', 'lookups', 'rules'] as $k) {
+            if (!empty($o[$k]) && is_array($o[$k])) { self::$overrides[$k] = $o[$k]; }
+        }
     }
     public static function groups(): array
     {
@@ -204,7 +229,61 @@ final class Validator
         if ($g('single_coin_or_set') === 'Set' && $g('set_count') === '') {
             $statuses['set_count'] = 'action'; $messages['set_count'] = 'Enter number of coins in the set';
         }
+
+        // Data-driven per-coin rules (the spreadsheet's conditional formatting).
+        // Gated on a SKU being present, mirroring the sheet's ISBLANK(A)=0 gate.
+        if ($g('sku') !== '') {
+            foreach (Schema::rules() as $rule) {
+                $field = $rule['field'] ?? '';
+                if ($field === '') { continue; }
+                $fires = true;
+                foreach (($rule['all'] ?? []) as $p) {
+                    if (!self::predicate($row, $p)) { $fires = false; break; }
+                }
+                if ($fires) {
+                    self::applyRule($statuses, $messages, $field,
+                                    $rule['type'] ?? 'error', (string) ($rule['message'] ?? ''));
+                }
+            }
+        }
+
         return ['statuses' => $statuses, 'messages' => $messages, 'valid' => !in_array('error', $statuses, true)];
+    }
+
+    /** Evaluate one rule predicate against the (computed) row. */
+    private static function predicate(array $row, array $p): bool
+    {
+        $cur = trim((string) ($row[$p['field'] ?? ''] ?? ''));
+        $val = $p['value'] ?? null;
+        switch ($p['op'] ?? '') {
+            case 'blank':     return $cur === '';
+            case 'not_blank': return $cur !== '';
+            case 'eq':        return $cur === (string) $val;
+            case 'ne':        return $cur !== (string) $val;
+            case 'in':        return is_array($val) && in_array($cur, $val, true);
+            case 'not_in':    return is_array($val) && !in_array($cur, $val, true);
+            case 'len_gt':    return mb_strlen($cur) > (int) $val;
+            case 'num':       return $cur !== '' && is_numeric($cur);
+            case 'not_num':   return $cur !== '' && !is_numeric($cur);
+            case 'le_field':
+                $other = trim((string) ($row[(string) $val] ?? ''));
+                return is_numeric($cur) && is_numeric($other) && (float) $cur <= (float) $other;
+            default:          return false;
+        }
+    }
+
+    /** Apply a fired rule without downgrading a hard error already on the field. */
+    private static function applyRule(array &$statuses, array &$messages, string $field, string $type, string $msg): void
+    {
+        if ($type === 'error') {
+            $statuses[$field] = 'error';
+            $messages[$field] = $msg;
+            return;
+        }
+        if (($statuses[$field] ?? '') !== 'error') {
+            $statuses[$field] = 'action';
+            if ($msg !== '') { $messages[$field] = $msg; }
+        }
     }
 }
 
