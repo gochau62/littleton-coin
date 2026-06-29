@@ -81,8 +81,10 @@ I read every file in `Sellbrite/` plus the reference tools and the `.ods`. Statu
 | `_ajax.php` | ✅ Solid | `compute / save / find / delete / export` endpoints. |
 | `_logic.php` | ✅ Strong | `Schema`, `Computer` (title/description/image-URL/default formulas), `Validator`, `Exporter` (3-row CSV). This is the spreadsheet's brain, already in PHP. |
 | `_model.php` | ✅ **Built** | Inline parameterized SQL: `sblGetAll/sblFind/sblSave/sblDelete`. Columns come from `Schema::columns()`; lower-cases DB2's keys; coerces blanks/`***`/bad input to NULL. Needs the table to run (smoke-tested without DB). |
-| `_data.php` | ✅ **Built** | One PHP file holding `schema` (85 cols), `values` (26 dropdown lists), `lookups` (category_copy 242 / category_meta 242 / grade_circ 274). Generated from the `.ods`; **replaces the old JSON files**. |
-| DB2 table | ❌ **Not created** | SQL is ready in `SBLPRODUCT.TABLE` (Phase 1) — waiting on you to run it. See §5.1. |
+| `_data.php` | ✅ **Built** | One PHP file holding `schema` (85 cols), `values` (26 dropdown lists), `lookups` (category_copy 242 / category_meta 242 / grade_circ 274), and now `rules` (per-coin "turns red" checks, ported as a starting subset from the conditional formatting). Generated from the `.ods`; **replaces the old JSON files**. |
+| `_admin_model.php` | ✅ **Built** | DB2 read/write for the reference tables; `sblLoadReferenceOverrides()` swaps DB data into `Schema` when the tables exist, else keeps the file. Includes a one-click **seed from `_data.php`**. |
+| DB2 product table | ❌ **Not created** | SQL ready in `SBLPRODUCT.TABLE` (Phase 1) — waiting on you to run it. See §5.1. |
+| DB2 reference tables | ❌ **Not created** | SQL ready in `SBLREFERENCE.TABLE` (`SBLVALUES` / `SBLLOOKUP` / `SBLRULE`). **Optional** — the screen runs off `_data.php` until you create + seed them. See §5.2. |
 
 ### Issues found early — all resolved
 1. ✅ **Filename mismatch — FIXED.** Everything now uses the **`SellbriteBulkLoader_*`** base name;
@@ -110,7 +112,7 @@ The `.ods` has **3 sheets**, which map onto the three sections of `SellbriteBulk
 | **0** | Orient: read repo, `.ods`, reference screens; summarize | ✅ **Done** (this doc + meeting notes) |
 | **1** | Data model + SQL `CREATE TABLE` (DB2 for i) | ✅ **Script delivered** → ⏸ **waiting on you to create the table** |
 | **2** | M-Power files: data from `.ods`, build `_model.php` (DB2), wire up, fix naming | ✅ **Code complete** — data ✅, naming ✅, model ✅; just needs the table created to run live |
-| **3** | Website assembly: standalone screen vs. menu integration | ⛔ Blocked on scope decision |
+| **3** | Website assembly (menu-integrated, §9) + **Manage Lists / Categories** admin screen | 🚧 **In progress** — admin screen + reference tables (`SBLREFERENCE.TABLE`) built; menu wiring pending |
 | **4** | Meeting notes → markdown + readable plan | ✅ **Done** (this doc + `MEETING-NOTES.md`) |
 | **5** | Agentic automation: pick 1 of 3 options, then scaffold | ⛔ Blocked on your pick |
 
@@ -170,6 +172,25 @@ Two ways to run it (either works — pick what you normally use):
 
 ➡️ **Action for you:** create the table with A or B, then tell me it exists. The app code is already
 finished and waiting — the model points at `LSCDEVLIBP.SBLPRODUCT`.
+
+### 5.2 Reference tables — make Valid Values / VLOOKUP / rules editable from the web (NEW)
+
+**File:** [`../SBLREFERENCE.TABLE`](../SBLREFERENCE.TABLE) — creates three small tables in `LSCDEVLIBP`:
+- **`SBLVALUES`** — one row per dropdown option (`list_name`, `option_value`, `sort_order`, `active`). Feeds `Schema::values()`.
+- **`SBLLOOKUP`** — the VLOOKUP defaults (`lookup_name`, `lookup_key`, `attr_name`, `attr_value`). The nested maps (`category_copy` / `category_meta`) use `attr_name`; the scalar `grade_circ` map uses a blank `attr_name`. Feeds `Schema::lookups()`.
+- **`SBLRULE`** — the per-coin "turns red" rules (`field_name`, `rule_type` = error/action, `message`, `condition_json`). Feeds `Schema::rules()` → the Validator.
+
+**Why:** Des updates dropdowns almost daily and adds coins a few times a month. With these tables that becomes INSERTs from the new **Manage Lists / Categories** screen — no `.ods`, no file edit, no deploy. **An entirely new coin = a new `category_name` option + its `category_copy`/`category_meta` rows + (if it needs special required fields) a few `SBLRULE` rows.**
+
+**Run it (same mechanism as the product table):**
+```
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLREFERENCE) COMMIT(*NONE)
+```
+or paste the whole file into ACS **Run SQL Scripts** → **Run All**.
+
+**Then seed once:** open the screen → **Manage Lists** → **Seed from spreadsheet**. This copies everything already in `_data.php` into the tables (it skips any table that already has rows, so it is safe to click again). Until you seed, the screen safely falls back to `_data.php` — nothing breaks if the tables don't exist yet.
+
+➡️ **Action for you (optional, when ready):** run `SBLREFERENCE.TABLE`, then click **Seed from spreadsheet** once.
 
 ---
 

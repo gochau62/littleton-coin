@@ -6676,4 +6676,76 @@ return [
             'XF Details' => 'Circulated',
         ],
     ],
+
+    /*
+     * 'rules' - the per-coin "turns red" checks, ported (as a starting subset)
+     * from the spreadsheet's conditional formatting so the web Validator
+     * highlights the same fields the .ods does.  A rule fires when EVERY
+     * predicate in 'all' is true; it then marks 'field' with 'type'
+     * ('error' = red / blocks "Ready", 'action' = amber heads-up).  Predicate
+     * ops: blank | not_blank | eq | ne | in | not_in | len_gt | num | not_num
+     * | le_field (this field <= the named field, numerically).  The engine
+     * only runs these once a SKU is present (mirrors the sheet's ISBLANK(A)=0
+     * gate).  These rows seed SBLRULE and are editable from the Manage Lists
+     * screen, so a brand-new coin's requirements become new rows -- no formula
+     * or code change.
+     */
+    'rules' => [
+        [
+            'field' => 'name', 'type' => 'action',
+            'message' => 'Title is over 70 characters (Amazon/eBay limit)',
+            'all' => [ ['field' => 'name', 'op' => 'len_gt', 'value' => 70] ],
+        ],
+        [
+            'field' => 'price', 'type' => 'error',
+            'message' => 'Price must be greater than cost',
+            'all' => [
+                ['field' => 'price', 'op' => 'num'],
+                ['field' => 'cost',  'op' => 'num'],
+                ['field' => 'price', 'op' => 'le_field', 'value' => 'cost'],
+            ],
+        ],
+        [
+            'field' => 'price', 'type' => 'action',
+            'message' => 'Add a price before uploading',
+            'all' => [ ['field' => 'price', 'op' => 'blank'] ],
+        ],
+        [
+            'field' => 'certification_number', 'type' => 'error',
+            'message' => 'Certification number is required for graded coins',
+            'all' => [
+                ['field' => 'certification', 'op' => 'in',
+                    'value' => ['PCGS', 'NGC', 'ANACS', 'PCGS & CAC', 'NGC & CAC']],
+                ['field' => 'single_coin_or_set', 'op' => 'ne', 'value' => 'Set'],
+                ['field' => 'certification_number', 'op' => 'blank'],
+            ],
+        ],
+        [
+            'field' => 'title_suffix', 'type' => 'action',
+            'message' => 'Sets and commemoratives usually need a title suffix',
+            'all' => [
+                ['field' => 'title_suffix', 'op' => 'blank'],
+                ['field' => 'category_name', 'op' => 'in',
+                    'value' => ['Proof Set', 'Mint Set',
+                                'Modern Silver/Clad Commemorative', 'Modern Gold Commemorative']],
+            ],
+        ],
+        [
+            'field' => 'coin_variety_1', 'type' => 'action',
+            'message' => 'Commemoratives and key dates usually need a variety',
+            'all' => [
+                ['field' => 'coin_variety_1', 'op' => 'blank'],
+                ['field' => 'coin_variety_2', 'op' => 'blank'],
+                ['field' => 'coin_type', 'op' => 'eq', 'value' => 'Commemorative'],
+            ],
+        ],
+        [
+            'field' => 'modification_description', 'type' => 'action',
+            'message' => 'Describe the modification when the item is modified',
+            'all' => [
+                ['field' => 'modified_item', 'op' => 'eq', 'value' => 'Yes'],
+                ['field' => 'modification_description', 'op' => 'blank'],
+            ],
+        ],
+    ],
 ];
