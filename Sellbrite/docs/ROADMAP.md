@@ -84,7 +84,7 @@ I read every file in `Sellbrite/` plus the reference tools and the `.ods`. Statu
 | `_data.php` | ✅ **Built** | One PHP file holding `schema` (85 cols), `values` (26 dropdown lists), `lookups` (category_copy 242 / category_meta 242 / grade_circ 274), and now `rules` (per-coin "turns red" checks, ported as a starting subset from the conditional formatting). Generated from the `.ods`; **replaces the old JSON files**. |
 | `_admin_model.php` | ✅ **Built** | DB2 read/write for the reference tables; `sblLoadReferenceOverrides()` swaps DB data into `Schema` when the tables exist, else keeps the file. Includes a one-click **seed from `_data.php`**. |
 | DB2 product table | ❌ **Not created** | SQL ready in `SBLPRODUCT.TABLE` (Phase 1) — waiting on you to run it. See §5.1. |
-| DB2 reference tables | ❌ **Not created** | SQL ready in `SBLREFERENCE.TABLE` (`SBLVALUES` / `SBLLOOKUP` / `SBLRULE`). **Optional** — the screen runs off `_data.php` until you create + seed them. See §5.2. |
+| DB2 reference tables | ✅ **Created** | `SBLVALUES` / `SBLLOOKUP` / `SBLRULE` — **one `.TABLE` source member each** (house rule: one object per member). Created 06/29. **Seeding pending** — the screen runs off `_data.php` until you click **Seed from spreadsheet**. See §5.2. |
 
 ### Issues found early — all resolved
 1. ✅ **Filename mismatch — FIXED.** Everything now uses the **`SellbriteBulkLoader_*`** base name;
@@ -112,7 +112,7 @@ The `.ods` has **3 sheets**, which map onto the three sections of `SellbriteBulk
 | **0** | Orient: read repo, `.ods`, reference screens; summarize | ✅ **Done** (this doc + meeting notes) |
 | **1** | Data model + SQL `CREATE TABLE` (DB2 for i) | ✅ **Script delivered** → ⏸ **waiting on you to create the table** |
 | **2** | M-Power files: data from `.ods`, build `_model.php` (DB2), wire up, fix naming | ✅ **Code complete** — data ✅, naming ✅, model ✅; just needs the table created to run live |
-| **3** | Website assembly (menu-integrated, §9) + **Manage Lists / Categories** admin screen | 🚧 **In progress** — admin screen + reference tables (`SBLREFERENCE.TABLE`) built; menu wiring pending |
+| **3** | Website assembly (menu-integrated, §9) + **Manage Lists / Categories** admin screen | 🚧 **In progress** — admin screen built; reference tables (`SBLVALUES`/`SBLLOOKUP`/`SBLRULE`) created; seeding + menu wiring pending |
 | **4** | Meeting notes → markdown + readable plan | ✅ **Done** (this doc + `MEETING-NOTES.md`) |
 | **5** | Agentic automation: pick 1 of 3 options, then scaffold | ⛔ Blocked on your pick |
 
@@ -175,22 +175,26 @@ finished and waiting — the model points at `LSCDEVLIBP.SBLPRODUCT`.
 
 ### 5.2 Reference tables — make Valid Values / VLOOKUP / rules editable from the web (NEW)
 
-**File:** [`../SBLREFERENCE.TABLE`](../SBLREFERENCE.TABLE) — creates three small tables in `LSCDEVLIBP`:
-- **`SBLVALUES`** — one row per dropdown option (`list_name`, `option_value`, `sort_order`, `active`). Feeds `Schema::values()`.
-- **`SBLLOOKUP`** — the VLOOKUP defaults (`lookup_name`, `lookup_key`, `attr_name`, `attr_value`). The nested maps (`category_copy` / `category_meta`) use `attr_name`; the scalar `grade_circ` map uses a blank `attr_name`. Feeds `Schema::lookups()`.
-- **`SBLRULE`** — the per-coin "turns red" rules (`field_name`, `rule_type` = error/action, `message`, `condition_json`). Feeds `Schema::rules()` → the Validator.
+**Files:** one `.TABLE` source member per table (house rule: one object per member, like `SBLPRODUCT.TABLE`):
+- [`../SBLVALUES.TABLE`](../SBLVALUES.TABLE) — **`SBLVALUES`**, one row per dropdown option (`list_name`, `option_value`, `sort_order`, `active`). Feeds `Schema::values()`.
+- [`../SBLLOOKUP.TABLE`](../SBLLOOKUP.TABLE) — **`SBLLOOKUP`**, the VLOOKUP defaults (`lookup_name`, `lookup_key`, `attr_name`, `attr_value`). The nested maps (`category_copy` / `category_meta`) use `attr_name`; the scalar `grade_circ` map uses a blank `attr_name`. Feeds `Schema::lookups()`.
+- [`../SBLRULE.TABLE`](../SBLRULE.TABLE) — **`SBLRULE`**, the per-coin "turns red" rules (`field_name`, `rule_type` = error/action, `message`, `condition_json`). Feeds `Schema::rules()` → the Validator.
 
 **Why:** Des updates dropdowns almost daily and adds coins a few times a month. With these tables that becomes INSERTs from the new **Manage Lists / Categories** screen — no `.ods`, no file edit, no deploy. **An entirely new coin = a new `category_name` option + its `category_copy`/`category_meta` rows + (if it needs special required fields) a few `SBLRULE` rows.**
 
-**Run it (same mechanism as the product table):**
+**Run them (one member each, same mechanism as the product table):**
 ```
-RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLREFERENCE) COMMIT(*NONE)
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLVALUES) COMMIT(*NONE)
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLLOOKUP) COMMIT(*NONE)
+RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLRULE)   COMMIT(*NONE)
 ```
-or paste the whole file into ACS **Run SQL Scripts** → **Run All**.
+or paste each into ACS **Run SQL Scripts** → **Run**.  (Created 06/29; the `SQL7905 … not journaled`
+severity-20 message is benign — the dev library isn't journaled and we run `COMMIT(*NONE)`, so no
+commitment control is needed.)
 
-**Then seed once:** open the screen → **Manage Lists** → **Seed from spreadsheet**. This copies everything already in `_data.php` into the tables (it skips any table that already has rows, so it is safe to click again). Until you seed, the screen safely falls back to `_data.php` — nothing breaks if the tables don't exist yet.
+**Then seed once:** open the screen → **Manage Lists** → **Seed from spreadsheet**. This copies everything already in `_data.php` into the tables (it skips any table that already has rows, so it is safe to click again). Until you seed, the screen safely falls back to `_data.php` — nothing breaks if the tables are empty.
 
-➡️ **Action for you (optional, when ready):** run `SBLREFERENCE.TABLE`, then click **Seed from spreadsheet** once.
+➡️ **Action for you:** the tables exist — just click **Seed from spreadsheet** once to populate them.
 
 ---
 

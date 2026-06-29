@@ -21,7 +21,8 @@
  * Reuses the connection / error / select helpers from the product model.
  * Every read degrades to [] when the tables do not exist yet (checked once
  * via the catalog), so the screen keeps running off the static data file
- * until you create SBLREFERENCE.TABLE and seed it ("Seed from spreadsheet").
+ * until you create the SBLVALUES / SBLLOOKUP / SBLRULE tables (one .TABLE
+ * source member each) and seed them ("Seed from spreadsheet").
  */
 
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // sbl_conn / sbl_db_err / sbl_select

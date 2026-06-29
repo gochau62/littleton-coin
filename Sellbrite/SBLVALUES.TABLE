@@ -1,0 +1,54 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - SBLVALUES.TABLE                               */
+/*                                                                   */
+/* Program Narrative - Create the Sellbrite Bulk Loader dropdown     */
+/*                     option table (the spreadsheet's "Valid        */
+/*                     Values").  One row = one option.  list_name   */
+/*                     matches a key in _data.php 'values'           */
+/*                     (mint_mark, grade, category_name, ...); adding */
+/*                     an option = one INSERT and it appears in the  */
+/*                     matching dropdown on the screen.              */
+/*                                                                   */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 06/29/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(SBLVALUES) COMMIT(*NONE)               */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |  Author   -                                                    |*/
+/* |   Date    -                                                    |*/
+/* |   Purpose -                                                    |*/
+/* ------------------------------------------------------------------*/
+/*-------------------------------------------------------------------*/
+
+CREATE TABLE LSCDEVLIBP.SBLVALUES (
+   id           INTEGER GENERATED ALWAYS AS IDENTITY
+                (START WITH 1, INCREMENT BY 1) NOT NULL,
+   list_name    FOR COLUMN LISTNAME  VARCHAR(40)  CCSID 1208  NOT NULL,
+   option_value FOR COLUMN OPTVAL     VARCHAR(150) CCSID 1208  NOT NULL,
+   sort_order   FOR COLUMN SORTORD    SMALLINT     NOT NULL DEFAULT 0,
+   active       CHAR(1) CCSID 1208                 NOT NULL DEFAULT 'Y',
+   created_at FOR COLUMN CREATTS  TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+   updated_at FOR COLUMN UPDATETS TIMESTAMP NOT NULL
+              GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
+   CONSTRAINT SBLVALUES_PK PRIMARY KEY (id),
+   CONSTRAINT SBLVALUES_UK UNIQUE (list_name, option_value)
+)
+RCDFMT SBLVALUESR;
+
+LABEL ON LSCDEVLIBP.SBLVALUES (
+   id           TEXT IS 'Record ID',
+   list_name    TEXT IS 'Dropdown List Name',
+   option_value TEXT IS 'Option Value',
+   sort_order   TEXT IS 'Sort Order',
+   active       TEXT IS 'Active Y/N',
+   created_at   TEXT IS 'Created Timestamp',
+   updated_at   TEXT IS 'Updated Timestamp');
+
+LABEL ON TABLE LSCDEVLIBP.SBLVALUES IS 'Sellbrite Bulk Loader Dropdown Values';
