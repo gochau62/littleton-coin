@@ -45,7 +45,12 @@ final class Schema
     }
     public static function values(): array
     {
-        if (self::$values === null) { self::$values = self::data()['values'] ?? []; }
+        if (self::$values === null) {
+            // Prefer the live DB2 tables (maintainable from the web page); fall
+            // back to the bundled data file when there is no DB (dev/offline).
+            $db = function_exists('sblLoadValues') ? sblLoadValues() : [];
+            self::$values = $db ?: (self::data()['values'] ?? []);
+        }
         return self::$values;
     }
     public static function optionsFor(array $col): array
@@ -55,7 +60,10 @@ final class Schema
     }
     public static function lookups(): array
     {
-        if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
+        if (self::$lookups === null) {
+            $db = function_exists('sblLoadLookups') ? sblLoadLookups() : [];
+            self::$lookups = $db ?: (self::data()['lookups'] ?? []);
+        }
         return self::$lookups;
     }
     public static function groups(): array

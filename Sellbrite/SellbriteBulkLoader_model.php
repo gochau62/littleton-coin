@@ -37,6 +37,12 @@ if (!defined('SBL_TABLE')) {
     // SQL naming (schema.table). Matches how the other LCC tools reference DB2 objects.
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
+// Reference / lookup tables that back the dropdowns and the spreadsheet VLOOKUPs.
+// These let the screen's option lists and category defaults be maintained from a
+// web page instead of being hard-coded in SellbriteBulkLoader_data.php.
+if (!defined('SBL_VALUE_TABLE')) { define('SBL_VALUE_TABLE', 'LSCDEVLIBP.SBLVALUET'); }
+if (!defined('SBL_CAT_TABLE'))   { define('SBL_CAT_TABLE',   'LSCDEVLIBP.SBLCATDFT'); }
+if (!defined('SBL_GRADE_TABLE')) { define('SBL_GRADE_TABLE', 'LSCDEVLIBP.SBLGRADET'); }
 
 /** Open (once) and reuse a DB2 connection from the session credentials. */
 function sbl_conn()
@@ -203,4 +209,220 @@ function sblDelete($id)
     if (!$stmt) { return (bool) sbl_db_err('delete prepare'); }
     if (!db2_execute($stmt, [$id])) { return (bool) sbl_db_err('delete execute'); }
     return true;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reference data (dropdown lists + VLOOKUP tables)                   */
+/*                                                                     */
+/*  These functions back the maintenance screen and feed Schema. Two   */
+/*  kinds of call:                                                     */
+/*    - sblLoad*()  : whole-table loaders shaped exactly like the old  */
+/*                    SellbriteBulkLoader_data.php arrays, so Schema    */
+/*                    can read from DB2 with the PHP file as fallback.  */
+/*    - CRUD        : add / update / delete used by the web page.       */
+/* ------------------------------------------------------------------ */
+
+/** Run a prepared write (INSERT/UPDATE/DELETE); returns true on success. */
+function sbl_exec($sql, array $params, $where)
+{
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    $stmt = db2_prepare($conn, $sql);
+    if (!$stmt) { return (bool) sbl_db_err($where . ' prepare'); }
+    if (!db2_execute($stmt, $params)) { return (bool) sbl_db_err($where . ' execute'); }
+    return true;
+}
+
+/* ---- Dropdown value lists (SBLVALUET) ---------------------------- */
+
+/**
+ * Load every active dropdown option, grouped by list, in sort order.
+ * Returns [ list_name => [ value_text, ... ], ... ] — the shape Schema
+ * expects for 'values'.  Returns [] when there is no DB (dev/offline).
+ */
+function sblLoadValues()
+{
+    $rows = sbl_select(
+        'SELECT list_name, value_text FROM ' . SBL_VALUE_TABLE
+      . " WHERE active = 'Y' ORDER BY list_name, sort_seq, value_text"
+    );
+    $out = [];
+    foreach ($rows as $r) { $out[$r['list_name']][] = $r['value_text']; }
+    return $out;
+}
+
+/** Distinct list names (for the maintenance page's list picker). */
+function sblValueLists()
+{
+    $rows = sbl_select('SELECT DISTINCT list_name FROM ' . SBL_VALUE_TABLE . ' ORDER BY list_name');
+    return array_column($rows, 'list_name');
+}
+
+/** All option rows for one list (full detail for the editing grid). */
+function sblValueRows($list)
+{
+    return sbl_select(
+        'SELECT id, list_name, value_text, sort_seq, is_header, active FROM ' . SBL_VALUE_TABLE
+      . ' WHERE list_name = ? ORDER BY sort_seq, value_text',
+        [(string) $list]
+    );
+}
+
+/** Add one option to a list; returns the new id (or false). */
+function sblValueAdd($list, $value, $isHeader = 'N')
+{
+    $list = trim((string) $list); $value = trim((string) $value);
+    if ($list === '' || $value === '') { return false; }
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    // Append to the end of the list (max sort_seq + 10).
+    $seqRows = sbl_select('SELECT COALESCE(MAX(sort_seq), 0) + 10 AS nextseq FROM '
+                        . SBL_VALUE_TABLE . ' WHERE list_name = ?', [$list]);
+    $seq = (int) ($seqRows[0]['nextseq'] ?? 10);
+    $ok = sbl_exec(
+        'INSERT INTO ' . SBL_VALUE_TABLE
+      . ' (list_name, value_text, sort_seq, is_header) VALUES (?, ?, ?, ?)',
+        [$list, $value, $seq, ($isHeader === 'Y' ? 'Y' : 'N')], 'value add'
+    );
+    return $ok ? (int) db2_last_insert_id($conn) : false;
+}
+
+/** Update one option row (text / sort / header / active). */
+function sblValueUpdate($id, array $fields)
+{
+    $id = (int) $id;
+    if ($id <= 0) { return false; }
+    return sbl_exec(
+        'UPDATE ' . SBL_VALUE_TABLE
+      . ' SET value_text = ?, sort_seq = ?, is_header = ?, active = ? WHERE id = ?',
+        [
+            trim((string) ($fields['value_text'] ?? '')),
+            (int) ($fields['sort_seq'] ?? 0),
+            (($fields['is_header'] ?? 'N') === 'Y' ? 'Y' : 'N'),
+            (($fields['active'] ?? 'Y') === 'N' ? 'N' : 'Y'),
+            $id,
+        ], 'value update'
+    );
+}
+
+/** Delete one option row by id. */
+function sblValueDelete($id)
+{
+    $id = (int) $id;
+    if ($id <= 0) { return false; }
+    return sbl_exec('DELETE FROM ' . SBL_VALUE_TABLE . ' WHERE id = ?', [$id], 'value delete');
+}
+
+/* ---- Category defaults + grade map (SBLCATDFT / SBLGRADET) -------- */
+
+/**
+ * Load the VLOOKUP tables in the shape Schema expects for 'lookups':
+ *   [ 'category_copy' => [cat => [...]], 'category_meta' => [cat => [...]],
+ *     'grade_circ'    => [grade => circ_status] ]
+ * SBLCATDFT is split back into the copy/meta halves the Computer reads.
+ * Returns [] when there is no DB.
+ */
+function sblLoadLookups()
+{
+    $conn = sbl_conn();
+    if (!$conn) { return []; }
+    $copy = []; $meta = []; $grade = [];
+    foreach (sblCatRows() as $r) {
+        $cat = $r['category_name'];
+        $c = [];
+        foreach (['coin_type','denomination','composition','fineness','country','brand',
+                  'copy_description','collector_note'] as $k) {
+            if (($r[$k] ?? null) !== null && $r[$k] !== '') { $c[$k] = $r[$k]; }
+        }
+        $copy[$cat] = $c;
+        $m = [];
+        if (($r['search_terms'] ?? null) !== null && $r['search_terms'] !== '') { $m['search_terms'] = $r['search_terms']; }
+        if (($r['weight_lb'] ?? null) !== null && $r['weight_lb'] !== '') { $m['weight_lb'] = $r['weight_lb']; }
+        $meta[$cat] = $m;
+    }
+    foreach (sblGradeRows() as $r) { $grade[$r['grade']] = $r['circ_status'] ?? ''; }
+    return ['category_copy' => $copy, 'category_meta' => $meta, 'grade_circ' => $grade];
+}
+
+/** All category-default rows (for the maintenance grid). */
+function sblCatRows()
+{
+    return sbl_select('SELECT * FROM ' . SBL_CAT_TABLE . ' ORDER BY category_name');
+}
+
+/** One category-default row by id, or false. */
+function sblCatFind($id)
+{
+    $id = (int) $id;
+    if ($id <= 0) { return false; }
+    $rows = sbl_select('SELECT * FROM ' . SBL_CAT_TABLE . ' WHERE id = ?', [$id]);
+    return $rows[0] ?? false;
+}
+
+/** Insert or update a category-default row (by id). Returns id (or false). */
+function sblCatSave(array $row)
+{
+    $cols = ['category_name','coin_type','denomination','composition','fineness','country',
+             'brand','search_terms','weight_lb','copy_description','collector_note'];
+    $vals = [];
+    foreach ($cols as $c) {
+        $v = isset($row[$c]) ? trim((string) $row[$c]) : '';
+        if ($c === 'weight_lb') { $vals[] = ($v === '' || !is_numeric($v)) ? null : $v; }
+        elseif ($c === 'category_name') { $vals[] = $v; }       // NOT NULL
+        else { $vals[] = $v === '' ? null : $v; }
+    }
+    $id = (int) ($row['id'] ?? 0);
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    if ($id > 0) {
+        $set = implode(', ', array_map(static fn($c) => $c . ' = ?', $cols));
+        $vals[] = $id;
+        return sbl_exec('UPDATE ' . SBL_CAT_TABLE . ' SET ' . $set . ' WHERE id = ?', $vals, 'cat update')
+             ? $id : false;
+    }
+    $ph = implode(', ', array_fill(0, count($cols), '?'));
+    $ok = sbl_exec('INSERT INTO ' . SBL_CAT_TABLE . ' (' . implode(', ', $cols) . ') VALUES (' . $ph . ')',
+                   $vals, 'cat insert');
+    return $ok ? (int) db2_last_insert_id($conn) : false;
+}
+
+/** Delete a category-default row by id. */
+function sblCatDelete($id)
+{
+    $id = (int) $id;
+    if ($id <= 0) { return false; }
+    return sbl_exec('DELETE FROM ' . SBL_CAT_TABLE . ' WHERE id = ?', [$id], 'cat delete');
+}
+
+/** All grade rows (for the maintenance grid). */
+function sblGradeRows()
+{
+    return sbl_select('SELECT id, grade, circ_status FROM ' . SBL_GRADE_TABLE . ' ORDER BY grade');
+}
+
+/** Insert or update a grade row (by id). Returns id (or false). */
+function sblGradeSave(array $row)
+{
+    $grade = trim((string) ($row['grade'] ?? ''));
+    if ($grade === '') { return false; }
+    $circ  = trim((string) ($row['circ_status'] ?? ''));
+    $circ  = $circ === '' ? null : $circ;
+    $id    = (int) ($row['id'] ?? 0);
+    $conn  = sbl_conn();
+    if (!$conn) { return false; }
+    if ($id > 0) {
+        return sbl_exec('UPDATE ' . SBL_GRADE_TABLE . ' SET grade = ?, circ_status = ? WHERE id = ?',
+                        [$grade, $circ, $id], 'grade update') ? $id : false;
+    }
+    $ok = sbl_exec('INSERT INTO ' . SBL_GRADE_TABLE . ' (grade, circ_status) VALUES (?, ?)',
+                   [$grade, $circ], 'grade insert');
+    return $ok ? (int) db2_last_insert_id($conn) : false;
+}
+
+/** Delete a grade row by id. */
+function sblGradeDelete($id)
+{
+    $id = (int) $id;
+    if ($id <= 0) { return false; }
+    return sbl_exec('DELETE FROM ' . SBL_GRADE_TABLE . ' WHERE id = ?', [$id], 'grade delete');
 }
