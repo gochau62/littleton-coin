@@ -29,6 +29,7 @@ return [
         ],
         [
             'name' => 'category_name',
+            'reddens' => true,
             'label' => 'Sellbrite Category Name',
             'required' => false,
             'auto' => false,
@@ -36,6 +37,7 @@ return [
         ],
         [
             'name' => 'year',
+            'reddens' => true,
             'label' => 'Year',
             'required' => false,
             'auto' => false,
@@ -56,6 +58,7 @@ return [
         ],
         [
             'name' => 'coin_type',
+            'reddens' => true,
             'label' => 'Coin Type',
             'required' => false,
             'auto' => true,
@@ -63,6 +66,7 @@ return [
         ],
         [
             'name' => 'denomination',
+            'reddens' => true,
             'label' => 'Denomination',
             'required' => false,
             'auto' => true,
@@ -84,6 +88,7 @@ return [
         ],
         [
             'name' => 'grade',
+            'reddens' => true,
             'label' => 'Grade',
             'required' => false,
             'auto' => false,
@@ -119,6 +124,7 @@ return [
         ],
         [
             'name' => 'certification',
+            'reddens' => true,
             'label' => 'Certification',
             'required' => false,
             'auto' => false,
@@ -132,6 +138,7 @@ return [
         ],
         [
             'name' => 'circulated_or_uncirculated',
+            'reddens' => true,
             'label' => 'Circulated or Uncirculated',
             'required' => false,
             'auto' => true,
@@ -139,6 +146,7 @@ return [
         ],
         [
             'name' => 'strike_type',
+            'reddens' => true,
             'label' => 'Strike Type',
             'required' => false,
             'auto' => false,
@@ -146,6 +154,7 @@ return [
         ],
         [
             'name' => 'style',
+            'reddens' => true,
             'label' => 'Style',
             'required' => false,
             'auto' => false,
@@ -153,6 +162,7 @@ return [
         ],
         [
             'name' => 'composition',
+            'reddens' => true,
             'label' => 'Composition',
             'required' => false,
             'auto' => true,
@@ -160,6 +170,7 @@ return [
         ],
         [
             'name' => 'fineness',
+            'reddens' => true,
             'label' => 'Fineness',
             'required' => false,
             'auto' => true,
@@ -167,6 +178,7 @@ return [
         ],
         [
             'name' => 'precious_metal_content',
+            'reddens' => true,
             'label' => 'Precious Metal Content',
             'required' => false,
             'auto' => false,
@@ -174,6 +186,7 @@ return [
         ],
         [
             'name' => 'single_coin_or_set',
+            'reddens' => true,
             'label' => 'Single Coin or Set',
             'required' => false,
             'auto' => false,
@@ -187,6 +200,7 @@ return [
         ],
         [
             'name' => 'country_of_manufacture',
+            'reddens' => true,
             'label' => 'Country of Manufacture',
             'required' => false,
             'auto' => true,
@@ -194,6 +208,7 @@ return [
         ],
         [
             'name' => 'brand',
+            'reddens' => true,
             'label' => 'Brand Name',
             'required' => false,
             'auto' => true,
@@ -201,6 +216,7 @@ return [
         ],
         [
             'name' => 'modified_item',
+            'reddens' => true,
             'label' => 'Modified Item',
             'required' => false,
             'auto' => false,
@@ -221,24 +237,28 @@ return [
         ],
         [
             'name' => 'price',
+            'reddens' => true,
             'label' => 'Price',
             'required' => false,
             'auto' => false,
         ],
         [
             'name' => 'cost',
+            'reddens' => true,
             'label' => 'Cost',
             'required' => false,
             'auto' => false,
         ],
         [
             'name' => 'quantity',
+            'reddens' => true,
             'label' => 'Quantity',
             'required' => true,
             'auto' => false,
         ],
         [
             'name' => 'exact_image',
+            'reddens' => true,
             'label' => 'Exact Image',
             'required' => false,
             'auto' => false,

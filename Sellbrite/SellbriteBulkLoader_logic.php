@@ -200,17 +200,6 @@ final class Computer
  */
 final class Validator
 {
-    /** Core fields the workbook reddens the moment a SKU is present and they are blank. */
-    private static array $requiredWithSku = [
-        'category_name','year','coin_type','denomination','grade','certification',
-        'circulated_or_uncirculated','strike_type','style','composition','fineness',
-        'precious_metal_content','single_coin_or_set','country_of_manufacture','brand',
-        'exact_image','name','description','red_book_description',
-        'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
-        'price','cost','quantity','modified_item',
-        'product_image_1','product_image_2','product_image_3','product_image_4',
-    ];
-
     /** Categories that require a Title Suffix even when uncertified (workbook K-column rule). */
     private static array $titleSuffixCategories = [
         'Modern Silver/Clad Commemorative','Modern Gold Commemorative','Proof Set','Mint Set',
@@ -252,8 +241,14 @@ final class Validator
         $hasSku = $g('sku') !== '';
 
         // --- 1) required once a SKU exists (advisory red) ------------------
+        // Which fields redden when blank is data: the 'reddens' flag on each
+        // field definition (set from the .ods, editable as data — no hardcoded
+        // list here).  Auto-filled content/image fields are NOT flagged, since
+        // the spreadsheet fills them by formula so they never go blank.
         if ($hasSku) {
-            foreach (self::$requiredWithSku as $f) {
+            foreach (Schema::columns() as $col) {
+                if (empty($col['reddens'])) { continue; }
+                $f = $col['name'];
                 if ($g($f) !== '' || ($statuses[$f] ?? '') !== '') { continue; }
                 if ($f === 'coin_type' && $g('category_name') === 'Two Cent') { continue; } // no coin type
                 $mark($f, 'action', 'Required once a SKU is entered');
