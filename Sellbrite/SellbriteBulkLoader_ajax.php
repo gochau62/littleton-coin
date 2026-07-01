@@ -75,6 +75,16 @@ switch ($action) {
         echo json_encode(['returnClass' => 'success', 'id' => $id]);
         break;
 
+    case 'gsSearch':
+        // Find coins in the GreySheet catalog by free text (for the picker).
+        $s = gsSearch((string) ($_POST['q'] ?? ''));
+        echo json_encode([
+            'returnClass' => $s['ok'] ? 'success' : 'error',
+            'matches'     => $s['matches'],
+            'message'     => $s['error'],
+        ]);
+        break;
+
     case 'gsImport':
         // GreySheet lookup -> Gemini fills the fields. found=false => offer to generate.
         $imp = gsImport($_POST);

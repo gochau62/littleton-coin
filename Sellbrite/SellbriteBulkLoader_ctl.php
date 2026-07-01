@@ -105,9 +105,34 @@
         });
         sblRecompute();
     }
-    function sblGsImport(){
-        var node = $('#gs-node').val().trim();
-        if (!node){ $('#gs-node').focus(); return; }
+    /* search the catalog, then let the user pick a coin */
+    function sblGsSearch(){
+        var q = $('#gs-search').val().trim();
+        if (!q){ $('#gs-search').focus(); return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsSearch', q:q }, function(res){
+            var sel = $('#gs-results').empty();
+            var matches = (res.matches || []);
+            if (res.returnClass !== 'success' || !matches.length){
+                sel.hide();
+                swal({ title:"No match in GreySheet", text:'Generate this coin with AI instead?',
+                       icon:'info', buttons:['Cancel','Generate with AI'] })
+                .then(function(go){ if (go) sblGsGenerate(q); });
+                return;
+            }
+            sel.append('<option value="">'+matches.length+' match(es) — pick one…</option>');
+            $.each(matches, function(i, m){ sel.append('<option value="'+rdEscAttr(m.id)+'">'+rdEsc(m.label)+'</option>'); });
+            sel.show();
+        }, 'json');
+    }
+    function rdEsc(s){ return $('<div>').text(s == null ? '' : s).html(); }
+    function rdEscAttr(s){ return (s == null ? '' : String(s)).replace(/"/g,'&quot;'); }
+    function sblGsPick(){
+        var id = $('#gs-results').val();
+        if (id) sblGsImport(id);
+    }
+    function sblGsImport(node){
+        node = (node || '').toString().trim();
+        if (!node){ return; }
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', node_id:node }, function(res){
             if (res.returnClass === 'notfound'){
                 swal({ title:"GreySheet doesn't have this coin",

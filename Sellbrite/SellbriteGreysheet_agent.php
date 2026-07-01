@@ -141,6 +141,45 @@ function gsAiGenerate(string $hint, array &$meta = []): array
     return sbl_clean_ai_row(geminiJson($system, $user, $meta));
 }
 
+/** First scalar value under any of $keys (case-insensitive) directly on an assoc array. */
+function gs_pick(array $assoc, array $keys)
+{
+    foreach ($keys as $want) {
+        foreach ($assoc as $k => $v) {
+            if (is_string($k) && strtolower($k) === strtolower($want) && is_scalar($v) && $v !== '') { return $v; }
+        }
+    }
+    return null;
+}
+
+/** Recursively collect {id,label} pairs from a search response (tolerant of shape). */
+function gs_collect_matches($data, array &$out): void
+{
+    if (!is_array($data)) { return; }
+    $id    = gs_pick($data, ['id', 'nodeId', 'collectibleId', 'catalogId']);
+    $label = gs_pick($data, ['name', 'title', 'displayName', 'fullName', 'description']);
+    if ($id !== null && $label !== null) { $out[(string) $id] = (string) $label; }
+    foreach ($data as $v) { if (is_array($v)) { gs_collect_matches($v, $out); } }
+}
+
+/**
+ * Search the GreySheet catalog for a coin by free text.
+ * Returns ['ok','matches'=>[['id','label'],...],'error'].  The endpoint/param
+ * are configurable (GS_SEARCH_PATH / GS_SEARCH_PARAM) - confirm them in Swagger.
+ */
+function gsSearch(string $q): array
+{
+    $q = trim($q);
+    if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Enter something to search for.']; }
+    $res = gsResult(GS_SEARCH_PATH, [GS_SEARCH_PARAM => $q]);
+    if (!$res['ok']) { return ['ok' => false, 'matches' => [], 'error' => $res['error'] ?: ('HTTP ' . $res['status'])]; }
+    $pairs = [];
+    gs_collect_matches($res['data'], $pairs);
+    $matches = [];
+    foreach ($pairs as $id => $label) { $matches[] = ['id' => $id, 'label' => $label]; }
+    return ['ok' => true, 'matches' => array_slice($matches, 0, 50), 'error' => ''];
+}
+
 /** Deterministic GreySheet lookup. Returns ['found','data','error','status']. */
 function gsLookup(array $params): array
 {

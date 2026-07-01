@@ -162,8 +162,10 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
-            <input type="text" id="gs-node" class="sbl-search" style="width:150px" placeholder="GreySheet node id&hellip;">
-            <button type="button" class="btn btn-ghost" onclick="sblGsImport()" title="Pull this coin's data from GreySheet">Import from GreySheet</button>
+            <input type="search" id="gs-search" class="sbl-search" style="width:190px" placeholder="Find a coin (year, type, grade)&hellip;"
+                   onkeyup="if(event.key==='Enter'){sblGsSearch();}">
+            <button type="button" class="btn btn-ghost" onclick="sblGsSearch()" title="Search the GreySheet catalog">Find coin</button>
+            <select id="gs-results" style="display:none;min-width:220px;padding:8px;border-radius:6px;border:1px solid #b4b4b4" onchange="sblGsPick()"></select>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" onclick="sblSave()">Save SKU</button>
         </div>

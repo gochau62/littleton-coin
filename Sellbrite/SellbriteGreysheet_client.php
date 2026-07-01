@@ -38,6 +38,9 @@ if (!defined('GS_API_TOKEN')) { define('GS_API_TOKEN', ''); }        // paste te
 if (!defined('GS_API_KEY'))   { define('GS_API_KEY',   ''); }        // paste testing x-api-key
 if (!defined('GS_API_LEVEL')) { define('GS_API_LEVEL', 'basic'); }   // 'basic' or 'advanced'
 if (!defined('GS_TIMEOUT'))   { define('GS_TIMEOUT',   20); }        // seconds per request
+// Coin search: confirm the real route + query param name in your Swagger.
+if (!defined('GS_SEARCH_PATH'))  { define('GS_SEARCH_PATH',  'SearchRequest'); }
+if (!defined('GS_SEARCH_PARAM')) { define('GS_SEARCH_PARAM', 'query'); }
 
 if (!function_exists('gsConfig')) {
     function gsConfig()
