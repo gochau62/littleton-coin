@@ -78,12 +78,15 @@
     function sblSave(){
         var data = $('#sku-form').serialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
-            if (res.returnClass === 'success'){
-                swal({title:'Saved', text:'SKU saved and derived fields recomputed.', type:'success', timer:1500});
+            if (res && res.returnClass === 'success'){
+                // Clean save: flash a self-closing toast, then return to the list.
+                swal({title:'Saved', text:'SKU saved and derived fields recomputed.',
+                      type:'success', timer:1000, showConfirmButton:false});
+                setTimeout(function(){ window.location = '?'; }, 1000);
             } else {
+                // Saved but flagged: stay on the form so the highlighted fields can be fixed.
                 swal('Saved with warnings','The SKU was saved but still needs attention (see the highlighted fields).','warning');
             }
-            setTimeout(function(){ window.location = '?'; }, 800);
         }, 'json');
     }
     function sblDelete(id, sku){
