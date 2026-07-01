@@ -522,6 +522,126 @@ function gs_price_num($v): string
     return is_numeric($v) ? $v : '';
 }
 
+/* ------------------------------------------------------------------ */
+/*  Live tree navigation - find a coin's GsId without knowing the path */
+/*                                                                     */
+/*  No cache: walk the node tree from the US Coins root, letting the   */
+/*  coin's own attributes (category / year / mint / grade) choose each */
+/*  turn.  String-match when a folder is obvious, ask Gemini when it   */
+/*  is not (e.g. it knows a Morgan lives under "Dollars").  ~4-6 calls. */
+/* ------------------------------------------------------------------ */
+
+if (!defined('GS_ROOT_NODE')) { define('GS_ROOT_NODE', 1); }   // "U.S. Coins"
+
+/** Normalize a name for loose matching. */
+function gs_norm($s)
+{
+    return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
+}
+
+/** A node's children as [ ['id','name','nodes','coins'], ... ]. */
+function gsChildren($nodeId): array
+{
+    $res = gsResult('GetNodeChildrenRequest', ['NodeId' => (int) $nodeId]);
+    if (!$res['ok'] || !isset($res['data']['Data'])) { return []; }
+    $out = [];
+    foreach ($res['data']['Data'] as $c) {
+        if (!is_array($c)) { continue; }
+        $out[] = ['id' => (int) ($c['Id'] ?? 0), 'name' => (string) ($c['Name'] ?? ''),
+                  'nodes' => (int) ($c['NodeChildrenCountLive'] ?? 0),
+                  'coins' => (int) ($c['CollectibleChildrenCountLive'] ?? 0)];
+    }
+    return $out;
+}
+
+/** Choose the child folder that leads toward the target (string-match, then Gemini). */
+function gsNavPick(array $children, string $target, string $context)
+{
+    $t = gs_norm($target);
+    $hits = [];
+    foreach ($children as $c) {
+        $n = gs_norm($c['name']);
+        if ($n !== '' && (strpos($t, $n) !== false || strpos($n, $t) !== false)) { $hits[] = $c; }
+    }
+    if (count($hits) === 1) { return $hits[0]; }                    // unambiguous
+
+    if (geminiConfigured()) {
+        $list = [];
+        foreach ($children as $c) { $list[] = $c['id'] . ' = ' . $c['name']; }
+        $sys = 'You navigate a coin catalog tree. Given a target coin and a list of catalog folders '
+             . '(each "id = name"), pick the ONE folder that leads to that coin. Consider proof vs '
+             . 'business strike from the grade. Return ONLY JSON {"id": <id>}.';
+        $out = geminiJson($sys, "TARGET COIN: $context\n\nFOLDERS:\n" . implode("\n", $list), $m);
+        $id  = (int) ($out['id'] ?? 0);
+        foreach ($children as $c) { if ($c['id'] === $id) { return $c; } }
+    }
+    return $hits[0] ?? null;                                        // best string hit, or give up
+}
+
+/** At a leaf node, pick the exact coin's GsId by year / mint / grade. */
+function gsPickCoinFromLeaf(int $nodeId, array $coin): int
+{
+    $res = gsResult('GetCollectibleByNodeRequest', ['NodeId' => $nodeId, 'apiLevel' => GS_API_LEVEL]);
+    if (!$res['ok'] || !isset($res['data']['Data'])) { return 0; }
+    $coins = array_values(array_filter($res['data']['Data'], 'is_array'));
+    $year  = trim((string) ($coin['year'] ?? ''));
+    $mm    = trim((string) ($coin['mint_mark'] ?? ''));
+
+    // Narrow to the right date first (leaf lists can be hundreds of coins).
+    $cands = [];
+    foreach ($coins as $c) {
+        if ($year !== '' && (string) ($c['CoinDate'] ?? '') !== $year && strpos((string) ($c['Name'] ?? ''), $year) === false) { continue; }
+        $cands[] = $c;
+    }
+    if (!$cands) { $cands = $coins; }
+    if (count($cands) === 1) { return (int) ($cands[0]['Gsid'] ?? 0); }
+
+    // Prefer a matching mint mark when we have one.
+    if ($mm !== '' && strcasecmp($mm, 'No Mint Mark') !== 0) {
+        $mmHits = array_values(array_filter($cands, static fn($c) => strcasecmp((string) ($c['MintMark'] ?? ''), $mm) === 0));
+        if ($mmHits) { $cands = $mmHits; }
+    }
+    if (count($cands) === 1) { return (int) ($cands[0]['Gsid'] ?? 0); }
+
+    // Still ambiguous (grade colour / variety): let Gemini pick, else take the first.
+    if (geminiConfigured()) {
+        $list = []; foreach ($cands as $c) { $list[] = (int) ($c['Gsid'] ?? 0) . ' = ' . (string) ($c['Name'] ?? ''); }
+        $desc = trim(implode(' ', array_filter([$coin['year'] ?? '', $coin['mint_mark'] ?? '',
+                    $coin['category_name'] ?? '', $coin['grade'] ?? '', $coin['strike_type'] ?? ''])));
+        $sys = 'Pick the ONE catalog coin that best matches the target (match grade colour BN/RB/RD, '
+             . 'proof/business, and variety). Return ONLY JSON {"id": <GsId>}.';
+        $out = geminiJson($sys, "TARGET: $desc\n\nCOINS:\n" . implode("\n", $list), $m);
+        $id  = (int) ($out['id'] ?? 0);
+        foreach ($cands as $c) { if ((int) ($c['Gsid'] ?? 0) === $id) { return $id; } }
+    }
+    return (int) ($cands[0]['Gsid'] ?? 0);
+}
+
+/**
+ * Resolve a coin (from the form's category / year / mint / grade) to a GreySheet
+ * GsId by walking the tree live.  Returns 0 if it cannot be found.
+ */
+function gsResolveGsId(array $coin, array &$trace = []): int
+{
+    $category = trim((string) ($coin['category_name'] ?? ''));
+    $desc = trim(implode(' ', array_filter([$coin['year'] ?? '', $coin['mint_mark'] ?? '', $category,
+                $coin['denomination'] ?? '', $coin['grade'] ?? '', $coin['strike_type'] ?? ''])));
+    if ($category === '' && $desc === '') { return 0; }
+    $target = $category !== '' ? $category : $desc;
+
+    $nodeId = GS_ROOT_NODE;
+    for ($depth = 0; $depth < 8; $depth++) {
+        $children = gsChildren($nodeId);
+        if (!$children) { return 0; }
+        $pick = gsNavPick($children, $target, $desc);
+        if (!$pick) { return 0; }
+        $trace[] = $pick['id'] . ':' . $pick['name'];
+        if ($pick['coins'] > 0) { return gsPickCoinFromLeaf($pick['id'], $coin); }   // leaf reached
+        $nodeId = $pick['id'];
+    }
+    return 0;
+}
+
 /**
  * Import a coin the user picked (by GreySheet id): fetch its full detail +
  * pricing with the real endpoints, map, then Gemini fills the rest.
@@ -534,16 +654,16 @@ function gsImport(array $params): array
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
              'valid' => false, 'source' => null, 'error' => '', 'via' => ''];
 
+    // Either the caller already knows the GsId, or we navigate the tree to find it.
     $gsId = (int) ($params['gs_id'] ?? 0);
-    if ($gsId <= 0) {                          // no id yet -> try the (cache-backed) search
-        $look = gsLookup($params);
-        if ($look['error'] !== '') { return array_merge($base, ['error' => $look['error']]); }
-        if (!$look['found'])       { return array_merge($base, ['ok' => true]); }   // offer generate
-        $coin = gs_data_first($look['data']);
-    } else {
-        $coin = gsCollectible($gsId);
-        if (!$coin) { return array_merge($base, ['ok' => true]); }                  // not found -> generate
+    if ($gsId <= 0) {
+        $trace = [];
+        $gsId  = gsResolveGsId($params, $trace);
+        if ($gsId <= 0) { return array_merge($base, ['ok' => true]); }   // not found -> offer to generate
+        gsLog('resolved ' . ($params['category_name'] ?? '') . ' -> GsId ' . $gsId . ' via ' . implode(' > ', $trace));
     }
+    $coin = gsCollectible($gsId);
+    if (!$coin) { return array_merge($base, ['ok' => true]); }
 
     // Live pricing for this coin (CpgVal -> retail suggestion, GreyVal -> cost).
     if (($gsId > 0) || isset($coin['Gsid'])) {

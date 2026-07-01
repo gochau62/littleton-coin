@@ -111,9 +111,10 @@
                  $('#f_grade').val() ].filter(function(x){ return x && x.trim(); }).join(' ').trim();
     }
     function sblGsImport(){
+        if (!$('#f_category_name').val()){ swal('Pick a coin first', 'Choose a Category (and year/mint) so we know what to look up.', 'info'); return; }
         var q = sblCoinQuery();
-        if (!q){ swal('Pick a coin first', 'Choose a Category (and year/mint) so we know what to look up.', 'info'); return; }
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', q:q }, function(res){
+        // Send the whole form so the resolver has category / year / mint / grade to navigate with.
+        $.post('SellbriteBulkLoader_ajax.php', $('#sku-form').serialize() + '&action=gsImport', function(res){
             if (res.returnClass === 'notfound'){
                 swal({ title:"GreySheet doesn't have this coin",
                        text:'Would you like the AI to generate this listing?',
