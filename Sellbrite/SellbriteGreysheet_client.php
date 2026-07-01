@@ -18,24 +18,37 @@
  *    request timing, and logs them so we can watch consumption while testing.
  *
  *  Public surface:
- *     gsConfig()                       -> array (or throws if not configured)
+ *     gsConfig()                       -> array of settings
  *     gsApiGet($path, $params, &$meta) -> decoded body array, or null on error
  *     gsResult($path, $params)         -> ['ok'=>bool,'status'=>int,'data'=>..,
  *                                          'error'=>..,'usage'=>[..],'ms'=>int]
  */
 
+/*
+ * ----------------------------------------------------------------------------
+ *  SETTINGS - edit these four lines.
+ *  Start on the DEV / sandbox base URL to test; flip to prod only when happy.
+ *     DEV  (testing) : https://cpgpublicapiv2dev.greysheet.com/api
+ *     PROD (live)    : https://cpgpublicapiv2.greysheet.com/api
+ *  NOTE: do not commit real production keys to git.
+ * ----------------------------------------------------------------------------
+ */
+if (!defined('GS_BASE_URL'))  { define('GS_BASE_URL',  'https://cpgpublicapiv2dev.greysheet.com/api'); }
+if (!defined('GS_API_TOKEN')) { define('GS_API_TOKEN', ''); }        // paste testing x-api-token
+if (!defined('GS_API_KEY'))   { define('GS_API_KEY',   ''); }        // paste testing x-api-key
+if (!defined('GS_API_LEVEL')) { define('GS_API_LEVEL', 'basic'); }   // 'basic' or 'advanced'
+if (!defined('GS_TIMEOUT'))   { define('GS_TIMEOUT',   20); }        // seconds per request
+
 if (!function_exists('gsConfig')) {
     function gsConfig()
     {
-        static $cfg = null;
-        if ($cfg !== null) { return $cfg; }
-        $file = __DIR__ . '/SellbriteGreysheet_config.php';
-        if (!is_file($file)) {
-            throw new RuntimeException('Missing SellbriteGreysheet_config.php — copy the .sample and add your keys.');
-        }
-        $cfg = require $file;
-        $cfg += ['base_url' => '', 'api_token' => '', 'api_key' => '', 'api_level' => 'basic', 'timeout' => 20];
-        return $cfg;
+        return [
+            'base_url'  => GS_BASE_URL,
+            'api_token' => GS_API_TOKEN,
+            'api_key'   => GS_API_KEY,
+            'api_level' => GS_API_LEVEL,
+            'timeout'   => GS_TIMEOUT,
+        ];
     }
 }
 
@@ -61,9 +74,8 @@ if (!function_exists('gsApiGet')) {
         $cfg = gsConfig();
         $meta = ['status' => 0, 'error' => '', 'usage' => [], 'ms' => 0, 'url' => ''];
 
-        if ($cfg['api_token'] === '' || $cfg['api_token'] === 'PUT-TEST-TOKEN-HERE'
-            || $cfg['api_key'] === '' || $cfg['api_key'] === 'PUT-TEST-KEY-HERE') {
-            $meta['error'] = 'API token/key not set in SellbriteGreysheet_config.php';
+        if ($cfg['api_token'] === '' || $cfg['api_key'] === '') {
+            $meta['error'] = 'GS_API_TOKEN / GS_API_KEY not set in SellbriteGreysheet_client.php';
             gsLog('config: ' . $meta['error']);
             return null;
         }

@@ -86,7 +86,8 @@ $h = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 <?php if (!$res['ok'] && $res['status'] === 0): ?>
 <div class="card muted">
   Could not connect. Check that this server can reach the GreySheet host and that
-  <code>SellbriteGreysheet_config.php</code> exists with your testing keys.
+  <code>GS_API_TOKEN</code> / <code>GS_API_KEY</code> are set at the top of
+  <code>SellbriteGreysheet_client.php</code>.
 </div>
 <?php endif; ?>
 </body></html>

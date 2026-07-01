@@ -14,6 +14,7 @@ foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // also pulls in the logic file
+require_once __DIR__ . '/SellbriteGreysheet_agent.php';    // GreySheet import (gsImport)
 
 if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
@@ -72,6 +73,19 @@ switch ($action) {
         $id = (int) ($_POST['id'] ?? 0);
         if ($id > 0) { sblDelete($id); }
         echo json_encode(['returnClass' => 'success', 'id' => $id]);
+        break;
+
+    case 'gsImport':
+        // Pull a coin from GreySheet, map it onto the 85 fields, compute + validate.
+        $imp = gsImport($_POST);
+        echo json_encode([
+            'returnClass' => $imp['ok'] ? ($imp['valid'] ? 'success' : 'warning') : 'error',
+            'row'         => $imp['row'],
+            'statuses'    => $imp['statuses'],
+            'messages'    => $imp['messages'],
+            'valid'       => $imp['valid'],
+            'message'     => $imp['error'],
+        ]);
         break;
 
     default:

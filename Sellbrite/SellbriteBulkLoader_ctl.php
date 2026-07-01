@@ -97,6 +97,22 @@
         });
     }
 
+    /* ---- import a coin's data from GreySheet into the form ---- */
+    function sblGsImport(){
+        var node = $('#gs-node').val().trim();
+        if (!node){ $('#gs-node').focus(); return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', node_id:node }, function(res){
+            if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
+            $.each(res.row || {}, function(k,v){
+                var el = document.getElementById('f_' + k);
+                if (el && v !== null && v !== '') { el.value = v; }
+            });
+            sblRecompute();
+            swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
+                   icon: res.returnClass === 'success' ? 'success' : 'warning', timer:1600, buttons:false });
+        }, 'json');
+    }
+
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
     function sblRecompute(){
         var data = $('#sku-form').serialize() + '&action=compute';

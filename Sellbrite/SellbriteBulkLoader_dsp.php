@@ -162,6 +162,8 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
+            <input type="text" id="gs-node" class="sbl-search" style="width:150px" placeholder="GreySheet node id&hellip;">
+            <button type="button" class="btn btn-ghost" onclick="sblGsImport()" title="Pull this coin's data from GreySheet">Import from GreySheet</button>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" onclick="sblSave()">Save SKU</button>
         </div>
