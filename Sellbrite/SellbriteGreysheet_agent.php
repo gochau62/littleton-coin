@@ -26,9 +26,150 @@
  *  Nothing is ever auto-saved: every result is a draft the human reviews.
  */
 
-require_once __DIR__ . '/SellbriteGreysheet_client.php';   // gsResult (GreySheet)
 require_once __DIR__ . '/SellbriteGemini_client.php';      // geminiJson  (AI)
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema / Computer / Validator
+
+/* ====================================================================== */
+/*  GreySheet CDN Public API v2 client (folded in - this is the one file). */
+/*                                                                        */
+/*  Sends x-api-token / x-api-key, adds apiLevel, and handles errors       */
+/*  (cURL / 401 / 403 / 429 / non-2xx / bad JSON) as a structured result;  */
+/*  captures rate-limit / quota headers + timing for usage monitoring.     */
+/* ====================================================================== */
+
+/*
+ * ----------------------------------------------------------------------------
+ *  SETTINGS - edit these lines.  Do NOT commit real production keys to git.
+ *     DEV  (testing) : https://cpgpublicapiv2dev.greysheet.com/api
+ *     PROD (live)    : https://cpgpublicapiv2.greysheet.com/api
+ * ----------------------------------------------------------------------------
+ */
+if (!defined('GS_BASE_URL'))  { define('GS_BASE_URL',  'https://cpgpublicapiv2dev.greysheet.com/api'); }
+if (!defined('GS_API_TOKEN')) { define('GS_API_TOKEN', ''); }        // paste x-api-token
+if (!defined('GS_API_KEY'))   { define('GS_API_KEY',   ''); }        // paste x-api-key
+if (!defined('GS_API_LEVEL')) { define('GS_API_LEVEL', 'basic'); }   // 'basic' or 'advanced'
+if (!defined('GS_TIMEOUT'))   { define('GS_TIMEOUT',   20); }        // seconds per request
+// Coin search: confirm the real route + query param name in your Swagger.
+if (!defined('GS_SEARCH_PATH'))  { define('GS_SEARCH_PATH',  'SearchRequest'); }
+if (!defined('GS_SEARCH_PARAM')) { define('GS_SEARCH_PARAM', 'query'); }
+
+if (!function_exists('gsConfig')) {
+    function gsConfig()
+    {
+        return [
+            'base_url'  => GS_BASE_URL,  'api_token' => GS_API_TOKEN, 'api_key' => GS_API_KEY,
+            'api_level' => GS_API_LEVEL, 'timeout'   => GS_TIMEOUT,
+        ];
+    }
+}
+
+/** Log a short usage/error line through the LCC logger when present, else error_log. */
+if (!function_exists('gsLog')) {
+    function gsLog($msg)
+    {
+        $line = 'GreySheet ' . $msg;
+        if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec($line); }
+        else { error_log($line); }
+    }
+}
+
+/**
+ * GET a path under the configured base URL.
+ *  $meta receives: status, error, usage (rate-limit headers), ms, url.
+ * Returns the decoded JSON body (array) on success, or null on any failure.
+ */
+if (!function_exists('gsApiGet')) {
+    function gsApiGet($path, array $params = [], array &$meta = [])
+    {
+        $cfg = gsConfig();
+        $meta = ['status' => 0, 'error' => '', 'usage' => [], 'ms' => 0, 'url' => ''];
+
+        if ($cfg['api_token'] === '' || $cfg['api_key'] === '') {
+            $meta['error'] = 'GS_API_TOKEN / GS_API_KEY not set in SellbriteGreysheet_agent.php';
+            gsLog('config: ' . $meta['error']);
+            return null;
+        }
+
+        if (!isset($params['apiLevel']) && $cfg['api_level'] !== '') { $params['apiLevel'] = $cfg['api_level']; }
+        $url = rtrim($cfg['base_url'], '/') . '/' . ltrim($path, '/');
+        if ($params) { $url .= '?' . http_build_query($params); }
+        $meta['url'] = $url;
+
+        $headers = [];
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => (int) $cfg['timeout'],
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_HTTPHEADER     => [
+                'x-api-token: ' . $cfg['api_token'],
+                'x-api-key: '   . $cfg['api_key'],
+                'Accept: application/json',
+            ],
+            CURLOPT_HEADERFUNCTION => function ($c, $h) use (&$headers) {
+                $p = explode(':', $h, 2);
+                if (count($p) === 2) {
+                    $name = strtolower(trim($p[0]));
+                    if (strpos($name, 'ratelimit') !== false || strpos($name, 'rate-limit') !== false
+                        || strpos($name, 'quota') !== false || strpos($name, 'x-api') !== false) {
+                        $headers[trim($p[0])] = trim($p[1]);
+                    }
+                }
+                return strlen($h);
+            },
+        ]);
+        $t0   = microtime(true);
+        $body = curl_exec($ch);
+        $meta['ms'] = (int) round((microtime(true) - $t0) * 1000);
+
+        if ($body === false) {
+            $meta['error'] = 'cURL: ' . curl_error($ch) . ' (errno ' . curl_errno($ch) . ')';
+            curl_close($ch);
+            gsLog('network ' . $meta['error'] . ' url=' . $url);
+            return null;
+        }
+        $meta['status'] = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $meta['usage']  = $headers;
+        curl_close($ch);
+
+        if ($meta['status'] === 401 || $meta['status'] === 403) {
+            $meta['error'] = 'Auth rejected (HTTP ' . $meta['status'] . ') — check token/key and subscription tier';
+            gsLog($meta['error']); return null;
+        }
+        if ($meta['status'] === 429) {
+            $meta['error'] = 'Rate limited (HTTP 429) — back off; see usage headers';
+            gsLog($meta['error'] . ' usage=' . json_encode($headers)); return null;
+        }
+        if ($meta['status'] < 200 || $meta['status'] >= 300) {
+            $meta['error'] = 'HTTP ' . $meta['status'];
+            gsLog($meta['error'] . ' url=' . $url . ' body=' . substr((string) $body, 0, 300)); return null;
+        }
+
+        $data = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $meta['error'] = 'Bad JSON: ' . json_last_error_msg();
+            gsLog($meta['error'] . ' url=' . $url); return null;
+        }
+        if ($headers) { gsLog('usage ' . json_encode($headers) . ' ms=' . $meta['ms']); }
+        return $data;
+    }
+}
+
+/** Convenience wrapper returning a flat result array. */
+if (!function_exists('gsResult')) {
+    function gsResult($path, array $params = [])
+    {
+        $meta = [];
+        try {
+            $data = gsApiGet($path, $params, $meta);
+        } catch (Throwable $e) {
+            return ['ok' => false, 'status' => 0, 'data' => null, 'error' => $e->getMessage(),
+                    'usage' => [], 'ms' => 0, 'url' => ''];
+        }
+        return ['ok' => $data !== null, 'status' => $meta['status'], 'data' => $data,
+                'error' => $meta['error'], 'usage' => $meta['usage'], 'ms' => $meta['ms'], 'url' => $meta['url']];
+    }
+}
 
 /* ---- Deterministic fallback map (used only when no Gemini key) ---------- */
 if (!isset($GLOBALS['GS_FIELD_MAP'])) {
