@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - greysheet_api_test.php            *  -->
+<!--  * Program Name - greysheet.php                     *  -->
 <!--  *                                                 *  -->
 <!--  * Standalone GreySheet CDN Public API v2 tester.   *  -->
 <!--  * NO dependency on the M-Power stack or any other  *  -->
@@ -33,14 +33,14 @@
  *
  * HOW TO RUN
  * ----------
+ *   Localhost (browser): from this folder run  php -S localhost:8000
+ *                        then open http://localhost:8000/greysheet.php
  *   CLI (IBM i PASE / QSH, or anywhere php-cli exists):
- *       php greysheet_api_test.php ping
- *       php greysheet_api_test.php probe
- *       php greysheet_api_test.php probe --node=17453 --term="Morgan Dollar"
- *       php greysheet_api_test.php node --node=17453
- *       php greysheet_api_test.php search --path=SearchRequest --param=query --term="1909-S VDB"
- *       php greysheet_api_test.php search --term="Morgan Dollar" --base=https://cpgpublicapiv2.greysheet.com/api
- *   Browser: just open this file on your web server; a form appears.
+ *       php greysheet.php ping
+ *       php greysheet.php probe
+ *       php greysheet.php probe --node=17453 --term="Morgan Dollar"
+ *       php greysheet.php node --node=17453
+ *       php greysheet.php search --path=SearchRequest --param=query --term="1909-S VDB"
  */
 
 /* ----------------------------- CONFIG ---------------------------------- */
@@ -250,7 +250,7 @@ function gs_run(string $mode, array $cfg, array $opt, array $nodeCands, array $s
             $L[] = '';
             $L[] = 'Tip: re-run with a REAL node id you know exists to tell a working';
             $L[] = 'route (200) from a merely-valid one (404). Example:';
-            $L[] = '  php greysheet_api_test.php probe --node=17453 --term="Morgan Dollar"';
+            $L[] = '  php greysheet.php probe --node=17453 --term="Morgan Dollar"';
             break;
 
         case 'node':
