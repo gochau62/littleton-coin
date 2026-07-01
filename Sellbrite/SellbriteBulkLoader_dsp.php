@@ -136,7 +136,7 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                 <th class="num">Price</th><th class="num">Qty</th><th>Updated</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($skus as $r): ?>
-                <tr>
+                <tr data-row-id="<?= (int) $r['id'] ?>">
                     <td><span class="sku-link" onclick="sblEdit(<?= (int) $r['id'] ?>)"><?= sbl_e($r['sku']) ?></span></td>
                     <td><?= sbl_e($r['category_name'] ?? '') ?></td>
                     <td><?= sbl_e($r['name'] ?? '') ?></td>

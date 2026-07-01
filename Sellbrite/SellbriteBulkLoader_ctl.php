@@ -75,18 +75,27 @@
     }
 
     /* ---- save / delete ---- */
+    /* Quietly pull a fresh copy of the inventory grid - no full-page reload,
+       no scroll jump. Reuses the server-rendered list (incl. the empty state). */
+    function sblRefreshGrid(){
+        var url = window.location.pathname + (window.location.search || '');
+        $.get(url, function(html){
+            var doc  = $('<div>').append($.parseHTML(html || '', document, false));
+            var fresh = doc.find('#listView');
+            if (fresh.length) { $('#listView').html(fresh.html()); }
+        });
+    }
     function sblSave(){
         var data = $('#sku-form').serialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
+            if (res && res.id) { $('#f_id').val(res.id); }   // so a second save updates, not re-inserts
             if (res && res.returnClass === 'success'){
-                // Clean save: flash a self-closing toast, then return to the list.
                 swal({title:'Saved', text:'SKU saved and derived fields recomputed.',
-                      type:'success', timer:1000, showConfirmButton:false});
-                setTimeout(function(){ window.location = '?'; }, 1000);
+                      type:'success', timer:1200, showConfirmButton:false});
             } else {
-                // Saved but flagged: stay on the form so the highlighted fields can be fixed.
                 swal('Saved with warnings','The SKU was saved but still needs attention (see the highlighted fields).','warning');
             }
+            sblRefreshGrid();   // stay on the form; update the grid in the background
         }, 'json');
     }
     function sblDelete(id, sku){
@@ -97,7 +106,12 @@
             if (!isConfirm) return;
             $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(res){
                 if (res && res.returnClass === 'success'){
-                    window.location = '?';
+                    // Remove just that row in place - no reload, keeps your scroll position.
+                    var row = $('.grid tbody tr[data-row-id="' + id + '"]');
+                    row.fadeOut(150, function(){
+                        $(this).remove();
+                        if ($('.grid tbody tr').length === 0) { sblRefreshGrid(); }  // show "No SKUs yet"
+                    });
                 } else {
                     swal('Delete failed','The record was not removed - check the server log.','error');
                 }
