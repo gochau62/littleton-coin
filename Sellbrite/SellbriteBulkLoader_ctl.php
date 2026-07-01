@@ -91,8 +91,12 @@
                icon:'warning', buttons:['Cancel','Delete'], dangerMode:true })
         .then(function(ok){
             if (!ok) return;
-            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(){
-                window.location = '?';
+            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(res){
+                if (res.returnClass === 'success'){
+                    window.location = '?';
+                } else {
+                    swal('Delete failed','The record was not removed - check the server log.','error');
+                }
             }, 'json');
         });
     }

@@ -70,9 +70,9 @@ switch ($action) {
         break;
 
     case 'delete':
-        $id = (int) ($_POST['id'] ?? 0);
-        if ($id > 0) { sblDelete($id); }
-        echo json_encode(['returnClass' => 'success', 'id' => $id]);
+        $id  = (int) ($_POST['id'] ?? 0);
+        $ok  = $id > 0 && sblDelete($id);
+        echo json_encode(['returnClass' => $ok ? 'success' : 'error', 'id' => $id]);
         break;
 
     case 'gsSearch':
