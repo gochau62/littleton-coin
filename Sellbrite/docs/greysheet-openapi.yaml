@@ -1,0 +1,303 @@
+openapi: 3.0.3
+info:
+  title: GreySheet CDN Public API v2 — endpoints used by the Sellbrite Bulk Loader
+  version: 2.0.0
+  description: >-
+    Minimal, valid OpenAPI 3.0.3 description of the GreySheet CDN Public API v2
+    surface that `SellbriteBulkLoader_agent.php` actually calls: the node lookup
+    and the coin search, plus the two auth headers (`x-api-token` / `x-api-key`)
+    and the `apiLevel` query parameter the client always sends.
+
+
+    Paste this into a Swagger validator to confirm it is well-formed:
+      * https://editor.swagger.io  (Swagger Editor — shows errors inline)
+      * https://validator.swagger.io/validator/debug?url=...  (Validator Badge)
+
+
+    Then compare it against GreySheet's own published Swagger to VERIFY the
+    guessed pieces the PHP still marks as unconfirmed:
+      * search route  — `GS_SEARCH_PATH  = "SearchRequest"`
+      * search param  — `GS_SEARCH_PARAM = "query"`
+    Everything under `x-lcc-unconfirmed: true` below is an assumption to check.
+  contact:
+    name: Littleton Coin Company — Sellbrite Bulk Loader
+
+servers:
+  - url: https://cpgpublicapiv2dev.greysheet.com/api
+    description: DEV (testing)   — GS_BASE_URL default
+  - url: https://cpgpublicapiv2.greysheet.com/api
+    description: PROD (live)
+
+# Both keys are sent on every request (see gsApiGet()).
+security:
+  - apiToken: []
+    apiKey: []
+
+paths:
+  /GetNodeRequest:
+    get:
+      operationId: getNode
+      summary: Look up one coin (catalog node) by its GreySheet node id
+      description: >-
+        Deterministic lookup used by `gsLookup()`:
+        `GET GetNodeRequest?NodeId=<int>`.
+        The client treats HTTP 404 — or a 2xx with an empty body — as
+        "GreySheet has no entry for this coin" (found = false), which is the
+        signal the UI uses to offer AI generation instead.
+      parameters:
+        - $ref: '#/components/parameters/NodeId'
+        - $ref: '#/components/parameters/apiLevel'
+      responses:
+        '200':
+          description: The coin's price-guide data.
+          headers:
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoinNode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /SearchRequest:
+    get:
+      operationId: searchCoins
+      summary: Search the GreySheet catalog for a coin by free text
+      description: >-
+        Backs `gsSearch()`. The response is walked recursively by
+        `gs_collect_matches()`, which picks an id
+        (`id` | `nodeId` | `collectibleId` | `catalogId`) and a label
+        (`name` | `title` | `displayName` | `fullName` | `description`) out of
+        each item, so the exact envelope shape is not important — only that
+        those field names appear somewhere per match.
+      x-lcc-unconfirmed: true
+      x-lcc-note: >-
+        Route name and the `query` parameter name are the agent's assumptions
+        (GS_SEARCH_PATH / GS_SEARCH_PARAM). Confirm both in GreySheet's Swagger.
+      parameters:
+        - $ref: '#/components/parameters/query'
+        - $ref: '#/components/parameters/apiLevel'
+      responses:
+        '200':
+          description: Zero or more catalog matches.
+          headers:
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+components:
+  securitySchemes:
+    apiToken:
+      type: apiKey
+      in: header
+      name: x-api-token
+      description: "Sent as `x-api-token: <GS_API_TOKEN>`."
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: "Sent as `x-api-key: <GS_API_KEY>`."
+
+  parameters:
+    NodeId:
+      name: NodeId
+      in: query
+      required: true
+      description: GreySheet catalog node id (positive integer).
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      example: 12345
+    query:
+      name: query
+      in: query
+      required: true
+      description: >-
+        Free-text coin search term (year / mint / denomination / series).
+        Param NAME is unconfirmed — see the operation's x-lcc-note.
+      schema:
+        type: string
+        minLength: 1
+      example: 1909-S VDB Lincoln Cent
+    apiLevel:
+      name: apiLevel
+      in: query
+      required: false
+      description: >-
+        Subscription tier the client requests; the agent always appends it
+        (GS_API_LEVEL, default "basic").
+      schema:
+        type: string
+        enum: [basic, advanced]
+        default: basic
+
+  headers:
+    RateLimitLimit:
+      description: Requests allowed in the current window (captured for usage monitoring).
+      schema:
+        type: integer
+    RateLimitRemaining:
+      description: Requests remaining in the current window.
+      schema:
+        type: integer
+    RateLimitReset:
+      description: When the current rate-limit window resets.
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: HTTP 401 — token/key rejected. Check credentials and subscription tier.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: HTTP 403 — authenticated but not allowed (wrong tier for this data).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: HTTP 404 — no such node. Treated by the client as "coin not found".
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: HTTP 429 — rate limited. Back off and read the rate-limit headers.
+      headers:
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    CoinNode:
+      type: object
+      description: >-
+        One coin's price-guide fields. Property names mirror GS_FIELD_MAP in
+        SellbriteBulkLoader_agent.php — the fields the deterministic fallback
+        (`gsMapToProduct()`) reads via case-insensitive `gs_dig()`. Real
+        GreySheet payloads carry more; these are the ones the tool consumes.
+      properties:
+        NodeId:
+          type: integer
+          example: 12345
+        Year:
+          type: string
+          example: "1909"
+        MintMark:
+          type: string
+          example: "S"
+        Mint:
+          type: string
+          example: "San Francisco"
+        Denomination:
+          type: string
+          example: "Cent"
+        Series:
+          type: string
+          example: "Lincoln Cent (Wheat Reverse)"
+        Variety:
+          type: string
+          example: "VDB"
+        Grade:
+          type: string
+          example: "MS63"
+        Composition:
+          type: string
+          example: "Bronze"
+        Metal:
+          type: string
+          example: "Copper"
+        CpgVal:
+          type: number
+          format: double
+          description: CPG value → mapped to SBLPRODUCT `price`.
+          example: 1250.00
+        GreyVal1:
+          type: number
+          format: double
+          description: GreySheet bid → mapped to SBLPRODUCT `cost`.
+          example: 950.00
+
+    SearchResults:
+      type: object
+      description: >-
+        Search envelope. `gs_collect_matches()` recurses through any shape, so
+        this array is illustrative — the tolerant client only needs id/label
+        fields to appear per match.
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchMatch'
+
+    SearchMatch:
+      type: object
+      description: One catalog hit. The client reads the first present id and label field.
+      properties:
+        id:
+          type: integer
+          example: 12345
+        nodeId:
+          type: integer
+          example: 12345
+        collectibleId:
+          type: integer
+          example: 12345
+        catalogId:
+          type: integer
+          example: 12345
+        name:
+          type: string
+          example: "1909-S VDB Lincoln Cent"
+        title:
+          type: string
+          example: "1909-S VDB 1C"
+        displayName:
+          type: string
+          example: "Lincoln Cent, 1909-S VDB"
+        fullName:
+          type: string
+          example: "1909-S VDB Lincoln Cent (Wheat Reverse)"
+        description:
+          type: string
+          example: "Key-date Lincoln cent, San Francisco, VDB reverse."
+
+    ErrorResponse:
+      type: object
+      description: Generic error body. The client logs the first 300 chars on non-2xx.
+      properties:
+        status:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: "Auth rejected — check token/key and subscription tier."
