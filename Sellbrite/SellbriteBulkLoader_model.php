@@ -59,6 +59,18 @@ function sbl_db_err($where)
     return false;
 }
 
+/**
+ * Commit the current unit of work. Required if the connection is under manual
+ * commitment control (common on IBM i) - without it, a "successful" INSERT /
+ * UPDATE / DELETE can execute cleanly yet never persist, and looks identical
+ * to a no-op from the AJAX layer. Harmless no-op when autocommit is already on.
+ */
+function sbl_commit($conn)
+{
+    if (!function_exists('db2_commit')) { return true; }
+    return (bool) db2_commit($conn);
+}
+
 /** Normalize a user date (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) to ISO, or '' if unusable. */
 function sbl_norm_date($v)
 {
@@ -164,7 +176,9 @@ function sblInsert(array $row)
     $vals = [];
     foreach ($cols as $c) { $vals[] = sbl_coerce($c, $row[$c] ?? null); }
     if (!db2_execute($stmt, $vals)) { return sbl_db_err('insert execute'); }
-    return (int) db2_last_insert_id($conn);
+    $id = (int) db2_last_insert_id($conn);
+    if (!sbl_commit($conn)) { return sbl_db_err('insert commit'); }
+    return $id;
 }
 
 /** Update an existing product row by id; returns true on success. */
@@ -181,6 +195,7 @@ function sblUpdate($id, array $row)
     foreach ($cols as $c) { $vals[] = sbl_coerce($c, $row[$c] ?? null); }
     $vals[] = (int) $id;
     if (!db2_execute($stmt, $vals)) { return (bool) sbl_db_err('update execute'); }
+    if (!sbl_commit($conn)) { return (bool) sbl_db_err('update commit'); }
     return true;
 }
 
@@ -202,5 +217,6 @@ function sblDelete($id)
     $stmt = db2_prepare($conn, 'DELETE FROM ' . SBL_TABLE . ' WHERE id = ?');
     if (!$stmt) { return (bool) sbl_db_err('delete prepare'); }
     if (!db2_execute($stmt, [$id])) { return (bool) sbl_db_err('delete execute'); }
+    if (!sbl_commit($conn)) { return (bool) sbl_db_err('delete commit'); }
     return true;
 }
