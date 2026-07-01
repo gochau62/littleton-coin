@@ -105,40 +105,20 @@
         });
         sblRecompute();
     }
-    /* search the catalog, then let the user pick a coin */
-    function sblGsSearch(){
-        var q = $('#gs-search').val().trim();
-        if (!q){ $('#gs-search').focus(); return; }
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsSearch', q:q }, function(res){
-            var sel = $('#gs-results').empty();
-            var matches = (res.matches || []);
-            if (res.returnClass !== 'success' || !matches.length){
-                sel.hide();
-                swal({ title:"No match in GreySheet", text:'Generate this coin with AI instead?',
-                       icon:'info', buttons:['Cancel','Generate with AI'] })
-                .then(function(go){ if (go) sblGsGenerate(q); });
-                return;
-            }
-            sel.append('<option value="">'+matches.length+' match(es) — pick one…</option>');
-            $.each(matches, function(i, m){ sel.append('<option value="'+rdEscAttr(m.id)+'">'+rdEsc(m.label)+'</option>'); });
-            sel.show();
-        }, 'json');
+    /* Build a search string from the coin the user has typed into the form. */
+    function sblCoinQuery(){
+        return [ $('#f_year').val(), $('#f_mint_mark').val(), $('#f_category_name').val(),
+                 $('#f_grade').val() ].filter(function(x){ return x && x.trim(); }).join(' ').trim();
     }
-    function rdEsc(s){ return $('<div>').text(s == null ? '' : s).html(); }
-    function rdEscAttr(s){ return (s == null ? '' : String(s)).replace(/"/g,'&quot;'); }
-    function sblGsPick(){
-        var id = $('#gs-results').val();
-        if (id) sblGsImport(id);
-    }
-    function sblGsImport(node){
-        node = (node || '').toString().trim();
-        if (!node){ return; }
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', node_id:node }, function(res){
+    function sblGsImport(){
+        var q = sblCoinQuery();
+        if (!q){ swal('Pick a coin first', 'Choose a Category (and year/mint) so we know what to look up.', 'info'); return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', q:q }, function(res){
             if (res.returnClass === 'notfound'){
                 swal({ title:"GreySheet doesn't have this coin",
                        text:'Would you like the AI to generate this listing?',
                        icon:'info', buttons:['Cancel','Generate with AI'] })
-                .then(function(go){ if (go) sblGsGenerate(node); });
+                .then(function(go){ if (go) sblGsGenerate(q); });
                 return;
             }
             if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }

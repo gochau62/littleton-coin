@@ -435,14 +435,22 @@ function gsSearch(string $q): array
 /** Deterministic GreySheet lookup. Returns ['found','data','error','status']. */
 function gsLookup(array $params): array
 {
+    $nodeId = (int) ($params['node_id'] ?? 0);
+    $q      = trim((string) ($params['q'] ?? ''));
     if (!empty($params['path'])) {
         $path  = preg_replace('/[^A-Za-z0-9_\/]/', '', (string) $params['path']);
-        $query = array_diff_key($params, ['path' => 1, 'action' => 1]);
+        $query = array_diff_key($params, ['path' => 1, 'action' => 1, 'q' => 1]);
         $res   = gsResult($path, $query);
-    } else {
-        $nodeId = (int) ($params['node_id'] ?? 0);
-        if ($nodeId <= 0) { return ['found' => false, 'data' => null, 'error' => 'Provide a GreySheet node_id (or path).', 'status' => 0]; }
+    } elseif ($nodeId > 0) {
         $res = gsResult('GetNodeRequest', ['NodeId' => $nodeId]);
+    } elseif ($q !== '') {
+        // Free text (the coin typed in the form): search, then take the best match.
+        $search = gsSearch($q);
+        if (!$search['ok'])      { return ['found' => false, 'data' => null, 'error' => $search['error'], 'status' => 0]; }
+        if (!$search['matches']) { return ['found' => false, 'data' => null, 'error' => '', 'status' => 404]; }  // nothing -> offer generate
+        $res = gsResult('GetNodeRequest', ['NodeId' => (int) $search['matches'][0]['id']]);
+    } else {
+        return ['found' => false, 'data' => null, 'error' => 'Enter a coin (category / year) or a node id.', 'status' => 0];
     }
     // 404 (or an OK-but-empty body) means GreySheet has no such coin.
     if (!$res['ok'] && $res['status'] === 404) { return ['found' => false, 'data' => null, 'error' => '', 'status' => 404]; }
