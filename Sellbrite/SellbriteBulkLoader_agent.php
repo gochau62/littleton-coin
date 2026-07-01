@@ -41,18 +41,22 @@ require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema / Computer 
 /*
  * ----------------------------------------------------------------------------
  *  SETTINGS - edit these lines.  Do NOT commit real production keys to git.
- *     DEV  (testing) : https://cpgpublicapiv2dev.greysheet.com/api
+ *     BETA (testing) : https://cpgpublicapiv2beta.greysheet.com/api
  *     PROD (live)    : https://cpgpublicapiv2.greysheet.com/api
  * ----------------------------------------------------------------------------
+ *  Real catalog endpoints (there is NO text-search endpoint - the catalog is
+ *  a node tree, so free-text search is served from the local cache):
+ *     GetNodeRequest?NodeId=            one node
+ *     GetNodeChildrenRequest?NodeId=    child nodes
+ *     GetCollectibleByNodeRequest?NodeId=&ApiLevel=   coins in a leaf node
+ *     GetCollectibleRequest?GsId=&ApiLevel=           one coin (full detail)
+ *     GetPricingRequest?Gsid=&Grade=&ApiLevel=        prices by grade
  */
-if (!defined('GS_BASE_URL'))  { define('GS_BASE_URL',  'https://cpgpublicapiv2dev.greysheet.com/api'); }
+if (!defined('GS_BASE_URL'))  { define('GS_BASE_URL',  'https://cpgpublicapiv2beta.greysheet.com/api'); }
 if (!defined('GS_API_TOKEN')) { define('GS_API_TOKEN', ''); }        // paste x-api-token
 if (!defined('GS_API_KEY'))   { define('GS_API_KEY',   ''); }        // paste x-api-key
 if (!defined('GS_API_LEVEL')) { define('GS_API_LEVEL', 'basic'); }   // 'basic' or 'advanced'
 if (!defined('GS_TIMEOUT'))   { define('GS_TIMEOUT',   20); }        // seconds per request
-// Coin search: confirm the real route + query param name in your Swagger.
-if (!defined('GS_SEARCH_PATH'))  { define('GS_SEARCH_PATH',  'SearchRequest'); }
-if (!defined('GS_SEARCH_PARAM')) { define('GS_SEARCH_PARAM', 'query'); }
 
 if (!function_exists('gsConfig')) {
     function gsConfig()
@@ -282,15 +286,26 @@ if (!function_exists('geminiJson')) {
     }
 }
 
-/* ---- Deterministic fallback map (used only when no Gemini key) ---------- */
+/* ---- Deterministic fallback map (used only when no Gemini key) ----------
+ * Left = real GetCollectibleRequest field, right = Sellbrite column. */
 if (!isset($GLOBALS['GS_FIELD_MAP'])) {
     $GLOBALS['GS_FIELD_MAP'] = [
-        'Year' => 'year', 'MintMark' => 'mint_mark', 'Mint' => 'mint_location',
-        'Denomination' => 'denomination', 'Series' => 'category_name',
-        'Variety' => 'coin_variety_1', 'Grade' => 'grade',
-        'Composition' => 'composition', 'Metal' => 'composition',
-        'CpgVal' => 'price', 'GreyVal1' => 'cost',
+        'CoinDate'          => 'year',
+        'MintMark'          => 'mint_mark',
+        'DenominationShort' => 'denomination',
+        'Variety'           => 'coin_variety_1',
+        'Variety2'          => 'coin_variety_2',
+        'Composition'       => 'composition',
+        'Fineness'          => 'fineness',
+        'StrikeType'        => 'strike_type',
     ];
+}
+
+/** Pull the collectible object out of a wrapped GreySheet response ({ "Data":[ {...} ] }). */
+function gs_data_first($resp)
+{
+    if (is_array($resp) && isset($resp['Data'][0]) && is_array($resp['Data'][0])) { return $resp['Data'][0]; }
+    return is_array($resp) ? $resp : [];
 }
 
 /** Recursively find the first scalar value for $key (case-insensitive) in a decoded response. */
@@ -307,18 +322,48 @@ function gs_dig($data, $key)
     return null;
 }
 
-/** Deterministic fallback: map a GreySheet item onto a partial row with the static map. */
+/** Deterministic fallback: map one GreySheet collectible onto a partial row.
+ * Reads the documented fields directly (no deep recursion, so CatalogPath node
+ * fields are not mistaken for coin fields). */
 function gsMapToProduct(array $gsItem): array
 {
     $row = [];
     foreach ($GLOBALS['GS_FIELD_MAP'] as $gsKey => $sblField) {
-        $val = gs_dig($gsItem, $gsKey);
-        if ($val === null || $val === '') { continue; }
-        if (!isset($row[$sblField]) || $row[$sblField] === '') {
-            $row[$sblField] = is_scalar($val) ? trim((string) $val) : $val;
-        }
+        $val = $gsItem[$gsKey] ?? null;
+        if (is_scalar($val) && trim((string) $val) !== '') { $row[$sblField] = trim((string) $val); }
+    }
+    // Coin weight (ounces) -> package weight (pounds), a starting point for review.
+    if (isset($gsItem['WeightOunces']) && is_numeric($gsItem['WeightOunces']) && (float) $gsItem['WeightOunces'] > 0) {
+        $row['package_weight'] = (string) round((float) $gsItem['WeightOunces'] / 16, 4);
+    }
+    // Deepest node in the catalog path is the closest thing to a category seed.
+    if (!empty($gsItem['CatalogPath']) && is_array($gsItem['CatalogPath'])) {
+        $last = end($gsItem['CatalogPath']);
+        if (is_array($last) && !empty($last['Name'])) { $row['category_name'] = trim((string) $last['Name']); }
     }
     return $row;
+}
+
+/** Fetch one collectible's full detail by GreySheet id (GetCollectibleRequest). */
+function gsCollectible($gsId): array
+{
+    $gsId = (int) $gsId;
+    if ($gsId <= 0) { return []; }
+    $res = gsResult('GetCollectibleRequest', ['GsId' => $gsId]);
+    return $res['ok'] ? gs_data_first($res['data']) : [];
+}
+
+/** Fetch pricing for a coin (GetPricingRequest); optionally at one numeric grade. */
+function gsPricing($gsId, $grade = null): array
+{
+    $gsId = (int) $gsId;
+    if ($gsId <= 0) { return []; }
+    $params = ['Gsid' => $gsId];
+    if ($grade !== null && $grade !== '' && ctype_digit((string) $grade)) { $params['Grade'] = (int) $grade; }
+    $res = gsResult('GetPricingRequest', $params);
+    if (!$res['ok']) { return []; }
+    $first = gs_data_first($res['data']);
+    return (is_array($first) && isset($first['PricingData'][0])) ? $first['PricingData'][0] : [];
 }
 
 /**
@@ -415,21 +460,22 @@ function gs_collect_matches($data, array &$out): void
 }
 
 /**
- * Search the GreySheet catalog for a coin by free text.
- * Returns ['ok','matches'=>[['id','label'],...],'error'].  The endpoint/param
- * are configurable (GS_SEARCH_PATH / GS_SEARCH_PARAM) - confirm them in Swagger.
+ * Search the coin catalog by free text.
+ *
+ * GreySheet has NO text-search endpoint (the catalog is a node tree), so this
+ * searches the local catalog cache once it exists (SBLGSCATT, populated by a
+ * scheduled crawl of GetNodeChildrenRequest / GetCollectibleByNodeRequest).
+ * Until that table is built it returns a clear message instead of guessing.
  */
 function gsSearch(string $q): array
 {
     $q = trim($q);
     if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Enter something to search for.']; }
-    $res = gsResult(GS_SEARCH_PATH, [GS_SEARCH_PARAM => $q]);
-    if (!$res['ok']) { return ['ok' => false, 'matches' => [], 'error' => $res['error'] ?: ('HTTP ' . $res['status'])]; }
-    $pairs = [];
-    gs_collect_matches($res['data'], $pairs);
-    $matches = [];
-    foreach ($pairs as $id => $label) { $matches[] = ['id' => $id, 'label' => $label]; }
-    return ['ok' => true, 'matches' => array_slice($matches, 0, 50), 'error' => ''];
+    if (function_exists('sblGsCatalogSearch')) {          // provided once the cache is built
+        return ['ok' => true, 'matches' => sblGsCatalogSearch($q), 'error' => ''];
+    }
+    return ['ok' => false, 'matches' => [],
+            'error' => 'Catalog search is not available yet (the GreySheet cache table has not been built).'];
 }
 
 /** Deterministic GreySheet lookup. Returns ['found','data','error','status']. */
@@ -469,22 +515,50 @@ function gs_finalize(array $row, $source, string $via): array
             'error' => '', 'via' => $via];
 }
 
+/** Clean a GreySheet price string ("$1,234.50") to a plain number, or '' . */
+function gs_price_num($v): string
+{
+    $v = preg_replace('/[^0-9.]/', '', (string) $v);
+    return is_numeric($v) ? $v : '';
+}
+
 /**
- * Import a coin: GreySheet lookup -> Gemini fills the fields.
- * Returns found=false (no error) when GreySheet has no entry, so the caller can
- * offer to generate it with AI.
+ * Import a coin the user picked (by GreySheet id): fetch its full detail +
+ * pricing with the real endpoints, map, then Gemini fills the rest.
+ *   $params['gs_id']  the collectible's GsId (from the catalog picker)
+ *   $params['grade']  optional numeric grade to price at
+ * Falls back to a free-text lookup (needs the cache) when no gs_id is given.
  */
 function gsImport(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
              'valid' => false, 'source' => null, 'error' => '', 'via' => ''];
-    $look = gsLookup($params);
-    if ($look['error'] !== '') { return array_merge($base, ['error' => $look['error']]); }
-    if (!$look['found'])       { return array_merge($base, ['ok' => true]); }   // ok, but not found
 
-    $row = gsAiMap(is_array($look['data']) ? $look['data'] : []);
+    $gsId = (int) ($params['gs_id'] ?? 0);
+    if ($gsId <= 0) {                          // no id yet -> try the (cache-backed) search
+        $look = gsLookup($params);
+        if ($look['error'] !== '') { return array_merge($base, ['error' => $look['error']]); }
+        if (!$look['found'])       { return array_merge($base, ['ok' => true]); }   // offer generate
+        $coin = gs_data_first($look['data']);
+    } else {
+        $coin = gsCollectible($gsId);
+        if (!$coin) { return array_merge($base, ['ok' => true]); }                  // not found -> generate
+    }
+
+    // Live pricing for this coin (CpgVal -> retail suggestion, GreyVal -> cost).
+    if (($gsId > 0) || isset($coin['Gsid'])) {
+        $price = gsPricing($gsId ?: (int) ($coin['Gsid'] ?? 0), $params['grade'] ?? null);
+        if ($price) {
+            $coin['CpgVal'] = $price['CpgVal'] ?? ($coin['CpgVal'] ?? '');
+            $coin['GreyVal'] = $price['GreyVal'] ?? ($coin['GreyVal'] ?? '');
+        }
+    }
+
+    $row = gsAiMap($coin);
+    if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '')  { $row['price'] = gs_price_num($coin['CpgVal']); }
+    if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '')  { $row['cost']  = gs_price_num($coin['GreyVal']); }
     if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.']); }
-    return gs_finalize($row, $look['data'], geminiConfigured() ? 'greysheet+ai' : 'greysheet-map');
+    return gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map');
 }
 
 /** Generate a one-off coin's listing with AI (used after the user confirms). */
