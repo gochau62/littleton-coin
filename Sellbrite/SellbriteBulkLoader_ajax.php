@@ -76,15 +76,31 @@ switch ($action) {
         break;
 
     case 'gsImport':
-        // Pull a coin from GreySheet, map it onto the 85 fields, compute + validate.
+        // GreySheet lookup -> Gemini fills the fields. found=false => offer to generate.
         $imp = gsImport($_POST);
+        $rc  = !$imp['ok'] ? 'error' : (!$imp['found'] ? 'notfound' : ($imp['valid'] ? 'success' : 'warning'));
         echo json_encode([
-            'returnClass' => $imp['ok'] ? ($imp['valid'] ? 'success' : 'warning') : 'error',
+            'returnClass' => $rc,
             'row'         => $imp['row'],
             'statuses'    => $imp['statuses'],
             'messages'    => $imp['messages'],
             'valid'       => $imp['valid'],
+            'via'         => $imp['via'],
             'message'     => $imp['error'],
+        ]);
+        break;
+
+    case 'gsGenerate':
+        // One-off / foreign coin: Gemini drafts the whole listing from its knowledge.
+        $gen = gsGenerate($_POST);
+        echo json_encode([
+            'returnClass' => !$gen['ok'] ? 'error' : ($gen['valid'] ? 'success' : 'warning'),
+            'row'         => $gen['row'],
+            'statuses'    => $gen['statuses'],
+            'messages'    => $gen['messages'],
+            'valid'       => $gen['valid'],
+            'via'         => $gen['via'],
+            'message'     => $gen['error'],
         ]);
         break;
 

@@ -97,19 +97,37 @@
         });
     }
 
-    /* ---- import a coin's data from GreySheet into the form ---- */
+    /* ---- import a coin from GreySheet (AI fills the fields) ---- */
+    function sblFillFromRow(row){
+        $.each(row || {}, function(k,v){
+            var el = document.getElementById('f_' + k);
+            if (el && v !== null && v !== '') { el.value = v; }
+        });
+        sblRecompute();
+    }
     function sblGsImport(){
         var node = $('#gs-node').val().trim();
         if (!node){ $('#gs-node').focus(); return; }
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', node_id:node }, function(res){
+            if (res.returnClass === 'notfound'){
+                swal({ title:"GreySheet doesn't have this coin",
+                       text:'Would you like the AI to generate this listing?',
+                       icon:'info', buttons:['Cancel','Generate with AI'] })
+                .then(function(go){ if (go) sblGsGenerate(node); });
+                return;
+            }
             if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
-            $.each(res.row || {}, function(k,v){
-                var el = document.getElementById('f_' + k);
-                if (el && v !== null && v !== '') { el.value = v; }
-            });
-            sblRecompute();
+            sblFillFromRow(res.row);
             swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                    icon: res.returnClass === 'success' ? 'success' : 'warning', timer:1600, buttons:false });
+        }, 'json');
+    }
+    function sblGsGenerate(hint){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
+            if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
+            sblFillFromRow(res.row);
+            swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
+                   icon: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, buttons:false });
         }, 'json');
     }
 
