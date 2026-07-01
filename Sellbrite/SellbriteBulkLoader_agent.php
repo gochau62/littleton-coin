@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - SellbriteGreysheet_agent.php     *  -->
+<!--  * Program Name - SellbriteBulkLoader_agent.php     *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -86,7 +86,7 @@ if (!function_exists('gsApiGet')) {
         $meta = ['status' => 0, 'error' => '', 'usage' => [], 'ms' => 0, 'url' => ''];
 
         if ($cfg['api_token'] === '' || $cfg['api_key'] === '') {
-            $meta['error'] = 'GS_API_TOKEN / GS_API_KEY not set in SellbriteGreysheet_agent.php';
+            $meta['error'] = 'GS_API_TOKEN / GS_API_KEY not set in SellbriteBulkLoader_agent.php';
             gsLog('config: ' . $meta['error']);
             return null;
         }
@@ -208,7 +208,7 @@ if (!function_exists('geminiJson')) {
     {
         $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0, 'finish' => ''];
         if (!geminiConfigured()) {
-            $meta['error'] = 'GEMINI_API_KEY not set in SellbriteGreysheet_agent.php';
+            $meta['error'] = 'GEMINI_API_KEY not set in SellbriteBulkLoader_agent.php';
             gsLog('config: ' . $meta['error']);
             return null;
         }
