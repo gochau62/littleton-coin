@@ -30,17 +30,12 @@ function dspBulkLoader(&$screenData)
         $h .= '</label>';
         $da = ' data-name="' . sbl_e($name) . '"' . ($auto ? ' data-auto="1"' : '') . ($req ? ' data-required="1"' : '');
         if ($opts) {
-            // Searchable typeahead: type to filter the list (e.g. "Liberty" ->
-            // Liberty Nickel / Liberty Walking Half Dollar / Liberty Cap...).
-            $listId = 'dl_' . sbl_e($name);
-            $h .= '<input type="text" id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '" value=""'
-                . ' list="' . $listId . '" autocomplete="off" placeholder="Type to search&hellip;"' . $da . '>';
-            $h .= '<datalist id="' . $listId . '">';
+            $h .= '<select id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '"' . $da . '><option value="">&mdash; select &mdash;</option>';
             foreach ($opts as $o) {
-                if (str_starts_with($o, '---')) { continue; }   // skip section separators
-                $h .= '<option value="' . sbl_e($o) . '"></option>';
+                if (str_starts_with($o, '---')) { $h .= '<option disabled>' . sbl_e($o) . '</option>'; continue; }
+                $h .= '<option value="' . sbl_e($o) . '">' . sbl_e($o) . '</option>';
             }
-            $h .= '</datalist>';
+            $h .= '</select>';
         } elseif (in_array($name, $textareas, true)) {
             $h .= '<textarea id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '" rows="2"' . $da . '></textarea>';
         } else {
@@ -167,8 +162,13 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
-            <button type="button" class="btn btn-ghost" onclick="sblGsImport()"
-                    title="Pull this coin's data from GreySheet (uses the category / year / mint you've entered)">Import from GreySheet</button>
+            <input type="search" id="gs-find" class="sbl-search" style="width:210px"
+                   placeholder="Find coin (e.g. 1881 S Morgan)&hellip;"
+                   onkeyup="if(event.key==='Enter'){sblGsFind();}">
+            <button type="button" class="btn btn-ghost" onclick="sblGsFind()"
+                    title="Search remembered coins; unknown coins are looked up on GreySheet">Find coin</button>
+            <select id="gs-matches" style="display:none;max-width:340px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
+                    onchange="sblGsPick()"></select>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" onclick="sblSave()">Save SKU</button>
         </div>
