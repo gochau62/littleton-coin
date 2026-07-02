@@ -19,6 +19,15 @@
  * Requires SBLMEMORYT to exist and GS_API_TOKEN / GS_API_KEY set in the agent.
  */
 
+// Framework helpers (getDB2PConn) + the logged-in user's DB2 credentials,
+// same as the AJAX endpoint. Run this from a browser session that is
+// signed in to LCCOnline, or the DB2 connection check below will stop it.
+foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
+    if (file_exists($f)) { require_once $f; }
+}
+if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
+if (session_status() !== PHP_SESSION_ACTIVE && PHP_SAPI !== 'cli') { session_start(); }
+
 require_once __DIR__ . '/SellbriteBulkLoader_agent.php';   // client + memory helpers
 
 if (function_exists('set_time_limit')) { @set_time_limit(0); }
