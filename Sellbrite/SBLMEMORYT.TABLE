@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - SBLGSMEMT.TABLE                               */
+/* Program Name      - SBLMEMORYT.TABLE                               */
 /*                                                                   */
 /* Program Narrative - Create the GreySheet catalog memory table     */
 /*                     for the Sellbrite Bulk Loader.  One row = one  */
@@ -17,7 +17,7 @@
 /*                                                                   */
 /* Date Written      - 07/02/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(SBLGSMEMT) COMMIT(*NONE)               */
+/*                     SRCMBR(SBLMEMORYT) COMMIT(*NONE)               */
 /*                                                                   */
 /*********************************************************************/
 /*                                                                   */
@@ -29,7 +29,7 @@
 /* ------------------------------------------------------------------*/
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE LSCDEVLIBP.SBLGSMEMT (
+CREATE TABLE LSCDEVLIBP.SBLMEMORYT (
    id        INTEGER GENERATED ALWAYS AS IDENTITY
              (START WITH 1, INCREMENT BY 1) NOT NULL,
    kind        CHAR(1)       CCSID 1208 NOT NULL,
@@ -44,12 +44,12 @@ CREATE TABLE LSCDEVLIBP.SBLGSMEMT (
    created_at  FOR COLUMN CREATTS   TIMESTAMP    NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
    updated_at  FOR COLUMN UPDATETS  TIMESTAMP    NOT NULL
              GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
-   CONSTRAINT SBLGSMEMT_PK  PRIMARY KEY (id),
-   CONSTRAINT SBLGSMEMT_UNQ UNIQUE (kind, ref_id)
+   CONSTRAINT SBLMEMORYT_PK  PRIMARY KEY (id),
+   CONSTRAINT SBLMEMORYT_UNQ UNIQUE (kind, ref_id)
 )
-RCDFMT SBLGSMEMR;
+RCDFMT SBLMEMORYR;
 
-LABEL ON LSCDEVLIBP.SBLGSMEMT (
+LABEL ON LSCDEVLIBP.SBLMEMORYT (
    id          TEXT IS 'Record ID',
    kind        TEXT IS 'Kind (N=node C=coin)',
    ref_id      TEXT IS 'GreySheet NodeId or GsId',
@@ -63,4 +63,4 @@ LABEL ON LSCDEVLIBP.SBLGSMEMT (
    created_at  TEXT IS 'Created Timestamp',
    updated_at  TEXT IS 'Updated Timestamp');
 
-LABEL ON TABLE LSCDEVLIBP.SBLGSMEMT IS 'Sellbrite GreySheet Catalog Memory';
+LABEL ON TABLE LSCDEVLIBP.SBLMEMORYT IS 'Sellbrite GreySheet Catalog Memory';

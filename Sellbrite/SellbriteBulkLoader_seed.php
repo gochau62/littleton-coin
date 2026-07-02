@@ -1,6 +1,6 @@
 <?php
 /*
- * One-time seed crawl: populate the GreySheet catalog memory (SBLGSMEMT).
+ * One-time seed crawl: populate the GreySheet catalog memory (SBLMEMORYT).
  *
  * Walks the node tree from GS_ROOT_NODE breadth-first, storing every folder
  * and every coin (name, GsId, path, date, mint mark) into the memory table.
@@ -16,7 +16,7 @@
  * RUN (on the server that has the keys + DB2):
  *   Browser:  SellbriteBulkLoader_seed.php?maxcalls=1200&delay=150
  *   CLI:      php SellbriteBulkLoader_seed.php maxcalls=1200 delay=150
- * Requires SBLGSMEMT to exist and GS_API_TOKEN / GS_API_KEY set in the agent.
+ * Requires SBLMEMORYT to exist and GS_API_TOKEN / GS_API_KEY set in the agent.
  */
 
 require_once __DIR__ . '/SellbriteBulkLoader_agent.php';   // client + memory helpers
@@ -38,7 +38,7 @@ echo str_repeat('-', 60) . "\n";
 @ob_flush(); @flush();
 
 if (GS_API_TOKEN === '' || GS_API_KEY === '') { exit("STOP: GS_API_TOKEN / GS_API_KEY not set in the agent file.\n"); }
-if (!(function_exists('sbl_conn') && sbl_conn())) { exit("STOP: no DB2 connection - create SBLGSMEMT and run this on the server.\n"); }
+if (!(function_exists('sbl_conn') && sbl_conn())) { exit("STOP: no DB2 connection - create SBLMEMORYT and run this on the server.\n"); }
 
 /* ---- known state from the table (resume support) ---- */
 $doneNodes = [];

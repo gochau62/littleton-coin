@@ -3,7 +3,7 @@
  * GreySheet + Gemini coin agent for the Sellbrite Bulk Loader.
  *
  * WHAT IT DOES
- *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLGSMEMT) of every
+ *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
  *     Searching memory costs 0 API calls.  Populate it with the seed crawl
  *     (SellbriteBulkLoader_seed.php) or just let lookups teach it over time.
@@ -156,14 +156,14 @@ function geminiJson($system, $user, &$meta = [])
 
 /* ------------------------------ PATH MEMORY ----------------------------- */
 /*
- * The memory lives in DB2 (SBLGSMEMT): one row per catalog folder
+ * The memory lives in DB2 (SBLMEMORYT): one row per catalog folder
  * (kind 'N', ref_id = NodeId) or coin (kind 'C', ref_id = GsId) learned from
  * GreySheet - by the seed crawl or on first lookup.  The dropdown searches
  * coin rows at 0 API calls; navigation starts from the deepest known folder.
  * Without a DB2 connection (dev) memory is a no-op and lookups still work,
  * they just navigate live every time.
  */
-if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLGSMEMT'); }
+if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
 /** Normalize a name for matching ("Morgan Dollars, Proof" -> "morgan dollars proof"). */
 function gsNorm($s): string
