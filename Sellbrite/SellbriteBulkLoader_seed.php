@@ -47,10 +47,18 @@ echo str_repeat('-', 60) . "\n";
 @ob_flush(); @flush();
 
 if (GS_API_TOKEN === '' || GS_API_KEY === '') { exit("STOP: GS_API_TOKEN / GS_API_KEY not set in the agent file.\n"); }
-if (!gsMemDb()) {
-    echo "NOTE: no DB2 connection - DEV MODE, storing to " . basename(GS_MEM_DEVFILE) . "\n";
-    echo str_repeat('-', 60) . "\n";
-    @ob_flush(); @flush();
+// Works with either agent build: dev-fallback (JSON) or DB2-only.
+$hasDb2 = function_exists('sbl_conn') && sbl_conn();
+if (!$hasDb2) {
+    if (function_exists('gsMemDb') && defined('GS_MEM_DEVFILE')) {
+        echo "NOTE: no DB2 connection - DEV MODE, storing to " . basename(GS_MEM_DEVFILE) . "\n";
+        echo str_repeat('-', 60) . "\n";
+        @ob_flush(); @flush();
+    } else {
+        exit("STOP: no DB2 connection and this agent build is DB2-only.\n"
+           . "Run this from a signed-in LCCOnline browser session on the server\n"
+           . "(after RUNSQLSTM SRCMBR(SBLMEMORYT) has created the table).\n");
+    }
 }
 
 /* ---- known state from the table (resume support) ---- */
