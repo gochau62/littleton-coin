@@ -47,7 +47,11 @@ echo str_repeat('-', 60) . "\n";
 @ob_flush(); @flush();
 
 if (GS_API_TOKEN === '' || GS_API_KEY === '') { exit("STOP: GS_API_TOKEN / GS_API_KEY not set in the agent file.\n"); }
-if (!(function_exists('sbl_conn') && sbl_conn())) { exit("STOP: no DB2 connection - create SBLMEMORYT and run this on the server.\n"); }
+if (!gsMemDb()) {
+    echo "NOTE: no DB2 connection - DEV MODE, storing to " . basename(GS_MEM_DEVFILE) . "\n";
+    echo str_repeat('-', 60) . "\n";
+    @ob_flush(); @flush();
+}
 
 /* ---- known state from the table (resume support) ---- */
 $doneNodes = [];

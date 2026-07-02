@@ -165,6 +165,33 @@ function geminiJson($system, $user, &$meta = [])
  */
 if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
+/* Dev fallback (XAMPP / no DB2): memory lives in a local JSON file so the
+ * crawl, dropdown search, years and imports can all be tested off the i.
+ * On the server with DB2 this file is never touched. */
+if (!defined('GS_MEM_DEVFILE')) { define('GS_MEM_DEVFILE', __DIR__ . '/SellbriteBulkLoader_memory.dev.json'); }
+
+/** Is the real DB2 memory available? (cached per request) */
+function gsMemDb(): bool
+{
+    static $ok = null;
+    if ($ok === null) { $ok = function_exists('db2_prepare') && function_exists('sbl_conn') && (bool) sbl_conn(); }
+    return $ok;
+}
+
+/** Dev store: all rows keyed "K:ref_id", shaped like the SQL rows. */
+function gsMemDevAll(): array
+{
+    if (isset($GLOBALS['GS_MEM_DEV'])) { return $GLOBALS['GS_MEM_DEV']; }
+    $d = is_file(GS_MEM_DEVFILE) ? json_decode((string) file_get_contents(GS_MEM_DEVFILE), true) : null;
+    return $GLOBALS['GS_MEM_DEV'] = (is_array($d) ? $d : []);
+}
+
+function gsMemDevSave(array $rows): void
+{
+    $GLOBALS['GS_MEM_DEV'] = $rows;
+    @file_put_contents(GS_MEM_DEVFILE, json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+}
+
 /** Normalize a name for matching ("Morgan Dollars, Proof" -> "morgan dollars proof"). */
 function gsNorm($s): string
 {
@@ -192,6 +219,14 @@ function gsMemUpsert(string $kind, int $refId, string $name, string $path,
                      int $coinCount = 0, string $done = 'N'): void
 {
     if ($refId <= 0 || $name === '') { return; }
+    if (!gsMemDb()) {
+        $rows = gsMemDevAll();
+        $rows[$kind . ':' . $refId] = ['kind' => $kind, 'ref_id' => $refId, 'parent_id' => $parent,
+            'name' => $name, 'path' => $path, 'coin_date' => $date, 'mint_mark' => $mm,
+            'coin_count' => $coinCount, 'done' => $done];
+        gsMemDevSave($rows);
+        return;
+    }
     $ins = gsMemExec(
         'INSERT INTO ' . SBL_GSMEM_TABLE
       . ' (kind, ref_id, parent_id, name, path, coin_date, mint_mark, coin_count, done)'
@@ -226,15 +261,35 @@ function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): voi
     }
 }
 
+/** Delete one memory row (used by the test page's round trip). */
+function gsMemDelete(string $kind, int $refId): void
+{
+    if (!gsMemDb()) {
+        $rows = gsMemDevAll();
+        unset($rows[$kind . ':' . $refId]);
+        gsMemDevSave($rows);
+        return;
+    }
+    gsMemExec('DELETE FROM ' . SBL_GSMEM_TABLE . ' WHERE kind = ? AND ref_id = ?', [$kind, $refId]);
+}
+
 /** Mark a node fully fetched (its coins/children are all in the table). */
 function gsMemMarkDone(int $nodeId): void
 {
+    if (!gsMemDb()) {
+        $rows = gsMemDevAll();
+        if (isset($rows['N:' . $nodeId])) { $rows['N:' . $nodeId]['done'] = 'Y'; gsMemDevSave($rows); }
+        return;
+    }
     gsMemExec('UPDATE ' . SBL_GSMEM_TABLE . " SET done = 'Y' WHERE kind = 'N' AND ref_id = ?", [$nodeId]);
 }
 
 /** All remembered folders (for the navigation shortcut). */
 function gsMemNodes(): array
 {
+    if (!gsMemDb()) {
+        return array_values(array_filter(gsMemDevAll(), static fn($r) => ($r['kind'] ?? '') === 'N'));
+    }
     return gsMemRows('SELECT ref_id, parent_id, name, path, coin_count, done FROM '
                    . SBL_GSMEM_TABLE . " WHERE kind = 'N'");
 }
@@ -242,6 +297,10 @@ function gsMemNodes(): array
 /** Remembered child folders of one node (lets the seed crawl resume without API calls). */
 function gsMemNodeChildren(int $parentId): array
 {
+    if (!gsMemDb()) {
+        return array_values(array_filter(gsMemDevAll(), static fn($r) =>
+            ($r['kind'] ?? '') === 'N' && (int) ($r['parent_id'] ?? 0) === $parentId));
+    }
     return gsMemRows('SELECT ref_id, name, path, coin_count, done FROM ' . SBL_GSMEM_TABLE
                    . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
 }
@@ -251,6 +310,19 @@ function gsMemSearch(string $q, int $limit = 40): array
 {
     $words = array_filter(explode(' ', gsNorm($q)));
     if (!$words) { return []; }
+
+    if (!gsMemDb()) {
+        $out = [];
+        foreach (gsMemDevAll() as $r) {
+            if (($r['kind'] ?? '') !== 'C') { continue; }
+            $hay = gsNorm(($r['name'] ?? '') . ' ' . ($r['path'] ?? ''));
+            foreach ($words as $w) { if (strpos($hay, $w) === false) { continue 2; } }
+            $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? '')];
+            if (count($out) >= $limit) { break; }
+        }
+        return $out;
+    }
+
     $sql = 'SELECT ref_id, name, path FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'C'";
     $params = [];
     foreach ($words as $w) {
@@ -411,11 +483,19 @@ function gsYearsFor(string $category, bool $liveLookup = true): array
     if ($ck === '') { return []; }
 
     $years = [];
-    $like  = '%' . strtoupper($ck) . '%';
-    $rows  = gsMemRows('SELECT DISTINCT coin_date FROM ' . SBL_GSMEM_TABLE
-                     . " WHERE kind = 'C' AND UPPER(COALESCE(path, '') CONCAT ' ' CONCAT name) LIKE ?", [$like]);
-    foreach ($rows as $r) {
-        if (preg_match('/\d{4}/', (string) ($r['coin_date'] ?? ''), $m)) { $years[$m[0]] = true; }
+    if (!gsMemDb()) {
+        foreach (gsMemDevAll() as $r) {
+            if (($r['kind'] ?? '') !== 'C') { continue; }
+            if (strpos(gsNorm(($r['path'] ?? '') . ' ' . ($r['name'] ?? '')), $ck) === false) { continue; }
+            if (preg_match('/\d{4}/', (string) ($r['coin_date'] ?? ''), $m)) { $years[$m[0]] = true; }
+        }
+    } else {
+        $like = '%' . strtoupper($ck) . '%';
+        $rows = gsMemRows('SELECT DISTINCT coin_date FROM ' . SBL_GSMEM_TABLE
+                        . " WHERE kind = 'C' AND UPPER(COALESCE(path, '') CONCAT ' ' CONCAT name) LIKE ?", [$like]);
+        foreach ($rows as $r) {
+            if (preg_match('/\d{4}/', (string) ($r['coin_date'] ?? ''), $m)) { $years[$m[0]] = true; }
+        }
     }
     if (!$years && $liveLookup) {
         $t = [];
