@@ -1,14 +1,4 @@
 <?php
-/*    ***************************************************  -->
-<!--  * Program Name - SellbriteBulkLoader_ctl.php      *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
-<!--  ***************************************************   */
-?>
-
-<?php
     // retrieves and sets password and username
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
@@ -78,23 +68,91 @@
     function sblSave(){
         var data = $('#sku-form').serialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
-            if (res.returnClass === 'success'){
-                swal({title:'Saved', text:'SKU saved and derived fields recomputed.', icon:'success', timer:1500, buttons:false});
+            if (res && res.returnClass === 'success'){
+                swal({title:'Saved', text:'SKU saved and derived fields recomputed.',
+                    type:'success', timer:15000});
+                setTimeout(function(){ window.location = '?'; }, 3000);
             } else {
                 swal('Saved with warnings','The SKU was saved but still needs attention (see the highlighted fields).','warning');
             }
-            setTimeout(function(){ window.location = '?'; }, 800);
         }, 'json');
     }
+    
     function sblDelete(id, sku){
         swal({ title:'Delete ' + sku + '?', text:'This permanently removes the record.',
-               icon:'warning', buttons:['Cancel','Delete'], dangerMode:true })
-        .then(function(ok){
-            if (!ok) return;
-            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(){
-                window.location = '?';
+               type:'warning', showCancelButton:true, confirmButtonColor:'#d9534f',
+               confirmButtonText:'Delete', cancelButtonText:'Cancel', closeOnConfirm:true },
+        function(isConfirm){
+            if (!isConfirm) return;
+            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(res){
+                if (res && res.returnClass === 'success'){
+                    window.location = '?';
+                } else {
+                    swal('Delete failed','The record was not removed - check the server log.','error');
+                }
             }, 'json');
         });
+    }
+
+    /* ---- import a coin from GreySheet (AI fills the fields) ---- */
+    function sblFillFromRow(row){
+        $.each(row || {}, function(k,v){
+            var el = document.getElementById('f_' + k);
+            if (el && v !== null && v !== '') { el.value = v; }
+        });
+        sblRecompute();
+    }
+    /* search the catalog, then let the user pick a coin */
+    function sblGsSearch(){
+        var q = $('#gs-search').val().trim();
+        if (!q){ $('#gs-search').focus(); return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsSearch', q:q }, function(res){
+            var sel = $('#gs-results').empty();
+            var matches = (res.matches || []);
+            if (res.returnClass !== 'success' || !matches.length){
+                sel.hide();
+                swal({ title:"No match in GreySheet", text:'Generate this coin with AI instead?',
+                       type:'info', showCancelButton:true, confirmButtonText:'Generate with AI',
+                       cancelButtonText:'Cancel', closeOnConfirm:true },
+                function(isConfirm){ if (isConfirm) sblGsGenerate(q); });
+                return;
+            }
+            sel.append('<option value="">'+matches.length+' match(es) — pick one…</option>');
+            $.each(matches, function(i, m){ sel.append('<option value="'+rdEscAttr(m.id)+'">'+rdEsc(m.label)+'</option>'); });
+            sel.show();
+        }, 'json');
+    }
+    function rdEsc(s){ return $('<div>').text(s == null ? '' : s).html(); }
+    function rdEscAttr(s){ return (s == null ? '' : String(s)).replace(/"/g,'&quot;'); }
+    function sblGsPick(){
+        var id = $('#gs-results').val();
+        if (id) sblGsImport(id);
+    }
+    function sblGsImport(node){
+        node = (node || '').toString().trim();
+        if (!node){ return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', node_id:node }, function(res){
+            if (res.returnClass === 'notfound'){
+                swal({ title:"GreySheet doesn't have this coin",
+                       text:'Would you like the AI to generate this listing?',
+                       type:'info', showCancelButton:true, confirmButtonText:'Generate with AI',
+                       cancelButtonText:'Cancel', closeOnConfirm:true },
+                function(isConfirm){ if (isConfirm) sblGsGenerate(node); });
+                return;
+            }
+            if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
+            sblFillFromRow(res.row);
+            swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
+                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1600 });
+        }, 'json');
+    }
+    function sblGsGenerate(hint){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
+            if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
+            sblFillFromRow(res.row);
+            swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
+                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800 });
+        }, 'json');
     }
 
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */

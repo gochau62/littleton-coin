@@ -1,14 +1,4 @@
 <?php
-/*    ***************************************************  -->
-<!--  * Program Name - SellbriteBulkLoader_logic.php    *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
-<!--  ***************************************************   */
-?>
-
-<?php
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }

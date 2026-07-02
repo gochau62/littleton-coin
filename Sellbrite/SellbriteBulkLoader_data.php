@@ -1,12 +1,4 @@
 <?php
-/*    ***************************************************  -->
-<!--  * Program Name - SellbriteBulkLoader_data.php      *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
-<!--  ***************************************************   */
-
 /*
  * Reference data for the Sellbrite Bulk Loader, generated from the source
  * workbook (Sellbrite-Bulk-New.ods).  Replaces the old sbl_data/*.json files

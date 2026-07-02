@@ -1,19 +1,10 @@
 <?php
-/*    ***************************************************  -->
-<!--  * Program Name - SellbriteBulkLoader_ajax.php     *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
-<!--  ***************************************************   */
-?>
-
-<?php
 // AJAX endpoint for the Sellbrite Bulk Loader.
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // also pulls in the logic file
+require_once __DIR__ . '/SellbriteBulkLoader_agent.php';   // GreySheet + Gemini agent (gsImport)
 
 if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
@@ -69,9 +60,48 @@ switch ($action) {
         break;
 
     case 'delete':
-        $id = (int) ($_POST['id'] ?? 0);
-        if ($id > 0) { sblDelete($id); }
-        echo json_encode(['returnClass' => 'success', 'id' => $id]);
+        $id  = (int) ($_POST['id'] ?? 0);
+        $ok  = $id > 0 && sblDelete($id);
+        echo json_encode(['returnClass' => $ok ? 'success' : 'error', 'id' => $id]);
+        break;
+
+    case 'gsSearch':
+        // Find coins in the GreySheet catalog by free text (for the picker).
+        $s = gsSearch((string) ($_POST['q'] ?? ''));
+        echo json_encode([
+            'returnClass' => $s['ok'] ? 'success' : 'error',
+            'matches'     => $s['matches'],
+            'message'     => $s['error'],
+        ]);
+        break;
+
+    case 'gsImport':
+        // GreySheet lookup -> Gemini fills the fields. found=false => offer to generate.
+        $imp = gsImport($_POST);
+        $rc  = !$imp['ok'] ? 'error' : (!$imp['found'] ? 'notfound' : ($imp['valid'] ? 'success' : 'warning'));
+        echo json_encode([
+            'returnClass' => $rc,
+            'row'         => $imp['row'],
+            'statuses'    => $imp['statuses'],
+            'messages'    => $imp['messages'],
+            'valid'       => $imp['valid'],
+            'via'         => $imp['via'],
+            'message'     => $imp['error'],
+        ]);
+        break;
+
+    case 'gsGenerate':
+        // One-off / foreign coin: Gemini drafts the whole listing from its knowledge.
+        $gen = gsGenerate($_POST);
+        echo json_encode([
+            'returnClass' => !$gen['ok'] ? 'error' : ($gen['valid'] ? 'success' : 'warning'),
+            'row'         => $gen['row'],
+            'statuses'    => $gen['statuses'],
+            'messages'    => $gen['messages'],
+            'valid'       => $gen['valid'],
+            'via'         => $gen['via'],
+            'message'     => $gen['error'],
+        ]);
         break;
 
     default:
