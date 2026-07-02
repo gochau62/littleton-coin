@@ -82,6 +82,12 @@ switch ($action) {
                           'matches' => $s['matches'], 'message' => $s['error']]);
         break;
 
+    case 'gsYears':
+        // Dynamic Year dropdown: only the years this series exists for.
+        $years = gsYearsFor((string) ($_POST['category'] ?? ''));
+        echo json_encode(['returnClass' => 'success', 'years' => $years]);
+        break;
+
     case 'gsImport':
         // Auto-fill from GreySheet: by gs_id (dropdown pick) or by navigating
         // the tree from the form's attributes (learning the path as it goes).

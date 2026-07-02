@@ -298,16 +298,17 @@ function gsPickCoin(array $coins, array $attrs): int
 }
 
 /**
- * Find a coin's GsId from its attributes, walking the tree live.
+ * Navigate to a coin's leaf node from its attributes, walking the tree live.
  * Starts from the deepest folder memory already knows, learns every folder
- * visited and every coin in the leaf, then returns the matched GsId (0 = not found).
+ * visited and every coin in the leaf.  Returns ['coins' => [...], 'path' => ''].
  */
-function gsResolve(array $attrs, array &$trace = []): int
+function gsResolveLeaf(array $attrs, array &$trace = []): array
 {
+    $none = ['coins' => [], 'path' => ''];
     $category = trim((string) ($attrs['category_name'] ?? ''));
     $desc = trim(implode(' ', array_filter([$attrs['year'] ?? '', $attrs['mint_mark'] ?? '', $category,
                 $attrs['denomination'] ?? '', $attrs['grade'] ?? '', $attrs['strike_type'] ?? ''])));
-    if ($category === '' && $desc === '') { return 0; }
+    if ($category === '' && $desc === '') { return $none; }
     $target = $category !== '' ? $category : $desc;
 
     $mem    = gsMemLoad();
@@ -326,34 +327,66 @@ function gsResolve(array $attrs, array &$trace = []): int
     }
 
     for ($depth = 0; $depth < 8; $depth++) {
-        // If this node is a leaf we know about, list its coins directly.
         $children = gsChildren($nodeId);
-        if (!$children) {
-            // No child folders: treat as leaf.
+        if (!$children) {                               // no child folders: treat as leaf
             $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $nodeId], $m);
             $coins = gsData($resp);
-            if (!$coins) { return 0; }
+            if (!$coins) { return $none; }
             gsMemLearnCoins($mem, $coins, $path);
             gsMemSave($mem);
-            return gsPickCoin($coins, $attrs);
+            return ['coins' => $coins, 'path' => $path];
         }
         $pick = gsNavPick($children, $target, $desc);
-        if (!$pick) { return 0; }
+        if (!$pick) { return $none; }
         $path .= ' > ' . $pick['name'];
         $trace[] = $pick['id'] . ':' . $pick['name'];
         gsMemLearnNode($mem, $pick['id'], $pick['name'], $path);
 
-        if ($pick['coins'] > 0) {                       // leaf: list, learn, match
+        if ($pick['coins'] > 0) {                       // leaf: list + learn
             $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $pick['id']], $m);
             $coins = gsData($resp);
             gsMemLearnCoins($mem, $coins, $path);
             gsMemSave($mem);
-            return $coins ? gsPickCoin($coins, $attrs) : 0;
+            return ['coins' => $coins, 'path' => $path];
         }
         $nodeId = $pick['id'];
     }
     gsMemSave($mem);
-    return 0;
+    return $none;
+}
+
+/** Find a coin's GsId from its attributes (0 = not found). */
+function gsResolve(array $attrs, array &$trace = []): int
+{
+    $leaf = gsResolveLeaf($attrs, $trace);
+    return $leaf['coins'] ? gsPickCoin($leaf['coins'], $attrs) : 0;
+}
+
+/**
+ * The years a series actually exists for (drives the dynamic Year dropdown).
+ * Memory-first (0 API calls once a series is learned); unknown series are
+ * looked up live, which also teaches memory the whole leaf.
+ */
+function gsYearsFor(string $category, bool $liveLookup = true): array
+{
+    $ck = gsNorm($category);
+    if ($ck === '') { return []; }
+
+    $years = [];
+    foreach (gsMemLoad()['coins'] as $c) {
+        $hay = gsNorm(($c['p'] ?? '') . ' ' . ($c['n'] ?? ''));
+        if (strpos($hay, $ck) === false) { continue; }
+        if (preg_match('/\d{4}/', (string) ($c['d'] ?? ''), $m)) { $years[$m[0]] = true; }
+    }
+    if (!$years && $liveLookup) {
+        $t = [];
+        foreach (gsResolveLeaf(['category_name' => $category], $t)['coins'] as $c) {
+            if (preg_match('/\d{4}/', (string) ($c['CoinDate'] ?? ''), $m)) { $years[$m[0]] = true; }
+        }
+    }
+    $out = array_keys($years);
+    sort($out);
+    return $out;
 }
 
 /* ----------------------- COIN DATA -> FORM FIELDS ------------------------ */

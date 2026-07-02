@@ -104,8 +104,37 @@
             var el = document.getElementById('f_' + k);
             if (el && v !== null && v !== '') { el.value = v; }
         });
+        sblYearRefresh(row && row.year);   // constrain Year to the series' real years
         sblRecompute();
     }
+
+    /* ---- dynamic Year dropdown: only the years the series exists for ---- */
+    function sblYearApply(years, keep){
+        var cur = (keep !== undefined && keep !== null && keep !== '') ? keep : $('#f_year').val();
+        if (!years || !years.length){
+            // No data for this series: fall back to free typing.
+            if ($('#f_year').is('select')){
+                $('#f_year').replaceWith('<input type="text" id="f_year" name="year" value="' + sblEsc(cur) + '" data-name="year">');
+            }
+            return;
+        }
+        var h = '<select id="f_year" name="year" data-name="year"><option value="">&mdash; select &mdash;</option>';
+        for (var i = 0; i < years.length; i++){
+            h += '<option value="' + years[i] + '"' + (String(cur) === String(years[i]) ? ' selected' : '') + '>' + years[i] + '</option>';
+        }
+        $('#f_year').replaceWith(h + '</select>');
+    }
+    function sblYearRefresh(keep){
+        var cat = $('#f_category_name').val();
+        if (!cat){ sblYearApply([], keep); return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsYears', category:cat }, function(res){
+            sblYearApply(res.years || [], keep);
+        }, 'json');
+    }
+    jQuery(document).ready(function(){
+        // Delegated: survives the input<->select swap and fires on category picks.
+        $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); });
+    });
     /* Search the learned coin memory; matches pop into the dropdown. */
     function sblGsFind(){
         var q = $('#gs-find').val().trim();
