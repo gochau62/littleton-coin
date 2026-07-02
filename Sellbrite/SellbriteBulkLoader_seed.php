@@ -1,34 +1,36 @@
 <?php
 /*
- * One-time seed crawl: populate the GreySheet catalog memory (SBLMEMORYT).
+ * One-time seed crawl: populate the GreySheet catalog memory.
  *
  * Walks the node tree from GS_ROOT_NODE breadth-first, storing every folder
- * and every coin (name, GsId, path, date, mint mark) into the memory table.
- * After this runs, the coin dropdown and the dynamic Year list work for the
- * whole catalog with 0 API calls; only the final data pull per coin is live.
+ * and every coin (name, GsId, path, date, mint mark). Where it stores:
+ *
+ *   - DB2 available (the IBM i, signed in to LCCOnline): writes SBLMEMORYT
+ *     through the agent's memory functions. THIS is the production run.
+ *   - No DB2 (XAMPP): writes SellbriteBulkLoader_memory.dev.json itself, the
+ *     same file/shape the standalone test page reads - so the crawl can be
+ *     tested locally even though the DB2 screen won't use that file.
  *
  * COST: calls scale with the number of NODES, not coins (one call lists a
- * whole leaf).  A full U.S. Coins run is roughly 1,000-2,500 calls.  The
- * crawl is budget-capped and RESUMABLE: nodes already marked done in the
- * table are skipped (their children/coins are read from the table), so you
- * can run it in slices - just run it again and it continues where it left off.
+ * whole leaf). Full U.S. Coins run is roughly 1,000-2,500 calls. The crawl
+ * is budget-capped and RESUMABLE: nodes already marked done are re-expanded
+ * from storage at 0 API calls, so just run it again to continue.
  *
- * RUN (on the server that has the keys + DB2):
- *   Browser:  SellbriteBulkLoader_seed.php?maxcalls=1200&delay=150
- *   CLI:      php SellbriteBulkLoader_seed.php maxcalls=1200 delay=150
- * Requires SBLMEMORYT to exist and GS_API_TOKEN / GS_API_KEY set in the agent.
+ * RUN
+ *   Browser: SellbriteBulkLoader_seed.php?maxcalls=1200&delay=150
+ *            (on the i: be signed in to LCCOnline in the same browser)
+ *   Mini test first: ?root=8243&maxcalls=10&delay=250   (Half Cents, ~7 calls)
  */
 
-// Framework helpers (getDB2PConn) + the logged-in user's DB2 credentials,
-// same as the AJAX endpoint. Run this from a browser session that is
-// signed in to LCCOnline, or the DB2 connection check below will stop it.
+// Framework helpers (getDB2PConn) + the signed-in user's DB2 credentials,
+// same as the AJAX endpoint. Both are optional off the i.
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
 if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
 if (session_status() !== PHP_SESSION_ACTIVE && PHP_SAPI !== 'cli') { session_start(); }
 
-require_once __DIR__ . '/SellbriteBulkLoader_agent.php';   // client + memory helpers
+require_once __DIR__ . '/SellbriteBulkLoader_agent.php';   // gsApiGet/gsData + DB2 memory fns
 
 if (function_exists('set_time_limit')) { @set_time_limit(0); }
 header('Content-Type: text/plain; charset=utf-8');
@@ -47,25 +49,96 @@ echo str_repeat('-', 60) . "\n";
 @ob_flush(); @flush();
 
 if (GS_API_TOKEN === '' || GS_API_KEY === '') { exit("STOP: GS_API_TOKEN / GS_API_KEY not set in the agent file.\n"); }
-// Works with either agent build: dev-fallback (JSON) or DB2-only.
-$hasDb2 = function_exists('sbl_conn') && sbl_conn();
-if (!$hasDb2) {
-    if (function_exists('gsMemDb') && defined('GS_MEM_DEVFILE')) {
-        echo "NOTE: no DB2 connection - DEV MODE, storing to " . basename(GS_MEM_DEVFILE) . "\n";
-        echo str_repeat('-', 60) . "\n";
-        @ob_flush(); @flush();
-    } else {
-        exit("STOP: no DB2 connection and this agent build is DB2-only.\n"
-           . "Run this from a signed-in LCCOnline browser session on the server\n"
-           . "(after RUNSQLSTM SRCMBR(SBLMEMORYT) has created the table).\n");
+
+/* ---- storage: DB2 (production) or the seed's own JSON (local testing) ---- */
+$HAS_DB2   = function_exists('sbl_conn') && sbl_conn();
+$JSON_FILE = __DIR__ . '/SellbriteBulkLoader_memory.dev.json';
+$JSON      = [];
+
+if ($HAS_DB2) {
+    // Make sure the table actually exists, otherwise every write silently no-ops.
+    $probe = sbl_select('SELECT COUNT(*) AS N FROM ' . SBL_GSMEM_TABLE);
+    if (!isset($probe[0]['n'])) {
+        exit("STOP: DB2 is connected but " . SBL_GSMEM_TABLE . " is missing or not readable.\n"
+           . "Create it first:  RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(SBLMEMORYT) COMMIT(*NONE)\n");
+    }
+    echo 'DB2 MODE: storing to ' . SBL_GSMEM_TABLE . ' (' . $probe[0]['n'] . " rows already)\n";
+} else {
+    $d = is_file($JSON_FILE) ? json_decode((string) file_get_contents($JSON_FILE), true) : null;
+    $JSON = is_array($d) ? $d : [];
+    echo 'JSON MODE (no DB2): storing to ' . basename($JSON_FILE) . ' (' . count($JSON) . " rows already)\n";
+    echo "Note: the standalone test page reads this file; the DB2 screen does not.\n";
+}
+echo str_repeat('-', 60) . "\n";
+@ob_flush(); @flush();
+
+/* Small adapter so the crawl below is identical in both modes. */
+function seed_json_save(): void
+{
+    global $HAS_DB2, $JSON, $JSON_FILE;
+    if (!$HAS_DB2) { @file_put_contents($JSON_FILE, json_encode($JSON, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX); }
+}
+function seed_node(int $id, string $name, string $path, int $parent, int $coins, string $done = 'N'): void
+{
+    global $HAS_DB2, $JSON;
+    if ($HAS_DB2) { gsMemLearnNode($id, $name, $path, $parent, $coins, $done); return; }
+    $JSON['N:' . $id] = ['kind' => 'N', 'ref_id' => $id, 'parent_id' => $parent, 'name' => $name,
+        'path' => $path, 'coin_date' => '', 'mint_mark' => '', 'coin_count' => $coins, 'done' => $done];
+}
+function seed_coins(array $coins, string $path, int $parent): void
+{
+    global $HAS_DB2, $JSON;
+    if ($HAS_DB2) { gsMemLearnCoins($coins, $path, $parent); return; }
+    foreach ($coins as $c) {
+        $id = (int) ($c['Gsid'] ?? 0);
+        if ($id <= 0) { continue; }
+        $JSON['C:' . $id] = ['kind' => 'C', 'ref_id' => $id, 'parent_id' => $parent,
+            'name' => (string) ($c['Name'] ?? ''), 'path' => $path,
+            'coin_date' => (string) ($c['CoinDate'] ?? ''), 'mint_mark' => (string) ($c['MintMark'] ?? ''),
+            'coin_count' => 0, 'done' => 'N'];
     }
 }
+function seed_done(int $id): void
+{
+    global $HAS_DB2, $JSON;
+    if ($HAS_DB2) { gsMemMarkDone($id); return; }
+    if (isset($JSON['N:' . $id])) { $JSON['N:' . $id]['done'] = 'Y'; }
+}
+function seed_done_map(): array
+{
+    global $HAS_DB2, $JSON;
+    $out = [];
+    if ($HAS_DB2) {
+        foreach (gsMemNodes() as $n) { if (($n['done'] ?? 'N') === 'Y') { $out[(int) $n['ref_id']] = true; } }
+    } else {
+        foreach ($JSON as $r) { if (($r['kind'] ?? '') === 'N' && ($r['done'] ?? 'N') === 'Y') { $out[(int) $r['ref_id']] = true; } }
+    }
+    return $out;
+}
+function seed_children_of(int $id): array
+{
+    global $HAS_DB2, $JSON;
+    $out = [];
+    if ($HAS_DB2) {
+        foreach (gsMemNodeChildren($id) as $k) {
+            $out[] = ['id' => (int) $k['ref_id'], 'name' => $k['name'], 'path' => (string) ($k['path'] ?? ''),
+                      'coins' => (int) $k['coin_count'], 'parent' => $id];
+        }
+    } else {
+        foreach ($JSON as $r) {
+            if (($r['kind'] ?? '') === 'N' && (int) ($r['parent_id'] ?? 0) === $id) {
+                $out[] = ['id' => (int) $r['ref_id'], 'name' => $r['name'], 'path' => $r['path'],
+                          'coins' => (int) $r['coin_count'], 'parent' => $id];
+            }
+        }
+    }
+    return $out;
+}
 
-/* ---- known state from the table (resume support) ---- */
-$doneNodes = [];
-foreach (gsMemNodes() as $n) { if (($n['done'] ?? 'N') === 'Y') { $doneNodes[(int) $n['ref_id']] = true; } }
-
-$queue = [['id' => (int) $opt['root'], 'name' => 'U.S. Coins', 'path' => 'U.S. Coins', 'coins' => 0]];
+/* ------------------------------ the crawl ------------------------------- */
+$doneNodes = seed_done_map();
+$queue = [['id' => (int) $opt['root'], 'name' => '(root ' . $opt['root'] . ')', 'path' => 'U.S. Coins',
+           'coins' => 0, 'parent' => 0]];
 $seen  = [];
 $stat  = ['calls' => 0, 'nodes' => 0, 'coins' => 0, 'skipped' => 0, 'stopped' => ''];
 
@@ -77,13 +150,10 @@ while ($queue) {
     $seen[$id] = true;
     $stat['nodes']++;
 
-    // Resume: a done node's children are already in the table - no API needed.
+    // Resume: a done node's children come from storage, 0 API calls.
     if (isset($doneNodes[$id])) {
         $stat['skipped']++;
-        foreach (gsMemNodeChildren($id) as $kid) {
-            $queue[] = ['id' => (int) $kid['ref_id'], 'name' => $kid['name'],
-                        'path' => (string) ($kid['path'] ?? ''), 'coins' => (int) $kid['coin_count']];
-        }
+        foreach (seed_children_of($id) as $kid) { $queue[] = $kid; }
         continue;
     }
 
@@ -93,12 +163,13 @@ while ($queue) {
         $stat['calls']++;
         if ($resp === null) { $stat['stopped'] = 'API error: ' . $meta['error']; break; }
         $coins = gsData($resp);
-        gsMemLearnCoins($coins, $n['path'], $id);
-        gsMemMarkDone($id);
+        seed_coins($coins, $n['path'], $id);
+        seed_done($id);
         $stat['coins'] += count($coins);
-        echo "LEAF [{$id}] {$n['name']}  +" . count($coins) . " coins  (call {$stat['calls']})\n";
+        echo "LEAF [{$id}] {$n['name']}  +" . count($coins) . " coins  (call {$stat['calls']}, {$meta['ms']}ms)\n";
+        if ($coins) { $s = $coins[0]; echo '      e.g. GsId=' . ($s['Gsid'] ?? '?') . '  "' . ($s['Name'] ?? '?') . '"  date=' . ($s['CoinDate'] ?? '?') . "\n"; }
     } else {
-        // Folder: list children, store them, queue them.
+        // Folder: list children, store them, queue them, mark this folder done.
         $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => $id], $meta);
         $stat['calls']++;
         if ($resp === null) { $stat['stopped'] = 'API error: ' . $meta['error']; break; }
@@ -106,20 +177,21 @@ while ($queue) {
         foreach ($kids as $c) {
             $kid = ['id' => (int) ($c['Id'] ?? 0), 'name' => (string) ($c['Name'] ?? ''),
                     'path' => $n['path'] . ' > ' . (string) ($c['Name'] ?? ''),
-                    'coins' => (int) ($c['CollectibleChildrenCountLive'] ?? 0)];
-            gsMemLearnNode($kid['id'], $kid['name'], $kid['path'], $id, $kid['coins']);
+                    'coins' => (int) ($c['CollectibleChildrenCountLive'] ?? 0), 'parent' => $id];
+            seed_node($kid['id'], $kid['name'], $kid['path'], $id, $kid['coins']);
             $queue[] = $kid;
         }
-        gsMemLearnNode($id, $n['name'], $n['path'], 0, 0, 'Y');   // folder itself is done
-        echo "NODE [{$id}] {$n['name']}  +" . count($kids) . " folders  (call {$stat['calls']})\n";
+        seed_node($id, $n['name'], $n['path'], (int) $n['parent'], 0, 'Y');
+        echo "NODE [{$id}] {$n['name']}  +" . count($kids) . " folders  (call {$stat['calls']}, {$meta['ms']}ms)\n";
     }
+    seed_json_save();
     @ob_flush(); @flush();
     if ($delayUs) { usleep($delayUs); }
 }
 
 echo str_repeat('-', 60) . "\n";
 echo "DONE: {$stat['calls']} API calls, {$stat['nodes']} nodes visited "
-   . "({$stat['skipped']} resumed from table), {$stat['coins']} coins stored.\n";
+   . "({$stat['skipped']} resumed from storage), {$stat['coins']} coins stored.\n";
 if ($stat['stopped']) { echo 'Stopped: ' . $stat['stopped'] . "\n"; }
 if ($queue)           { echo count($queue) . " nodes still queued - run again to continue.\n"; }
 else                  { echo "Crawl complete - the whole tree is in memory.\n"; }
