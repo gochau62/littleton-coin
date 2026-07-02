@@ -29,9 +29,9 @@ require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // sbl_conn / sbl_sel
 /* Edit these lines. Do NOT commit real production keys to git.
  *   BETA (testing) : https://cpgpublicapiv2beta.greysheet.com/api
  *   PROD (live)    : https://cpgpublicapiv2.greysheet.com/api        */
-if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2beta.greysheet.com/api'); }
-if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  ''); }                 // x-api-token
-if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    ''); }                 // x-api-key
+if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2.greysheet.com/api'); }
+if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }   // x-api-token
+if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }   // x-api-key
 if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'basic'); }            // 'basic' | 'advanced'
 if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }                  // 1 = "U.S. Coins"
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    20); }
