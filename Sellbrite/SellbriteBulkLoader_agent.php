@@ -3,9 +3,10 @@
  * GreySheet + Gemini coin agent for the Sellbrite Bulk Loader.
  *
  * WHAT IT DOES
- *   - Coin dropdown: searches a local PATH MEMORY (JSON file) of every coin
- *     this screen has ever seen on GreySheet - name, GsId, node path.
- *     Searching memory costs 0 API calls.
+ *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLGSMEMT) of every
+ *     coin this screen has ever seen on GreySheet - name, GsId, node path.
+ *     Searching memory costs 0 API calls.  Populate it with the seed crawl
+ *     (SellbriteBulkLoader_seed.php) or just let lookups teach it over time.
  *   - Unknown coin: navigates the GreySheet node tree live (string-match the
  *     obvious folders, Gemini picks the ambiguous ones), finds the coin, and
  *     LEARNS: every folder visited and every coin in the leaf is written to
@@ -22,6 +23,7 @@
  */
 
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema / Computer / Validator
+require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // sbl_conn / sbl_select (DB2 memory)
 
 /* ----------------------------- SETTINGS --------------------------------- */
 /* Edit these lines. Do NOT commit real production keys to git.
@@ -38,9 +40,6 @@ if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }               
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
-
-/* Path memory lives next to the code; the web user must be able to write it. */
-if (!defined('GS_MEMORY_FILE')) { define('GS_MEMORY_FILE', __DIR__ . '/SellbriteBulkLoader_memory.json'); }
 
 /* ------------------------------ LOGGING --------------------------------- */
 function gsLog($msg)
@@ -157,32 +156,14 @@ function geminiJson($system, $user, &$meta = [])
 
 /* ------------------------------ PATH MEMORY ----------------------------- */
 /*
- * One JSON file remembers everything learned from GreySheet:
- *   nodes: { "<norm name>": {"id":8215,"name":"Dollars","path":"U.S. Coins > Dollars"} }
- *   coins: { "<GsId>":     {"n":"1881-S $1 MS","p":"... > Morgan Dollars","d":"1881","mm":"S"} }
- * The dropdown searches "coins"; navigation starts from the deepest known node.
+ * The memory lives in DB2 (SBLGSMEMT): one row per catalog folder
+ * (kind 'N', ref_id = NodeId) or coin (kind 'C', ref_id = GsId) learned from
+ * GreySheet - by the seed crawl or on first lookup.  The dropdown searches
+ * coin rows at 0 API calls; navigation starts from the deepest known folder.
+ * Without a DB2 connection (dev) memory is a no-op and lookups still work,
+ * they just navigate live every time.
  */
-function gsMemLoad(): array
-{
-    if (isset($GLOBALS['GS_MEM'])) { return $GLOBALS['GS_MEM']; }
-    $mem = ['nodes' => [], 'coins' => []];
-    if (is_file(GS_MEMORY_FILE)) {
-        $d = json_decode((string) file_get_contents(GS_MEMORY_FILE), true);
-        if (is_array($d)) { $mem = $d + $mem; }
-    }
-    return $GLOBALS['GS_MEM'] = $mem;
-}
-
-function gsMemSave(array $mem): void
-{
-    $GLOBALS['GS_MEM'] = $mem;
-    $tmp = GS_MEMORY_FILE . '.tmp';
-    if (@file_put_contents($tmp, json_encode($mem, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX) !== false) {
-        @rename($tmp, GS_MEMORY_FILE);
-    } else {
-        gsLog('memory: cannot write ' . GS_MEMORY_FILE);
-    }
-}
+if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLGSMEMT'); }
 
 /** Normalize a name for matching ("Morgan Dollars, Proof" -> "morgan dollars proof"). */
 function gsNorm($s): string
@@ -190,39 +171,96 @@ function gsNorm($s): string
     return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
 }
 
-/** Remember a folder. */
-function gsMemLearnNode(array &$mem, int $id, string $name, string $path): void
+/** Run a prepared write against the memory table; false when no DB2. */
+function gsMemExec(string $sql, array $params): bool
 {
-    $k = gsNorm($name);
-    if ($k !== '' && $id > 0) { $mem['nodes'][$k] = ['id' => $id, 'name' => $name, 'path' => $path]; }
+    $conn = function_exists('sbl_conn') ? sbl_conn() : false;
+    if (!$conn) { return false; }
+    $stmt = db2_prepare($conn, $sql);
+    return $stmt ? (bool) @db2_execute($stmt, $params) : false;
+}
+
+/** SELECT rows from the memory table (lowercase keys); [] when no DB2. */
+function gsMemRows(string $sql, array $params = []): array
+{
+    return function_exists('sbl_select') ? sbl_select($sql, $params) : [];
+}
+
+/** Insert-or-update one memory row, keyed by (kind, ref_id). */
+function gsMemUpsert(string $kind, int $refId, string $name, string $path,
+                     string $date = '', string $mm = '', int $parent = 0,
+                     int $coinCount = 0, string $done = 'N'): void
+{
+    if ($refId <= 0 || $name === '') { return; }
+    $ins = gsMemExec(
+        'INSERT INTO ' . SBL_GSMEM_TABLE
+      . ' (kind, ref_id, parent_id, name, path, coin_date, mint_mark, coin_count, done)'
+      . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [$kind, $refId, $parent, $name, $path, $date, $mm, $coinCount, $done]
+    );
+    if (!$ins) {                                        // duplicate -> refresh it
+        gsMemExec(
+            'UPDATE ' . SBL_GSMEM_TABLE
+          . ' SET parent_id = ?, name = ?, path = ?, coin_date = ?, mint_mark = ?, coin_count = ?, done = ?'
+          . ' WHERE kind = ? AND ref_id = ?',
+            [$parent, $name, $path, $date, $mm, $coinCount, $done, $kind, $refId]
+        );
+    }
+}
+
+/** Remember a folder. */
+function gsMemLearnNode(int $id, string $name, string $path, int $parent = 0,
+                        int $coinCount = 0, string $done = 'N'): void
+{
+    gsMemUpsert('N', $id, $name, $path, '', '', $parent, $coinCount, $done);
 }
 
 /** Remember every coin in a leaf (one API call teaches the whole series). */
-function gsMemLearnCoins(array &$mem, array $coins, string $path): void
+function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): void
 {
     foreach ($coins as $c) {
         $id = (int) ($c['Gsid'] ?? 0);
         if ($id <= 0) { continue; }
-        $mem['coins'][(string) $id] = [
-            'n'  => (string) ($c['Name'] ?? ''),
-            'p'  => $path,
-            'd'  => (string) ($c['CoinDate'] ?? ''),
-            'mm' => (string) ($c['MintMark'] ?? ''),
-        ];
+        gsMemUpsert('C', $id, (string) ($c['Name'] ?? ''), $path,
+                    (string) ($c['CoinDate'] ?? ''), (string) ($c['MintMark'] ?? ''), $parentNodeId);
     }
 }
 
-/** Dropdown search: all remembered coins matching every word of $q. 0 API calls. */
+/** Mark a node fully fetched (its coins/children are all in the table). */
+function gsMemMarkDone(int $nodeId): void
+{
+    gsMemExec('UPDATE ' . SBL_GSMEM_TABLE . " SET done = 'Y' WHERE kind = 'N' AND ref_id = ?", [$nodeId]);
+}
+
+/** All remembered folders (for the navigation shortcut). */
+function gsMemNodes(): array
+{
+    return gsMemRows('SELECT ref_id, parent_id, name, path, coin_count, done FROM '
+                   . SBL_GSMEM_TABLE . " WHERE kind = 'N'");
+}
+
+/** Remembered child folders of one node (lets the seed crawl resume without API calls). */
+function gsMemNodeChildren(int $parentId): array
+{
+    return gsMemRows('SELECT ref_id, name, path, coin_count, done FROM ' . SBL_GSMEM_TABLE
+                   . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
+}
+
+/** Dropdown search: remembered coins matching every word of $q. 0 API calls. */
 function gsMemSearch(string $q, int $limit = 40): array
 {
     $words = array_filter(explode(' ', gsNorm($q)));
     if (!$words) { return []; }
+    $sql = 'SELECT ref_id, name, path FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'C'";
+    $params = [];
+    foreach ($words as $w) {
+        $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
+        $params[] = '%' . strtoupper($w) . '%';
+    }
+    $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
-    foreach (gsMemLoad()['coins'] as $gsId => $c) {
-        $hay = gsNorm(($c['n'] ?? '') . ' ' . ($c['p'] ?? ''));
-        foreach ($words as $w) { if (strpos($hay, $w) === false) { continue 2; } }
-        $out[] = ['gs_id' => (int) $gsId, 'label' => $c['n'], 'path' => $c['p']];
-        if (count($out) >= $limit) { break; }
+    foreach (gsMemRows($sql, $params) as $r) {
+        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? '')];
     }
     return $out;
 }
@@ -311,16 +349,16 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
     if ($category === '' && $desc === '') { return $none; }
     $target = $category !== '' ? $category : $desc;
 
-    $mem    = gsMemLoad();
     $nodeId = GS_ROOT_NODE;
     $path   = 'U.S. Coins';
 
     // Memory shortcut: jump straight to a known folder whose name matches the category.
     $tk = gsNorm($target);
-    foreach ($mem['nodes'] as $k => $n) {
+    foreach (gsMemNodes() as $n) {
+        $k = gsNorm((string) $n['name']);
         if ($k !== '' && (strpos($tk, $k) !== false || strpos($k, $tk) !== false)) {
-            $nodeId = (int) $n['id'];
-            $path   = $n['path'];
+            $nodeId = (int) $n['ref_id'];
+            $path   = (string) ($n['path'] ?? $path);
             $trace[] = 'memory:' . $n['name'];
             break;
         }
@@ -332,26 +370,26 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
             $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $nodeId], $m);
             $coins = gsData($resp);
             if (!$coins) { return $none; }
-            gsMemLearnCoins($mem, $coins, $path);
-            gsMemSave($mem);
+            gsMemLearnCoins($coins, $path, $nodeId);
+            gsMemMarkDone($nodeId);
             return ['coins' => $coins, 'path' => $path];
         }
         $pick = gsNavPick($children, $target, $desc);
         if (!$pick) { return $none; }
-        $path .= ' > ' . $pick['name'];
+        $parent = $nodeId;
+        $path  .= ' > ' . $pick['name'];
         $trace[] = $pick['id'] . ':' . $pick['name'];
-        gsMemLearnNode($mem, $pick['id'], $pick['name'], $path);
+        gsMemLearnNode($pick['id'], $pick['name'], $path, $parent, $pick['coins']);
 
         if ($pick['coins'] > 0) {                       // leaf: list + learn
             $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $pick['id']], $m);
             $coins = gsData($resp);
-            gsMemLearnCoins($mem, $coins, $path);
-            gsMemSave($mem);
+            gsMemLearnCoins($coins, $path, $pick['id']);
+            if ($coins) { gsMemMarkDone($pick['id']); }
             return ['coins' => $coins, 'path' => $path];
         }
         $nodeId = $pick['id'];
     }
-    gsMemSave($mem);
     return $none;
 }
 
@@ -373,10 +411,11 @@ function gsYearsFor(string $category, bool $liveLookup = true): array
     if ($ck === '') { return []; }
 
     $years = [];
-    foreach (gsMemLoad()['coins'] as $c) {
-        $hay = gsNorm(($c['p'] ?? '') . ' ' . ($c['n'] ?? ''));
-        if (strpos($hay, $ck) === false) { continue; }
-        if (preg_match('/\d{4}/', (string) ($c['d'] ?? ''), $m)) { $years[$m[0]] = true; }
+    $like  = '%' . strtoupper($ck) . '%';
+    $rows  = gsMemRows('SELECT DISTINCT coin_date FROM ' . SBL_GSMEM_TABLE
+                     . " WHERE kind = 'C' AND UPPER(COALESCE(path, '') CONCAT ' ' CONCAT name) LIKE ?", [$like]);
+    foreach ($rows as $r) {
+        if (preg_match('/\d{4}/', (string) ($r['coin_date'] ?? ''), $m)) { $years[$m[0]] = true; }
     }
     if (!$years && $liveLookup) {
         $t = [];
