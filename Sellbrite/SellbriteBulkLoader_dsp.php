@@ -1,4 +1,14 @@
 <?php
+/*    ***************************************************  -->
+<!--  * Program Name - SellbriteBulkLoader_dsp.php      *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  *             Littleton Coin Company              *  -->
+<!--  *             Littleton NH                        *  -->
+<!--  ***************************************************   */
+?>
+
+<?php
 function dspBulkLoader(&$screenData)
 {
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
@@ -152,10 +162,13 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
-            <input type="search" id="gs-search" class="sbl-search" style="width:190px" placeholder="Find a coin (year, type, grade)&hellip;"
-                   onkeyup="if(event.key==='Enter'){sblGsSearch();}">
-            <button type="button" class="btn btn-ghost" onclick="sblGsSearch()" title="Search the GreySheet catalog">Find coin</button>
-            <select id="gs-results" style="display:none;min-width:220px;padding:8px;border-radius:6px;border:1px solid #b4b4b4" onchange="sblGsPick()"></select>
+            <input type="search" id="gs-find" class="sbl-search" style="width:210px"
+                   placeholder="Find coin (e.g. 1881 S Morgan)&hellip;"
+                   onkeyup="if(event.key==='Enter'){sblGsFind();}">
+            <button type="button" class="btn btn-ghost" onclick="sblGsFind()"
+                    title="Search remembered coins; unknown coins are looked up on GreySheet">Find coin</button>
+            <select id="gs-matches" style="display:none;max-width:340px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
+                    onchange="sblGsPick()"></select>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" onclick="sblSave()">Save SKU</button>
         </div>

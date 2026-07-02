@@ -1,0 +1,66 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - SBLGSMEMT.TABLE                               */
+/*                                                                   */
+/* Program Narrative - Create the GreySheet catalog memory table     */
+/*                     for the Sellbrite Bulk Loader.  One row = one  */
+/*                     catalog folder (kind 'N', ref_id = NodeId) or  */
+/*                     one coin (kind 'C', ref_id = GsId) learned     */
+/*                     from the GreySheet API.  The coin dropdown     */
+/*                     searches this table (0 API calls); picking a   */
+/*                     coin makes the live GreySheet call from its    */
+/*                     GsId.  Populated by the seed crawl and by      */
+/*                     learn-on-use during lookups.                  */
+/*                                                                   */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/02/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(SBLGSMEMT) COMMIT(*NONE)               */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |  Author   -                                                    |*/
+/* |   Date    -                                                    |*/
+/* |   Purpose -                                                    |*/
+/* ------------------------------------------------------------------*/
+/*-------------------------------------------------------------------*/
+
+CREATE TABLE LSCDEVLIBP.SBLGSMEMT (
+   id        INTEGER GENERATED ALWAYS AS IDENTITY
+             (START WITH 1, INCREMENT BY 1) NOT NULL,
+   kind        CHAR(1)       CCSID 1208 NOT NULL,
+   ref_id      FOR COLUMN REFID     BIGINT       NOT NULL,
+   parent_id   FOR COLUMN PARENTID  BIGINT       NOT NULL DEFAULT 0,
+   name        VARCHAR(200)  CCSID 1208 NOT NULL,
+   path        VARCHAR(500)  CCSID 1208 DEFAULT NULL,
+   coin_date   FOR COLUMN COINDATE  VARCHAR(20)  CCSID 1208 DEFAULT NULL,
+   mint_mark   FOR COLUMN MINTMARK  VARCHAR(20)  CCSID 1208 DEFAULT NULL,
+   coin_count  FOR COLUMN COINCOUNT INTEGER      NOT NULL DEFAULT 0,
+   done        CHAR(1)       CCSID 1208 NOT NULL DEFAULT 'N',
+   created_at  FOR COLUMN CREATTS   TIMESTAMP    NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+   updated_at  FOR COLUMN UPDATETS  TIMESTAMP    NOT NULL
+             GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
+   CONSTRAINT SBLGSMEMT_PK  PRIMARY KEY (id),
+   CONSTRAINT SBLGSMEMT_UNQ UNIQUE (kind, ref_id)
+)
+RCDFMT SBLGSMEMR;
+
+LABEL ON LSCDEVLIBP.SBLGSMEMT (
+   id          TEXT IS 'Record ID',
+   kind        TEXT IS 'Kind (N=node C=coin)',
+   ref_id      TEXT IS 'GreySheet NodeId or GsId',
+   parent_id   TEXT IS 'Parent NodeId',
+   name        TEXT IS 'Node or Coin Name',
+   path        TEXT IS 'Catalog Path',
+   coin_date   TEXT IS 'Coin Date',
+   mint_mark   TEXT IS 'Mint Mark',
+   coin_count  TEXT IS 'Collectible Children (nodes)',
+   done        TEXT IS 'Node Fully Fetched (Y/N)',
+   created_at  TEXT IS 'Created Timestamp',
+   updated_at  TEXT IS 'Updated Timestamp');
+
+LABEL ON TABLE LSCDEVLIBP.SBLGSMEMT IS 'Sellbrite GreySheet Catalog Memory';
