@@ -227,19 +227,26 @@ function gsMemSearch(string $q, int $limit = 40): array
     }
     return $out;
 }
-/* Cascade dropdown #1: coin-holding categories (leaf nodes). Every node with
- * coin_count > 0 directly holds collectibles - that IS a series/category like
- * "Draped Bust Half Cents". Blank query lists the first $limit by name. */
+/* Escape the LIKE metacharacters in a literal so a path/name used as a prefix
+ * can't act as a wildcard. Pair with  ... LIKE ? ESCAPE '\'  in the SQL. */
+function gsLikeEsc(string $s): string
+{
+    return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
+}
+/* Dropdown #1: search EVERY catalog node in memory - the broad roots
+ * (U.S. Coins, U.S. Currency, World Coins, World Currency), the specific series
+ * beneath them, and the leaves. Blank query lists the first $limit by name.
+ * 0 API calls. Coin-holding leaves are ordered first so they're easy to reach. */
 function gsMemCategories(string $q = '', int $limit = 60): array
 {
-    $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE
-         . " WHERE kind = 'N' AND coin_count > 0";
+    $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'N'";
     $params = [];
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
         $params[] = '%' . strtoupper($w) . '%';
     }
-    $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    $sql .= ' ORDER BY CASE WHEN coin_count > 0 THEN 0 ELSE 1 END, name'
+          . ' FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
     foreach (gsMemRows($sql, $params) as $r) {
         $out[] = ['node_id' => (int) $r['ref_id'], 'name' => (string) $r['name'],
@@ -247,14 +254,17 @@ function gsMemCategories(string $q = '', int $limit = 60): array
     }
     return $out;
 }
-/* Cascade dropdown #2: the coins inside one category node. Optional query
- * narrows within the series (e.g. a year or mint mark). 0 API calls. */
-function gsMemCoins(int $nodeId, string $q = '', int $limit = 300): array
+/* Dropdown #2: the coins under a node at ANY level, matched by catalog path so
+ * a broad pick (e.g. "U.S. Coins") still surfaces its descendant coins and a
+ * leaf pick returns just that series. Optional query narrows by coin name
+ * (year, mint mark, variety). 0 API calls. */
+function gsMemCoins(string $nodePath, string $q = '', int $limit = 300): array
 {
-    if ($nodeId <= 0) { return []; }
+    $nodePath = trim($nodePath);
+    if ($nodePath === '') { return []; }
     $sql = 'SELECT ref_id, name, coin_date, mint_mark FROM ' . SBL_GSMEM_TABLE
-         . " WHERE kind = 'C' AND parent_id = ?";
-    $params = [$nodeId];
+         . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')";
+    $params = [$nodePath, gsLikeEsc($nodePath) . ' > %'];
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name) LIKE ?";
         $params[] = '%' . strtoupper($w) . '%';

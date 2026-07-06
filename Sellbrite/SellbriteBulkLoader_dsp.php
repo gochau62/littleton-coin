@@ -54,7 +54,10 @@ function dspBulkLoader(&$screenData)
 .sbl-search { padding:9px 16px; border-radius:50px; border:2px solid #ccc; font-size:13px; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; width:280px; }
 .sbl-search:focus { border-color:#007bff; }
 .gs-cascade { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.gs-cascade select:disabled { opacity:.5; }
+.gs-cascade input:disabled { opacity:.5; }
+.ui-autocomplete { max-height:320px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; }
+.ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
+.ui-autocomplete .gs-path { color:#5f6b62; font-size:11px; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#007bff; color:#fff; font-size:14px; font-weight:700; border-radius:50px; cursor:pointer; }
 .btn:hover { background:#0056b3; }
 .btn-ghost { background:#fff; color:#222; border:1px solid #b4b4b4; }
@@ -165,15 +168,11 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
-            <span class="gs-cascade" title="Pick a GreySheet category, then a coin - the form auto-fills from GreySheet">
-                <input type="search" id="gs-cat" class="sbl-search" style="width:170px"
-                       placeholder="1. Category (e.g. Morgan)&hellip;" onkeyup="sblCatSearch()">
-                <select id="gs-cat-list" style="max-width:230px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
-                        onchange="sblCatPick()"><option value="">&mdash; category &mdash;</option></select>
-                <input type="search" id="gs-coin" class="sbl-search" style="width:150px"
-                       placeholder="2. Coin&hellip;" onkeyup="sblCoinSearch()" disabled>
-                <select id="gs-coin-list" style="max-width:270px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
-                        onchange="sblCoinPick()" disabled><option value="">&mdash; coin &mdash;</option></select>
+            <span class="gs-cascade" title="Search a GreySheet node (US Coins, a series, ...) then a coin - then Autofill">
+                <input type="text" id="gs-node" class="sbl-search" style="width:230px" autocomplete="off"
+                       placeholder="1. Node: US Coins, Morgan Dollars&hellip;">
+                <input type="text" id="gs-coin" class="sbl-search" style="width:210px" autocomplete="off"
+                       placeholder="2. Coin&hellip;" disabled>
                 <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
                         title="Fill the highlighted fields from GreySheet">Autofill</button>
             </span>
@@ -184,25 +183,20 @@ details.group summary { cursor:pointer; color:#1e6e43; }
         <div class="editor">
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
-                <?php foreach ($groups as $title => $names): ?>
-                    <fieldset class="card group"><legend><?= sbl_e($title) ?></legend>
-                        <div class="field-grid">
-                            <?php foreach ($names as $n) { if (isset($byName[$n])) echo $renderField($byName[$n]); } ?>
-                        </div>
-                    </fieldset>
-                <?php endforeach; ?>
-                <details class="card group">
-                    <summary>Advanced &amp; category-specific fields</summary>
+                <?php
+                // Pared-down view: the two required fields (SKU, Quantity) plus
+                // only the fields GreySheet auto-fills. The full 85-field layout
+                // is parked until we decide which sections we actually need.
+                $reduced = ['sku','quantity','category_name','year','mint_mark','denomination',
+                            'coin_variety_1','coin_variety_2','composition','fineness',
+                            'strike_type','package_weight','price','cost'];
+                ?>
+                <fieldset class="card group">
+                    <legend>Auto-filled from GreySheet</legend>
                     <div class="field-grid">
-                        <?php
-                        $shown = [];
-                        foreach ($groups as $names) { $shown = array_merge($shown, $names); }
-                        foreach (Schema::columns() as $col) {
-                            if (in_array($col['name'], $shown, true)) continue;
-                            echo $renderField($col);
-                        } ?>
+                        <?php foreach ($reduced as $n) { if (isset($byName[$n])) echo $renderField($byName[$n]); } ?>
                     </div>
-                </details>
+                </fieldset>
             </form>
 
             <aside class="preview-col">

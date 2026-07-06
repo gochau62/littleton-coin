@@ -52,14 +52,12 @@
         $('#f_id').val('');
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
-        // reset the GreySheet cascade
-        $('#gs-cat').val('');
-        $('#gs-cat-list').empty().append('<option value="">&mdash; category &mdash;</option>');
+        // reset the GreySheet lookup
+        $('#gs-node').val('');
         $('#gs-coin').val('').prop('disabled', true);
-        $('#gs-coin-list').empty().append('<option value="">&mdash; coin &mdash;</option>').prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
-        sblCurNode = 0; sblPendingGsId = 0;
+        sblCurNode = 0; sblCurPath = ''; sblPendingGsId = 0;
     }
     function sblNew(){
         sblClearForm();
@@ -143,8 +141,8 @@
         // Delegated: survives the input<->select swap and fires on category picks.
         $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); });
     });
-    /* ---- cascade lookup: Category dropdown -> Coin dropdown -> Autofill ---- */
-    var sblCatTimer = null, sblCoinTimer = null, sblCurNode = 0, sblPendingGsId = 0;
+    /* ---- lookup: searchable Node box -> searchable Coin box -> Autofill ---- */
+    var sblCurNode = 0, sblCurPath = '', sblPendingGsId = 0;
 
     /* Fields the GreySheet autofill populates (mirrors gsMapToProduct + pricing).
        These get the blue "AUTO" preview when a coin is picked. */
@@ -167,55 +165,64 @@
         });
     }
 
-    /* Dropdown #1 - search coin-holding categories in memory (0 API calls). */
-    function sblCatSearch(){
-        clearTimeout(sblCatTimer);
-        sblCatTimer = setTimeout(function(){
-            $.post('SellbriteBulkLoader_ajax.php', { action:'gsCategories', q:$('#gs-cat').val() }, function(res){
-                var sel = $('#gs-cat-list').empty().append('<option value="">&mdash; category &mdash;</option>');
-                $.each(res.matches || [], function(i, c){
-                    sel.append('<option value="' + c.node_id + '" data-name="' + sblEsc(c.name) + '" title="' + sblEsc(c.path) + '">'
-                             + sblEsc(c.name) + ' (' + c.count + ')</option>');
-                });
-            }, 'json');
-        }, 250);
+    /* Box #1 - searchable dropdown over every catalog NODE in memory: broad
+       roots (US Coins, US Currency, World Coins, World Currency), the specific
+       series under them, right down to the leaf. 0 API calls. */
+    function sblNodeAutocomplete(){
+        $('#gs-node').autocomplete({
+            minLength: 1, delay: 200,
+            source: function(req, resp){
+                $.post('SellbriteBulkLoader_ajax.php', { action:'gsCategories', q:req.term }, function(res){
+                    resp($.map(res.matches || [], function(c){
+                        return { label: c.name, value: c.name, id: c.node_id, path: c.path, count: c.count };
+                    }));
+                }, 'json');
+            },
+            focus: function(){ return false; },   // don't overwrite the box on arrow-key hover
+            select: function(e, ui){
+                sblCurNode = ui.item.id; sblCurPath = ui.item.path || '';
+                $('#gs-node').val(ui.item.value);
+                $('#f_category_name').val(ui.item.value).trigger('change');   // sets category + refreshes Year
+                sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
+                $('#gs-coin').val('').prop('disabled', false).focus();
+                return false;
+            }
+        }).autocomplete('instance')._renderItem = function(ul, item){
+            return $('<li>').append('<div>' + sblEsc(item.label)
+                     + '<div class="gs-path">' + sblEsc(item.path) + (item.count ? '  &middot; ' + item.count + ' coins' : '') + '</div></div>')
+                   .appendTo(ul);
+        };
     }
-    /* Pick a category: fill category_name (which refreshes Year) and load its coins. */
-    function sblCatPick(){
-        var opt = $('#gs-cat-list option:selected');
-        sblCurNode = parseInt($('#gs-cat-list').val() || '0', 10);
-        var name = opt.data('name') || '';
-        if (name){ $('#f_category_name').val(name).trigger('change'); }
-        $('#gs-coin, #gs-coin-list').prop('disabled', !sblCurNode);
-        $('#gs-coin').val('');
-        $('#gs-coin-list').empty().append('<option value="">&mdash; coin &mdash;</option>');
-        if (sblCurNode) sblCoinSearch();
-    }
-    /* Dropdown #2 - search the coins inside the chosen category (0 API calls). */
-    function sblCoinSearch(){
-        if (!sblCurNode) return;
-        clearTimeout(sblCoinTimer);
-        sblCoinTimer = setTimeout(function(){
-            $.post('SellbriteBulkLoader_ajax.php', { action:'gsCoins', node:sblCurNode, q:$('#gs-coin').val() }, function(res){
-                var m = res.matches || [], sel = $('#gs-coin-list').empty();
-                sel.append('<option value="">&mdash; coin (' + m.length + ') &mdash;</option>');
-                $.each(m, function(i, c){
-                    sel.append('<option value="' + c.gs_id + '">' + sblEsc(c.label) + '</option>');
-                });
-            }, 'json');
-        }, 250);
-    }
-    /* Pick a coin: no API call yet - preview which fields Autofill will fill. */
-    function sblCoinPick(){
-        sblPendingGsId = parseInt($('#gs-coin-list').val() || '0', 10);
-        $('#gs-autofill').prop('disabled', !sblPendingGsId);
-        sblMarkGsFields(!!sblPendingGsId);
+    /* Box #2 - searchable dropdown of the coins under the chosen node (any level;
+       matches by catalog path). Picking one previews the fields, does NOT call
+       the API yet. 0 API calls. */
+    function sblCoinAutocomplete(){
+        $('#gs-coin').autocomplete({
+            minLength: 0, delay: 200,
+            source: function(req, resp){
+                if (!sblCurPath){ resp([]); return; }
+                $.post('SellbriteBulkLoader_ajax.php', { action:'gsCoins', path:sblCurPath, q:req.term }, function(res){
+                    resp($.map(res.matches || [], function(c){
+                        return { label: c.label, value: c.label, gs_id: c.gs_id };
+                    }));
+                }, 'json');
+            },
+            select: function(e, ui){
+                sblPendingGsId = ui.item.gs_id;
+                $('#gs-coin').val(ui.item.value);
+                $('#gs-autofill').prop('disabled', !sblPendingGsId);
+                sblMarkGsFields(!!sblPendingGsId);
+                return false;
+            }
+        });
+        // show the whole series on focus even before typing
+        $('#gs-coin').on('focus', function(){ if (sblCurPath) $(this).autocomplete('search', $(this).val()); });
     }
     /* Autofill button: pull full collectible + pricing from GreySheet and fill. */
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() }, function(res){
-            sblGsHandle(res, $('#gs-coin-list option:selected').text());
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() || '' }, function(res){
+            sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
     }
     function sblGsHandle(res, hint){
@@ -295,6 +302,9 @@
         });
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
         $('#sku-form').on('change', sblRecompute);
+
+        // searchable Node / Coin dropdowns (jQuery UI autocomplete)
+        if ($.fn.autocomplete){ sblNodeAutocomplete(); sblCoinAutocomplete(); }
     });
 </script>
 

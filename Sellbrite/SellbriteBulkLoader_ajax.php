@@ -83,15 +83,15 @@ switch ($action) {
         break;
 
     case 'gsCategories':
-        // Cascade dropdown #1: coin-holding categories from memory (0 API calls).
+        // Dropdown #1: search every catalog node in memory (0 API calls).
         echo json_encode(['returnClass' => 'success',
                           'matches' => gsMemCategories((string) ($_POST['q'] ?? ''))]);
         break;
 
     case 'gsCoins':
-        // Cascade dropdown #2: coins inside the chosen category (0 API calls).
+        // Dropdown #2: coins under the chosen node, by catalog path (0 API calls).
         echo json_encode(['returnClass' => 'success',
-                          'matches' => gsMemCoins((int) ($_POST['node'] ?? 0), (string) ($_POST['q'] ?? ''))]);
+                          'matches' => gsMemCoins((string) ($_POST['path'] ?? ''), (string) ($_POST['q'] ?? ''))]);
         break;
 
     case 'gsYears':
