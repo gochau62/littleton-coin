@@ -58,7 +58,6 @@
         sblRootPath = ''; sblCurPath = '';
         sblResetBelowSeries();
         $('#gs-apilog').empty().append('<li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li>');
-        $('#gs-raw').text('Autofill a coin to see the full API response…');
     }
     function sblNew(){
         sblClearForm();
@@ -283,17 +282,16 @@
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() || '' }, function(res){
-            sblRenderCalls(res.calls);
-            sblRenderRaw(res.raw);
+            sblRenderCalls(res.calls, res.total_calls);
             sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
     }
-    /* Testing readout: the full GreySheet collectible + pricing response. */
-    function sblRenderRaw(raw){
-        $('#gs-raw').text(raw ? JSON.stringify(raw, null, 2) : 'No data returned.');
-    }
-    /* Small box: the API calls that Autofill made and what each returned. */
-    function sblRenderCalls(calls){
+    /* Small box: the API calls that Autofill made and what each returned, plus
+       the running total of GreySheet calls used this session. */
+    function sblRenderCalls(calls, total){
+        if (total !== undefined && total !== null){
+            $('#gs-total').text('· ' + Number(total).toLocaleString() + ' used this session');
+        }
         var ul = $('#gs-apilog').empty();
         if (!calls || !calls.length){ ul.append('<li style="color:#5f6b62">No calls recorded.</li>'); return; }
         $.each(calls, function(i, c){
