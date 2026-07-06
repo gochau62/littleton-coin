@@ -227,6 +227,46 @@ function gsMemSearch(string $q, int $limit = 40): array
     }
     return $out;
 }
+/* Cascade dropdown #1: coin-holding categories (leaf nodes). Every node with
+ * coin_count > 0 directly holds collectibles - that IS a series/category like
+ * "Draped Bust Half Cents". Blank query lists the first $limit by name. */
+function gsMemCategories(string $q = '', int $limit = 60): array
+{
+    $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE
+         . " WHERE kind = 'N' AND coin_count > 0";
+    $params = [];
+    foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
+        $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
+        $params[] = '%' . strtoupper($w) . '%';
+    }
+    $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    $out = [];
+    foreach (gsMemRows($sql, $params) as $r) {
+        $out[] = ['node_id' => (int) $r['ref_id'], 'name' => (string) $r['name'],
+                  'path' => (string) ($r['path'] ?? ''), 'count' => (int) $r['coin_count']];
+    }
+    return $out;
+}
+/* Cascade dropdown #2: the coins inside one category node. Optional query
+ * narrows within the series (e.g. a year or mint mark). 0 API calls. */
+function gsMemCoins(int $nodeId, string $q = '', int $limit = 300): array
+{
+    if ($nodeId <= 0) { return []; }
+    $sql = 'SELECT ref_id, name, coin_date, mint_mark FROM ' . SBL_GSMEM_TABLE
+         . " WHERE kind = 'C' AND parent_id = ?";
+    $params = [$nodeId];
+    foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
+        $sql .= " AND UPPER(name) LIKE ?";
+        $params[] = '%' . strtoupper($w) . '%';
+    }
+    $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    $out = [];
+    foreach (gsMemRows($sql, $params) as $r) {
+        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => (string) $r['name'],
+                  'coin_date' => (string) ($r['coin_date'] ?? ''), 'mint_mark' => (string) ($r['mint_mark'] ?? '')];
+    }
+    return $out;
+}
 function gsChildren(int $nodeId): array
 {
     $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => $nodeId], $m);

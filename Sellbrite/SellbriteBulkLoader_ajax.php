@@ -82,6 +82,18 @@ switch ($action) {
                           'matches' => $s['matches'], 'message' => $s['error']]);
         break;
 
+    case 'gsCategories':
+        // Cascade dropdown #1: coin-holding categories from memory (0 API calls).
+        echo json_encode(['returnClass' => 'success',
+                          'matches' => gsMemCategories((string) ($_POST['q'] ?? ''))]);
+        break;
+
+    case 'gsCoins':
+        // Cascade dropdown #2: coins inside the chosen category (0 API calls).
+        echo json_encode(['returnClass' => 'success',
+                          'matches' => gsMemCoins((int) ($_POST['node'] ?? 0), (string) ($_POST['q'] ?? ''))]);
+        break;
+
     case 'gsYears':
         // Dynamic Year dropdown: only the years this series exists for.
         $years = gsYearsFor((string) ($_POST['category'] ?? ''));

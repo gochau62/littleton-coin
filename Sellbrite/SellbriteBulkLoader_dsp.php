@@ -53,6 +53,8 @@ function dspBulkLoader(&$screenData)
 .sbl-tools .spacer { flex:1; }
 .sbl-search { padding:9px 16px; border-radius:50px; border:2px solid #ccc; font-size:13px; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; width:280px; }
 .sbl-search:focus { border-color:#007bff; }
+.gs-cascade { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.gs-cascade select:disabled { opacity:.5; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#007bff; color:#fff; font-size:14px; font-weight:700; border-radius:50px; cursor:pointer; }
 .btn:hover { background:#0056b3; }
 .btn-ghost { background:#fff; color:#222; border:1px solid #b4b4b4; }
@@ -162,13 +164,16 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
-            <input type="search" id="gs-find" class="sbl-search" style="width:210px"
-                   placeholder="Find coin (e.g. 1881 S Morgan)&hellip;"
-                   onkeyup="if(event.key==='Enter'){sblGsFind();}">
-            <button type="button" class="btn btn-ghost" onclick="sblGsFind()"
-                    title="Search remembered coins; unknown coins are looked up on GreySheet">Find coin</button>
-            <select id="gs-matches" style="display:none;max-width:340px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
-                    onchange="sblGsPick()"></select>
+            <span class="gs-cascade" title="Pick a GreySheet category, then a coin - the form auto-fills from GreySheet">
+                <input type="search" id="gs-cat" class="sbl-search" style="width:170px"
+                       placeholder="1. Category (e.g. Morgan)&hellip;" onkeyup="sblCatSearch()">
+                <select id="gs-cat-list" style="max-width:230px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
+                        onchange="sblCatPick()"><option value="">&mdash; category &mdash;</option></select>
+                <input type="search" id="gs-coin" class="sbl-search" style="width:150px"
+                       placeholder="2. Coin&hellip;" onkeyup="sblCoinSearch()" disabled>
+                <select id="gs-coin-list" style="max-width:270px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
+                        onchange="sblCoinPick()" disabled><option value="">&mdash; coin &mdash;</option></select>
+            </span>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" onclick="sblSave()">Save SKU</button>
         </div>
