@@ -126,7 +126,10 @@ final class Computer
         if (stripos($sku, '.WS') !== false && $g('price') !== '') { $row['original_retail'] = $g('price'); }
 
         $row['name'] = self::buildTitle($row);
-        $row['description'] = self::buildDescription($row, $copy);
+        // Keep an author-supplied (e.g. AI) description; only build one if empty.
+        if (trim((string) ($row['description'] ?? '')) === '') {
+            $row['description'] = self::buildDescription($row, $copy);
+        }
         return $row;
     }
     private static function lookupValue(string $value, string $fallback): string

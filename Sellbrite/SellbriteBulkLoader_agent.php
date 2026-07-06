@@ -32,6 +32,15 @@ if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); 
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
 
+// Constant listing copy from the ODS (feature_4 seller blurb, exact-image line).
+if (!defined('SBL_ABOUT_SELLER')) { define('SBL_ABOUT_SELLER',
+    'ABOUT PROFILE COINS & COLLECTIBLES: Selling collectible coins and currency online for more than a '
+  . 'decade, we are the dealer of choice for new and experienced collectors. Our ever-changing inventory '
+  . 'ranges from coins such as Morgan & Peace Dollars, Liberty Walking & Franklin Half Dollars, Standing '
+  . 'Liberty & Washington Quarters to modern sets, including proof sets, mint sets, & commemorative sets.'); }
+if (!defined('SBL_EXACT_IMAGE_DEFAULT')) { define('SBL_EXACT_IMAGE_DEFAULT',
+    'The images you see are for the exact item you will receive.'); }
+
 function gsLog($msg)
 {
     $line = 'Sellbrite ' . $msg;
@@ -506,6 +515,23 @@ function gsPriceNum($v): string
     $v = preg_replace('/[^0-9.]/', '', (string) $v);
     return is_numeric($v) ? $v : '';
 }
+/* Normalize a free-text GreySheet composition to an ODS "Valid Values" option
+ * (e.g. "99.99% gold" -> "Gold", "Copper-Nickel Clad" stays). */
+function sbl_norm_composition(string $c): string
+{
+    $l = strtolower($c);
+    $pairs = [
+        'copper-nickel clad' => 'Copper-Nickel Clad', 'copper-nickel' => 'Copper-Nickel',
+        'copper-plated zinc' => 'Copper-Plated Zinc', 'silver clad' => 'Silver Clad',
+        'manganese' => 'Manganese-Brass', 'bronze' => 'Bronze', 'sterling' => 'Sterling Silver',
+        'gold' => 'Gold', 'silver' => 'Silver', 'platinum' => 'Platinum', 'palladium' => 'Palladium',
+        'nickel' => 'Copper-Nickel', 'copper' => 'Copper', 'brass' => 'Brass', 'steel' => 'Zinc-Coated Steel',
+        'zinc' => 'Copper-Plated Zinc', 'aluminum' => 'Aluminum-Bronze', 'bi-metallic' => 'Bi-Metallic',
+        'pewter' => 'Pewter', 'titanium' => 'Titanium', 'paper' => 'Paper',
+    ];
+    foreach ($pairs as $needle => $val) { if (strpos($l, $needle) !== false) { return $val; } }
+    return trim($c);
+}
 /* Mint letter -> mint city (from the ODS Mint Location logic). */
 function sbl_mint_location(string $mm): string
 {
@@ -558,7 +584,14 @@ function sbl_field_guide(): array
         'certification'  => ['opts' => $cert, 'const' => 'Uncertified', 'desc' => 'Uncertified unless slabbed'],
         'title_suffix'   => ['const' => 'Coin Collectible'],
         'modified_item'  => ['opts' => ['No','Yes'], 'const' => 'No'],
-        'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of precious metal, blank for base-metal coins'],
+        'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
+        'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
+        'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
+        'description'    => ['desc' => 'ONE factual sentence: "A genuine {year} {mint} {type} {denomination} Coin." then the metal content if precious. No hype.'],
+        'red_book_description' => ['desc' => 'a detailed factual paragraph: design, designer, mintage, composition and a historical note - use GeneralNotes/ObverseDescription/ReverseDescription'],
+        'feature_1'      => ['desc' => 'start with "DETAILS: " then the specs line (year, mint, type, denomination, grade, metal content)'],
+        'feature_3'      => ['desc' => 'start with "COLLECTOR\'S NOTE: " then 2-4 sentences about this coin/series and why collectors want it'],
+        'search_terms'   => ['desc' => '8-15 lowercase space-separated keywords: metal, type, denomination, mint, theme, "numismatics", "coin"'],
         'price'          => ['src' => 'pricing CpgVal', 'req' => true, 'desc' => 'CPG retail; the operator confirms it'],
         'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
     ];
@@ -577,8 +610,10 @@ function gsMapToProduct(array $c): array
     if ($g('DenominationShort') !== '') { $row['denomination']   = $g('DenominationShort'); }
     if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
-    if ($g('Desg')     !== '')          { $row['designation_abbrivation'] = $g('Desg'); }
-    if ($g('Composition') !== '')       { $row['composition'] = $g('Composition'); }
+    // Strike designation (DCAM, RB, RD...) - "Other" is the specific one, else "Desg".
+    $desig = $g('Other') !== '' ? $g('Other') : $g('Desg');
+    if ($desig !== '')                  { $row['designation_abbrivation'] = $desig; }
+    if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
     if ($g('Fineness')    !== '')       { $row['fineness']    = $g('Fineness'); }
 
     $strike  = $g('StrikeType');
@@ -589,6 +624,12 @@ function gsMapToProduct(array $c): array
         $row['circulated_or_uncirculated'] = 'Uncirculated';
     }
     $row['single_coin_or_set'] = !empty($c['IsSet']) ? 'Set' : 'Single Coin';
+
+    // Per-coin precious-metal content, e.g. "1 oz" (precious metals only).
+    if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces'])
+        && preg_match('/silver|gold|platinum|palladium/', strtolower($g('Composition')))) {
+        $row['precious_metal_content'] = rtrim(rtrim(number_format((float) $c['WeightOunces'], 4, '.', ''), '0'), '.') . ' oz';
+    }
 
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $last = end($c['CatalogPath']);
@@ -609,6 +650,9 @@ function gsMapToProduct(array $c): array
     $row['title_suffix']  = 'Coin Collectible';
     $row['modified_item'] = 'No';
     $row['certification'] = 'Uncertified';
+    $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
+    $row['feature_2']     = SBL_EXACT_IMAGE_DEFAULT;   // ODS: feature 2 mirrors the exact-image line
+    $row['feature_4']     = SBL_ABOUT_SELLER;          // ODS: constant seller blurb
     if (($row['country_of_manufacture'] ?? '') === '') { $row['country_of_manufacture'] = 'United States'; }
     return array_filter($row, static fn($v) => $v !== '' && $v !== null);
 }
@@ -617,8 +661,10 @@ function gsMapToProduct(array $c): array
 function gs_coin_facts(array $c): array
 {
     $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
-             'Desg','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
-             'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal'];
+             'Desg','Other','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
+             'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
+             'GeneralNotes','ObverseDescription','ReverseDescription','ObverseLettering','ReverseLettering',
+             'PriceLow','PriceHigh'];
     $out = [];
     foreach ($keys as $k) {
         if (isset($c[$k]) && $c[$k] !== '' && $c[$k] !== null && $c[$k] !== 0 && $c[$k] !== '0') { $out[$k] = $c[$k]; }
