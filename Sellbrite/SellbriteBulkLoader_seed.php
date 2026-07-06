@@ -2,8 +2,10 @@
 /*
  * One-time seed crawl: populate the GreySheet catalog memory.
  *
- * Walks the node tree from GS_ROOT_NODE breadth-first, storing every folder
- * and every coin (name, GsId, path, date, mint mark). Where it stores:
+ * The catalog has NO single root node - four trees sit side by side at the top:
+ *   1 = U.S. Coins    2 = U.S. Currency    6 = World Coins    12 = World Currency
+ * Walks each requested tree breadth-first, storing every folder and every coin
+ * (name, GsId, path, date, mint mark). Where it stores:
  *
  *   - DB2 available (the IBM i, signed in to LCCOnline): writes SBLMEMORYT
  *     through the agent's memory functions. THIS is the production run.
@@ -19,6 +21,9 @@
  * RUN
  *   Browser: SellbriteBulkLoader_seed.php?maxcalls=1200&delay=150
  *            (on the i: be signed in to LCCOnline in the same browser)
+ *   Default tree is root=1 (U.S. Coins). The other trees when you want them:
+ *     ?root=2   U.S. Currency      ?root=6    World Coins
+ *     ?root=12  World Currency     ?root=1,2  several in one run
  *   Mini test first: ?root=8243&maxcalls=10&delay=250   (Half Cents, ~7 calls)
  */
 
@@ -35,16 +40,18 @@ require_once __DIR__ . '/SellbriteBulkLoader_agent.php';   // gsApiGet/gsData + 
 if (function_exists('set_time_limit')) { @set_time_limit(0); }
 header('Content-Type: text/plain; charset=utf-8');
 
-/* ---- options (querystring or CLI key=value) ---- */
-$opt = ['maxcalls' => 1200, 'delay' => 150, 'root' => GS_ROOT_NODE];
+/* ---- options (querystring or CLI key=value; root takes a comma list) ---- */
+$opt = ['maxcalls' => '1200', 'delay' => '150', 'root' => (string) GS_ROOT_NODE];
 $src = (PHP_SAPI === 'cli') ? array_slice($_SERVER['argv'] ?? [], 1) : [];
-foreach ($src as $a) { if (preg_match('/^(\w+)=(\d+)$/', $a, $m)) { $opt[$m[1]] = (int) $m[2]; } }
-foreach ($opt as $k => $v) { if (isset($_GET[$k]) && ctype_digit((string) $_GET[$k])) { $opt[$k] = (int) $_GET[$k]; } }
+foreach ($src as $a) { if (preg_match('/^(\w+)=([\d,]+)$/', $a, $m)) { $opt[$m[1]] = $m[2]; } }
+foreach ($opt as $k => $v) { if (isset($_GET[$k]) && preg_match('/^[\d,]+$/', (string) $_GET[$k])) { $opt[$k] = (string) $_GET[$k]; } }
 
-$maxCalls = max(1, $opt['maxcalls']);
-$delayUs  = max(0, $opt['delay']) * 1000;
+$maxCalls = max(1, (int) $opt['maxcalls']);
+$delayUs  = max(0, (int) $opt['delay']) * 1000;
+$roots    = array_values(array_unique(array_filter(array_map('intval', explode(',', $opt['root'])))));
+if (!$roots) { $roots = [GS_ROOT_NODE]; }
 
-echo "SEED CRAWL  root={$opt['root']}  maxcalls={$maxCalls}  delay={$opt['delay']}ms\n";
+echo 'SEED CRAWL  root=' . implode(',', $roots) . "  maxcalls={$maxCalls}  delay=" . (int) $opt['delay'] . "ms\n";
 echo str_repeat('-', 60) . "\n";
 @ob_flush(); @flush();
 
@@ -134,13 +141,45 @@ function seed_children_of(int $id): array
     }
     return $out;
 }
+/* Real name/path for a starting node, so stored paths label the right tree
+ * (U.S. Coins vs World Currency...). Known top-level roots cost 0 calls;
+ * a node we've crawled before comes from storage; anything else (e.g. a
+ * mini-test sub-tree) spends ONE GetNodeRequest call on its name. */
+function seed_root_entry(int $id, array &$stat): array
+{
+    global $HAS_DB2, $JSON;
+    $tops = function_exists('gsRoots') ? gsRoots()
+          : [1 => 'U.S. Coins', 2 => 'U.S. Currency', 6 => 'World Coins', 12 => 'World Currency'];
+    $name = (string) ($tops[$id] ?? '');
+    $path = $name;
+    if ($name === '') {
+        if ($HAS_DB2) {
+            $r = gsMemRows('SELECT name, path FROM ' . SBL_GSMEM_TABLE
+                         . " WHERE kind = 'N' AND ref_id = ?", [$id]);
+            $name = (string) ($r[0]['name'] ?? '');
+            $path = (string) (($r[0]['path'] ?? '') !== '' ? $r[0]['path'] : $name);
+        } elseif (isset($JSON['N:' . $id])) {
+            $name = (string) $JSON['N:' . $id]['name'];
+            $path = (string) (($JSON['N:' . $id]['path'] ?? '') !== '' ? $JSON['N:' . $id]['path'] : $name);
+        }
+    }
+    if ($name === '') {
+        $resp = gsApiGet('GetNodeRequest', ['NodeId' => $id], $m);
+        $stat['calls']++;
+        $d    = is_array($resp) ? ($resp['Data'] ?? []) : [];
+        $name = (string) ($d['Name'] ?? ($d[0]['Name'] ?? ''));
+        if ($name === '') { $name = '(root ' . $id . ')'; }
+        $path = $name;
+    }
+    return ['id' => $id, 'name' => $name, 'path' => $path, 'coins' => 0, 'parent' => 0];
+}
 
 /* ------------------------------ the crawl ------------------------------- */
 $doneNodes = seed_done_map();
-$queue = [['id' => (int) $opt['root'], 'name' => '(root ' . $opt['root'] . ')', 'path' => 'U.S. Coins',
-           'coins' => 0, 'parent' => 0]];
-$seen  = [];
 $stat  = ['calls' => 0, 'nodes' => 0, 'coins' => 0, 'skipped' => 0, 'stopped' => ''];
+$queue = [];
+foreach ($roots as $rid) { $queue[] = seed_root_entry($rid, $stat); }
+$seen  = [];
 
 while ($queue) {
     if ($stat['calls'] >= $maxCalls) { $stat['stopped'] = 'call budget reached (run again to resume)'; break; }

@@ -137,7 +137,11 @@ if ($check === 'crawl') {
     $done = [];
     foreach ($mem as $r) { if (($r['kind'] ?? '') === 'N' && ($r['done'] ?? 'N') === 'Y') { $done[(int) $r['ref_id']] = true; } }
 
-    $queue = [['id' => $root, 'name' => '(root ' . $root . ')', 'path' => 'U.S. Coins', 'coins' => 0, 'parent' => 0]];
+    // No single root: 1=U.S. Coins 2=U.S. Currency 6=World Coins 12=World Currency.
+    $tops  = [1 => 'U.S. Coins', 2 => 'U.S. Currency', 6 => 'World Coins', 12 => 'World Currency'];
+    $rName = $tops[$root] ?? (string) ($mem['N:' . $root]['name'] ?? '(root ' . $root . ')');
+    $rPath = $tops[$root] ?? (string) (($mem['N:' . $root]['path'] ?? '') !== '' ? $mem['N:' . $root]['path'] : $rName);
+    $queue = [['id' => $root, 'name' => $rName, 'path' => $rPath, 'coins' => 0, 'parent' => 0]];
     $seen = []; $calls = 0; $coinsTotal = 0; $skipped = 0; $stopped = '';
 
     while ($queue) {
@@ -359,7 +363,7 @@ $h = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 
 <div class="card"><h2>4. Crawl a branch <span class="muted">(default: Half Cents, ~7 calls &mdash; streams progress, resumable, writes the memory file)</span></h2>
   <form method="post" class="row">
-    <input name="root" value="8243" size="7" title="root node id (1 = all of U.S. Coins)">
+    <input name="root" value="8243" size="7" title="tree to crawl: 1=U.S. Coins 2=U.S. Currency 6=World Coins 12=World Currency, or any node id">
     <input name="maxcalls" value="10" size="5" title="call budget">
     <input name="delay" value="250" size="5" title="delay ms">
     <button class="blue" name="check" value="crawl">Run crawl</button></form>

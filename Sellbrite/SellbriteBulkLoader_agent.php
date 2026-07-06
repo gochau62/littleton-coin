@@ -24,7 +24,7 @@ if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2
 if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
 if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
 if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'basic'); }
-if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }
+if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }   // default TREE only - see gsRoots()
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    20); }
 
 if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
@@ -284,6 +284,28 @@ function gsPickCoin(array $coins, array $attrs): int
     return (int) ($cands[0]['Gsid'] ?? 0);
 }
 
+/* The catalog has NO single root node. Four trees sit side by side at the top:
+ *   1 = U.S. Coins    2 = U.S. Currency    6 = World Coins    12 = World Currency
+ * Every node under them has either child nodes OR collectibles, never both.
+ * GS_ROOT_NODE is only the default tree; gsPickRoot() chooses per item. */
+function gsRoots(): array
+{
+    return [1 => 'U.S. Coins', 2 => 'U.S. Currency', 6 => 'World Coins', 12 => 'World Currency'];
+}
+function gsPickRoot(array $attrs, string $desc): array
+{
+    $roots   = gsRoots();
+    $country = strtolower(trim((string) ($attrs['country_of_manufacture'] ?? '')));
+    $text    = strtolower($desc . ' ' . (string) ($attrs['paper_money_type'] ?? ''));
+    $paper   = trim((string) ($attrs['paper_money_type'] ?? '')) !== ''
+            || trim((string) ($attrs['paper_money_grade_designation'] ?? '')) !== ''
+            || preg_match('/\b(note|banknote|currency|paper money)\b/', $text);
+    $world   = ($country !== '' && !in_array($country, ['united states', 'united states of america', 'usa', 'us'], true))
+            || preg_match('/\b(world|foreign)\b/', $text);
+    $id = $world ? ($paper ? 12 : 6) : ($paper ? 2 : (int) GS_ROOT_NODE);
+    return ['id' => $id, 'name' => $roots[$id] ?? ('(root ' . $id . ')')];
+}
+
 function gsResolveLeaf(array $attrs, array &$trace = []): array
 {
     $none = ['coins' => [], 'path' => ''];
@@ -293,8 +315,10 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
     if ($category === '' && $desc === '') { return $none; }
     $target = $category !== '' ? $category : $desc;
 
-    $nodeId = GS_ROOT_NODE;
-    $path   = 'U.S. Coins';
+    $root   = gsPickRoot($attrs, $desc);
+    $nodeId = (int) $root['id'];
+    $path   = $root['name'];
+    $trace[] = 'root:' . $root['name'];
     $tk = gsNorm($target);
     foreach (gsMemNodes() as $n) {
         $k = gsNorm((string) $n['name']);
