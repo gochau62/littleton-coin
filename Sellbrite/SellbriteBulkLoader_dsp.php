@@ -194,12 +194,15 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
                 <?php
-                // Pared-down view. Everything shows AUTO (filled from GreySheet)
+                // Everything shows AUTO (filled from GreySheet + ODS constants)
                 // except the four the operator must set: SKU, Price, Quantity, Cost.
                 $required = ['sku','price','quantity','cost'];
-                $reduced  = ['sku','price','quantity','cost','category_name','mint_mark','denomination',
-                             'coin_variety_1','coin_variety_2','composition','fineness',
-                             'strike_type','package_weight'];
+                $reduced  = ['sku','category_name','coin_type','year','mint_mark','mint_location',
+                             'denomination','coin_variety_1','coin_variety_2','grade',
+                             'designation_abbrivation','strike_type','circulated_or_uncirculated','style',
+                             'composition','fineness','single_coin_or_set','country_of_manufacture',
+                             'title_suffix','total_precious_metal_content','package_weight',
+                             'price','cost','quantity'];
                 ?>
                 <fieldset class="card group">
                     <legend>Auto-filled from GreySheet <span class="req-note">(SKU / Price / Quantity / Cost are required)</span></legend>

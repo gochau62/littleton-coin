@@ -144,11 +144,13 @@
     /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
     var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
 
-    /* Auto fields GreySheet fills that get the blue "AUTO" preview when a coin
-       is picked. Price/Cost/Quantity/SKU are excluded - they're the required
-       fields the operator confirms (autofill still suggests price/cost). */
-    var SBL_GS_FIELDS = ['category_name','mint_mark','denomination','coin_variety_1',
-        'coin_variety_2','composition','fineness','strike_type','package_weight'];
+    /* Auto fields that get the blue "AUTO" preview when a coin is picked.
+       SKU/Price/Quantity/Cost are excluded - they're the required fields the
+       operator confirms (autofill still suggests price/cost). */
+    var SBL_GS_FIELDS = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
+        'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
+        'circulated_or_uncirculated','style','composition','fineness','single_coin_or_set',
+        'country_of_manufacture','title_suffix','total_precious_metal_content','package_weight'];
 
     function sblMarkGsFields(on){
         $.each(SBL_GS_FIELDS, function(i, name){
