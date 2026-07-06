@@ -203,8 +203,11 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                 $reduced  = ['sku','category_name','coin_type','year','mint_mark','mint_location',
                              'denomination','coin_variety_1','coin_variety_2','grade',
                              'designation_abbrivation','strike_type','circulated_or_uncirculated','style',
-                             'composition','fineness','single_coin_or_set','country_of_manufacture',
-                             'title_suffix','total_precious_metal_content','package_weight',
+                             'composition','fineness','precious_metal_content','total_precious_metal_content',
+                             'single_coin_or_set','country_of_manufacture','brand','title_suffix',
+                             'package_weight','exact_image',
+                             'name','description','red_book_description',
+                             'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
                              'price','cost','quantity'];
                 ?>
                 <fieldset class="card group">
