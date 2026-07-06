@@ -119,7 +119,7 @@ switch ($action) {
         $rc  = !$imp['ok'] ? 'error' : (!$imp['found'] ? 'notfound' : ($imp['valid'] ? 'success' : 'warning'));
         echo json_encode(['returnClass' => $rc, 'row' => $imp['row'], 'statuses' => $imp['statuses'],
                           'messages' => $imp['messages'], 'valid' => $imp['valid'],
-                          'via' => $imp['via'], 'calls' => $imp['calls'] ?? [],
+                          'via' => $imp['via'], 'calls' => $imp['calls'] ?? [], 'raw' => $imp['raw'] ?? null,
                           'total_calls' => (int) ($_SESSION['gs_api_calls'] ?? 0), 'message' => $imp['error']]);
         break;
 

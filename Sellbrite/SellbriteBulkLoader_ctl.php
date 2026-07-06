@@ -58,6 +58,7 @@
         sblRootPath = ''; sblCurPath = '';
         sblResetBelowSeries();
         $('#gs-apilog').empty().append('<li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li>');
+        $('#gs-raw').text('Autofill a coin to see the full API response…');
     }
     function sblNew(){
         sblClearForm();
@@ -283,8 +284,13 @@
         if (!sblPendingGsId) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() || '' }, function(res){
             sblRenderCalls(res.calls, res.total_calls);
+            sblRenderRaw(res.raw);
             sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
+    }
+    /* Full GreySheet collectible + pricing response, for reference. */
+    function sblRenderRaw(raw){
+        $('#gs-raw').text(raw ? JSON.stringify(raw, null, 2) : 'No data returned.');
     }
     /* Small box: the API calls that Autofill made and what each returned, plus
        the running total of GreySheet calls used this session. */
