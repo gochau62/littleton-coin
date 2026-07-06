@@ -1,14 +1,4 @@
 <?php
-/*    ***************************************************  -->
-<!--  * Program Name - SellbriteBulkLoader_ajax.php     *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
-<!--  ***************************************************   */
-?>
-
-<?php
 // AJAX endpoint for the Sellbrite Bulk Loader.
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
