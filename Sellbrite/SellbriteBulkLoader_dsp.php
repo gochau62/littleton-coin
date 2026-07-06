@@ -85,8 +85,9 @@ details.group summary { cursor:pointer; color:#1e6e43; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
-.field.is-auto input,.field.is-auto textarea,.field.is-auto select { background:#eef7ff; border-style:dashed; border-color:#8fbff0; }
-.badge.auto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
+.field.is-auto input,.field.is-auto textarea,.field.is-auto select,
+.field.is-gsauto input,.field.is-gsauto textarea,.field.is-gsauto select { background:#eef7ff; border-style:dashed; border-color:#8fbff0; }
+.badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
 .field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#e0a800; background:#fffaf0; } .field.is-action .field-msg { color:#9a6a14; }
@@ -173,6 +174,8 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                        placeholder="2. Coin&hellip;" onkeyup="sblCoinSearch()" disabled>
                 <select id="gs-coin-list" style="max-width:270px;padding:8px;border-radius:6px;border:1px solid #b4b4b4"
                         onchange="sblCoinPick()" disabled><option value="">&mdash; coin &mdash;</option></select>
+                <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
+                        title="Fill the highlighted fields from GreySheet">Autofill</button>
             </span>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" onclick="sblSave()">Save SKU</button>

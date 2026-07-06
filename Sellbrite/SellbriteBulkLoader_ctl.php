@@ -57,7 +57,9 @@
         $('#gs-cat-list').empty().append('<option value="">&mdash; category &mdash;</option>');
         $('#gs-coin').val('').prop('disabled', true);
         $('#gs-coin-list').empty().append('<option value="">&mdash; coin &mdash;</option>').prop('disabled', true);
-        sblCurNode = 0;
+        $('#gs-autofill').prop('disabled', true);
+        sblMarkGsFields(false);
+        sblCurNode = 0; sblPendingGsId = 0;
     }
     function sblNew(){
         sblClearForm();
@@ -141,8 +143,29 @@
         // Delegated: survives the input<->select swap and fires on category picks.
         $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); });
     });
-    /* ---- cascade lookup: Category dropdown -> Coin dropdown -> API pull ---- */
-    var sblCatTimer = null, sblCoinTimer = null, sblCurNode = 0;
+    /* ---- cascade lookup: Category dropdown -> Coin dropdown -> Autofill ---- */
+    var sblCatTimer = null, sblCoinTimer = null, sblCurNode = 0, sblPendingGsId = 0;
+
+    /* Fields the GreySheet autofill populates (mirrors gsMapToProduct + pricing).
+       These get the blue "AUTO" preview when a coin is picked. */
+    var SBL_GS_FIELDS = ['category_name','year','mint_mark','denomination','coin_variety_1',
+        'coin_variety_2','composition','fineness','strike_type','package_weight','price','cost'];
+
+    function sblMarkGsFields(on){
+        $.each(SBL_GS_FIELDS, function(i, name){
+            var el = document.querySelector('#sku-form [data-name="' + name + '"]');
+            if (!el) return;
+            var f = el.closest('.field'); if (!f) return;
+            f.classList.toggle('is-gsauto', !!on);
+            var lbl = f.querySelector('label'); if (!lbl) return;
+            var b = lbl.querySelector('.badge.gsauto');
+            if (on && !b && !lbl.querySelector('.badge.auto')){   // don't double-badge formula-auto fields
+                b = document.createElement('span'); b.className = 'badge gsauto'; b.textContent = 'AUTO';
+                b.title = 'Auto-filled from GreySheet when you click Autofill.';
+                lbl.appendChild(document.createTextNode(' ')); lbl.appendChild(b);
+            } else if (!on && b){ b.remove(); }
+        });
+    }
 
     /* Dropdown #1 - search coin-holding categories in memory (0 API calls). */
     function sblCatSearch(){
@@ -182,11 +205,16 @@
             }, 'json');
         }, 250);
     }
-    /* Pick a coin: pull full collectible + pricing from GreySheet and auto-fill. */
+    /* Pick a coin: no API call yet - preview which fields Autofill will fill. */
     function sblCoinPick(){
-        var id = $('#gs-coin-list').val();
-        if (!id) return;
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:id, grade:$('#f_grade').val() }, function(res){
+        sblPendingGsId = parseInt($('#gs-coin-list').val() || '0', 10);
+        $('#gs-autofill').prop('disabled', !sblPendingGsId);
+        sblMarkGsFields(!!sblPendingGsId);
+    }
+    /* Autofill button: pull full collectible + pricing from GreySheet and fill. */
+    function sblGsAutofill(){
+        if (!sblPendingGsId) return;
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() }, function(res){
             sblGsHandle(res, $('#gs-coin-list option:selected').text());
         }, 'json');
     }
