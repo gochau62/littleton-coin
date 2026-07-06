@@ -185,12 +185,18 @@ final class Validator
         if ($year !== '' && (!ctype_digit($year) || strlen($year) !== 4)) {
             $statuses['year'] = 'action'; $messages['year'] = 'Year should be 4 digits';
         }
-        foreach (['price','cost','original_retail'] as $m) {
+        // Price, Cost and Quantity are operator-required (autofill only suggests price/cost).
+        foreach (['price','cost'] as $m) {
             $v = $g($m);
-            if ($v !== '' && !is_numeric($v)) { $statuses[$m] = 'error'; $messages[$m] = 'Must be a number'; }
+            if ($v === '')           { $statuses[$m] = 'error'; $messages[$m] = 'Required field'; }
+            elseif (!is_numeric($v)) { $statuses[$m] = 'error'; $messages[$m] = 'Must be a number'; }
+        }
+        if ($g('original_retail') !== '' && !is_numeric($g('original_retail'))) {
+            $statuses['original_retail'] = 'error'; $messages['original_retail'] = 'Must be a number';
         }
         $qty = $g('quantity');
-        if ($qty !== '' && !ctype_digit($qty)) { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Whole number only'; }
+        if ($qty === '')            { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Required field'; }
+        elseif (!ctype_digit($qty)) { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Whole number only'; }
         if ($g('single_coin_or_set') === 'Set' && $g('set_count') === '') {
             $statuses['set_count'] = 'action'; $messages['set_count'] = 'Enter number of coins in the set';
         }

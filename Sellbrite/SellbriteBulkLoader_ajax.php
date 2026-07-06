@@ -82,16 +82,28 @@ switch ($action) {
                           'matches' => $s['matches'], 'message' => $s['error']]);
         break;
 
-    case 'gsCategories':
-        // Dropdown #1: search every catalog node in memory (0 API calls).
+    case 'gsRoots':
+        // Drill-down 1: the broad trees (US Coins, US Currency, ...). 0 API calls.
+        echo json_encode(['returnClass' => 'success', 'matches' => gsMemRoots()]);
+        break;
+
+    case 'gsSeries':
+        // Drill-down 2: coin-holding series under a root, searchable. 0 API calls.
         echo json_encode(['returnClass' => 'success',
-                          'matches' => gsMemCategories((string) ($_POST['q'] ?? ''))]);
+                          'matches' => gsMemSeries((string) ($_POST['root'] ?? ''), (string) ($_POST['q'] ?? ''))]);
+        break;
+
+    case 'gsNodeYears':
+        // Year dropdown for a series (deduplicated). 0 API calls.
+        echo json_encode(['returnClass' => 'success', 'years' => gsMemYears((string) ($_POST['path'] ?? ''))]);
         break;
 
     case 'gsCoins':
-        // Dropdown #2: coins under the chosen node, by catalog path (0 API calls).
+        // Drill-down 3: coins under the series, optional year filter. 0 API calls.
         echo json_encode(['returnClass' => 'success',
-                          'matches' => gsMemCoins((string) ($_POST['path'] ?? ''), (string) ($_POST['q'] ?? ''))]);
+                          'matches' => gsMemCoins((string) ($_POST['path'] ?? ''),
+                                                  (string) ($_POST['q'] ?? ''),
+                                                  (string) ($_POST['year'] ?? ''))]);
         break;
 
     case 'gsYears':
@@ -107,7 +119,7 @@ switch ($action) {
         $rc  = !$imp['ok'] ? 'error' : (!$imp['found'] ? 'notfound' : ($imp['valid'] ? 'success' : 'warning'));
         echo json_encode(['returnClass' => $rc, 'row' => $imp['row'], 'statuses' => $imp['statuses'],
                           'messages' => $imp['messages'], 'valid' => $imp['valid'],
-                          'via' => $imp['via'], 'message' => $imp['error']]);
+                          'via' => $imp['via'], 'calls' => $imp['calls'] ?? [], 'message' => $imp['error']]);
         break;
 
     case 'gsGenerate':

@@ -54,10 +54,18 @@ function dspBulkLoader(&$screenData)
 .sbl-search { padding:9px 16px; border-radius:50px; border:2px solid #ccc; font-size:13px; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; width:280px; }
 .sbl-search:focus { border-color:#007bff; }
 .gs-cascade { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.gs-cascade input:disabled { opacity:.5; }
-.ui-autocomplete { max-height:320px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; }
+.gs-cascade input:disabled, .gs-cascade select:disabled { opacity:.5; }
+.gs-dd { padding:9px 12px; border-radius:50px; border:2px solid #ccc; font-size:13px; background:#fff; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; max-width:170px; }
+.gs-dd:focus { border-color:#007bff; }
+.ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; }
 .ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
 .ui-autocomplete .gs-path { color:#5f6b62; font-size:11px; }
+.req-note { font-weight:400; font-size:11px; color:#b3261e; }
+.card.apilog ul { list-style:none; margin:0; padding:0; font-size:11.5px; }
+.card.apilog li { padding:6px 0; border-bottom:1px solid #eef1ee; line-height:1.4; }
+.card.apilog .ep { font-family:Menlo,Consolas,monospace; color:#0056b3; word-break:break-all; }
+.card.apilog .got { color:#33413a; }
+.card.apilog .ms { color:#8a948d; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#007bff; color:#fff; font-size:14px; font-weight:700; border-radius:50px; cursor:pointer; }
 .btn:hover { background:#0056b3; }
 .btn-ghost { background:#fff; color:#222; border:1px solid #b4b4b4; }
@@ -168,11 +176,13 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <span class="spacer"></span>
-            <span class="gs-cascade" title="Search a GreySheet node (US Coins, a series, ...) then a coin - then Autofill">
-                <input type="text" id="gs-node" class="sbl-search" style="width:230px" autocomplete="off"
-                       placeholder="1. Node: US Coins, Morgan Dollars&hellip;">
-                <input type="text" id="gs-coin" class="sbl-search" style="width:210px" autocomplete="off"
-                       placeholder="2. Coin&hellip;" disabled>
+            <span class="gs-cascade" title="Tree &rarr; series &rarr; year &rarr; coin, then Autofill">
+                <select id="gs-root" class="gs-dd"><option value="">1. Tree&hellip;</option></select>
+                <input type="text" id="gs-series" class="sbl-search" style="width:180px" autocomplete="off"
+                       placeholder="2. Series (Morgan Dollars)&hellip;" disabled>
+                <select id="gs-year" class="gs-dd" disabled><option value="">Year</option></select>
+                <input type="text" id="gs-coin" class="sbl-search" style="width:180px" autocomplete="off"
+                       placeholder="4. Coin&hellip;" disabled>
                 <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
                         title="Fill the highlighted fields from GreySheet">Autofill</button>
             </span>
@@ -184,17 +194,23 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
                 <?php
-                // Pared-down view: the two required fields (SKU, Quantity) plus
-                // only the fields GreySheet auto-fills. The full 85-field layout
-                // is parked until we decide which sections we actually need.
-                $reduced = ['sku','quantity','category_name','year','mint_mark','denomination',
-                            'coin_variety_1','coin_variety_2','composition','fineness',
-                            'strike_type','package_weight','price','cost'];
+                // Pared-down view. Everything shows AUTO (filled from GreySheet)
+                // except the four the operator must set: SKU, Price, Quantity, Cost.
+                $required = ['sku','price','quantity','cost'];
+                $reduced  = ['sku','price','quantity','cost','category_name','mint_mark','denomination',
+                             'coin_variety_1','coin_variety_2','composition','fineness',
+                             'strike_type','package_weight'];
                 ?>
                 <fieldset class="card group">
-                    <legend>Auto-filled from GreySheet</legend>
+                    <legend>Auto-filled from GreySheet <span class="req-note">(SKU / Price / Quantity / Cost are required)</span></legend>
                     <div class="field-grid">
-                        <?php foreach ($reduced as $n) { if (isset($byName[$n])) echo $renderField($byName[$n]); } ?>
+                        <?php foreach ($reduced as $n) {
+                            if (!isset($byName[$n])) { continue; }
+                            $col = $byName[$n];
+                            $col['required'] = in_array($n, $required, true);
+                            $col['auto']     = !$col['required'];   // all the rest read as AUTO
+                            echo $renderField($col);
+                        } ?>
                     </div>
                 </fieldset>
             </form>
@@ -209,6 +225,8 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                 </div>
                 <div class="card checklist"><h3>Validation</h3>
                     <ul id="issue-list"><li style="color:#5f6b62">Live as you type&hellip;</li></ul></div>
+                <div class="card apilog"><h3>API calls</h3>
+                    <ul id="gs-apilog"><li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li></ul></div>
             </aside>
         </div>
     </div>

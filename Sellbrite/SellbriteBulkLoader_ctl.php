@@ -52,12 +52,12 @@
         $('#f_id').val('');
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
-        // reset the GreySheet lookup
-        $('#gs-node').val('');
-        $('#gs-coin').val('').prop('disabled', true);
-        $('#gs-autofill').prop('disabled', true);
-        sblMarkGsFields(false);
-        sblCurNode = 0; sblCurPath = ''; sblPendingGsId = 0;
+        // reset the GreySheet drill-down
+        $('#gs-root').val('');
+        $('#gs-series').val('').prop('disabled', true);
+        sblRootPath = ''; sblCurPath = '';
+        sblResetBelowSeries();
+        $('#gs-apilog').empty().append('<li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li>');
     }
     function sblNew(){
         sblClearForm();
@@ -141,13 +141,14 @@
         // Delegated: survives the input<->select swap and fires on category picks.
         $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); });
     });
-    /* ---- lookup: searchable Node box -> searchable Coin box -> Autofill ---- */
-    var sblCurNode = 0, sblCurPath = '', sblPendingGsId = 0;
+    /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
+    var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
 
-    /* Fields the GreySheet autofill populates (mirrors gsMapToProduct + pricing).
-       These get the blue "AUTO" preview when a coin is picked. */
-    var SBL_GS_FIELDS = ['category_name','year','mint_mark','denomination','coin_variety_1',
-        'coin_variety_2','composition','fineness','strike_type','package_weight','price','cost'];
+    /* Auto fields GreySheet fills that get the blue "AUTO" preview when a coin
+       is picked. Price/Cost/Quantity/SKU are excluded - they're the required
+       fields the operator confirms (autofill still suggests price/cost). */
+    var SBL_GS_FIELDS = ['category_name','mint_mark','denomination','coin_variety_1',
+        'coin_variety_2','composition','fineness','strike_type','package_weight'];
 
     function sblMarkGsFields(on){
         $.each(SBL_GS_FIELDS, function(i, name){
@@ -165,65 +166,132 @@
         });
     }
 
-    /* Box #1 - searchable dropdown over every catalog NODE in memory: broad
-       roots (US Coins, US Currency, World Coins, World Currency), the specific
-       series under them, right down to the leaf. 0 API calls. */
-    function sblNodeAutocomplete(){
-        $('#gs-node').autocomplete({
-            minLength: 1, delay: 200,
+    /* Strip the shared leading words so the coin box shows only what DIFFERS
+       (e.g. "VAM-38 MS" instead of the whole "1878 7/8TF $1 Strong, 7/5, ..."). */
+    function sblCoinDisplays(items){
+        if (items.length < 2){ items.forEach(function(it){ it.display = it.label; }); return items; }
+        var toks = items.map(function(it){ return String(it.label).split(/\s+/); });
+        var min = Math.min.apply(null, toks.map(function(t){ return t.length; }));
+        var common = 0;
+        for (var i = 0; i < min; i++){
+            var w = toks[0][i];
+            if (toks.every(function(t){ return t[i] === w; })) common++; else break;
+        }
+        if (common >= min) common = min - 1;   // never blank out an entry entirely
+        items.forEach(function(it, idx){
+            it.display = (common > 0 ? toks[idx].slice(common).join(' ') : it.label) || it.label;
+        });
+        return items;
+    }
+
+    /* Level 1 - the broad trees (US Coins, US Currency, World Coins, World
+       Currency). Native <select>: opens on click, no typing. 0 API calls. */
+    function sblLoadRoots(){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsRoots' }, function(res){
+            var sel = $('#gs-root').empty().append('<option value="">1. Tree&hellip;</option>');
+            $.each(res.matches || [], function(i, r){
+                sel.append('<option value="' + sblEsc(r.path) + '">' + sblEsc(r.name) + '</option>');
+            });
+        }, 'json');
+        $('#gs-root').on('change', function(){
+            sblRootPath = $(this).val();
+            $('#gs-series').val('').prop('disabled', !sblRootPath);
+            sblResetBelowSeries();
+            if (sblRootPath) $('#gs-series').focus();
+        });
+    }
+    /* Level 2 - the coin-holding series under the chosen tree. Searchable box
+       that opens its dropdown on focus. 0 API calls. */
+    function sblSeriesAutocomplete(){
+        $('#gs-series').autocomplete({
+            minLength: 0, delay: 200,
             source: function(req, resp){
-                $.post('SellbriteBulkLoader_ajax.php', { action:'gsCategories', q:req.term }, function(res){
+                if (!sblRootPath){ resp([]); return; }
+                $.post('SellbriteBulkLoader_ajax.php', { action:'gsSeries', root:sblRootPath, q:req.term }, function(res){
                     resp($.map(res.matches || [], function(c){
-                        return { label: c.name, value: c.name, id: c.node_id, path: c.path, count: c.count };
+                        return { label: c.name, value: c.name, path: c.path, count: c.count };
                     }));
                 }, 'json');
             },
-            focus: function(){ return false; },   // don't overwrite the box on arrow-key hover
             select: function(e, ui){
-                sblCurNode = ui.item.id; sblCurPath = ui.item.path || '';
-                $('#gs-node').val(ui.item.value);
-                $('#f_category_name').val(ui.item.value).trigger('change');   // sets category + refreshes Year
-                sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
-                $('#gs-coin').val('').prop('disabled', false).focus();
+                sblCurPath = ui.item.path || '';
+                $('#gs-series').val(ui.item.value);
+                $('#f_category_name').val(ui.item.value).trigger('change');
+                sblResetBelowSeries();
+                sblLoadYears();
+                $('#gs-year, #gs-coin').prop('disabled', false);
+                $('#gs-coin').focus();
                 return false;
             }
         }).autocomplete('instance')._renderItem = function(ul, item){
             return $('<li>').append('<div>' + sblEsc(item.label)
-                     + '<div class="gs-path">' + sblEsc(item.path) + (item.count ? '  &middot; ' + item.count + ' coins' : '') + '</div></div>')
-                   .appendTo(ul);
+                     + (item.count ? ' <span class="gs-path">' + item.count + ' coins</span>' : '') + '</div>').appendTo(ul);
         };
+        $('#gs-series').on('focus', function(){ if (sblRootPath) $(this).autocomplete('search', $(this).val()); });
     }
-    /* Box #2 - searchable dropdown of the coins under the chosen node (any level;
-       matches by catalog path). Picking one previews the fields, does NOT call
-       the API yet. 0 API calls. */
+    /* Year dropdown for the chosen series (distinct, deduplicated). */
+    function sblLoadYears(){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsNodeYears', path:sblCurPath }, function(res){
+            var sel = $('#gs-year').empty().append('<option value="">Year (all)</option>');
+            $.each(res.years || [], function(i, y){ sel.append('<option value="' + y + '">' + y + '</option>'); });
+        }, 'json');
+        $('#gs-year').off('change').on('change', function(){
+            sblCurYear = $(this).val();
+            $('#gs-coin').val('');
+            sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
+            $('#gs-coin').focus();
+        });
+    }
+    /* Level 4 - coins under the series (optionally one year). Labels are trimmed
+       to just the distinguishing part. Opens on focus. 0 API calls. */
     function sblCoinAutocomplete(){
         $('#gs-coin').autocomplete({
             minLength: 0, delay: 200,
             source: function(req, resp){
                 if (!sblCurPath){ resp([]); return; }
-                $.post('SellbriteBulkLoader_ajax.php', { action:'gsCoins', path:sblCurPath, q:req.term }, function(res){
-                    resp($.map(res.matches || [], function(c){
+                $.post('SellbriteBulkLoader_ajax.php',
+                    { action:'gsCoins', path:sblCurPath, year:sblCurYear, q:req.term }, function(res){
+                    var items = $.map(res.matches || [], function(c){
                         return { label: c.label, value: c.label, gs_id: c.gs_id };
-                    }));
+                    });
+                    resp(sblCoinDisplays(items));
                 }, 'json');
             },
             select: function(e, ui){
                 sblPendingGsId = ui.item.gs_id;
-                $('#gs-coin').val(ui.item.value);
+                $('#gs-coin').val(ui.item.display || ui.item.label);
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
                 return false;
             }
-        });
-        // show the whole series on focus even before typing
+        }).autocomplete('instance')._renderItem = function(ul, item){
+            return $('<li>').append('<div>' + sblEsc(item.display || item.label) + '</div>').appendTo(ul);
+        };
         $('#gs-coin').on('focus', function(){ if (sblCurPath) $(this).autocomplete('search', $(this).val()); });
+    }
+    function sblResetBelowSeries(){
+        sblCurYear = ''; sblPendingGsId = 0;
+        $('#gs-year').empty().append('<option value="">Year (all)</option>').prop('disabled', true);
+        $('#gs-coin').val('').prop('disabled', true);
+        $('#gs-autofill').prop('disabled', true);
+        sblMarkGsFields(false);
     }
     /* Autofill button: pull full collectible + pricing from GreySheet and fill. */
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() || '' }, function(res){
+            sblRenderCalls(res.calls);
             sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
+    }
+    /* Small box: the API calls that Autofill made and what each returned. */
+    function sblRenderCalls(calls){
+        var ul = $('#gs-apilog').empty();
+        if (!calls || !calls.length){ ul.append('<li style="color:#5f6b62">No calls recorded.</li>'); return; }
+        $.each(calls, function(i, c){
+            ul.append('<li><div class="ep">' + sblEsc(c.call) + (c.ms ? ' <span class="ms">' + c.ms + 'ms</span>' : '')
+                    + '</div><div class="got">&rarr; ' + sblEsc(c.got) + '</div></li>');
+        });
     }
     function sblGsHandle(res, hint){
         if (res.returnClass === 'notfound'){
@@ -303,8 +371,9 @@
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
         $('#sku-form').on('change', sblRecompute);
 
-        // searchable Node / Coin dropdowns (jQuery UI autocomplete)
-        if ($.fn.autocomplete){ sblNodeAutocomplete(); sblCoinAutocomplete(); }
+        // Tree -> Series -> Year -> Coin drill-down
+        sblLoadRoots();
+        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblCoinAutocomplete(); }
     });
 </script>
 
