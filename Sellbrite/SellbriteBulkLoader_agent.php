@@ -233,20 +233,37 @@ function gsLikeEsc(string $s): string
 {
     return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
 }
-/* Dropdown #1: search EVERY catalog node in memory - the broad roots
- * (U.S. Coins, U.S. Currency, World Coins, World Currency), the specific series
- * beneath them, and the leaves. Blank query lists the first $limit by name.
- * 0 API calls. Coin-holding leaves are ordered first so they're easy to reach. */
-function gsMemCategories(string $q = '', int $limit = 60): array
+/* Drill-down level 1: the broad trees present in memory (parent_id = 0):
+ * U.S. Coins, U.S. Currency, World Coins, World Currency. 0 API calls. */
+function gsMemRoots(): array
 {
-    $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'N'";
+    $out = [];
+    foreach (gsMemRows('SELECT ref_id, name, path FROM ' . SBL_GSMEM_TABLE
+                     . " WHERE kind = 'N' AND parent_id = 0 ORDER BY name") as $r) {
+        $out[] = ['node_id' => (int) $r['ref_id'], 'name' => (string) $r['name'],
+                  'path' => (string) (($r['path'] ?? '') !== '' ? $r['path'] : $r['name'])];
+    }
+    return $out;
+}
+/* Drill-down level 2: the coin-holding series (leaf nodes) under a chosen root,
+ * matched by catalog path so intermediate folders are flattened away. The user
+ * goes root -> series -> coin. Searchable. 0 API calls. */
+function gsMemSeries(string $rootPath, string $q = '', int $limit = 200): array
+{
+    $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE
+         . " WHERE kind = 'N' AND coin_count > 0";
     $params = [];
+    $rootPath = trim($rootPath);
+    if ($rootPath !== '') {
+        $sql .= " AND (path = ? OR path LIKE ? ESCAPE '\\')";
+        $params[] = $rootPath;
+        $params[] = gsLikeEsc($rootPath) . ' > %';
+    }
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
         $params[] = '%' . strtoupper($w) . '%';
     }
-    $sql .= ' ORDER BY CASE WHEN coin_count > 0 THEN 0 ELSE 1 END, name'
-          . ' FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
     foreach (gsMemRows($sql, $params) as $r) {
         $out[] = ['node_id' => (int) $r['ref_id'], 'name' => (string) $r['name'],
@@ -254,17 +271,39 @@ function gsMemCategories(string $q = '', int $limit = 60): array
     }
     return $out;
 }
-/* Dropdown #2: the coins under a node at ANY level, matched by catalog path so
- * a broad pick (e.g. "U.S. Coins") still surfaces its descendant coins and a
- * leaf pick returns just that series. Optional query narrows by coin name
- * (year, mint mark, variety). 0 API calls. */
-function gsMemCoins(string $nodePath, string $q = '', int $limit = 300): array
+/* Distinct years for the coins under a node (its own dropdown, deduplicated). */
+function gsMemYears(string $nodePath): array
+{
+    $nodePath = trim($nodePath);
+    if ($nodePath === '') { return []; }
+    $rows = gsMemRows('SELECT DISTINCT coin_date, name FROM ' . SBL_GSMEM_TABLE
+                    . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')",
+                    [$nodePath, gsLikeEsc($nodePath) . ' > %']);
+    $years = [];
+    foreach ($rows as $r) {
+        $src = ((string) ($r['coin_date'] ?? '')) . ' ' . ((string) ($r['name'] ?? ''));
+        if (preg_match('/\b(1[6-9]\d{2}|20\d{2})\b/', $src, $m)) { $years[$m[0]] = true; }
+    }
+    $out = array_keys($years);
+    sort($out);
+    return $out;
+}
+/* Coins under a node (any level), by catalog path. Optional $year narrows to one
+ * year, optional $q narrows by coin name. Returns full names; the front-end
+ * strips the shared prefix so only the distinguishing part shows. 0 API calls. */
+function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $limit = 400): array
 {
     $nodePath = trim($nodePath);
     if ($nodePath === '') { return []; }
     $sql = 'SELECT ref_id, name, coin_date, mint_mark FROM ' . SBL_GSMEM_TABLE
          . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')";
     $params = [$nodePath, gsLikeEsc($nodePath) . ' > %'];
+    $year = trim($year);
+    if ($year !== '') {
+        $sql .= " AND (coin_date = ? OR UPPER(name) LIKE ?)";
+        $params[] = $year;
+        $params[] = '%' . strtoupper(gsLikeEsc($year)) . '%';
+    }
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name) LIKE ?";
         $params[] = '%' . strtoupper($w) . '%';
@@ -443,18 +482,20 @@ function gsYearsFor(string $category, bool $liveLookup = true): array
     return $out;
 }
 
-function gsCollectible(int $gsId): array
+function gsCollectible(int $gsId, &$meta = []): array
 {
+    $meta = [];
     if ($gsId <= 0) { return []; }
-    $resp = gsApiGet('GetCollectibleRequest', ['GsId' => $gsId], $m);
+    $resp = gsApiGet('GetCollectibleRequest', ['GsId' => $gsId], $meta);
     return gsData($resp)[0] ?? [];
 }
-function gsPricing(int $gsId, $grade = null): array
+function gsPricing(int $gsId, $grade = null, &$meta = []): array
 {
+    $meta = [];
     if ($gsId <= 0) { return []; }
     $params = ['Gsid' => $gsId];
     if ($grade !== null && ctype_digit((string) $grade)) { $params['Grade'] = (int) $grade; }
-    $resp  = gsApiGet('GetPricingRequest', $params, $m);
+    $resp  = gsApiGet('GetPricingRequest', $params, $meta);
     $first = gsData($resp)[0] ?? [];
     return $first['PricingData'][0] ?? [];
 }
@@ -530,41 +571,51 @@ function gsSearch(string $q): array
     if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Type something to search for.']; }
     return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
 }
-function gs_finalize(array $row, $source, string $via): array
+function gs_finalize(array $row, $source, string $via, array $calls = []): array
 {
     $row   = Computer::apply($row);
     $check = Validator::check($row);
     return ['ok' => true, 'found' => true, 'row' => $row, 'statuses' => $check['statuses'],
             'messages' => $check['messages'], 'valid' => $check['valid'], 'source' => $source,
-            'error' => '', 'via' => $via];
+            'error' => '', 'via' => $via, 'calls' => $calls];
 }
 function gsImport(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
-             'valid' => false, 'source' => null, 'error' => '', 'via' => ''];
+             'valid' => false, 'source' => null, 'error' => '', 'via' => '', 'calls' => []];
+    $calls = [];
 
     $gsId = (int) ($params['gs_id'] ?? 0);
     if ($gsId <= 0) {
         $trace = [];
         $gsId  = gsResolve($params, $trace);
-        if ($gsId <= 0) { return array_merge($base, ['ok' => true]); }
+        if ($trace) { $calls[] = ['call' => 'Navigate GreySheet tree', 'got' => implode(' > ', $trace)]; }
+        if ($gsId <= 0) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
         gsLog('resolved "' . ($params['category_name'] ?? '') . '" -> GsId ' . $gsId . ' via ' . implode(' > ', $trace));
     }
 
-    $coin = gsCollectible($gsId);
-    if (!$coin) { return array_merge($base, ['ok' => true]); }
+    $coin = gsCollectible($gsId, $mCol);
+    $calls[] = ['call' => 'GetCollectibleRequest?GsId=' . $gsId, 'ms' => (int) ($mCol['ms'] ?? 0),
+                'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)') : 'nothing returned'];
+    if (!$coin) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
 
-    $price = gsPricing($gsId, $params['grade'] ?? null);
+    $price = gsPricing($gsId, $params['grade'] ?? null, $mPr);
+    $calls[] = ['call' => 'GetPricingRequest?Gsid=' . $gsId . (isset($params['grade']) && $params['grade'] !== '' ? '&Grade=' . $params['grade'] : ''),
+                'ms' => (int) ($mPr['ms'] ?? 0),
+                'got' => $price ? ('CpgVal=' . ($price['CpgVal'] ?? '-') . '  GreyVal=' . ($price['GreyVal'] ?? '-')
+                                   . ($price['GradeLabel'] ?? '' ? '  (' . $price['GradeLabel'] . ')' : ''))
+                                : 'no pricing (basic tier or none)'];
     if ($price) {
         $coin['CpgVal']  = $price['CpgVal'] ?? '';
         $coin['GreyVal'] = $price['GreyVal'] ?? '';
     }
 
     $row = gsAiMap($coin);
+    if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
-    if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.']); }
-    return gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map');
+    if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.', 'calls' => $calls]); }
+    return gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map', $calls);
 }
 
 function gsGenerate(array $params): array
