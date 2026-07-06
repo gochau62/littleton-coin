@@ -504,23 +504,127 @@ function gsPriceNum($v): string
     $v = preg_replace('/[^0-9.]/', '', (string) $v);
     return is_numeric($v) ? $v : '';
 }
+/* Mint letter -> mint city (from the ODS Mint Location logic). */
+function sbl_mint_location(string $mm): string
+{
+    $mm = trim($mm);
+    if ($mm === '' || strcasecmp($mm, 'No Mint Mark') === 0) { return 'Philadelphia'; }
+    $map = ['C' => 'Charlotte', 'CC' => 'Carson City', 'D' => 'Denver', 'O' => 'New Orleans',
+            'P' => 'Philadelphia', 'S' => 'San Francisco', 'W' => 'West Point',
+            'M' => 'Manila', 'MO' => 'Mexico City'];
+    return $map[strtoupper($mm)] ?? '';
+}
+/* Snap a value to the closest allowed option (exact, then case-insensitive). */
+function sbl_snap(string $v, array $opts): string
+{
+    $v = trim($v);
+    if ($v === '') { return ''; }
+    foreach ($opts as $o) { if ($o === $v) { return $o; } }
+    foreach ($opts as $o) { if (strcasecmp($o, $v) === 0) { return $o; } }
+    return $v;   // leave as-is; the human can correct it
+}
+/* The ODS-derived field guide: for each Sellbrite field, where its value comes
+ * from, how to fill it, the allowed options (from the ODS "Valid Values" sheet)
+ * and any hardcoded constant. Drives BOTH the deterministic map and the Gemini
+ * prompt. Only the fields the autofill is responsible for are listed. */
+function sbl_field_guide(): array
+{
+    static $g = null;
+    if ($g !== null) { return $g; }
+    $strike = ['Business','Burnished','Enhanced Uncirculated','Matte','Proof-Like','Satin','Specimen','Proof','Brilliant Proof','Reverse Proof','Satin Proof'];
+    $style  = ['Circulated','Uncirculated','Mint','Cleaned','Damaged','Error','Proof','Classic Commemorative','Modern Commemorative','Pattern','Over Date','Repunched Date'];
+    $comp   = ['Bronze','Copper','Copper Alloy','Copper-Nickel','Copper-Nickel Clad','Copper-Plated Zinc','Gold','Manganese-Brass','Palladium','Platinum','Silver','Silver Alloy','Silver Clad','Zinc-Coated Steel','Aluminum-Bronze','Bi-Metallic','Billon','Brass','Nickel-Plated Steel','Nickel-Silver','Paper','Pewter','Sterling Silver','Titanium'];
+    $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
+    return $g = [
+        'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the coin series, e.g. "Morgan Dollars"'],
+        'coin_type'      => ['src' => 'series / Variety', 'desc' => 'the design/type NAME only, e.g. "Morgan","Liberty Cap","Buffalo","Jefferson"'],
+        'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
+        'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
+        'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
+        'denomination'   => ['src' => 'DenominationShort', 'desc' => 'face value, e.g. 1C, 5C, 10C, 25C, 50C, $1'],
+        'coin_variety_1' => ['src' => 'Variety'],
+        'coin_variety_2' => ['src' => 'Variety2'],
+        'designation_abbrivation' => ['src' => 'Desg', 'desc' => 'grade designation abbrev: MS, PR, BN, RB, RD, DMPL, PL, CAM, DCAM, FB, FS, FBL'],
+        'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'leave blank unless a graded example; the operator sets it'],
+        'strike_type'    => ['src' => 'StrikeType', 'opts' => $strike],
+        'circulated_or_uncirculated' => ['desc' => 'Uncirculated for MS/PR/proof/BU/mint-state, Circulated otherwise', 'opts' => ['Circulated','Uncirculated']],
+        'style'          => ['desc' => 'Proof for proof strikes, else Uncirculated/Circulated to match the grade', 'opts' => $style],
+        'composition'    => ['src' => 'Composition', 'opts' => $comp],
+        'fineness'       => ['src' => 'Fineness', 'desc' => 'decimal purity, e.g. 0.9, 0.999'],
+        'single_coin_or_set' => ['src' => 'IsSet', 'opts' => ['Single Coin','Set'], 'const' => 'Single Coin'],
+        'country_of_manufacture' => ['src' => 'CatalogPath CountryName', 'desc' => 'full country name', 'const' => 'United States'],
+        'certification'  => ['opts' => $cert, 'const' => 'Uncertified', 'desc' => 'Uncertified unless slabbed'],
+        'title_suffix'   => ['const' => 'Coin Collectible'],
+        'modified_item'  => ['opts' => ['No','Yes'], 'const' => 'No'],
+        'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of precious metal, blank for base-metal coins'],
+        'price'          => ['src' => 'pricing CpgVal', 'req' => true, 'desc' => 'CPG retail; the operator confirms it'],
+        'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
+    ];
+}
+/* Deterministic mapping: fills every field it reliably can straight from the
+ * GreySheet data + the ODS constants. This is the trustworthy base; Gemini only
+ * fills the gaps it leaves (coin_type, refinements). */
 function gsMapToProduct(array $c): array
 {
-    $map = ['CoinDate' => 'year', 'MintMark' => 'mint_mark', 'DenominationShort' => 'denomination',
-            'Variety' => 'coin_variety_1', 'Variety2' => 'coin_variety_2',
-            'Composition' => 'composition', 'Fineness' => 'fineness', 'StrikeType' => 'strike_type'];
+    $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
     $row = [];
-    foreach ($map as $k => $f) {
-        if (isset($c[$k]) && is_scalar($c[$k]) && trim((string) $c[$k]) !== '') { $row[$f] = trim((string) $c[$k]); }
+    if (preg_match('/\d{4}/', $g('CoinDate'), $m)) { $row['year'] = $m[0]; }
+    $mm = $g('MintMark');
+    $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
+    $row['mint_location'] = sbl_mint_location($mm);
+    if ($g('DenominationShort') !== '') { $row['denomination']   = $g('DenominationShort'); }
+    if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
+    if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
+    if ($g('Desg')     !== '')          { $row['designation_abbrivation'] = $g('Desg'); }
+    if ($g('Composition') !== '')       { $row['composition'] = $g('Composition'); }
+    if ($g('Fineness')    !== '')       { $row['fineness']    = $g('Fineness'); }
+
+    $strike  = $g('StrikeType');
+    $isProof = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false;
+    if ($strike !== '') { $row['strike_type'] = $strike; }
+    if ($isProof) {   // proofs are unambiguous; circulated/style otherwise need the grade
+        $row['style'] = 'Proof';
+        $row['circulated_or_uncirculated'] = 'Uncirculated';
     }
-    if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces'])) {
-        $row['package_weight'] = (string) round((float) $c['WeightOunces'] / 16, 4);
-    }
+    $row['single_coin_or_set'] = !empty($c['IsSet']) ? 'Set' : 'Single Coin';
+
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $last = end($c['CatalogPath']);
         if (is_array($last) && !empty($last['Name'])) { $row['category_name'] = trim((string) $last['Name']); }
+        foreach ($c['CatalogPath'] as $node) {
+            if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
+        }
     }
-    return $row;
+    // Precious-metal content = metal weight x fineness (troy oz), precious metals only.
+    $fin = (float) preg_replace('/[^0-9.]/', '', $g('Fineness'));
+    if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces']) && $fin > 0 && $fin <= 1) {
+        $comp = strtolower($g('Composition'));
+        if (preg_match('/silver|gold|platinum|palladium/', $comp)) {
+            $row['total_precious_metal_content'] = rtrim(rtrim(number_format((float) $c['WeightOunces'] * $fin, 4, '.', ''), '0'), '.') . ' oz';
+        }
+    }
+    // ODS constants.
+    $row['title_suffix']  = 'Coin Collectible';
+    $row['modified_item'] = 'No';
+    $row['certification'] = 'Uncertified';
+    if (($row['country_of_manufacture'] ?? '') === '') { $row['country_of_manufacture'] = 'United States'; }
+    return array_filter($row, static fn($v) => $v !== '' && $v !== null);
+}
+/* Compact, populated-only view of the coin for the AI prompt (drops the ~55
+ * empty / currency-only keys so the model isn't reading noise). */
+function gs_coin_facts(array $c): array
+{
+    $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
+             'Desg','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
+             'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal'];
+    $out = [];
+    foreach ($keys as $k) {
+        if (isset($c[$k]) && $c[$k] !== '' && $c[$k] !== null && $c[$k] !== 0 && $c[$k] !== '0') { $out[$k] = $c[$k]; }
+    }
+    if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
+        $out['CatalogPath'] = implode(' > ', array_map(static fn($n) => (string) ($n['Name'] ?? ''), $c['CatalogPath']));
+    }
+    return $out;
 }
 function sbl_field_spec(): string
 {
@@ -528,18 +632,14 @@ function sbl_field_spec(): string
     if ($spec !== null) { return $spec; }
     $byName = Schema::byName();
     $lines  = [];
-    foreach (Schema::groups() as $names) {
-        foreach ($names as $n) {
-            if (!isset($byName[$n])) { continue; }
-            $col  = $byName[$n];
-            $line = '- ' . $n . ' (' . $col['label'] . ')' . (!empty($col['required']) ? ' [required]' : '');
-            $opts = Schema::optionsFor($col);
-            if ($opts) {
-                $opts = array_values(array_filter($opts, static fn($o) => strpos((string) $o, '---') !== 0));
-                $line .= ' options: ' . implode(' | ', $opts);
-            }
-            $lines[] = $line;
-        }
+    foreach (sbl_field_guide() as $name => $gd) {
+        $label = $byName[$name]['label'] ?? $name;
+        $line  = '- ' . $name . ' (' . $label . ')' . (!empty($gd['req']) ? ' [required]' : '');
+        if (!empty($gd['desc']))  { $line .= ': ' . $gd['desc']; }
+        if (!empty($gd['src']))   { $line .= '  [from GreySheet ' . $gd['src'] . ']'; }
+        if (!empty($gd['const'])) { $line .= '  [default "' . $gd['const'] . '"]'; }
+        if (!empty($gd['opts']))  { $line .= '  MUST be one of: ' . implode(' | ', $gd['opts']); }
+        $lines[] = $line;
     }
     return $spec = implode("\n", $lines);
 }
@@ -555,15 +655,26 @@ function sbl_clean_ai_row($data): array
 }
 function gsAiMap(array $coin): array
 {
-    if (!geminiConfigured()) { return gsMapToProduct($coin); }
-    $sys = 'You are a data-entry assistant for Littleton Coin Company\'s Sellbrite listing tool. Given raw '
-         . 'GreySheet data for one coin and the target fields, put each piece of data into the correct '
-         . 'field. For fields with "options:", you MUST use one of those exact options (or leave empty). '
-         . 'Do not invent facts. Return ONLY a JSON object keyed by field machine-name.';
-    $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET DATA (JSON):\n"
-          . json_encode($coin, JSON_UNESCAPED_SLASHES);
-    $row = sbl_clean_ai_row(geminiJson($sys, $user, $m));
-    return $row ?: gsMapToProduct($coin);
+    $base = gsMapToProduct($coin);   // trustworthy deterministic fields + ODS constants
+    if (!geminiConfigured()) { return $base; }
+
+    $sys = 'You are a data-entry assistant for Littleton Coin Company\'s Sellbrite coin listings. '
+         . 'Fill each target field from the GreySheet coin facts. Follow every "MUST be one of" list '
+         . 'EXACTLY (copy the option verbatim) or leave the field empty. Use "[from GreySheet X]" as the '
+         . 'source hint. Do NOT invent facts - leave a field empty if the data does not support it. '
+         . 'Return ONLY a JSON object keyed by field machine-name.';
+    $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET COIN FACTS:\n"
+          . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
+
+    // Deterministic base wins; the AI only fills the gaps it left (e.g. coin_type).
+    $row = $base;
+    foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
+    // Snap controlled fields to their allowed options.
+    foreach (sbl_field_guide() as $f => $gd) {
+        if (!empty($gd['opts']) && isset($row[$f]) && $row[$f] !== '') { $row[$f] = sbl_snap($row[$f], $gd['opts']); }
+    }
+    return $row;
 }
 function gsSearch(string $q): array
 {
