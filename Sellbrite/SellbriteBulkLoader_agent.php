@@ -80,10 +80,17 @@ function gsApiGet($path, array $params = [], &$meta = [])
 
     $data = json_decode($body, true);
     if (!is_array($data)) { $meta['error'] = 'Bad JSON'; gsLog($meta['error'] . ' url=' . $url); return null; }
+    // PermitAccess=false does NOT mean the call failed. On the basic tier it
+    // flags that PREMIUM fields (advanced pricing such as GreyVal) are gated -
+    // the node tree and basic collectible Data still come back in this same
+    // response. The proven greysheet.php crawler ignores this flag and reads
+    // Data regardless, which is why it walks the whole catalog fine. So treat
+    // it as a note, never a failure: keep whatever Data we were handed.
     if (isset($data['PermitAccess']) && $data['PermitAccess'] === false) {
-        $meta['error'] = 'Access denied: ' . ($data['AccessDeniedMessage'] ?? 'check subscription tier');
-        gsLog($meta['error']);
-        return null;
+        $msg = trim((string) ($data['AccessDeniedMessage'] ?? ''));
+        $meta['permit'] = false;
+        $meta['note']   = 'PermitAccess=false' . ($msg !== '' ? ': ' . $msg : '') . ' (basic tier - premium fields omitted)';
+        gsLog($meta['note'] . ' url=' . $url);
     }
     return $data;
 }

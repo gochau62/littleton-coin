@@ -180,6 +180,7 @@ $stat  = ['calls' => 0, 'nodes' => 0, 'coins' => 0, 'skipped' => 0, 'stopped' =>
 $queue = [];
 foreach ($roots as $rid) { $queue[] = seed_root_entry($rid, $stat); }
 $seen  = [];
+$permitWarned = false;   // show the basic-tier note at most once
 
 while ($queue) {
     if ($stat['calls'] >= $maxCalls) { $stat['stopped'] = 'call budget reached (run again to resume)'; break; }
@@ -222,6 +223,10 @@ while ($queue) {
         }
         seed_node($id, $n['name'], $n['path'], (int) $n['parent'], 0, 'Y');
         echo "NODE [{$id}] {$n['name']}  +" . count($kids) . " folders  (call {$stat['calls']}, {$meta['ms']}ms)\n";
+    }
+    if (!$permitWarned && !($meta['permit'] ?? true)) {
+        echo '      note: ' . ($meta['note'] ?? 'PermitAccess=false') . " - navigation Data still stored.\n";
+        $permitWarned = true;
     }
     seed_json_save();
     @ob_flush(); @flush();
