@@ -80,10 +80,17 @@ function gsApiGet($path, array $params = [], &$meta = [])
 
     $data = json_decode($body, true);
     if (!is_array($data)) { $meta['error'] = 'Bad JSON'; gsLog($meta['error'] . ' url=' . $url); return null; }
+    // PermitAccess=false does NOT mean the call failed. On the basic tier it
+    // flags that PREMIUM fields (advanced pricing such as GreyVal) are gated -
+    // the node tree and basic collectible Data still come back in this same
+    // response. The proven greysheet.php crawler ignores this flag and reads
+    // Data regardless, which is why it walks the whole catalog fine. So treat
+    // it as a note, never a failure: keep whatever Data we were handed.
     if (isset($data['PermitAccess']) && $data['PermitAccess'] === false) {
-        $meta['error'] = 'Access denied: ' . ($data['AccessDeniedMessage'] ?? 'check subscription tier');
-        gsLog($meta['error']);
-        return null;
+        $msg = trim((string) ($data['AccessDeniedMessage'] ?? ''));
+        $meta['permit'] = false;
+        $meta['note']   = 'PermitAccess=false' . ($msg !== '' ? ': ' . $msg : '') . ' (basic tier - premium fields omitted)';
+        gsLog($meta['note'] . ' url=' . $url);
     }
     return $data;
 }
@@ -217,6 +224,56 @@ function gsMemSearch(string $q, int $limit = 40): array
     $out = [];
     foreach (gsMemRows($sql, $params) as $r) {
         $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? '')];
+    }
+    return $out;
+}
+/* Escape the LIKE metacharacters in a literal so a path/name used as a prefix
+ * can't act as a wildcard. Pair with  ... LIKE ? ESCAPE '\'  in the SQL. */
+function gsLikeEsc(string $s): string
+{
+    return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
+}
+/* Dropdown #1: search EVERY catalog node in memory - the broad roots
+ * (U.S. Coins, U.S. Currency, World Coins, World Currency), the specific series
+ * beneath them, and the leaves. Blank query lists the first $limit by name.
+ * 0 API calls. Coin-holding leaves are ordered first so they're easy to reach. */
+function gsMemCategories(string $q = '', int $limit = 60): array
+{
+    $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'N'";
+    $params = [];
+    foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
+        $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
+        $params[] = '%' . strtoupper($w) . '%';
+    }
+    $sql .= ' ORDER BY CASE WHEN coin_count > 0 THEN 0 ELSE 1 END, name'
+          . ' FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    $out = [];
+    foreach (gsMemRows($sql, $params) as $r) {
+        $out[] = ['node_id' => (int) $r['ref_id'], 'name' => (string) $r['name'],
+                  'path' => (string) ($r['path'] ?? ''), 'count' => (int) $r['coin_count']];
+    }
+    return $out;
+}
+/* Dropdown #2: the coins under a node at ANY level, matched by catalog path so
+ * a broad pick (e.g. "U.S. Coins") still surfaces its descendant coins and a
+ * leaf pick returns just that series. Optional query narrows by coin name
+ * (year, mint mark, variety). 0 API calls. */
+function gsMemCoins(string $nodePath, string $q = '', int $limit = 300): array
+{
+    $nodePath = trim($nodePath);
+    if ($nodePath === '') { return []; }
+    $sql = 'SELECT ref_id, name, coin_date, mint_mark FROM ' . SBL_GSMEM_TABLE
+         . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')";
+    $params = [$nodePath, gsLikeEsc($nodePath) . ' > %'];
+    foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
+        $sql .= " AND UPPER(name) LIKE ?";
+        $params[] = '%' . strtoupper($w) . '%';
+    }
+    $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    $out = [];
+    foreach (gsMemRows($sql, $params) as $r) {
+        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => (string) $r['name'],
+                  'coin_date' => (string) ($r['coin_date'] ?? ''), 'mint_mark' => (string) ($r['mint_mark'] ?? '')];
     }
     return $out;
 }
