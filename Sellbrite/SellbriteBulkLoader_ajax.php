@@ -119,7 +119,8 @@ switch ($action) {
         $rc  = !$imp['ok'] ? 'error' : (!$imp['found'] ? 'notfound' : ($imp['valid'] ? 'success' : 'warning'));
         echo json_encode(['returnClass' => $rc, 'row' => $imp['row'], 'statuses' => $imp['statuses'],
                           'messages' => $imp['messages'], 'valid' => $imp['valid'],
-                          'via' => $imp['via'], 'calls' => $imp['calls'] ?? [], 'message' => $imp['error']]);
+                          'via' => $imp['via'], 'calls' => $imp['calls'] ?? [],
+                          'raw' => $imp['raw'] ?? null, 'message' => $imp['error']]);
         break;
 
     case 'gsGenerate':
