@@ -66,6 +66,8 @@ function dspBulkLoader(&$screenData)
 .card.apilog .ep { font-family:Menlo,Consolas,monospace; color:#0056b3; word-break:break-all; }
 .card.apilog .got { color:#33413a; }
 .card.apilog .ms { color:#8a948d; }
+.gs-rawbox summary { cursor:pointer; font-weight:700; color:#1C4532; font-size:13px; }
+.gs-rawbox pre { max-height:360px; overflow:auto; background:#f6f8f6; border:1px solid #e0e6e0; border-radius:6px; padding:8px; font-size:11px; line-height:1.4; white-space:pre; margin:8px 0 0; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#007bff; color:#fff; font-size:14px; font-weight:700; border-radius:50px; cursor:pointer; }
 .btn:hover { background:#0056b3; }
 .btn-ghost { background:#fff; color:#222; border:1px solid #b4b4b4; }
@@ -230,6 +232,8 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                     <ul id="issue-list"><li style="color:#5f6b62">Live as you type&hellip;</li></ul></div>
                 <div class="card apilog"><h3>API calls</h3>
                     <ul id="gs-apilog"><li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li></ul></div>
+                <details class="card apilog gs-rawbox"><summary>Raw GreySheet data (testing)</summary>
+                    <pre id="gs-raw">Autofill a coin to see the full API response&hellip;</pre></details>
             </aside>
         </div>
     </div>
