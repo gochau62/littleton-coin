@@ -1,9 +1,6 @@
 <?php
 /*
- * GreySheet + Gemini coin agent for the Sellbrite Bulk Loader.
- *
- * WHAT IT DOES
- *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLGSMEMT) of every
+ *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
  *     Searching memory costs 0 API calls.  Populate it with the seed crawl
  *     (SellbriteBulkLoader_seed.php) or just let lookups teach it over time.
@@ -21,27 +18,20 @@
  *   GetCollectibleRequest?GsId=&ApiLevel=         one coin, full detail
  *   GetPricingRequest?Gsid=&Grade=&ApiLevel=      prices by grade
  */
-
-require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema / Computer / Validator
-require_once __DIR__ . '/SellbriteBulkLoader_model.php';   // sbl_conn / sbl_select (DB2 memory)
-
-/* ----------------------------- SETTINGS --------------------------------- */
-/* Edit these lines. Do NOT commit real production keys to git.
- *   BETA (testing) : https://cpgpublicapiv2beta.greysheet.com/api
- *   PROD (live)    : https://cpgpublicapiv2.greysheet.com/api        */
-if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2beta.greysheet.com/api'); }
-if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  ''); }                 // x-api-token
-if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    ''); }                 // x-api-key
-if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'basic'); }            // 'basic' | 'advanced'
-if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }                  // 1 = "U.S. Coins"
+require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
+require_once __DIR__ . '/SellbriteBulkLoader_model.php';
+if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2.greysheet.com/api'); }
+if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
+if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
+if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'basic'); }
+if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }   // default TREE only - see gsRoots()
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    20); }
 
-if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }               // aistudio.google.com/apikey
+if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
 
-/* ------------------------------ LOGGING --------------------------------- */
 function gsLog($msg)
 {
     $line = 'Sellbrite ' . $msg;
@@ -49,8 +39,6 @@ function gsLog($msg)
     else { error_log($line); }
 }
 
-/* --------------------------- GREYSHEET CLIENT --------------------------- */
-/** GET a GreySheet path; returns decoded JSON or null. $meta gets status/error/ms. */
 function gsApiGet($path, array $params = [], &$meta = [])
 {
     $meta = ['status' => 0, 'error' => '', 'ms' => 0, 'url' => ''];
@@ -100,17 +88,13 @@ function gsApiGet($path, array $params = [], &$meta = [])
     return $data;
 }
 
-/** The Data[] list from a wrapped response. */
 function gsData($resp): array
 {
     return (is_array($resp) && isset($resp['Data']) && is_array($resp['Data']))
         ? array_values(array_filter($resp['Data'], 'is_array')) : [];
 }
 
-/* ----------------------------- GEMINI CLIENT ---------------------------- */
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
-
-/** Ask Gemini for a JSON object; returns decoded array or null. */
 function geminiJson($system, $user, &$meta = [])
 {
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
@@ -154,24 +138,12 @@ function geminiJson($system, $user, &$meta = [])
     return $data;
 }
 
-/* ------------------------------ PATH MEMORY ----------------------------- */
-/*
- * The memory lives in DB2 (SBLGSMEMT): one row per catalog folder
- * (kind 'N', ref_id = NodeId) or coin (kind 'C', ref_id = GsId) learned from
- * GreySheet - by the seed crawl or on first lookup.  The dropdown searches
- * coin rows at 0 API calls; navigation starts from the deepest known folder.
- * Without a DB2 connection (dev) memory is a no-op and lookups still work,
- * they just navigate live every time.
- */
-if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLGSMEMT'); }
+if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
-/** Normalize a name for matching ("Morgan Dollars, Proof" -> "morgan dollars proof"). */
 function gsNorm($s): string
 {
     return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
 }
-
-/** Run a prepared write against the memory table; false when no DB2. */
 function gsMemExec(string $sql, array $params): bool
 {
     $conn = function_exists('sbl_conn') ? sbl_conn() : false;
@@ -179,14 +151,10 @@ function gsMemExec(string $sql, array $params): bool
     $stmt = db2_prepare($conn, $sql);
     return $stmt ? (bool) @db2_execute($stmt, $params) : false;
 }
-
-/** SELECT rows from the memory table (lowercase keys); [] when no DB2. */
 function gsMemRows(string $sql, array $params = []): array
 {
     return function_exists('sbl_select') ? sbl_select($sql, $params) : [];
 }
-
-/** Insert-or-update one memory row, keyed by (kind, ref_id). */
 function gsMemUpsert(string $kind, int $refId, string $name, string $path,
                      string $date = '', string $mm = '', int $parent = 0,
                      int $coinCount = 0, string $done = 'N'): void
@@ -198,7 +166,7 @@ function gsMemUpsert(string $kind, int $refId, string $name, string $path,
       . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [$kind, $refId, $parent, $name, $path, $date, $mm, $coinCount, $done]
     );
-    if (!$ins) {                                        // duplicate -> refresh it
+    if (!$ins) {
         gsMemExec(
             'UPDATE ' . SBL_GSMEM_TABLE
           . ' SET parent_id = ?, name = ?, path = ?, coin_date = ?, mint_mark = ?, coin_count = ?, done = ?'
@@ -207,15 +175,11 @@ function gsMemUpsert(string $kind, int $refId, string $name, string $path,
         );
     }
 }
-
-/** Remember a folder. */
 function gsMemLearnNode(int $id, string $name, string $path, int $parent = 0,
                         int $coinCount = 0, string $done = 'N'): void
 {
     gsMemUpsert('N', $id, $name, $path, '', '', $parent, $coinCount, $done);
 }
-
-/** Remember every coin in a leaf (one API call teaches the whole series). */
 function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): void
 {
     foreach ($coins as $c) {
@@ -225,28 +189,20 @@ function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): voi
                     (string) ($c['CoinDate'] ?? ''), (string) ($c['MintMark'] ?? ''), $parentNodeId);
     }
 }
-
-/** Mark a node fully fetched (its coins/children are all in the table). */
 function gsMemMarkDone(int $nodeId): void
 {
     gsMemExec('UPDATE ' . SBL_GSMEM_TABLE . " SET done = 'Y' WHERE kind = 'N' AND ref_id = ?", [$nodeId]);
 }
-
-/** All remembered folders (for the navigation shortcut). */
 function gsMemNodes(): array
 {
     return gsMemRows('SELECT ref_id, parent_id, name, path, coin_count, done FROM '
                    . SBL_GSMEM_TABLE . " WHERE kind = 'N'");
 }
-
-/** Remembered child folders of one node (lets the seed crawl resume without API calls). */
 function gsMemNodeChildren(int $parentId): array
 {
     return gsMemRows('SELECT ref_id, name, path, coin_count, done FROM ' . SBL_GSMEM_TABLE
                    . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
 }
-
-/** Dropdown search: remembered coins matching every word of $q. 0 API calls. */
 function gsMemSearch(string $q, int $limit = 40): array
 {
     $words = array_filter(explode(' ', gsNorm($q)));
@@ -264,9 +220,6 @@ function gsMemSearch(string $q, int $limit = 40): array
     }
     return $out;
 }
-
-/* --------------------------- TREE NAVIGATION ---------------------------- */
-/** A node's child folders. */
 function gsChildren(int $nodeId): array
 {
     $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => $nodeId], $m);
@@ -278,8 +231,6 @@ function gsChildren(int $nodeId): array
     }
     return $out;
 }
-
-/** Choose the child folder leading to the target: string-match, else Gemini. */
 function gsNavPick(array $children, string $target, string $context)
 {
     $t = gsNorm($target);
@@ -302,8 +253,6 @@ function gsNavPick(array $children, string $target, string $context)
     }
     return $hits[0] ?? null;
 }
-
-/** In a leaf's coin list, pick the exact coin by year / mint / grade. */
 function gsPickCoin(array $coins, array $attrs): int
 {
     $year = trim((string) ($attrs['year'] ?? ''));
@@ -335,11 +284,28 @@ function gsPickCoin(array $coins, array $attrs): int
     return (int) ($cands[0]['Gsid'] ?? 0);
 }
 
-/**
- * Navigate to a coin's leaf node from its attributes, walking the tree live.
- * Starts from the deepest folder memory already knows, learns every folder
- * visited and every coin in the leaf.  Returns ['coins' => [...], 'path' => ''].
- */
+/* The catalog has NO single root node. Four trees sit side by side at the top:
+ *   1 = U.S. Coins    2 = U.S. Currency    6 = World Coins    12 = World Currency
+ * Every node under them has either child nodes OR collectibles, never both.
+ * GS_ROOT_NODE is only the default tree; gsPickRoot() chooses per item. */
+function gsRoots(): array
+{
+    return [1 => 'U.S. Coins', 2 => 'U.S. Currency', 6 => 'World Coins', 12 => 'World Currency'];
+}
+function gsPickRoot(array $attrs, string $desc): array
+{
+    $roots   = gsRoots();
+    $country = strtolower(trim((string) ($attrs['country_of_manufacture'] ?? '')));
+    $text    = strtolower($desc . ' ' . (string) ($attrs['paper_money_type'] ?? ''));
+    $paper   = trim((string) ($attrs['paper_money_type'] ?? '')) !== ''
+            || trim((string) ($attrs['paper_money_grade_designation'] ?? '')) !== ''
+            || preg_match('/\b(note|banknote|currency|paper money)\b/', $text);
+    $world   = ($country !== '' && !in_array($country, ['united states', 'united states of america', 'usa', 'us'], true))
+            || preg_match('/\b(world|foreign)\b/', $text);
+    $id = $world ? ($paper ? 12 : 6) : ($paper ? 2 : (int) GS_ROOT_NODE);
+    return ['id' => $id, 'name' => $roots[$id] ?? ('(root ' . $id . ')')];
+}
+
 function gsResolveLeaf(array $attrs, array &$trace = []): array
 {
     $none = ['coins' => [], 'path' => ''];
@@ -349,10 +315,10 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
     if ($category === '' && $desc === '') { return $none; }
     $target = $category !== '' ? $category : $desc;
 
-    $nodeId = GS_ROOT_NODE;
-    $path   = 'U.S. Coins';
-
-    // Memory shortcut: jump straight to a known folder whose name matches the category.
+    $root   = gsPickRoot($attrs, $desc);
+    $nodeId = (int) $root['id'];
+    $path   = $root['name'];
+    $trace[] = 'root:' . $root['name'];
     $tk = gsNorm($target);
     foreach (gsMemNodes() as $n) {
         $k = gsNorm((string) $n['name']);
@@ -363,10 +329,9 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
             break;
         }
     }
-
     for ($depth = 0; $depth < 8; $depth++) {
         $children = gsChildren($nodeId);
-        if (!$children) {                               // no child folders: treat as leaf
+        if (!$children) {
             $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $nodeId], $m);
             $coins = gsData($resp);
             if (!$coins) { return $none; }
@@ -380,8 +345,7 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
         $path  .= ' > ' . $pick['name'];
         $trace[] = $pick['id'] . ':' . $pick['name'];
         gsMemLearnNode($pick['id'], $pick['name'], $path, $parent, $pick['coins']);
-
-        if ($pick['coins'] > 0) {                       // leaf: list + learn
+        if ($pick['coins'] > 0) {
             $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $pick['id']], $m);
             $coins = gsData($resp);
             gsMemLearnCoins($coins, $path, $pick['id']);
@@ -393,18 +357,12 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
     return $none;
 }
 
-/** Find a coin's GsId from its attributes (0 = not found). */
 function gsResolve(array $attrs, array &$trace = []): int
 {
     $leaf = gsResolveLeaf($attrs, $trace);
     return $leaf['coins'] ? gsPickCoin($leaf['coins'], $attrs) : 0;
 }
 
-/**
- * The years a series actually exists for (drives the dynamic Year dropdown).
- * Memory-first (0 API calls once a series is learned); unknown series are
- * looked up live, which also teaches memory the whole leaf.
- */
 function gsYearsFor(string $category, bool $liveLookup = true): array
 {
     $ck = gsNorm($category);
@@ -428,16 +386,12 @@ function gsYearsFor(string $category, bool $liveLookup = true): array
     return $out;
 }
 
-/* ----------------------- COIN DATA -> FORM FIELDS ------------------------ */
-/** One coin's full detail (GetCollectibleRequest). */
 function gsCollectible(int $gsId): array
 {
     if ($gsId <= 0) { return []; }
     $resp = gsApiGet('GetCollectibleRequest', ['GsId' => $gsId], $m);
     return gsData($resp)[0] ?? [];
 }
-
-/** Pricing for a coin, optionally at a numeric grade (GetPricingRequest). */
 function gsPricing(int $gsId, $grade = null): array
 {
     if ($gsId <= 0) { return []; }
@@ -447,15 +401,11 @@ function gsPricing(int $gsId, $grade = null): array
     $first = gsData($resp)[0] ?? [];
     return $first['PricingData'][0] ?? [];
 }
-
-/** "$1,234.50" -> "1234.50" (or ''). */
 function gsPriceNum($v): string
 {
     $v = preg_replace('/[^0-9.]/', '', (string) $v);
     return is_numeric($v) ? $v : '';
 }
-
-/** Deterministic map of documented collectible fields (fallback when no Gemini). */
 function gsMapToProduct(array $c): array
 {
     $map = ['CoinDate' => 'year', 'MintMark' => 'mint_mark', 'DenominationShort' => 'denomination',
@@ -474,8 +424,6 @@ function gsMapToProduct(array $c): array
     }
     return $row;
 }
-
-/** Field spec for the AI prompt: names, labels, and valid dropdown options. */
 function sbl_field_spec(): string
 {
     static $spec = null;
@@ -497,8 +445,6 @@ function sbl_field_spec(): string
     }
     return $spec = implode("\n", $lines);
 }
-
-/** Keep only real field keys from an AI answer. */
 function sbl_clean_ai_row($data): array
 {
     if (!is_array($data)) { return []; }
@@ -509,8 +455,6 @@ function sbl_clean_ai_row($data): array
     }
     return $row;
 }
-
-/** Gemini reads the GreySheet coin data and fills the fields (static map fallback). */
 function gsAiMap(array $coin): array
 {
     if (!geminiConfigured()) { return gsMapToProduct($coin); }
@@ -523,16 +467,12 @@ function gsAiMap(array $coin): array
     $row = sbl_clean_ai_row(geminiJson($sys, $user, $m));
     return $row ?: gsMapToProduct($coin);
 }
-
-/* ------------------------------ PUBLIC API ------------------------------ */
-/** Dropdown search over the path memory (0 API calls). */
 function gsSearch(string $q): array
 {
     $q = trim($q);
     if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Type something to search for.']; }
     return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
 }
-
 function gs_finalize(array $row, $source, string $via): array
 {
     $row   = Computer::apply($row);
@@ -541,13 +481,6 @@ function gs_finalize(array $row, $source, string $via): array
             'messages' => $check['messages'], 'valid' => $check['valid'], 'source' => $source,
             'error' => '', 'via' => $via];
 }
-
-/**
- * Import a coin and auto-fill the form.
- *   gs_id set  -> straight to the data pull (the dropdown pick).
- *   otherwise  -> resolve via memory + live tree navigation, learning as we go.
- * found=false with ok=true means "not on GreySheet" -> offer AI generate.
- */
 function gsImport(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
@@ -577,7 +510,6 @@ function gsImport(array $params): array
     return gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map');
 }
 
-/** One-off / foreign coin GreySheet doesn't have: Gemini drafts the listing. */
 function gsGenerate(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
