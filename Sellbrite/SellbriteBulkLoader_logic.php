@@ -233,15 +233,23 @@ final class Validator
 
 final class Exporter
 {
-    /* Sellbrite now takes TWO uploads: the product CSV (listing content) and an
-     * inventory CSV (sku/quantity/cost/bin). Quantity, cost and UPC are no
-     * longer product-file headers, so the product export skips them. */
-    private const INVENTORY_ONLY = ['quantity', 'cost', 'upc'];
+    /* One product CSV, tailored per marketplace. Column annotations in Des's
+     * Sellbrite export: the five features / search terms / style are Amazon-
+     * specific; modified-item fields are eBay-specific. 'all' keeps every
+     * column (the house master export). */
+    private const AMAZON_ONLY = ['feature_1','feature_2','feature_3','feature_4','feature_5','search_terms','style'];
+    private const EBAY_ONLY   = ['modified_item','modification_description'];
 
-    public static function csv(array $rows): string
+    public static function markets(): array { return ['all', 'amazon', 'ebay', 'walmart']; }
+
+    public static function csv(array $rows, string $market = 'all'): string
     {
+        $drop = [];
+        if ($market === 'amazon')  { $drop = self::EBAY_ONLY; }
+        if ($market === 'ebay')    { $drop = self::AMAZON_ONLY; }
+        if ($market === 'walmart') { $drop = array_merge(self::AMAZON_ONLY, self::EBAY_ONLY); }
         $columns = array_values(array_filter(Schema::columns(),
-            static fn($c) => !in_array($c['name'], self::INVENTORY_ONLY, true)));
+            static fn($c) => !in_array($c['name'], $drop, true)));
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
@@ -254,23 +262,6 @@ final class Exporter
             $line = [];
             foreach ($machine as $name) { $line[] = (string) ($row[$name] ?? ''); }
             fputcsv($fh, $line);
-        }
-        rewind($fh); $out = stream_get_contents($fh); fclose($fh);
-        return $out;
-    }
-
-    public static function inventoryCsv(array $rows): string
-    {
-        $banner = 'SELLBRITE INVENTORY CSV TEMPLATE (Do NOT remove the first 3 rows). '
-                . 'You MAY delete or change the order of columns, but do NOT alter the '
-                . 'header names in row 3. *Required Fields.';
-        $fh = fopen('php://temp', 'r+');
-        fputcsv($fh, [$banner, '', '', '']);
-        fputcsv($fh, ['SKU*', 'Quantity*', 'Cost', 'Bin Location']);
-        fputcsv($fh, ['sku', 'quantity', 'cost', 'bin_location']);
-        foreach ($rows as $row) {
-            fputcsv($fh, [(string) ($row['sku'] ?? ''), (string) ($row['quantity'] ?? ''),
-                          (string) ($row['cost'] ?? ''), (string) ($row['bin_location'] ?? '')]);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);
         return $out;

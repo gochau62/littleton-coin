@@ -32,7 +32,7 @@ function dspBulkLoader(&$screenData)
         if ($opts) {
             $h .= '<select id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '"' . $da . '><option value="">&mdash; select &mdash;</option>';
             foreach ($opts as $o) {
-                if (str_starts_with($o, '---')) { $h .= '<option disabled>' . sbl_e($o) . '</option>'; continue; }
+                if (preg_match('/^-{2,}/', $o)) { $h .= '<option disabled>' . sbl_e($o) . '</option>'; continue; }
                 $h .= '<option value="' . sbl_e($o) . '">' . sbl_e($o) . '</option>';
             }
             $h .= '</select>';
@@ -141,8 +141,13 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
             <span class="spacer"></span>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV (listing content)">Export Products CSV</button>
-            <button type="button" class="btn btn-green" onclick="sblExportInventory()" title="Sellbrite inventory CSV (SKU / quantity / cost / bin)">Export Inventory CSV</button>
+            <select id="export-market" class="gs-dd" title="Which marketplace's columns to export">
+                <option value="all">All columns</option>
+                <option value="amazon">Amazon</option>
+                <option value="ebay">eBay</option>
+                <option value="walmart">Walmart</option>
+            </select>
+            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV for the selected marketplace">Export CSV</button>
         </div>
 
         <?php if (!$skus): ?>
@@ -206,7 +211,9 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                              'designation_abbrivation','strike_type','circulated_or_uncirculated','style',
                              'composition','fineness','diameter','weight',
                              'precious_metal_content','total_precious_metal_content',
-                             'single_coin_or_set','country_of_manufacture','brand','title_suffix',
+                             'single_coin_or_set','set_count','country_of_manufacture','brand','title_suffix',
+                             'bullion_shape','coin_design',
+                             'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
                              'package_weight','exact_image',
                              'name','description','red_book_description',
                              'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',

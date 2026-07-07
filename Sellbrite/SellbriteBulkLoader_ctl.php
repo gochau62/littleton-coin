@@ -43,8 +43,10 @@
         $("#formView").toggle(view === 'form');
     }
     function sblBackToList(){ sblShow('list'); }
-    function sblExport(){ window.location = 'SellbriteBulkLoader_ajax.php?action=export'; }
-    function sblExportInventory(){ window.location = 'SellbriteBulkLoader_ajax.php?action=exportInventory'; }
+    function sblExport(){
+        var m = $('#export-market').val() || 'all';
+        window.location = 'SellbriteBulkLoader_ajax.php?action=export&market=' + encodeURIComponent(m);
+    }
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
     /* ---- new / edit ---- */
@@ -60,6 +62,7 @@
         sblResetBelowSeries();
         $('#gs-apilog').empty().append('<li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li>');
         $('#gs-raw').text('Autofill a coin to see the full API response…');
+        sblFieldVisibility();
     }
     function sblNew(){
         sblClearForm();
@@ -113,6 +116,7 @@
             if (el && v !== null && v !== '') { el.value = v; }
         });
         sblYearRefresh(row && row.year);   // constrain Year to the series' real years
+        sblFieldVisibility();              // show only this category's boxes
         sblRecompute();
     }
 
@@ -141,7 +145,9 @@
     }
     jQuery(document).ready(function(){
         // Delegated: survives the input<->select swap and fires on category picks.
-        $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); });
+        $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); sblFieldVisibility(); });
+        $('#sku-form').on('change', '#f_single_coin_or_set', sblFieldVisibility);
+        sblFieldVisibility();
     });
     /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
     var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
@@ -152,10 +158,37 @@
     var SBL_GS_FIELDS = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
         'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','style','composition','fineness','diameter','weight',
-        'precious_metal_content','total_precious_metal_content','single_coin_or_set',
-        'country_of_manufacture','brand','title_suffix',
+        'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
+        'country_of_manufacture','brand','title_suffix','bullion_shape','coin_design',
+        'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
         'package_weight','exact_image','name','description','red_book_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms'];
+
+    /* Category-specific boxes (the spreadsheet's column annotations): only show
+       the fields that apply to the picked coin's category. */
+    var SBL_CAT_FIELDS = {
+        paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
+        bullion: ['bullion_shape'],
+        cob:     ['coin_design'],
+        set:     ['set_count']
+    };
+    function sblFieldVisibility(){
+        var cat  = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
+        var show = {
+            paper:   /currency|paper money|banknote|\bnote\b/.test(cat),
+            bullion: /bullion/.test(cat),
+            cob:     /\bcob\b|pillar|spanish colonial/.test(cat),
+            set:     ($('#f_single_coin_or_set').val() || '') === 'Set' || /proof set|mint set/.test(cat)
+        };
+        $.each(SBL_CAT_FIELDS, function(group, names){
+            $.each(names, function(i, n){
+                var el = document.querySelector('#sku-form [data-name="' + n + '"]');
+                if (!el) return;
+                var f = el.closest('.field');
+                if (f) f.style.display = show[group] ? '' : 'none';
+            });
+        });
+    }
 
     function sblMarkGsFields(on){
         $.each(SBL_GS_FIELDS, function(i, name){

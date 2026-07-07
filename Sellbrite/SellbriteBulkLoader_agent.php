@@ -572,6 +572,16 @@ function sbl_field_guide(): array
         'composition'    => ['src' => 'Composition', 'opts' => $comp],
         'fineness'       => ['src' => 'Fineness', 'desc' => 'decimal purity, e.g. 0.9, 0.999'],
         'single_coin_or_set' => ['src' => 'IsSet', 'opts' => ['Single Coin','Set'], 'const' => 'Single Coin'],
+        'set_count'      => ['desc' => 'number of coins ONLY when a set; blank for single coins'],
+        'bullion_shape'  => ['opts' => ['Bar','Round'], 'desc' => 'bullion categories only; blank otherwise'],
+        'coin_design'    => ['opts' => ['Shield-Type Cob','Pillars-Type Cob','Milled-Pillar Type','Milled-Bust Type'],
+                             'desc' => 'Spanish colonial cob/milled coinage only; blank otherwise'],
+        'paper_money_type' => ['src' => 'catalog path', 'desc' => 'paper money ONLY (e.g. Banknotes, Replacement Notes); blank for coins',
+                               'opts' => ['Banknotes','Bond Certificates','Cancelled Currency','Collections & Lots','Commemorative Issue',
+                                          'Emergency Issue','Errors','Hawaii Overprint Note','Hologram','Military Currency',
+                                          'North Africa Note','Notgeld','Polymer Notes','Replacement Notes','Specimens',
+                                          'Uncut Sheets','Wartime Occupation']],
+        'paper_money_grade_designation' => ['desc' => 'paper money ONLY, e.g. EPQ, PPQ, Star; blank for coins'],
         'country_of_manufacture' => ['src' => 'CatalogPath CountryName', 'desc' => 'full country name', 'const' => 'United States'],
         'certification'  => ['opts' => $cert, 'const' => 'Uncertified', 'desc' => 'Uncertified unless slabbed'],
         'title_suffix'   => ['const' => 'Coin Collectible'],
@@ -683,7 +693,10 @@ function sbl_field_spec(): string
         if (!empty($gd['desc']))  { $line .= ': ' . $gd['desc']; }
         if (!empty($gd['src']))   { $line .= '  [from GreySheet ' . $gd['src'] . ']'; }
         if (!empty($gd['const'])) { $line .= '  [default "' . $gd['const'] . '"]'; }
-        if (!empty($gd['opts']))  { $line .= '  MUST be one of: ' . implode(' | ', $gd['opts']); }
+        if (!empty($gd['opts'])) {
+            $opts  = array_values(array_filter($gd['opts'], static fn($o) => !preg_match('/^-{2,}/', (string) $o)));
+            $line .= '  MUST be one of: ' . implode(' | ', $opts);
+        }
         $lines[] = $line;
     }
     return $spec = implode("\n", $lines);
