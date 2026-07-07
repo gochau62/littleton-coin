@@ -564,7 +564,7 @@ function sbl_field_guide(): array
         'denomination'   => ['src' => 'DenominationShort', 'desc' => 'face value, e.g. 1C, 5C, 10C, 25C, 50C, $1'],
         'coin_variety_1' => ['src' => 'Variety'],
         'coin_variety_2' => ['src' => 'Variety2'],
-        'designation_abbrivation' => ['src' => 'Desg', 'desc' => 'grade designation abbrev: MS, PR, BN, RB, RD, DMPL, PL, CAM, DCAM, FB, FS, FBL'],
+        'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
         'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'leave blank unless a graded example; the operator sets it'],
         'strike_type'    => ['src' => 'StrikeType', 'opts' => $strike],
         'circulated_or_uncirculated' => ['desc' => 'Uncirculated for MS/PR/proof/BU/mint-state, Circulated otherwise', 'opts' => ['Circulated','Uncirculated']],
@@ -613,9 +613,12 @@ function gsMapToProduct(array $c): array
     if ($g('DenominationShort') !== '') { $row['denomination']   = $g('DenominationShort'); }
     if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
-    // Strike designation (DCAM, RB, RD...) - "Other" is the specific one, else "Desg".
-    $desig = $g('Other') !== '' ? $g('Other') : $g('Desg');
-    if ($desig !== '')                  { $row['designation_abbrivation'] = $desig; }
+    // Designation abbreviation (Des): the special strike/color designation only -
+    // color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail
+    // FB/FBL/FS/5FS/FT/FH. GreySheet stores THIS in "Other" (e.g. "DCAM","FB",
+    // "RD","RD DCAM"). GreySheet "Desg" is the grade TYPE (MS/PR/SP) - it drives
+    // circulated/uncirculated below, and must NOT be used as a designation.
+    if ($g('Other') !== '')             { $row['designation_abbrivation'] = $g('Other'); }
     if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
     if ($g('Fineness')    !== '')       { $row['fineness']    = $g('Fineness'); }
     // Added per Des: diameter (mm) and weight (troy oz) straight from GreySheet.
@@ -624,11 +627,15 @@ function gsMapToProduct(array $c): array
         $row['weight'] = rtrim(rtrim(number_format((float) $c['WeightOunces'], 4, '.', ''), '0'), '.');
     }
 
-    $strike  = $g('StrikeType');
-    $isProof = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false;
+    $strike    = $g('StrikeType');
+    $gradeType = strtoupper($g('Desg'));   // MS / PR / PF / SP / SMS - the grade type
+    $isProof   = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false
+              || in_array($gradeType, ['PR', 'PF'], true);
     if ($strike !== '') { $row['strike_type'] = $strike; }
-    if ($isProof) {   // proofs are unambiguous; circulated/style otherwise need the grade
-        $row['style'] = 'Proof';
+    if ($isProof) { $row['style'] = 'Proof'; }
+    // Mint State / Proof / Specimen are all uncirculated; circulated coins have
+    // a circulated Desg or none, so leave those for the grade/operator.
+    if ($isProof || in_array($gradeType, ['MS', 'PR', 'PF', 'SP', 'SMS'], true)) {
         $row['circulated_or_uncirculated'] = 'Uncirculated';
     }
     $row['single_coin_or_set'] = !empty($c['IsSet']) ? 'Set' : 'Single Coin';
