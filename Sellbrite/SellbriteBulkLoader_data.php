@@ -163,6 +163,20 @@ return [
             'dropdown' => 'precious_metal_content',
         ],
         [
+            // Added per Des (July 2026): straight from GreySheet Diameter (mm).
+            'name' => 'diameter',
+            'label' => 'Diameter',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
+            // Added per Des (July 2026): GreySheet WeightOunces (troy oz).
+            'name' => 'weight',
+            'label' => 'Weight',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
             'name' => 'single_coin_or_set',
             'label' => 'Single Coin or Set',
             'required' => false,

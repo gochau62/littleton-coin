@@ -2,6 +2,15 @@
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }
+// Constant listing copy (Des): feature 5 is a brief PCC company blurb applied
+// to every listing; the exact-image line is the default for feature 3.
+if (!defined('SBL_ABOUT_SELLER')) { define('SBL_ABOUT_SELLER',
+    'ABOUT PROFILE COINS & COLLECTIBLES: Selling collectible coins and currency online for more than a '
+  . 'decade, we are the dealer of choice for new and experienced collectors. Our ever-changing inventory '
+  . 'ranges from coins such as Morgan & Peace Dollars, Liberty Walking & Franklin Half Dollars, Standing '
+  . 'Liberty & Washington Quarters to modern sets, including proof sets, mint sets, & commemorative sets.'); }
+if (!defined('SBL_EXACT_IMAGE_DEFAULT')) { define('SBL_EXACT_IMAGE_DEFAULT',
+    'The images you see are for the exact item you will receive.'); }
 
 /** HTML-escape helper (guarded so it never clashes with framework helpers). */
 if (!function_exists('sbl_e')) {
@@ -130,6 +139,21 @@ final class Computer
         if (trim((string) ($row['description'] ?? '')) === '') {
             $row['description'] = self::buildDescription($row, $copy);
         }
+
+        // Amazon bullet points (Des): features 1 & 2 are literally the
+        // description broken into two parts, feature 3 is the exact-image /
+        // stock-photo line, feature 5 is the constant PCC company blurb.
+        // Feature 4 (expanded copy unique to the product category) is authored
+        // by the agent/operator, so it is left untouched here.
+        $desc = trim((string) ($row['description'] ?? ''));
+        if ($desc !== '') {
+            $dot = strpos($desc, '. ');
+            $row['feature_1'] = $dot !== false ? substr($desc, 0, $dot + 1) : $desc;
+            $row['feature_2'] = $dot !== false ? trim(substr($desc, $dot + 1)) : '';
+        }
+        $exact = trim((string) ($row['exact_image'] ?? ''));
+        if ($exact !== '') { $row['feature_3'] = $exact; }
+        $row['feature_5'] = SBL_ABOUT_SELLER;
         return $row;
     }
     private static function lookupValue(string $value, string $fallback): string
@@ -209,9 +233,15 @@ final class Validator
 
 final class Exporter
 {
+    /* Sellbrite now takes TWO uploads: the product CSV (listing content) and an
+     * inventory CSV (sku/quantity/cost/bin). Quantity, cost and UPC are no
+     * longer product-file headers, so the product export skips them. */
+    private const INVENTORY_ONLY = ['quantity', 'cost', 'upc'];
+
     public static function csv(array $rows): string
     {
-        $columns = Schema::columns();
+        $columns = array_values(array_filter(Schema::columns(),
+            static fn($c) => !in_array($c['name'], self::INVENTORY_ONLY, true)));
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
@@ -224,6 +254,23 @@ final class Exporter
             $line = [];
             foreach ($machine as $name) { $line[] = (string) ($row[$name] ?? ''); }
             fputcsv($fh, $line);
+        }
+        rewind($fh); $out = stream_get_contents($fh); fclose($fh);
+        return $out;
+    }
+
+    public static function inventoryCsv(array $rows): string
+    {
+        $banner = 'SELLBRITE INVENTORY CSV TEMPLATE (Do NOT remove the first 3 rows). '
+                . 'You MAY delete or change the order of columns, but do NOT alter the '
+                . 'header names in row 3. *Required Fields.';
+        $fh = fopen('php://temp', 'r+');
+        fputcsv($fh, [$banner, '', '', '']);
+        fputcsv($fh, ['SKU*', 'Quantity*', 'Cost', 'Bin Location']);
+        fputcsv($fh, ['sku', 'quantity', 'cost', 'bin_location']);
+        foreach ($rows as $row) {
+            fputcsv($fh, [(string) ($row['sku'] ?? ''), (string) ($row['quantity'] ?? ''),
+                          (string) ($row['cost'] ?? ''), (string) ($row['bin_location'] ?? '')]);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);
         return $out;

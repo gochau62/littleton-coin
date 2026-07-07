@@ -141,7 +141,8 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
             <span class="spacer"></span>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <button type="button" class="btn btn-green" onclick="sblExport()">Export CSV</button>
+            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV (listing content)">Export Products CSV</button>
+            <button type="button" class="btn btn-green" onclick="sblExportInventory()" title="Sellbrite inventory CSV (SKU / quantity / cost / bin)">Export Inventory CSV</button>
         </div>
 
         <?php if (!$skus): ?>
@@ -203,7 +204,8 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                 $reduced  = ['sku','category_name','coin_type','year','mint_mark','mint_location',
                              'denomination','coin_variety_1','coin_variety_2','grade',
                              'designation_abbrivation','strike_type','circulated_or_uncirculated','style',
-                             'composition','fineness','precious_metal_content','total_precious_metal_content',
+                             'composition','fineness','diameter','weight',
+                             'precious_metal_content','total_precious_metal_content',
                              'single_coin_or_set','country_of_manufacture','brand','title_suffix',
                              'package_weight','exact_image',
                              'name','description','red_book_description',
