@@ -144,6 +144,24 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
+/**
+ * The most recently saved listing in a category - the tool's "learned" house
+ * copy for that category. Autofill reuses its category-level fields (Expanded
+ * Description / category feature) and mirrors its style, so every coin in a
+ * category comes out consistent and each saved edit becomes the new template.
+ */
+function sblCategoryExample($category)
+{
+    $category = trim((string) $category);
+    if ($category === '') { return []; }
+    $rows = sbl_select(
+        'SELECT * FROM ' . SBL_TABLE . ' WHERE UPPER(category_name) = ? '
+      . 'ORDER BY updated_at DESC FETCH FIRST 1 ROWS ONLY',
+        [strtoupper($category)]
+    );
+    return $rows[0] ?? [];
+}
+
 /** Fetch a single row (full record) for the edit form, or false if not found. */
 function sblFind($id)
 {
