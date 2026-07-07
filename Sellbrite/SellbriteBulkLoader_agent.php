@@ -681,6 +681,17 @@ function gs_coin_facts(array $c): array
     }
     return $out;
 }
+/* The allowed values for a field, straight from the ODS "Valid Values" sheet
+ * (Schema::values), with group separators / hint rows removed. This is the ONE
+ * source of truth the agent must conform to, both in the prompt and when
+ * snapping its answer. */
+function sbl_field_options(string $name): array
+{
+    $col = Schema::byName()[$name] ?? null;
+    $opts = $col ? Schema::optionsFor($col) : [];
+    if (!$opts) { $opts = sbl_field_guide()[$name]['opts'] ?? []; }
+    return array_values(array_filter($opts, static fn($o) => !preg_match('/^\s*(-{2,}|\*{3})/', (string) $o)));
+}
 function sbl_field_spec(): string
 {
     static $spec = null;
@@ -693,9 +704,13 @@ function sbl_field_spec(): string
         if (!empty($gd['desc']))  { $line .= ': ' . $gd['desc']; }
         if (!empty($gd['src']))   { $line .= '  [from GreySheet ' . $gd['src'] . ']'; }
         if (!empty($gd['const'])) { $line .= '  [default "' . $gd['const'] . '"]'; }
-        if (!empty($gd['opts'])) {
-            $opts  = array_values(array_filter($gd['opts'], static fn($o) => !preg_match('/^-{2,}/', (string) $o)));
-            $line .= '  MUST be one of: ' . implode(' | ', $opts);
+        $opts = sbl_field_options($name);
+        if ($opts) {
+            // Big lists (grade, country, designation) would swamp the prompt;
+            // still enforced by snapping, so just point at the list there.
+            $line .= count($opts) <= 80
+                ? '  MUST be one of: ' . implode(' | ', $opts)
+                : '  MUST be a valid Sellbrite "' . $label . '" value (snapped to the house list)';
         }
         $lines[] = $line;
     }
@@ -711,10 +726,34 @@ function sbl_clean_ai_row($data): array
     }
     return $row;
 }
-function gsAiMap(array $coin): array
+/* Snap every controlled field in a row to its ODS "Valid Values" list. Runs on
+ * the final row so both the deterministic base and the AI output conform. */
+function sbl_snap_row(array $row): array
+{
+    if (isset($row['composition']) && $row['composition'] !== '') {
+        $row['composition'] = sbl_norm_composition($row['composition']);   // "99.99% gold" -> "Gold"
+    }
+    foreach (array_keys(sbl_field_guide()) as $f) {
+        $opts = sbl_field_options($f);
+        if ($opts && isset($row[$f]) && $row[$f] !== '') { $row[$f] = sbl_snap($row[$f], $opts); }
+    }
+    return $row;
+}
+/* $example is the most recent saved listing in this coin's category (see
+ * sblCategoryExample) - the tool's learned house copy. Its category-level
+ * fields are reused verbatim and its style is shown to the AI to mirror. */
+function gsAiMap(array $coin, array $example = []): array
 {
     $base = gsMapToProduct($coin);   // trustworthy deterministic fields + ODS constants
-    if (!geminiConfigured()) { return $base; }
+
+    // LEARN: reuse the category-level copy from a prior saved listing so every
+    // coin in a category matches, and each saved edit becomes the new template.
+    foreach (['red_book_description', 'feature_4'] as $f) {
+        if (($base[$f] ?? '') === '' && trim((string) ($example[$f] ?? '')) !== '') {
+            $base[$f] = trim((string) $example[$f]);
+        }
+    }
+    if (!geminiConfigured()) { return sbl_snap_row($base); }
 
     $sys = 'You are a data-entry assistant for Littleton Coin Company\'s Sellbrite coin listings. '
          . 'Fill each target field from the GreySheet coin facts. Follow every "MUST be one of" list '
@@ -724,19 +763,27 @@ function gsAiMap(array $coin): array
          . 'red_book_description and feature_4 describe the CATEGORY (series/program), never the individual '
          . 'coin, so the same wording would fit every coin in the category. Do not fill feature_1, feature_2, '
          . 'feature_3 or feature_5 - the system derives them. '
+         . 'When a HOUSE EXAMPLE is given, match its wording and style for the copy fields. '
          . 'Return ONLY a JSON object keyed by field machine-name.';
     $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET COIN FACTS:\n"
           . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    if ($example) {
+        $ex = [];
+        foreach (['category_name','coin_type','description','red_book_description','feature_4','search_terms'] as $f) {
+            if (trim((string) ($example[$f] ?? '')) !== '') { $ex[$f] = $example[$f]; }
+        }
+        if ($ex) {
+            $user .= "\n\nHOUSE EXAMPLE (a saved listing in this same category - match its style, especially "
+                   . "description, red_book_description and feature_4):\n"
+                   . json_encode($ex, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        }
+    }
     $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
 
     // Deterministic base wins; the AI only fills the gaps it left (e.g. coin_type).
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
-    // Snap controlled fields to their allowed options.
-    foreach (sbl_field_guide() as $f => $gd) {
-        if (!empty($gd['opts']) && isset($row[$f]) && $row[$f] !== '') { $row[$f] = sbl_snap($row[$f], $gd['opts']); }
-    }
-    return $row;
+    return sbl_snap_row($row);
 }
 function gsSearch(string $q): array
 {
@@ -784,7 +831,19 @@ function gsImport(array $params): array
         $coin['GreyVal'] = $price['GreyVal'] ?? '';
     }
 
-    $row = gsAiMap($coin);
+    // LEARN: pull the house copy from a prior saved listing in this category.
+    $exCat = '';
+    if (!empty($coin['CatalogPath']) && is_array($coin['CatalogPath'])) {
+        $last  = end($coin['CatalogPath']);
+        $exCat = is_array($last) ? trim((string) ($last['Name'] ?? '')) : '';
+    }
+    $example = function_exists('sblCategoryExample') ? sblCategoryExample($exCat) : [];
+    if ($example) {
+        $calls[] = ['call' => 'Category memory', 'got' => 'reused house copy from a saved "' . $exCat
+                    . '" listing (#' . ($example['id'] ?? '?') . ')'];
+    }
+
+    $row = gsAiMap($coin, $example);
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
