@@ -24,11 +24,19 @@ $password = $_SESSION['password'] ?? '';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// CSV export streams a file, so handle it before JSON 
+// CSV exports stream files, so handle them before JSON. Sellbrite takes two
+// uploads: the product CSV and the inventory CSV (sku/quantity/cost/bin).
 if ($action === 'export') {
     $csv = Exporter::csv(sblGetAll());
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="sellbrite_export_' . date('Ymd_His') . '.csv"');
+    header('Content-Disposition: attachment; filename="sellbrite_products_' . date('Ymd_His') . '.csv"');
+    echo $csv;
+    exit;
+}
+if ($action === 'exportInventory') {
+    $csv = Exporter::inventoryCsv(sblGetAll());
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="sellbrite_inventory_' . date('Ymd_His') . '.csv"');
     echo $csv;
     exit;
 }

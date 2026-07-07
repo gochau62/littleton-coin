@@ -44,6 +44,7 @@
     }
     function sblBackToList(){ sblShow('list'); }
     function sblExport(){ window.location = 'SellbriteBulkLoader_ajax.php?action=export'; }
+    function sblExportInventory(){ window.location = 'SellbriteBulkLoader_ajax.php?action=exportInventory'; }
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
     /* ---- new / edit ---- */
@@ -150,8 +151,9 @@
        operator confirms (autofill still suggests price/cost). */
     var SBL_GS_FIELDS = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
         'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
-        'circulated_or_uncirculated','style','composition','fineness','precious_metal_content',
-        'total_precious_metal_content','single_coin_or_set','country_of_manufacture','brand','title_suffix',
+        'circulated_or_uncirculated','style','composition','fineness','diameter','weight',
+        'precious_metal_content','total_precious_metal_content','single_coin_or_set',
+        'country_of_manufacture','brand','title_suffix',
         'package_weight','exact_image','name','description','red_book_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms'];
 

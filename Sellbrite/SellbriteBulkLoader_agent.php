@@ -31,15 +31,7 @@ if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
-
-// Constant listing copy from the ODS (feature_4 seller blurb, exact-image line).
-if (!defined('SBL_ABOUT_SELLER')) { define('SBL_ABOUT_SELLER',
-    'ABOUT PROFILE COINS & COLLECTIBLES: Selling collectible coins and currency online for more than a '
-  . 'decade, we are the dealer of choice for new and experienced collectors. Our ever-changing inventory '
-  . 'ranges from coins such as Morgan & Peace Dollars, Liberty Walking & Franklin Half Dollars, Standing '
-  . 'Liberty & Washington Quarters to modern sets, including proof sets, mint sets, & commemorative sets.'); }
-if (!defined('SBL_EXACT_IMAGE_DEFAULT')) { define('SBL_EXACT_IMAGE_DEFAULT',
-    'The images you see are for the exact item you will receive.'); }
+// (SBL_ABOUT_SELLER / SBL_EXACT_IMAGE_DEFAULT constants live in the logic file.)
 
 function gsLog($msg)
 {
@@ -565,7 +557,7 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the coin series, e.g. "Morgan Dollars"'],
-        'coin_type'      => ['src' => 'series / Variety', 'desc' => 'the design/type NAME only, e.g. "Morgan","Liberty Cap","Buffalo","Jefferson"'],
+        'coin_type'      => ['src' => 'series / Variety', 'desc' => 'the SERIES type name only, e.g. "Morgan","Peace","Buffalo","Jefferson"; for commemoratives use the program name (e.g. "Basketball Hall of Fame")'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
@@ -587,10 +579,11 @@ function sbl_field_guide(): array
         'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
         'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
-        'description'    => ['desc' => 'ONE factual sentence: "A genuine {year} {mint} {type} {denomination} Coin." then the metal content if precious. No hype.'],
-        'red_book_description' => ['desc' => 'a detailed factual paragraph: design, designer, mintage, composition and a historical note - use GeneralNotes/ObverseDescription/ReverseDescription'],
-        'feature_1'      => ['desc' => 'start with "DETAILS: " then the specs line (year, mint, type, denomination, grade, metal content)'],
-        'feature_3'      => ['desc' => 'start with "COLLECTOR\'S NOTE: " then 2-4 sentences about this coin/series and why collectors want it'],
+        'description'    => ['desc' => 'EXACTLY two sentences, same shape every time: "A genuine {year} {mint mark} {series/program} {denomination} Coin. Contains {metal content} {fineness} {metal}." (second sentence only for precious metals). No hype, no adjectives beyond "genuine".'],
+        'red_book_description' => ['desc' => 'the EXPANDED DESCRIPTION for the CATEGORY: 2-4 factual sentences about the series/program as a whole (history, design, why it exists) - write it so the SAME text fits every coin of this category; never mention this coin\'s grade, date or price'],
+        'feature_4'      => ['desc' => 'expanded copy unique to the product CATEGORY (different from red_book_description): 2-3 sentences on the series and why collectors want it; leave empty if nothing category-specific to say'],
+        'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
+        'weight'         => ['src' => 'WeightOunces', 'desc' => 'coin weight in troy ounces, number only'],
         'search_terms'   => ['desc' => '8-15 lowercase space-separated keywords: metal, type, denomination, mint, theme, "numismatics", "coin"'],
         'price'          => ['src' => 'pricing CpgVal', 'req' => true, 'desc' => 'CPG retail; the operator confirms it'],
         'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
@@ -615,6 +608,11 @@ function gsMapToProduct(array $c): array
     if ($desig !== '')                  { $row['designation_abbrivation'] = $desig; }
     if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
     if ($g('Fineness')    !== '')       { $row['fineness']    = $g('Fineness'); }
+    // Added per Des: diameter (mm) and weight (troy oz) straight from GreySheet.
+    if ($g('Diameter') !== '')          { $row['diameter']    = $g('Diameter'); }
+    if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces'])) {
+        $row['weight'] = rtrim(rtrim(number_format((float) $c['WeightOunces'], 4, '.', ''), '0'), '.');
+    }
 
     $strike  = $g('StrikeType');
     $isProof = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false;
@@ -646,13 +644,12 @@ function gsMapToProduct(array $c): array
             $row['total_precious_metal_content'] = rtrim(rtrim(number_format((float) $c['WeightOunces'] * $fin, 4, '.', ''), '0'), '.') . ' oz';
         }
     }
-    // ODS constants.
+    // ODS constants. (Features 1/2/3/5 are derived by Computer per Des's layout:
+    // 1+2 = description split, 3 = exact-image line, 5 = PCC blurb.)
     $row['title_suffix']  = 'Coin Collectible';
     $row['modified_item'] = 'No';
     $row['certification'] = 'Uncertified';
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
-    $row['feature_2']     = SBL_EXACT_IMAGE_DEFAULT;   // ODS: feature 2 mirrors the exact-image line
-    $row['feature_4']     = SBL_ABOUT_SELLER;          // ODS: constant seller blurb
     if (($row['country_of_manufacture'] ?? '') === '') { $row['country_of_manufacture'] = 'United States'; }
     return array_filter($row, static fn($v) => $v !== '' && $v !== null);
 }
@@ -710,6 +707,10 @@ function gsAiMap(array $coin): array
          . 'Fill each target field from the GreySheet coin facts. Follow every "MUST be one of" list '
          . 'EXACTLY (copy the option verbatim) or leave the field empty. Use "[from GreySheet X]" as the '
          . 'source hint. Do NOT invent facts - leave a field empty if the data does not support it. '
+         . 'CONSISTENCY RULE: copy fields follow their stated template so every listing reads the same; '
+         . 'red_book_description and feature_4 describe the CATEGORY (series/program), never the individual '
+         . 'coin, so the same wording would fit every coin in the category. Do not fill feature_1, feature_2, '
+         . 'feature_3 or feature_5 - the system derives them. '
          . 'Return ONLY a JSON object keyed by field machine-name.';
     $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET COIN FACTS:\n"
           . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
