@@ -395,11 +395,10 @@
         $('#pv-desc').text(f.description || '');
         $('#pv-price').text(f.price ? '$' + f.price : '');
         $('#pv-qty').text(f.quantity ? 'Qty ' + f.quantity : '');
-        // Preview uses the GreySheet reference image (display only). Manually
-        // entered product_image_1 wins if the operator pasted one.
-        var src = (f.product_image_1 && f.product_image_1.trim()) ? f.product_image_1 : sblPreviewImg;
+        // Preview always shows the GreySheet reference image (display only); the
+        // SKU-based product_image URLs aren't reachable here so we never use them.
         var img = document.getElementById('pv-img');
-        if (img && src && img.getAttribute('src') !== src){ img.classList.remove('broken'); img.src = src; }
+        if (img && sblPreviewImg && img.getAttribute('src') !== sblPreviewImg){ img.classList.remove('broken'); img.src = sblPreviewImg; }
     }
     function sblValidity(res){
         var pill = $('#valid-pill');
