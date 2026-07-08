@@ -36,7 +36,34 @@
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
     var SBL_LABELS = {};
-    var sblPreviewImg = '';   // GreySheet reference image for the preview pane (display only)
+    var sblPreviewImg = '';    // GreySheet reference image for the preview pane (display only)
+    var sblAutofilled = false; // once true, AUTO badges track actual values
+
+    /* After an autofill, only fields that ACTUALLY got a value keep the blue
+       AUTO look - GreySheet didn't provide the empty ones. */
+    function sblSyncAutoBadges(){
+        $('#sku-form [data-name]').each(function(){
+            var name = this.getAttribute('data-name');
+            if (SBL_GS_FIELDS.indexOf(name) < 0) return;
+            var field = this.closest('.field'); if (!field) return;
+            var has = String(this.value || '').trim() !== '';
+            field.classList.toggle('is-auto', has);
+            if (!has) field.classList.remove('is-gsauto');
+            var badge = field.querySelector('.badge.auto, .badge.gsauto');
+            if (badge) badge.style.display = has ? '' : 'none';
+        });
+    }
+    /* Restore the default AUTO look on all auto-eligible fields (blank form). */
+    function sblResetAutoBadges(){
+        $('#sku-form [data-name]').each(function(){
+            var name = this.getAttribute('data-name');
+            if (SBL_GS_FIELDS.indexOf(name) < 0) return;
+            var field = this.closest('.field'); if (!field) return;
+            field.classList.add('is-auto'); field.classList.remove('is-gsauto');
+            var badge = field.querySelector('.badge.auto, .badge.gsauto');
+            if (badge) badge.style.display = '';
+        });
+    }
 
     /* ---- view switching ---- */
     function sblShow(view){
@@ -65,6 +92,8 @@
         $('#gs-raw').text('Autofill a coin to see the full API response…');
         sblPreviewImg = '';
         var pv = document.getElementById('pv-img'); if (pv){ pv.removeAttribute('src'); pv.classList.add('broken'); }
+        sblAutofilled = false;
+        sblResetAutoBadges();
         sblFieldVisibility();
     }
     function sblNew(){
@@ -160,6 +189,7 @@
         });
         sblYearRefresh(row && row.year);   // constrain Year to the series' real years
         sblFieldVisibility();              // show only this category's boxes
+        sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
     }
 
@@ -428,6 +458,7 @@
             });
             sblPreview(res.fields);
             sblValidity(res);
+            if (sblAutofilled) sblSyncAutoBadges();
         }, 'json');
     }
     function sblPreview(f){
