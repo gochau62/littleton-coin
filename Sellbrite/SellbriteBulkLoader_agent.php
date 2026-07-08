@@ -656,11 +656,20 @@ function sbl_field_guide(): array
 function gsMapToProduct(array $c): array
 {
     $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
+    // Paper money (U.S./World Currency trees): the coin-only fields (mint mark
+    // and location) are never stamped onto a note.
+    $isPaper = false;
+    if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
+        $rootName = strtolower((string) (($c['CatalogPath'][0]['Name'] ?? '')));
+        $isPaper  = strpos($rootName, 'currency') !== false;
+    }
     $row = [];
     if (preg_match('/\d{4}/', $g('CoinDate'), $m)) { $row['year'] = $m[0]; }
-    $mm = $g('MintMark');
-    $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
-    $row['mint_location'] = sbl_mint_location($mm);
+    if (!$isPaper) {
+        $mm = $g('MintMark');
+        $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
+        $row['mint_location'] = sbl_mint_location($mm);
+    }
     if ($g('DenominationShort') !== '') { $row['denomination']   = $g('DenominationShort'); }
     if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
