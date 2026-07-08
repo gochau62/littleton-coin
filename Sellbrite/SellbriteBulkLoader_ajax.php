@@ -56,11 +56,26 @@ switch ($action) {
         $computed   = Computer::apply($_POST);
         $validation = Validator::check($computed);
         $id = sblSave($computed);
+        if ($id === false) {
+            echo json_encode(['returnClass' => 'error',
+                              'message' => 'Save failed - no database connection or a DB error (check you are signed in on the IBM i).']);
+            break;
+        }
         echo json_encode([
             'returnClass' => $validation['valid'] ? 'success' : 'warning',
             'id'          => $id,
             'sku'         => $computed['sku'] ?? '',
             'valid'       => $validation['valid'],
+            'row'         => [
+                'id'            => $id,
+                'sku'           => $computed['sku'] ?? '',
+                'category_name' => $computed['category_name'] ?? '',
+                'name'          => $computed['name'] ?? '',
+                'grade'         => $computed['grade'] ?? '',
+                'price'         => $computed['price'] ?? '',
+                'quantity'      => $computed['quantity'] ?? '',
+                'updated_at'    => date('Y-m-d H:i'),
+            ],
         ]);
         break;
 
@@ -74,8 +89,9 @@ switch ($action) {
 
     case 'delete':
         $id = (int) ($_POST['id'] ?? 0);
-        if ($id > 0) { sblDelete($id); }
-        echo json_encode(['returnClass' => 'success', 'id' => $id]);
+        $ok = $id > 0 ? sblDelete($id) : false;
+        echo json_encode(['returnClass' => $ok ? 'success' : 'error', 'id' => $id,
+                          'message' => $ok ? '' : 'Delete failed - no database connection or a DB error.']);
         break;
 
     case 'gsSearch':

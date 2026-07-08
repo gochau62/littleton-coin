@@ -140,20 +140,23 @@ final class Computer
             $row['description'] = self::buildDescription($row, $copy);
         }
 
-        // Amazon bullet points (Des): features 1 & 2 are literally the
-        // description broken into two parts, feature 3 is the exact-image /
-        // stock-photo line, feature 5 is the constant PCC company blurb.
-        // Feature 4 (expanded copy unique to the product category) is authored
-        // by the agent/operator, so it is left untouched here.
+        // Amazon bullet points, PCC layout (from the real exports):
+        //   1 DETAILS  2 CONDITION  3 IMAGES  4 COLLECTOR'S NOTE  5 ABOUT PCC
+        // The description reads "A genuine <specs> Coin, in <condition> Condition",
+        // which we split into the DETAILS and CONDITION bullets.
         $desc = trim((string) ($row['description'] ?? ''));
         if ($desc !== '') {
-            $dot = strpos($desc, '. ');
-            $row['feature_1'] = $dot !== false ? substr($desc, 0, $dot + 1) : $desc;
-            $row['feature_2'] = $dot !== false ? trim(substr($desc, $dot + 1)) : '';
+            $core = preg_replace('/^A genuine\s+/i', '', $desc);
+            $bits = preg_split('/,\s*in\s+/i', $core, 2);
+            $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .');
+            if (!empty($bits[1])) { $row['feature_2'] = 'CONDITION: ' . rtrim(trim($bits[1]), ' .'); }
         }
         $exact = trim((string) ($row['exact_image'] ?? ''));
-        if ($exact !== '') { $row['feature_3'] = $exact; }
-        $row['feature_5'] = SBL_ABOUT_SELLER;
+        if ($exact !== '') { $row['feature_3'] = 'IMAGES: ' . $exact; }
+        // feature_4 = the agent's category COLLECTOR'S NOTE; make sure it carries the label.
+        $note = trim((string) ($row['feature_4'] ?? ''));
+        if ($note !== '' && stripos($note, "COLLECTOR'S NOTE") !== 0) { $row['feature_4'] = "COLLECTOR'S NOTE: " . $note; }
+        $row['feature_5'] = SBL_ABOUT_SELLER;   // already begins "ABOUT PROFILE COINS & COLLECTIBLES:"
         return $row;
     }
     private static function lookupValue(string $value, string $fallback): string
@@ -179,17 +182,24 @@ final class Computer
         $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
     }
+    /* Fallback description (used only when the agent didn't write one). Same
+     * shape as the real listings: "A genuine <specs> Coin, in <condition>
+     * Condition." The DETAILS/CONDITION bullets are split back out of it. */
     private static function buildDescription(array $row, array $copy): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
-        if ($g('single_coin_or_set') === 'Set') { return ''; }
-        $bits = [];
-        $headline = self::buildTitle($row);
-        if ($headline !== '') { $bits[] = 'A genuine ' . $headline . '.'; }
-        if (!empty($copy['collector_note'])) { $bits[] = $copy['collector_note']; }
-        elseif (!empty($copy['copy_description'])) { $bits[] = $copy['copy_description']; }
-        if ($g('composition') !== '') { $bits[] = 'Composition: ' . $g('composition') . '.'; }
-        return trim(implode(' ', $bits));
+        if ($g('category_name') === '') { return ''; }
+        $specs = trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
+            $g('year'),
+            $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
+            $g('coin_type') !== '' ? $g('coin_type') : $g('category_name'),
+            $g('denomination'),
+        ]))));
+        $d = 'A genuine ' . $specs . ' Coin';
+        $cond = $g('grade') !== '' && $g('grade') !== 'Ungraded'
+              ? $g('grade') : $g('circulated_or_uncirculated');
+        if ($cond !== '') { $d .= ', in ' . $cond . ' Condition'; }
+        return $d . '.';
     }
 }
 

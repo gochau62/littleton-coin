@@ -73,6 +73,13 @@
         sblShow('form');
         sblRecompute();
     }
+    /* Clear the whole form back to a blank New SKU (stays on the form). */
+    function sblClearAll(){
+        sblClearForm();
+        $('#f_id').val('');
+        $('#formTitle').text('New SKU');
+        sblRecompute();
+    }
     function sblEdit(id){
         $.post('SellbriteBulkLoader_ajax.php', { action:'find', id:id }, function(res){
             if (res.returnClass !== 'success' || !res.row){ swal('Not found','That record could not be loaded.','error'); return; }
@@ -88,16 +95,22 @@
         }, 'json');
     }
 
-    /* ---- save / delete ---- */
+    /* ---- save / delete (AJAX, no page reload) ---- */
     function sblSave(){
         var data = $('#sku-form').serialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
-            if (res.returnClass === 'success'){
-                swal({title:'Saved', text:'SKU saved and derived fields recomputed.', icon:'success', timer:1500, buttons:false});
-            } else {
-                swal('Saved with warnings','The SKU was saved but still needs attention (see the highlighted fields).','warning');
+            if (!res || res.returnClass === 'error'){
+                swal('Not saved', (res && res.message) || 'The database rejected the save (no DB connection?).', 'error');
+                return;
             }
-            setTimeout(function(){ window.location = '?'; }, 800);
+            if (res.id) { $('#f_id').val(res.id); $('#formTitle').text('Edit SKU - ' + (res.sku || '')); }
+            sblUpsertListRow(res.row);
+            if (res.returnClass === 'warning'){
+                swal({ title:'Saved with warnings', text:'Some fields still need attention (highlighted).',
+                       icon:'warning', timer:1600, buttons:false });
+            } else {
+                swal({ title:'Saved', text:'SKU saved.', icon:'success', timer:1500, buttons:false });
+            }
         }, 'json');
     }
     function sblDelete(id, sku){
@@ -105,10 +118,31 @@
                icon:'warning', buttons:['Cancel','Delete'], dangerMode:true })
         .then(function(ok){
             if (!ok) return;
-            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(){
-                window.location = '?';
+            $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(res){
+                if (res && res.returnClass === 'error'){ swal('Not deleted', res.message || 'Database error.', 'error'); return; }
+                var tr = document.getElementById('sku-row-' + id); if (tr) tr.remove();
+                if (!document.querySelector('#sku-tbody tr')){ $('#list-table').hide(); $('#list-empty').show(); }
             }, 'json');
         });
+    }
+    /* Insert or update one row in the inventory table without reloading. */
+    function sblUpsertListRow(row){
+        if (!row || !row.id) return;
+        var price = row.price ? '$' + sblEsc(row.price) : '—';
+        var qty   = (row.quantity !== undefined && row.quantity !== null && row.quantity !== '') ? sblEsc(row.quantity) : '—';
+        var cells = '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
+                  + '<td>' + sblEsc(row.category_name || '') + '</td>'
+                  + '<td>' + sblEsc(row.name || '') + '</td>'
+                  + '<td>' + sblEsc(row.grade || '') + '</td>'
+                  + '<td class="num">' + price + '</td><td class="num">' + qty + '</td>'
+                  + '<td>' + sblEsc(row.updated_at || '') + '</td>'
+                  + '<td style="text-align:right"><button type="button" class="mini" onclick="sblEdit(' + row.id + ')">Edit</button> '
+                  + '<button type="button" class="mini danger" onclick="sblDelete(' + row.id + ',&quot;' + sblEsc(row.sku) + '&quot;)">Delete</button></td>';
+        var tr = document.getElementById('sku-row-' + row.id);
+        if (tr){ tr.innerHTML = cells; return; }
+        $('#list-empty').hide(); $('#list-table').show();
+        tr = document.createElement('tr'); tr.id = 'sku-row-' + row.id; tr.innerHTML = cells;
+        var tb = document.getElementById('sku-tbody'); if (tb) tb.insertBefore(tr, tb.firstChild);
     }
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
@@ -258,12 +292,12 @@
             },
             select: function(e, ui){
                 sblCurPath = ui.item.path || '';
-                $('#gs-series').val(ui.item.value);
+                $('#gs-series').val(ui.item.value).autocomplete('close').blur();
                 $('#f_category_name').val(ui.item.value).trigger('change');
                 sblResetBelowSeries();
                 sblLoadYears();
                 $('#gs-year, #gs-coin').prop('disabled', false);
-                $('#gs-coin').focus();
+                setTimeout(function(){ $('#gs-coin').focus(); }, 0);
                 return false;
             }
         }).autocomplete('instance')._renderItem = function(ul, item){
@@ -302,7 +336,7 @@
             },
             select: function(e, ui){
                 sblPendingGsId = ui.item.gs_id;
-                $('#gs-coin').val(ui.item.display || ui.item.label);
+                $('#gs-coin').val(ui.item.display || ui.item.label).autocomplete('close');
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
                 return false;
