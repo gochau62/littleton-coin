@@ -289,7 +289,16 @@
                   'diameter','weight','circulated_or_uncirculated'],
         bullion: ['bullion_shape'],
         cob:     ['coin_design'],
-        set:     ['set_count']
+        set:     ['set_count'],
+        advent:  ['advent_calendar_type','advent_calendar_occasion','advent_calendar_material',
+                  'advent_calendar_number_of_items','advent_calendar_shape','advent_calendar_theme',
+                  'advent_calendar_item_height','advent_calendar_item_length',
+                  'advent_calendar_item_width','advent_calendar_item_weight'],
+        watch:   ['watch_band_material','watch_band_type','watch_band_width','watch_case_material',
+                  'watch_case_size','watch_department','watch_display_type',
+                  'watch_manufacturer_warranty','watch_movement_type','watch_water_resistance'],
+        stamp:   ['stamp_color','stamp_quality','stamp_type'],
+        nativity:['nativity_item_type']
     };
     function sblFieldVisibility(){
         var cat  = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
@@ -299,7 +308,12 @@
             coin:    !paper,   // coin-only boxes disappear for the Currency trees
             bullion: !paper && /bullion/.test(cat),
             cob:     !paper && (/\bcob\b|pillar|spanish colonial/.test(cat)),
-            set:     ($('#f_single_coin_or_set').val() || '') === 'Set' || /proof set|mint set/.test(cat)
+            set:     ($('#f_single_coin_or_set').val() || '') === 'Set' || /proof set|mint set/.test(cat),
+            // Other product types (Des's store categories beyond coins/notes):
+            advent:  /advent/.test(cat),
+            watch:   /watch|wristwatch/.test(cat),
+            stamp:   /\bstamp|postage/.test(cat),
+            nativity:/nativity/.test(cat)
         };
         $.each(SBL_CAT_FIELDS, function(group, names){
             $.each(names, function(i, n){
@@ -309,6 +323,13 @@
                 if (f) f.style.display = show[group] ? '' : 'none';
             });
         });
+        // The whole "Other product types" section only exists when one applies.
+        var other = document.getElementById('other-products-sec');
+        if (other){
+            var any = show.advent || show.watch || show.stamp || show.nativity;
+            other.style.display = any ? '' : 'none';
+            if (any) other.open = true;
+        }
     }
 
     function sblMarkGsFields(on){
