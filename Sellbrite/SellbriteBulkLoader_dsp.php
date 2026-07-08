@@ -243,6 +243,16 @@ details.group summary::-webkit-details-marker { display:none; }
                         'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                         'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                         'z_ebay_ungraded_coin_condition']],
+                    'Other product types (advent calendar / watch / stamp / nativity)' => [
+                        'open' => false, 'id' => 'other-products-sec', 'fields' => [
+                        'advent_calendar_type','advent_calendar_occasion','advent_calendar_material',
+                        'advent_calendar_number_of_items','advent_calendar_shape','advent_calendar_theme',
+                        'advent_calendar_item_height','advent_calendar_item_length',
+                        'advent_calendar_item_width','advent_calendar_item_weight',
+                        'watch_band_material','watch_band_type','watch_band_width','watch_case_material',
+                        'watch_case_size','watch_department','watch_display_type',
+                        'watch_manufacturer_warranty','watch_movement_type','watch_water_resistance',
+                        'stamp_color','stamp_quality','stamp_type','nativity_item_type']],
                     'Listing content' => ['open' => false, 'fields' => [
                         'name','description','red_book_description',
                         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms']],
@@ -251,8 +261,10 @@ details.group summary::-webkit-details-marker { display:none; }
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
                 ];
                 foreach ($sections as $title => $sec) {
-                    echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '') . '>';
+                    echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '')
+                       . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
                     echo '<summary>' . sbl_e($title) . '</summary><div class="field-grid">';
+                    $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
@@ -261,7 +273,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         // unless required. Manual image slots 5-8 stay plain boxes.
                         $col['auto'] = !empty($sec['images'])
                             ? in_array($n, ['product_image_1','product_image_2','product_image_3','product_image_4'], true)
-                            : !$col['required'];
+                            : (!$manual && !$col['required']);
                         echo $renderField($col);
                     }
                     echo '</div></details>';
