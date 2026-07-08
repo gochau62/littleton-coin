@@ -276,7 +276,12 @@ final class Validator
         // chosen marketplace's required fields.
         $required = array_flip(Schema::requiredNames());
         $market   = strtolower(trim((string) ($row['marketplace'] ?? '')));
-        foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
+        // Market-required fields are coin-specific; paper money is exempt.
+        $isPaper = (bool) preg_match('/currency|paper money|banknote|\bnote\b/i',
+            ($row['category_name'] ?? '') . ' ' . ($row['paper_money_type'] ?? ''));
+        if (!$isPaper) {
+            foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
+        }
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
             if ($val !== '' && str_starts_with($val, '***')) {

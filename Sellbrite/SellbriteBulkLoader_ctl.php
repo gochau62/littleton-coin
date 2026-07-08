@@ -123,7 +123,10 @@
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
     function sblMarketApply(){
         var m = $('#f_marketplace').val() || '';
-        var show = (m === '') ? SBL_ALL_MARKET_FIELDS : (SBL_MARKET_FIELDS[m] || []);
+        // The market fields are all coin-specific: never show them for currency.
+        var cat = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
+        var paper = /currency|paper money|banknote|\bnote\b/.test(cat);
+        var show = paper ? [] : ((m === '') ? SBL_ALL_MARKET_FIELDS : (SBL_MARKET_FIELDS[m] || []));
         SBL_ALL_MARKET_FIELDS.forEach(function(n){
             var el = document.querySelector('#sku-form [data-name="' + n + '"]');
             if (!el) return; var field = el.closest('.field'); if (!field) return;
@@ -284,9 +287,17 @@
        (U.S./World Coins vs U.S./World Currency), then the series/category. */
     var SBL_CAT_FIELDS = {
         paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
-        coin:    ['mint_mark','mint_location','strike_type','designation_abbrivation',
-                  'fineness','precious_metal_content','total_precious_metal_content',
-                  'diameter','weight','circulated_or_uncirculated'],
+        // The sheet's whole "US Coin and World Coin" block - none of it shows
+        // for the Currency trees.
+        coin:    ['coin_type','denomination','year','mint_mark','mint_location',
+                  'coin_variety_1','coin_variety_2','grade','designation_abbrivation',
+                  'circulated_or_uncirculated','strike_type','certification','certification_number',
+                  'composition','fineness','precious_metal_content','single_coin_or_set',
+                  'total_precious_metal_content','diameter','weight',
+                  'modified_item','modification_description',
+                  'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
+                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
+                  'z_ebay_ungraded_coin_condition'],
         bullion: ['bullion_shape'],
         cob:     ['coin_design'],
         set:     ['set_count'],
@@ -380,6 +391,7 @@
             $('#gs-series').val('').prop('disabled', !sblRootPath);
             sblResetBelowSeries();
             sblFieldVisibility();   // Currency trees swap in the paper-money boxes right away
+            sblMarketApply();       // and drop the coin-only market fields
             if (sblRootPath) $('#gs-series').focus();
         });
     }
