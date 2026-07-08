@@ -1,0 +1,5 @@
+# Local secrets (Gemini key) - never commit; GitHub blocks Google keys.
+Sellbrite/SellbriteBulkLoader_secrets.php
+
+# Local dev memory file written by the standalone test/seed off the IBM i.
+Sellbrite/SellbriteBulkLoader_memory.dev.json
