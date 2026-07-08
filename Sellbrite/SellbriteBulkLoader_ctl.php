@@ -280,19 +280,25 @@
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
 
     /* Category-specific boxes (the spreadsheet's column annotations): only show
-       the fields that apply to the picked coin's category. */
+       the fields that apply to what was picked - starting with the TREE
+       (U.S./World Coins vs U.S./World Currency), then the series/category. */
     var SBL_CAT_FIELDS = {
         paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
+        coin:    ['mint_mark','mint_location','strike_type','designation_abbrivation',
+                  'fineness','precious_metal_content','total_precious_metal_content',
+                  'diameter','weight','circulated_or_uncirculated'],
         bullion: ['bullion_shape'],
         cob:     ['coin_design'],
         set:     ['set_count']
     };
     function sblFieldVisibility(){
         var cat  = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
+        var paper = /currency|paper money|banknote|\bnote\b/.test(cat);
         var show = {
-            paper:   /currency|paper money|banknote|\bnote\b/.test(cat),
-            bullion: /bullion/.test(cat),
-            cob:     /\bcob\b|pillar|spanish colonial/.test(cat),
+            paper:   paper,
+            coin:    !paper,   // coin-only boxes disappear for the Currency trees
+            bullion: !paper && /bullion/.test(cat),
+            cob:     !paper && (/\bcob\b|pillar|spanish colonial/.test(cat)),
             set:     ($('#f_single_coin_or_set').val() || '') === 'Set' || /proof set|mint set/.test(cat)
         };
         $.each(SBL_CAT_FIELDS, function(group, names){
@@ -352,6 +358,7 @@
             sblRootPath = $(this).val();
             $('#gs-series').val('').prop('disabled', !sblRootPath);
             sblResetBelowSeries();
+            sblFieldVisibility();   // Currency trees swap in the paper-money boxes right away
             if (sblRootPath) $('#gs-series').focus();
         });
     }
