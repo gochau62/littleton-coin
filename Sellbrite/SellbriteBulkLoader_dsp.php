@@ -231,6 +231,17 @@ details.group summary { cursor:pointer; color:#1e6e43; }
                         } ?>
                     </div>
                 </fieldset>
+                <fieldset class="card group">
+                    <legend>Product images <span class="req-note">(left blank - paste your own uploaded photo URLs)</span></legend>
+                    <div class="field-grid">
+                        <?php foreach (['product_image_1','product_image_2','product_image_3','product_image_4',
+                                        'product_image_5','product_image_6','product_image_7','product_image_8'] as $n) {
+                            if (!isset($byName[$n])) { continue; }
+                            $col = $byName[$n]; $col['required'] = false; $col['auto'] = false;
+                            echo $renderField($col);
+                        } ?>
+                    </div>
+                </fieldset>
             </form>
 
             <aside class="preview-col">

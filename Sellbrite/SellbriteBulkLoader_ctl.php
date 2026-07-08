@@ -36,6 +36,7 @@
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
     var SBL_LABELS = {};
+    var sblPreviewImg = '';   // GreySheet reference image for the preview pane (display only)
 
     /* ---- view switching ---- */
     function sblShow(view){
@@ -62,6 +63,8 @@
         sblResetBelowSeries();
         $('#gs-apilog').empty().append('<li style="color:#5f6b62">Autofill a coin to see the GreySheet calls&hellip;</li>');
         $('#gs-raw').text('Autofill a coin to see the full API response…');
+        sblPreviewImg = '';
+        var pv = document.getElementById('pv-img'); if (pv){ pv.removeAttribute('src'); pv.classList.add('broken'); }
         sblFieldVisibility();
     }
     function sblNew(){
@@ -351,6 +354,7 @@
             return;
         }
         if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
+        sblPreviewImg = res.preview_image || '';   // GreySheet image, display only
         sblFillFromRow(res.row);
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                icon: res.returnClass === 'success' ? 'success' : 'warning', timer:1600, buttons:false });
@@ -391,8 +395,11 @@
         $('#pv-desc').text(f.description || '');
         $('#pv-price').text(f.price ? '$' + f.price : '');
         $('#pv-qty').text(f.quantity ? 'Qty ' + f.quantity : '');
+        // Preview uses the GreySheet reference image (display only). Manually
+        // entered product_image_1 wins if the operator pasted one.
+        var src = (f.product_image_1 && f.product_image_1.trim()) ? f.product_image_1 : sblPreviewImg;
         var img = document.getElementById('pv-img');
-        if (img && f.product_image_1 && img.getAttribute('src') !== f.product_image_1){ img.classList.remove('broken'); img.src = f.product_image_1; }
+        if (img && src && img.getAttribute('src') !== src){ img.classList.remove('broken'); img.src = src; }
     }
     function sblValidity(res){
         var pill = $('#valid-pill');
