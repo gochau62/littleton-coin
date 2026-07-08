@@ -109,6 +109,17 @@ final class Computer
 
         $copyVal = static fn(string $k): string => self::lookupValue($copy[$k] ?? '', '');
         $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
+        // Deterministic fallback so search terms always fill (even if the AI didn't).
+        if (trim((string) $row['search_terms']) === '') {
+            $words = [];
+            foreach ([$g('coin_type'), $g('category_name'), $g('composition'),
+                      $g('denomination'), 'coin', 'numismatics', 'collectible'] as $src) {
+                foreach (preg_split('/[^a-z0-9]+/', strtolower(trim((string) $src))) as $w) {
+                    if ($w !== '' && !in_array($w, $words, true)) { $words[] = $w; }
+                }
+            }
+            $row['search_terms'] = implode(' ', $words);
+        }
         if ($g('composition') === '' && $copyVal('composition') !== '') { $row['composition'] = $copyVal('composition'); }
         if ($g('fineness') === '' && $copyVal('fineness') !== '') { $row['fineness'] = $copyVal('fineness'); }
         if ($g('country_of_manufacture') === '') { $row['country_of_manufacture'] = $copyVal('country') ?: 'United States'; }
