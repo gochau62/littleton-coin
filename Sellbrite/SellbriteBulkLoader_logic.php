@@ -57,6 +57,27 @@ final class Schema
         if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
     }
+    /* Fields required for EVERY listing (Sellbrite export "Mandatory for all",
+     * peach group) - limited to the ones that always fill (auto or operator),
+     * so requiring them never blocks a save that the sheet would allow. */
+    public static function requiredNames(): array
+    {
+        return ['sku', 'name', 'description', 'country_of_manufacture', 'exact_image',
+                'search_terms', 'creation_date', 'price', 'quantity', 'cost'];
+    }
+    /* Extra fields a marketplace needs, shown only when that market is chosen
+     * for the SKU (from the Sellbrite export's market groups). Only fields that
+     * already exist as columns are listed; the eBay-specific condition columns
+     * (ebay_coin_condition_type, ebay_graded_coin_*) need adding to SBLPRODUCT
+     * first, so they are intentionally not here yet. */
+    public static function marketFields(): array
+    {
+        return [
+            'amazon'  => ['fields' => ['style'], 'required' => []],
+            'ebay'    => ['fields' => ['modified_item', 'modification_description'], 'required' => []],
+            'walmart' => ['fields' => [], 'required' => []],
+        ];
+    }
     public static function groups(): array
     {
         return [
@@ -220,12 +241,17 @@ final class Validator
     {
         $statuses = []; $messages = [];
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
+        // Required = schema flag OR the Sellbrite "mandatory for all" set OR the
+        // chosen marketplace's required fields.
+        $required = array_flip(Schema::requiredNames());
+        $market   = strtolower(trim((string) ($row['marketplace'] ?? '')));
+        foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
             if ($val !== '' && str_starts_with($val, '***')) {
                 $statuses[$name] = 'action'; $messages[$name] = trim($val, '* '); continue;
             }
-            if (!empty($col['required']) && $val === '') {
+            if ((!empty($col['required']) || isset($required[$name])) && $val === '') {
                 $statuses[$name] = 'error'; $messages[$name] = 'Required field'; continue;
             }
             $statuses[$name] = $val === '' ? '' : 'ok';

@@ -57,6 +57,8 @@ function dspBulkLoader(&$screenData)
 .gs-cascade input:disabled, .gs-cascade select:disabled { opacity:.5; }
 .gs-dd { padding:9px 12px; border-radius:50px; border:2px solid #ccc; font-size:13px; background:#fff; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; max-width:170px; }
 .gs-dd:focus { border-color:#007bff; }
+.mkt-pick { font-size:12px; font-weight:700; color:#1C4532; display:inline-flex; align-items:center; gap:6px; }
+.mkt-pick .gs-dd { max-width:120px; }
 .ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; }
 .ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
 .ui-autocomplete .gs-path { color:#5f6b62; font-size:11px; }
@@ -187,6 +189,14 @@ details.group summary::-webkit-details-marker { display:none; }
         <div class="sbl-tools">
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
+            <label class="mkt-pick" title="Marketplace for this SKU - reveals that market's specific fields">Market
+                <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()">
+                    <option value="">All</option>
+                    <option value="amazon">Amazon</option>
+                    <option value="ebay">eBay</option>
+                    <option value="walmart">Walmart</option>
+                </select>
+            </label>
             <span class="spacer"></span>
             <span class="gs-cascade" title="Tree &rarr; series &rarr; year &rarr; coin, then Autofill">
                 <select id="gs-root" class="gs-dd"><option value="">1. Tree&hellip;</option></select>
@@ -206,10 +216,11 @@ details.group summary::-webkit-details-marker { display:none; }
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
                 <?php
-                // Collapsible sections keep the big form uncluttered. Everything
-                // shows AUTO (filled from GreySheet + ODS constants) except the
-                // four the operator must set: SKU, Price, Quantity, Cost.
-                $required = ['sku','price','quantity','cost'];
+                // Collapsible sections keep the big form uncluttered. Required
+                // fields (Sellbrite "mandatory for all") come from the schema;
+                // most auto-fill, so requiring them just flags what a listing needs.
+                $required = array_merge(Schema::requiredNames(), ['quantity', 'cost']);
+                $required = array_values(array_unique($required));
                 $sections = [
                     'Coin details' => ['open' => true, 'fields' => [
                         'sku','category_name','coin_type','year','mint_mark','mint_location',

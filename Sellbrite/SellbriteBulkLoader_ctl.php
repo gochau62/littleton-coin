@@ -92,15 +92,31 @@
         $('#gs-raw').text('Autofill a coin to see the full API response…');
         sblPreviewImg = '';
         var pv = document.getElementById('pv-img'); if (pv){ pv.removeAttribute('src'); pv.classList.add('broken'); }
+        $('#f_marketplace').val('');
         sblAutofilled = false;
         sblResetAutoBadges();
         sblFieldVisibility();
+        sblMarketApply();
     }
     function sblNew(){
         sblClearForm();
         $('#formTitle').text('New SKU');
         sblShow('form');
         sblRecompute();
+    }
+    /* Marketplace picker: reveal only the chosen market's specific fields.
+       "All" shows every market field; a specific market shows just its own. */
+    var SBL_MARKET_FIELDS = { amazon:['style'], ebay:['modified_item','modification_description'], walmart:[] };
+    var SBL_ALL_MARKET_FIELDS = ['style','modified_item','modification_description'];
+    function sblMarketApply(){
+        var m = $('#f_marketplace').val() || '';
+        var show = (m === '') ? SBL_ALL_MARKET_FIELDS : (SBL_MARKET_FIELDS[m] || []);
+        SBL_ALL_MARKET_FIELDS.forEach(function(n){
+            var el = document.querySelector('#sku-form [data-name="' + n + '"]');
+            if (!el) return; var field = el.closest('.field'); if (!field) return;
+            field.style.display = (show.indexOf(n) >= 0) ? '' : 'none';
+        });
+        sblRecompute();   // re-validate for the chosen market
     }
     /* Delete every SKU from the inventory (home menu). */
     function sblDeleteAll(){
@@ -131,8 +147,12 @@
     }
 
     /* ---- save / delete (AJAX, no page reload) ---- */
+    /* Form fields + the marketplace picker (which lives in the toolbar). */
+    function sblFormSerialize(){
+        return $('#sku-form').serialize() + '&marketplace=' + encodeURIComponent($('#f_marketplace').val() || '');
+    }
     function sblSave(){
-        var data = $('#sku-form').serialize() + '&action=save';
+        var data = sblFormSerialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
             if (!res || res.returnClass === 'error'){
                 swal('Not saved', (res && res.message) || 'The database rejected the save (no DB connection?).', 'error');
@@ -189,6 +209,7 @@
         });
         sblYearRefresh(row && row.year);   // constrain Year to the series' real years
         sblFieldVisibility();              // show only this category's boxes
+        sblMarketApply();                  // and only the chosen market's boxes
         sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
     }
@@ -440,7 +461,7 @@
 
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
     function sblRecompute(){
-        var data = $('#sku-form').serialize() + '&action=compute';
+        var data = sblFormSerialize() + '&action=compute';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
             var active = document.activeElement;
             $('#sku-form [data-auto="1"]').each(function(){
