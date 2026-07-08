@@ -20,14 +20,23 @@
  */
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';
+
+// Local, UNCOMMITTED secrets (the Gemini key). Create this file ONCE on each
+// machine - it is git-ignored, so it survives every pull and never reaches
+// GitHub (whose secret scanning blocks Google keys):
+//     Sellbrite/SellbriteBulkLoader_secrets.php
+//     <?php  define('GEMINI_API_KEY', 'AQ.your-key-here');
+if (is_file(__DIR__ . '/SellbriteBulkLoader_secrets.php')) { require_once __DIR__ . '/SellbriteBulkLoader_secrets.php'; }
+
 if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2.greysheet.com/api'); }
 if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
 if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
-if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'basic'); }
+if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'advanced'); }
 if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }   // default TREE only - see gsRoots()
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    20); }
 
-if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
+// Key comes from the secrets file above, or the GEMINI_API_KEY env var, else blank.
+if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
@@ -293,8 +302,10 @@ function gsMemYears(string $nodePath): array
 }
 /* Coins under a node (any level), by catalog path. Optional $year narrows to one
  * year, optional $q narrows by coin name. Returns full names; the front-end
- * strips the shared prefix so only the distinguishing part shows. 0 API calls. */
-function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $limit = 400): array
+ * strips the shared prefix so only the distinguishing part shows. 0 API calls.
+ * Limit is high so big series (Morgan Dollars 1878-1921 with all VAMs) list in
+ * full; the Year dropdown is the quick way to narrow them. */
+function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $limit = 3000): array
 {
     $nodePath = trim($nodePath);
     if ($nodePath === '') { return []; }
