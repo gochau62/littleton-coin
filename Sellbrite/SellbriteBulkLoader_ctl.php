@@ -121,13 +121,14 @@
     /* Delete every SKU from the inventory (home menu). */
     function sblDeleteAll(){
         swal({ title:'Delete ALL SKUs?', text:'This permanently removes every record and cannot be undone.',
-               icon:'warning', buttons:['Cancel','Delete all'], dangerMode:true })
-        .then(function(ok){
+               type:'warning', showCancelButton:true, confirmButtonColor:'#c0392b',
+               confirmButtonText:'Delete all', cancelButtonText:'Cancel', closeOnConfirm:true },
+        function(ok){
             if (!ok) return;
             $.post('SellbriteBulkLoader_ajax.php', { action:'deleteAll' }, function(res){
                 if (res && res.returnClass === 'error'){ swal('Not deleted', res.message || 'Database error.', 'error'); return; }
                 $('#sku-tbody').empty(); $('#list-table').hide(); $('#list-empty').show();
-                swal({ title:'Deleted', text:'All SKUs removed.', icon:'success', timer:1500, buttons:false });
+                swal({ title:'Deleted', text:'All SKUs removed.', type:'success', timer:1500, showConfirmButton:false });
             }, 'json');
         });
     }
@@ -158,20 +159,21 @@
                 swal('Not saved', (res && res.message) || 'The database rejected the save (no DB connection?).', 'error');
                 return;
             }
-            if (res.id) { $('#f_id').val(res.id); $('#formTitle').text('Edit SKU - ' + (res.sku || '')); }
-            sblUpsertListRow(res.row);
+            sblUpsertListRow(res.row);       // update the inventory row in place (AJAX, no reload)
+            sblBackToList();                 // back to the main inventory page
             if (res.returnClass === 'warning'){
-                swal({ title:'Saved with warnings', text:'Some fields still need attention (highlighted).',
-                       icon:'warning', timer:1600, buttons:false });
+                swal({ title:'Saved with warnings', text:'The SKU saved, but some fields still need attention.',
+                       type:'warning', timer:2200, showConfirmButton:false });
             } else {
-                swal({ title:'Saved', text:'SKU saved.', icon:'success', timer:1500, buttons:false });
+                swal({ title:'Saved', text:'SKU saved.', type:'success', timer:1500, showConfirmButton:false });
             }
         }, 'json');
     }
     function sblDelete(id, sku){
         swal({ title:'Delete ' + sku + '?', text:'This permanently removes the record.',
-               icon:'warning', buttons:['Cancel','Delete'], dangerMode:true })
-        .then(function(ok){
+               type:'warning', showCancelButton:true, confirmButtonColor:'#c0392b',
+               confirmButtonText:'Delete', cancelButtonText:'Cancel', closeOnConfirm:true },
+        function(ok){
             if (!ok) return;
             $.post('SellbriteBulkLoader_ajax.php', { action:'delete', id:id }, function(res){
                 if (res && res.returnClass === 'error'){ swal('Not deleted', res.message || 'Database error.', 'error'); return; }
@@ -440,22 +442,23 @@
         if (res.returnClass === 'notfound'){
             swal({ title:"GreySheet doesn't have this coin",
                    text:'Would you like the AI to generate this listing?',
-                   icon:'info', buttons:['Cancel','Generate with AI'] })
-            .then(function(go){ if (go) sblGsGenerate(hint); });
+                   type:'info', showCancelButton:true,
+                   confirmButtonText:'Generate with AI', cancelButtonText:'Cancel', closeOnConfirm:true },
+            function(go){ if (go) sblGsGenerate(hint); });
             return;
         }
         if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
         sblPreviewImg = res.preview_image || '';   // GreySheet image, display only
         sblFillFromRow(res.row);
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
-               icon: res.returnClass === 'success' ? 'success' : 'warning', timer:1600, buttons:false });
+               type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
     }
     function sblGsGenerate(hint){
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
             if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
             sblFillFromRow(res.row);
             swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
-                   icon: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, buttons:false });
+                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
         }, 'json');
     }
 
