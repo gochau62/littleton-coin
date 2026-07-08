@@ -215,6 +215,18 @@ function sblSave(array $row)
     return sblInsert($row);
 }
 
+/** Delete EVERY product row (home-menu "Delete All"); returns true on success. */
+function sblDeleteAll()
+{
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    $stmt = db2_prepare($conn, 'DELETE FROM ' . SBL_TABLE);
+    if (!$stmt) { return (bool) sbl_db_err('deleteAll prepare'); }
+    if (!db2_execute($stmt)) { return (bool) sbl_db_err('deleteAll execute'); }
+    if (!sbl_commit($conn)) { return (bool) sbl_db_err('deleteAll commit'); }
+    return true;
+}
+
 /** Delete a product row by id; returns true on success. */
 function sblDelete($id)
 {

@@ -71,6 +71,7 @@ function dspBulkLoader(&$screenData)
 .gs-rawbox pre { max-height:360px; overflow:auto; background:#f6f8f6; border:1px solid #e0e6e0; border-radius:6px; padding:8px; font-size:11px; line-height:1.4; white-space:pre; margin:8px 0 0; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#007bff; color:#fff; font-size:14px; font-weight:700; border-radius:50px; cursor:pointer; }
 .btn:hover { background:#0056b3; }
+.btn.btn-danger { background:#c0392b; } .btn.btn-danger:hover { background:#a33025; }
 .btn-ghost { background:#fff; color:#222; border:1px solid #b4b4b4; }
 .btn-ghost:hover { color:#007bff; border-color:#007bff; }
 .btn-green { background:#2e8b57; } .btn-green:hover { background:#1e6e43; }
@@ -152,6 +153,7 @@ details.group summary::-webkit-details-marker { display:none; }
                 <option value="walmart">Walmart</option>
             </select>
             <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV for the selected marketplace">Export CSV</button>
+            <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
 
         <div id="list-empty" class="empty"<?= $skus ? ' style="display:none"' : '' ?>>No SKUs yet. Click <strong>+ New SKU</strong> to add the first one.</div>
@@ -197,7 +199,6 @@ details.group summary::-webkit-details-marker { display:none; }
                         title="Fill the highlighted fields from GreySheet">Autofill</button>
             </span>
             <span id="valid-pill" class="pill ok">Ready</span>
-            <button type="button" class="btn btn-grey" id="clear-btn" onclick="sblClearAll()" title="Clear the form back to a blank New SKU">Clear</button>
             <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
 
