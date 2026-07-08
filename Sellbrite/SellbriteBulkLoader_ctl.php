@@ -112,13 +112,13 @@
     /* Marketplace picker: reveal only the chosen market's specific fields.
        "All" shows every market field; a specific market shows just its own. */
     var SBL_MARKET_FIELDS = {
-        amazon: ['style'],
+        amazon: [],
         ebay:   ['modified_item','modification_description','ebay_coin_condition_type',
                  'ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
                  'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'],
         walmart: []
     };
-    var SBL_ALL_MARKET_FIELDS = ['style','modified_item','modification_description',
+    var SBL_ALL_MARKET_FIELDS = ['modified_item','modification_description',
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
     function sblMarketApply(){
@@ -168,18 +168,22 @@
     function sblSave(){
         var data = sblFormSerialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
+            if (res && res.returnClass === 'invalid'){
+                // Hard gate: required fields incomplete - stay on the form.
+                sblRecompute();   // refresh the red highlights + validation panel
+                swal({ title:'Cannot save yet',
+                       text:'Complete the required fields first:\n\n' + (res.missing || []).slice(0, 12).join(', ')
+                            + ((res.missing || []).length > 12 ? ' …' : ''),
+                       type:'error' });
+                return;
+            }
             if (!res || res.returnClass === 'error'){
                 swal('Not saved', (res && res.message) || 'The database rejected the save (no DB connection?).', 'error');
                 return;
             }
             sblUpsertListRow(res.row);       // update the inventory row in place (AJAX, no reload)
             sblBackToList();                 // back to the main inventory page
-            if (res.returnClass === 'warning'){
-                swal({ title:'Saved with warnings', text:'The SKU saved, but some fields still need attention.',
-                       type:'warning', timer:2200, showConfirmButton:false });
-            } else {
-                swal({ title:'Saved', text:'SKU saved.', type:'success', timer:1500, showConfirmButton:false });
-            }
+            swal({ title:'Saved', text:'SKU saved.', type:'success', timer:1500, showConfirmButton:false });
         }, 'json');
     }
     function sblDelete(id, sku){
@@ -266,7 +270,7 @@
        operator confirms (autofill still suggests price/cost). */
     var SBL_GS_FIELDS = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
         'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
-        'circulated_or_uncirculated','style','composition','fineness','diameter','weight',
+        'circulated_or_uncirculated','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
         'country_of_manufacture','brand','bullion_shape','coin_design','condition',
         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',

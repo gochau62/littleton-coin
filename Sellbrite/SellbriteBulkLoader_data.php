@@ -374,13 +374,7 @@ return [
             'auto' => false,
             'dropdown' => 'strike_type',
         ],
-        [
-            'name' => 'style',
-            'label' => 'Style',
-            'required' => false,
-            'auto' => false,
-            'dropdown' => 'style',
-        ],
+        // 'style' deprecated per Des (July 2026) - dropped from the schema/export.
         [
             'name' => 'composition',
             'label' => 'Composition',

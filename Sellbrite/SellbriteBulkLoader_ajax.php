@@ -55,6 +55,22 @@ switch ($action) {
     case 'save':
         $computed   = Computer::apply($_POST);
         $validation = Validator::check($computed);
+        // HARD GATE: the Sellbrite "mandatory for all" fields must be complete
+        // before a SKU can be submitted - reject the save, list what's missing.
+        if (!$validation['valid']) {
+            $missing = [];
+            $labels  = [];
+            foreach (Schema::columns() as $col) { $labels[$col['name']] = $col['label']; }
+            foreach ($validation['statuses'] as $f => $st) {
+                if ($st === 'error') { $missing[] = $labels[$f] ?? $f; }
+            }
+            echo json_encode(['returnClass' => 'invalid',
+                              'statuses' => $validation['statuses'], 'messages' => $validation['messages'],
+                              'missing' => $missing,
+                              'message' => 'Required fields incomplete: ' . implode(', ', array_slice($missing, 0, 12))
+                                         . (count($missing) > 12 ? ' …' : '')]);
+            break;
+        }
         $id = sblSave($computed);
         if ($id === false) {
             echo json_encode(['returnClass' => 'error',

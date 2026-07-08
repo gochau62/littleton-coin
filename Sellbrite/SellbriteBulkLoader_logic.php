@@ -78,7 +78,7 @@ final class Schema
     public static function marketFields(): array
     {
         return [
-            'amazon'  => ['fields' => ['style'], 'required' => []],
+            'amazon'  => ['fields' => [], 'required' => []],
             'ebay'    => ['fields' => ['modified_item', 'modification_description',
                                        'ebay_coin_condition_type', 'ebay_graded_coin_letter_grade',
                                        'ebay_graded_coin_numerical_grade', 'ebay_graded_coin_professional_grader',
@@ -96,7 +96,7 @@ final class Schema
                 'coin_variety_1','coin_variety_2','grade','title_suffix',
                 'designation_abbrivation','paper_money_grade_designation','paper_money_type',
                 'certification','certification_number','circulated_or_uncirculated',
-                'strike_type','style','composition','fineness','precious_metal_content',
+                'strike_type','composition','fineness','precious_metal_content',
                 'single_coin_or_set','set_count','country_of_manufacture','brand',
                 'modified_item','modification_description','bullion_shape','coin_design',
             ],
@@ -316,7 +316,7 @@ final class Exporter
      * Sellbrite export: the five features / search terms / style are Amazon-
      * specific; modified-item fields are eBay-specific. 'all' keeps every
      * column (the house master export). */
-    private const AMAZON_ONLY = ['feature_1','feature_2','feature_3','feature_4','feature_5','search_terms','style'];
+    private const AMAZON_ONLY = ['feature_1','feature_2','feature_3','feature_4','feature_5','search_terms'];
     private const EBAY_ONLY   = ['modified_item','modification_description',
                                  'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',

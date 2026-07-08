@@ -239,7 +239,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
                         'package_weight','exact_image','price','cost','quantity']],
                     'Marketplace fields (pick a Market above)' => ['open' => false, 'fields' => [
-                        'style','modified_item','modification_description',
+                        'modified_item','modification_description',
                         'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                         'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                         'z_ebay_ungraded_coin_condition']],
