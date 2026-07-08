@@ -601,7 +601,7 @@ function sbl_field_guide(): array
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
         'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
         'description'    => ['desc' => 'ONE sentence, this EXACT shape: "A genuine {year} {mint mark if any} {series/type} {metal e.g. Steel/Silver} {denomination in words e.g. Cent Penny / Silver Dollar} Coin, in {grade or condition} Condition." e.g. "A genuine 1943 Lincoln Wheat Steel Cent Penny Coin, in AU About Uncirculated Condition." No hype.'],
-        'red_book_description' => ['desc' => 'the EXPANDED DESCRIPTION for this issue/category: 2-4 factual sentences (composition, one-year-only facts, designer, history). Same text should fit every coin of this category; no grade/price.'],
+        'red_book_description' => ['desc' => 'EXPANDED DESCRIPTION for the whole category: 2-4 factual sentences built from YOUR description PLUS the GreySheet GeneralNotes/Obverse/Reverse text (composition, design, designer, history). Write it so the SAME text fits every coin in this category - no grade, date, mint or price.'],
         'feature_4'      => ['desc' => 'a COLLECTOR\'S NOTE about the SERIES (history, design, collector appeal) - category-level, 2-4 sentences, no this-coin grade/date/price. Do NOT add the "COLLECTOR\'S NOTE:" prefix; the system adds it.'],
         'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
         'weight'         => ['src' => 'WeightOunces', 'desc' => 'coin weight in troy ounces, number only'],
@@ -774,16 +774,25 @@ function gsAiMap(array $coin, array $example = []): array
     }
     if (!geminiConfigured()) { return sbl_snap_row($base); }
 
-    $sys = 'You are a data-entry assistant for Littleton Coin Company\'s Sellbrite coin listings. '
-         . 'Fill each target field from the GreySheet coin facts. Follow every "MUST be one of" list '
-         . 'EXACTLY (copy the option verbatim) or leave the field empty. Use "[from GreySheet X]" as the '
-         . 'source hint. Do NOT invent facts - leave a field empty if the data does not support it. '
-         . 'CONSISTENCY RULE: copy fields follow their stated template so every listing reads the same; '
-         . 'red_book_description and feature_4 describe the CATEGORY (series/program), never the individual '
-         . 'coin, so the same wording would fit every coin in the category. Do not fill feature_1, feature_2, '
-         . 'feature_3 or feature_5 - the system derives them. '
-         . 'When a HOUSE EXAMPLE is given, match its wording and style for the copy fields. '
-         . 'Return ONLY a JSON object keyed by field machine-name.';
+    $sys = "You are the listing writer for Littleton Coin Company's Sellbrite coin listings. From the "
+         . "GreySheet coin facts (name, dates, mint, composition, designer, mintage, and especially "
+         . "GeneralNotes / ObverseDescription / ReverseDescription) produce the catalog fields AND the "
+         . "listing copy.\n"
+         . "RULES:\n"
+         . "1. For any field with a \"MUST be one of\" list, copy one option EXACTLY or leave it empty. "
+         . "Never invent facts - leave a field empty if the data does not support it.\n"
+         . "2. WRITE THE DESCRIPTION FIRST, in its exact one-sentence shape. Everything else builds on it.\n"
+         . "3. red_book_description is the EXPANDED DESCRIPTION for the whole category/series: write 2-4 "
+         . "factual sentences by combining your description with the GreySheet GeneralNotes / obverse / "
+         . "reverse text (history, composition, design, designer). It must read so the SAME text fits "
+         . "EVERY coin in this category - do not mention this coin's grade, date, mint or price.\n"
+         . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), also category-level "
+         . "and distinct from red_book_description; do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
+         . "5. Do NOT fill feature_1, feature_2, feature_3 or feature_5 - the system derives them from the "
+         . "description, condition, image line and company blurb.\n"
+         . "6. When a HOUSE EXAMPLE is given, reuse its red_book_description and feature_4 wording for that "
+         . "category and match its style.\n"
+         . "Return ONLY a JSON object keyed by field machine-name.";
     $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET COIN FACTS:\n"
           . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
     if ($example) {
@@ -802,6 +811,14 @@ function gsAiMap(array $coin, array $example = []): array
     // Deterministic base wins; the AI only fills the gaps it left (e.g. coin_type).
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
+
+    // Expanded Description fallback: if it still has none (AI failed / 429 and no
+    // category example), use the GreySheet GeneralNotes cleaned up.
+    if (trim((string) ($row['red_book_description'] ?? '')) === '' && !empty($coin['GeneralNotes'])) {
+        $notes = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $coin['GeneralNotes'])));
+        $notes = trim(preg_replace('/\s+/', ' ', $notes));
+        if ($notes !== '') { $row['red_book_description'] = mb_substr($notes, 0, 1900); }
+    }
     return sbl_snap_row($row);
 }
 function gsSearch(string $q): array

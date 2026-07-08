@@ -57,13 +57,18 @@ final class Schema
         if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
     }
-    /* Fields required for EVERY listing (Sellbrite export "Mandatory for all",
-     * peach group) - limited to the ones that always fill (auto or operator),
-     * so requiring them never blocks a save that the sheet would allow. */
+    /* Fields required for EVERY listing - the Sellbrite export's peach
+     * "Mandatory for all listings" group (plus Quantity/Cost from the inventory
+     * file). An empty required field flags the listing "needs attention" but
+     * still saves, so this can faithfully mirror the sheet. Original Retail and
+     * extra image slots are left off (the workbook itself makes them optional). */
     public static function requiredNames(): array
     {
-        return ['sku', 'name', 'description', 'country_of_manufacture', 'exact_image',
-                'search_terms', 'creation_date', 'price', 'quantity', 'cost'];
+        return ['sku', 'name', 'description', 'red_book_description',
+                'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
+                'brand', 'country_of_manufacture', 'price', 'creation_date',
+                'package_weight', 'package_length', 'package_width', 'package_height',
+                'exact_image', 'product_image_1', 'search_terms', 'quantity', 'cost'];
     }
     /* Extra fields a marketplace needs, shown only when that market is chosen
      * for the SKU (from the Sellbrite export's market groups). Only fields that
