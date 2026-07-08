@@ -100,12 +100,45 @@ function sbl_coerce($name, $val)
     return $v === '' ? null : $v;                     // other text: '' -> NULL
 }
 
-/** The 85 product column names, in schema order. */
+/** The product column names, in schema order. */
 function sbl_columns()
 {
     static $cols = null;
     if ($cols === null) { $cols = array_column(Schema::columns(), 'name'); }
     return $cols;
+}
+
+/** The columns that ACTUALLY exist on the DB2 table (lowercased), cached. */
+function sbl_table_columns()
+{
+    static $set = null;
+    if ($set !== null) { return $set; }
+    $set = [];
+    $parts  = explode('.', SBL_TABLE);
+    $schema = count($parts) > 1 ? $parts[0] : '';
+    $table  = strtoupper(end($parts));
+    $sql = 'SELECT COLUMN_NAME FROM QSYS2.SYSCOLUMNS WHERE TABLE_NAME = ?'
+         . ($schema !== '' ? ' AND TABLE_SCHEMA = ?' : '');
+    $params = $schema !== '' ? [$table, strtoupper($schema)] : [$table];
+    foreach (sbl_select($sql, $params) as $r) {
+        $name = strtolower((string) ($r['column_name'] ?? ''));
+        if ($name !== '') { $set[$name] = true; }
+    }
+    return $set;
+}
+
+/**
+ * Schema columns to write, intersected with what the table really has. This
+ * keeps a newly-added schema column (before its ALTER TABLE runs) from breaking
+ * EVERY insert/update - the new field is just skipped until the table catches
+ * up. Falls back to all columns if the catalog lookup returns nothing.
+ */
+function sbl_writable_columns()
+{
+    $cols  = sbl_columns();
+    $tcols = sbl_table_columns();
+    if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
+    return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
 }
 
 /** Run a prepared SELECT with params and return all rows as lowercase-keyed assoc arrays. */
@@ -176,7 +209,7 @@ function sblInsert(array $row)
 {
     $conn = sbl_conn();
     if (!$conn) { return false; }
-    $cols = sbl_columns();
+    $cols = sbl_writable_columns();
     $sql  = 'INSERT INTO ' . SBL_TABLE . ' (' . implode(', ', $cols) . ') VALUES ('
           . implode(', ', array_fill(0, count($cols), '?')) . ')';
     $stmt = db2_prepare($conn, $sql);
@@ -194,7 +227,7 @@ function sblUpdate($id, array $row)
 {
     $conn = sbl_conn();
     if (!$conn) { return false; }
-    $cols = sbl_columns();
+    $cols = sbl_writable_columns();
     $set  = implode(', ', array_map(static fn($c) => $c . ' = ?', $cols));
     $sql  = 'UPDATE ' . SBL_TABLE . ' SET ' . $set . ' WHERE id = ?';
     $stmt = db2_prepare($conn, $sql);
