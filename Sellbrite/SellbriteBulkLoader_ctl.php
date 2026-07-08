@@ -159,7 +159,7 @@
         'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','style','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
-        'country_of_manufacture','brand','title_suffix','bullion_shape','coin_design',
+        'country_of_manufacture','brand','bullion_shape','coin_design',
         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
         'package_weight','exact_image','name','description','red_book_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms'];

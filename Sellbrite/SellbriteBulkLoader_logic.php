@@ -173,7 +173,8 @@ final class Computer
             $g('denomination'),
             $g('grade') !== '' && $g('grade') !== 'Ungraded' ? $g('grade') : '',
             $g('certification') !== '' && $g('certification') !== 'Uncertified' ? $g('certification') : '',
-            $g('title_suffix'),
+            $g('title_suffix'),   // operator catch-all: grade/error/packaging/slab details
+            'Coin Collectible',   // constant title tail (ODS hardcodes this, not title_suffix)
         ];
         $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
