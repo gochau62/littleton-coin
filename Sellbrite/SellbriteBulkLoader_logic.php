@@ -295,25 +295,33 @@ final class Exporter
 
     public static function markets(): array { return ['all', 'amazon', 'ebay', 'walmart']; }
 
+    /* Internal working fields with no Sellbrite header (diameter/weight are
+     * ours until Des adds them in Sellbrite) - kept out of the upload file. */
+    private const INTERNAL_ONLY = ['diameter', 'weight'];
+
     public static function csv(array $rows, string $market = 'all'): string
     {
-        $drop = [];
-        if ($market === 'amazon')  { $drop = self::EBAY_ONLY; }
-        if ($market === 'ebay')    { $drop = self::AMAZON_ONLY; }
-        if ($market === 'walmart') { $drop = array_merge(self::AMAZON_ONLY, self::EBAY_ONLY); }
+        $drop = self::INTERNAL_ONLY;
+        if ($market === 'amazon')  { $drop = array_merge($drop, self::EBAY_ONLY); }
+        if ($market === 'ebay')    { $drop = array_merge($drop, self::AMAZON_ONLY); }
+        if ($market === 'walmart') { $drop = array_merge($drop, self::AMAZON_ONLY, self::EBAY_ONLY); }
         $columns = array_values(array_filter(Schema::columns(),
             static fn($c) => !in_array($c['name'], $drop, true)));
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
-        $human   = array_map(static fn($c) => $c['label'] . (!empty($c['required']) ? '*' : ''), $columns);
-        $machine = array_map(static fn($c) => $c['name'], $columns);
+        // Sellbrite's real header for the store category is "SKU of Parent
+        // Product" / parent_sku (see Des's export) - remap on the way out.
+        $human   = array_map(static fn($c) => ($c['name'] === 'category_name' ? 'SKU of Parent Product' : $c['label'])
+                                            . (!empty($c['required']) ? '*' : ''), $columns);
+        $machine = array_map(static fn($c) => $c['name'] === 'category_name' ? 'parent_sku' : $c['name'], $columns);
+        $source  = array_map(static fn($c) => $c['name'], $columns);   // our field names for the data rows
         $fh = fopen('php://temp', 'r+');
         $bannerRow = array_fill(0, count($columns), ''); $bannerRow[0] = $banner;
         fputcsv($fh, $bannerRow); fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
             $line = [];
-            foreach ($machine as $name) { $line[] = (string) ($row[$name] ?? ''); }
+            foreach ($source as $name) { $line[] = (string) ($row[$name] ?? ''); }
             fputcsv($fh, $line);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);
