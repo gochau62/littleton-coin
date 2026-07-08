@@ -147,6 +147,12 @@ details.group summary::-webkit-details-marker { display:none; }
                    onkeyup="if(event.key==='Enter'){sblSearch();}">
             <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
             <span class="spacer"></span>
+            <select id="new-market" class="gs-dd" title="Marketplace this SKU is being made for - its market fields autofill and appear on the form">
+                <option value="">All markets</option>
+                <option value="amazon">Amazon</option>
+                <option value="ebay">eBay</option>
+                <option value="walmart">Walmart</option>
+            </select>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
             <select id="export-market" class="gs-dd" title="Which marketplace's columns to export">
                 <option value="all">All columns</option>

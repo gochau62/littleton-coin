@@ -100,7 +100,12 @@
     }
     function sblNew(){
         sblClearForm();
-        $('#formTitle').text('New SKU');
+        // The market picked at creation carries onto the form: its specific
+        // fields (e.g. the eBay condition set) show, autofill, and validate.
+        var m = $('#new-market').val() || '';
+        $('#f_marketplace').val(m);
+        sblMarketApply();
+        $('#formTitle').text('New SKU' + (m ? ' — ' + $('#new-market option:selected').text() : ''));
         sblShow('form');
         sblRecompute();
     }
