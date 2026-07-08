@@ -457,6 +457,44 @@ return [
             'auto' => false,
         ],
         [
+            // Sellbrite mandatory group: new / used / reconditioned.
+            'name' => 'condition',
+            'label' => 'Condition (new, used, reconditioned)',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
+            'name' => 'ebay_coin_condition_type',
+            'label' => 'eBay Coin Condition Type',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
+            'name' => 'ebay_graded_coin_letter_grade',
+            'label' => 'eBay Graded Coin Letter Grade',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
+            'name' => 'ebay_graded_coin_numerical_grade',
+            'label' => 'eBay Graded Coin Numerical Grade',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
+            'name' => 'ebay_graded_coin_professional_grader',
+            'label' => 'eBay Graded Coin Professional Grader',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
+            // Sellbrite really names this with the "z " prefix - keep it exact.
+            'name' => 'z_ebay_ungraded_coin_condition',
+            'label' => 'z eBay Ungraded Coin Condition',
+            'required' => false,
+            'auto' => true,
+        ],
+        [
             'name' => 'bullion_shape',
             'label' => 'Bullion Shape',
             'required' => false,
@@ -502,7 +540,7 @@ return [
         ],
         [
             'name' => 'red_book_description',
-            'label' => 'Red Book Description',
+            'label' => 'Extended Description',
             'required' => false,
             'auto' => false,
         ],

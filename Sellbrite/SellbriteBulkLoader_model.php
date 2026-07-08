@@ -210,7 +210,9 @@ function sblInsert(array $row)
     $conn = sbl_conn();
     if (!$conn) { return false; }
     $cols = sbl_writable_columns();
-    $sql  = 'INSERT INTO ' . SBL_TABLE . ' (' . implode(', ', $cols) . ') VALUES ('
+    // Delimited uppercase identifiers: safe for reserved-ish names (condition, year).
+    $qcols = array_map(static fn($c) => '"' . strtoupper($c) . '"', $cols);
+    $sql  = 'INSERT INTO ' . SBL_TABLE . ' (' . implode(', ', $qcols) . ') VALUES ('
           . implode(', ', array_fill(0, count($cols), '?')) . ')';
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return sbl_db_err('insert prepare'); }
@@ -228,7 +230,7 @@ function sblUpdate($id, array $row)
     $conn = sbl_conn();
     if (!$conn) { return false; }
     $cols = sbl_writable_columns();
-    $set  = implode(', ', array_map(static fn($c) => $c . ' = ?', $cols));
+    $set  = implode(', ', array_map(static fn($c) => '"' . strtoupper($c) . '" = ?', $cols));
     $sql  = 'UPDATE ' . SBL_TABLE . ' SET ' . $set . ' WHERE id = ?';
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return (bool) sbl_db_err('update prepare'); }
