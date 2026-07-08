@@ -66,7 +66,7 @@ final class Schema
     {
         return ['sku', 'name', 'description', 'red_book_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
-                'brand', 'country_of_manufacture', 'price', 'creation_date',
+                'brand', 'country_of_manufacture', 'price', 'creation_date', 'condition',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'search_terms', 'quantity', 'cost'];
     }
@@ -79,7 +79,11 @@ final class Schema
     {
         return [
             'amazon'  => ['fields' => ['style'], 'required' => []],
-            'ebay'    => ['fields' => ['modified_item', 'modification_description'], 'required' => []],
+            'ebay'    => ['fields' => ['modified_item', 'modification_description',
+                                       'ebay_coin_condition_type', 'ebay_graded_coin_letter_grade',
+                                       'ebay_graded_coin_numerical_grade', 'ebay_graded_coin_professional_grader',
+                                       'z_ebay_ungraded_coin_condition'],
+                          'required' => ['ebay_coin_condition_type']],
             'walmart' => ['fields' => [], 'required' => []],
         ];
     }
@@ -188,6 +192,28 @@ final class Computer
             $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .');
             if (!empty($bits[1])) { $row['feature_2'] = 'CONDITION: ' . rtrim(trim($bits[1]), ' .'); }
         }
+        // Sellbrite Condition (new/used/reconditioned): collectible coins list
+        // as "used" (Des's export rows do) unless the operator overrides.
+        if ($g('condition') === '') { $row['condition'] = 'used'; }
+
+        // eBay condition fields, derived from certification + grade:
+        //   certified/slabbed -> Graded (grader + letter/numerical grade)
+        //   raw               -> Ungraded (circulated/uncirculated condition)
+        $cert   = $g('certification');
+        $grade  = $g('grade');
+        $graded = $cert !== '' && strcasecmp($cert, 'Uncertified') !== 0 && strcasecmp($cert, 'U.S. Mint') !== 0;
+        if ($g('ebay_coin_condition_type') === '') { $row['ebay_coin_condition_type'] = $graded ? 'Graded' : 'Ungraded'; }
+        if ($graded) {
+            if ($g('ebay_graded_coin_professional_grader') === '') { $row['ebay_graded_coin_professional_grader'] = $cert; }
+            if ($g('ebay_graded_coin_letter_grade') === '' && $grade !== '') { $row['ebay_graded_coin_letter_grade'] = $grade; }
+            if ($g('ebay_graded_coin_numerical_grade') === '' && preg_match('/\d{1,2}/', $grade, $gm)) {
+                $row['ebay_graded_coin_numerical_grade'] = $gm[0];
+            }
+        } elseif ($g('z_ebay_ungraded_coin_condition') === '') {
+            $row['z_ebay_ungraded_coin_condition'] = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0
+                ? $grade : $g('circulated_or_uncirculated');
+        }
+
         $exact = trim((string) ($row['exact_image'] ?? ''));
         if ($exact !== '') { $row['feature_3'] = 'IMAGES: ' . $exact; }
         // feature_4 = the agent's category COLLECTOR'S NOTE; make sure it carries the label.
@@ -291,7 +317,10 @@ final class Exporter
      * specific; modified-item fields are eBay-specific. 'all' keeps every
      * column (the house master export). */
     private const AMAZON_ONLY = ['feature_1','feature_2','feature_3','feature_4','feature_5','search_terms','style'];
-    private const EBAY_ONLY   = ['modified_item','modification_description'];
+    private const EBAY_ONLY   = ['modified_item','modification_description',
+                                 'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
+                                 'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
+                                 'z_ebay_ungraded_coin_condition'];
 
     public static function markets(): array { return ['all', 'amazon', 'ebay', 'walmart']; }
 
@@ -310,10 +339,16 @@ final class Exporter
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
-        // Sellbrite's real header for the store category is "SKU of Parent
-        // Product" / parent_sku (see Des's export) - remap on the way out.
-        $human   = array_map(static fn($c) => ($c['name'] === 'category_name' ? 'SKU of Parent Product' : $c['label'])
-                                            . (!empty($c['required']) ? '*' : ''), $columns);
+        // Sellbrite's real headers differ from two display names: the store
+        // category exports as "SKU of Parent Product"/parent_sku, and the
+        // "Extended Description" display label is still Sellbrite's
+        // "Red Book Description" header.
+        $human   = array_map(static function ($c) {
+            $label = $c['label'];
+            if ($c['name'] === 'category_name')        { $label = 'SKU of Parent Product'; }
+            if ($c['name'] === 'red_book_description') { $label = 'Red Book Description'; }
+            return $label . (!empty($c['required']) ? '*' : '');
+        }, $columns);
         $machine = array_map(static fn($c) => $c['name'] === 'category_name' ? 'parent_sku' : $c['name'], $columns);
         $source  = array_map(static fn($c) => $c['name'], $columns);   // our field names for the data rows
         $fh = fopen('php://temp', 'r+');

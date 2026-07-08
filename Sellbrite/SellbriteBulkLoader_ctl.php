@@ -106,8 +106,16 @@
     }
     /* Marketplace picker: reveal only the chosen market's specific fields.
        "All" shows every market field; a specific market shows just its own. */
-    var SBL_MARKET_FIELDS = { amazon:['style'], ebay:['modified_item','modification_description'], walmart:[] };
-    var SBL_ALL_MARKET_FIELDS = ['style','modified_item','modification_description'];
+    var SBL_MARKET_FIELDS = {
+        amazon: ['style'],
+        ebay:   ['modified_item','modification_description','ebay_coin_condition_type',
+                 'ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
+                 'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'],
+        walmart: []
+    };
+    var SBL_ALL_MARKET_FIELDS = ['style','modified_item','modification_description',
+        'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
+        'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
     function sblMarketApply(){
         var m = $('#f_marketplace').val() || '';
         var show = (m === '') ? SBL_ALL_MARKET_FIELDS : (SBL_MARKET_FIELDS[m] || []);
@@ -255,10 +263,12 @@
         'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','style','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
-        'country_of_manufacture','brand','bullion_shape','coin_design',
+        'country_of_manufacture','brand','bullion_shape','coin_design','condition',
         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
         'package_weight','exact_image','name','description','red_book_description',
-        'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms'];
+        'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
+        'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
+        'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
 
     /* Category-specific boxes (the spreadsheet's column annotations): only show
        the fields that apply to the picked coin's category. */
