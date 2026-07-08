@@ -535,6 +535,47 @@ function sbl_norm_composition(string $c): string
     foreach ($pairs as $needle => $val) { if (strpos($l, $needle) !== false) { return $val; } }
     return trim($c);
 }
+/* Normalize a GreySheet series name ("Lincoln Cents - Wheat Reverse
+ * (1909-1958)", "Morgan Dollars") to the PCC STORE CATEGORY from the ODS
+ * VLOOKUP sheet ("Lincoln Wheat Small Cent", "Morgan Dollar"). These store
+ * categories are what Sellbrite's "SKU of Parent Product" carries. Returns the
+ * store category, or the input unchanged if nothing matches well. */
+function sbl_norm_category(string $gs): string
+{
+    // Known renames the token matcher can't infer (GreySheet name -> store category).
+    $l = strtolower($gs);
+    if (preg_match('/silver eagle/', $l))              { return 'Silver Bullion Coin'; }
+    if (preg_match('/gold (eagle|buffalo)/', $l))      { return 'Gold Bullion Coin'; }
+    if (preg_match('/platinum eagle/', $l))            { return 'Platinum Bullion Coin'; }
+    if (preg_match('/palladium eagle/', $l))           { return 'Palladium Bullion Coin'; }
+    if (preg_match('/america the beautiful.*5 oz/', $l)) { return 'Silver Bullion Coin'; }
+    $cats = array_keys(Schema::lookups()['category_copy'] ?? []);
+    if (!$cats || trim($gs) === '') { return trim($gs); }
+    $tok = static function (string $s): array {
+        $s = strtolower(preg_replace('/\([^)]*\)/', ' ', $s));       // drop "(1909-1958)"
+        $s = preg_replace('/[^a-z0-9 ]/', ' ', $s);
+        $words = [];
+        foreach (preg_split('/\s+/', $s, -1, PREG_SPLIT_NO_EMPTY) as $w) {
+            if (preg_match('/^\d{3,4}$/', $w)) { continue; }          // bare years
+            if (strlen($w) > 3 && substr($w, -1) === 's') { $w = substr($w, 0, -1); }  // dollars->dollar
+            $words[$w] = true;
+        }
+        return $words;
+    };
+    $g = $tok($gs);
+    if (!$g) { return trim($gs); }
+    $best = ''; $bestScore = 0.0;
+    foreach ($cats as $cat) {
+        $c = $tok($cat);
+        if (!$c) { continue; }
+        $inter = count(array_intersect_key($g, $c));
+        if ($inter === 0) { continue; }
+        // Jaccard, weighted toward covering the STORE category's words.
+        $score = ($inter / count($c)) * 0.7 + ($inter / count($g)) * 0.3;
+        if ($score > $bestScore) { $bestScore = $score; $best = $cat; }
+    }
+    return $bestScore >= 0.7 ? $best : trim($gs);
+}
 /* Mint letter -> mint city (from the ODS Mint Location logic). */
 function sbl_mint_location(string $mm): string
 {
@@ -567,8 +608,8 @@ function sbl_field_guide(): array
     $comp   = ['Bronze','Copper','Copper Alloy','Copper-Nickel','Copper-Nickel Clad','Copper-Plated Zinc','Gold','Manganese-Brass','Palladium','Platinum','Silver','Silver Alloy','Silver Clad','Zinc-Coated Steel','Aluminum-Bronze','Bi-Metallic','Billon','Brass','Nickel-Plated Steel','Nickel-Silver','Paper','Pewter','Sterling Silver','Titanium'];
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
-        'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the coin series, e.g. "Morgan Dollars"'],
-        'coin_type'      => ['src' => 'series / Variety', 'desc' => 'the SERIES type name only, e.g. "Morgan","Peace","Buffalo","Jefferson"; for commemoratives use the program name (e.g. "Basketball Hall of Fame")'],
+        'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
+        'coin_type'      => ['src' => 'store category (VLOOKUP)', 'desc' => 'the series/design type for the store category, e.g. "Lincoln Wheat" (not just "Lincoln"), "Morgan","American Eagle","American Women"; commemoratives use "Commemorative" or the program name'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
@@ -659,9 +700,27 @@ function gsMapToProduct(array $c): array
 
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $last = end($c['CatalogPath']);
-        if (is_array($last) && !empty($last['Name'])) { $row['category_name'] = trim((string) $last['Name']); }
+        if (is_array($last) && !empty($last['Name'])) {
+            // Normalize the GreySheet series to the PCC STORE CATEGORY (the ODS
+            // VLOOKUP "Store Category" = Sellbrite "SKU of Parent Product").
+            $row['category_name'] = sbl_norm_category(trim((string) $last['Name']));
+        }
         foreach ($c['CatalogPath'] as $node) {
             if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
+        }
+    }
+    // Category defaults from the ODS VLOOKUP: coin_type is authoritative here
+    // ("Lincoln Wheat", "Morgan", "American Eagle"), plus denomination /
+    // composition / fineness / country when GreySheet left them blank.
+    $vc = Schema::lookups()['category_copy'][$row['category_name'] ?? ''] ?? [];
+    if ($vc) {
+        // coin_type and denomination use the HOUSE values ("Lincoln Wheat", "1C");
+        // composition/fineness/country only fill gaps GreySheet left.
+        if (!empty($vc['coin_type']))    { $row['coin_type']    = $vc['coin_type']; }
+        if (!empty($vc['denomination'])) { $row['denomination'] = $vc['denomination']; }
+        foreach (['composition' => 'composition', 'fineness' => 'fineness',
+                  'country' => 'country_of_manufacture'] as $vk => $f) {
+            if (!empty($vc[$vk]) && ($row[$f] ?? '') === '') { $row[$f] = $vc[$vk]; }
         }
     }
     // Precious-metal content = metal weight x fineness (troy oz), precious metals only.
