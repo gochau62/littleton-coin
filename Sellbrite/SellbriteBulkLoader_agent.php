@@ -620,7 +620,6 @@ function sbl_field_guide(): array
         'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'leave blank unless a graded example; the operator sets it'],
         'strike_type'    => ['src' => 'StrikeType', 'opts' => $strike],
         'circulated_or_uncirculated' => ['desc' => 'Uncirculated for MS/PR/proof/BU/mint-state, Circulated otherwise', 'opts' => ['Circulated','Uncirculated']],
-        'style'          => ['desc' => 'Proof for proof strikes, else Uncirculated/Circulated to match the grade', 'opts' => $style],
         'composition'    => ['src' => 'Composition', 'opts' => $comp],
         'fineness'       => ['src' => 'Fineness', 'desc' => 'decimal purity, e.g. 0.9, 0.999'],
         'single_coin_or_set' => ['src' => 'IsSet', 'opts' => ['Single Coin','Set'], 'const' => 'Single Coin'],
@@ -684,7 +683,6 @@ function gsMapToProduct(array $c): array
     $isProof   = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false
               || in_array($gradeType, ['PR', 'PF'], true);
     if ($strike !== '') { $row['strike_type'] = $strike; }
-    if ($isProof) { $row['style'] = 'Proof'; }
     // Mint State / Proof / Specimen are all uncirculated; circulated coins have
     // a circulated Desg or none, so leave those for the grade/operator.
     if ($isProof || in_array($gradeType, ['MS', 'PR', 'PF', 'SP', 'SMS'], true)) {
