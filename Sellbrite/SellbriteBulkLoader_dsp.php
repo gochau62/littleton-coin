@@ -90,9 +90,13 @@ table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:
 .editor { display:grid; grid-template-columns:1fr 300px; gap:20px; align-items:start; margin-top:6px; }
 .form-col { display:flex; flex-direction:column; gap:14px; }
 .card { background:#fff; border:1px solid #b4b4b4; border-radius:8px; padding:16px; }
-fieldset.group { border:1px solid #b4b4b4; border-radius:8px; }
+fieldset.group, details.group { border:1px solid #b4b4b4; border-radius:8px; }
+details.group { padding:12px 14px; margin-bottom:14px; background:#fff; }
 .group legend, .group summary { font-size:12.5px; font-weight:700; text-transform:uppercase; color:#1C4532; padding:0 6px; }
-details.group summary { cursor:pointer; color:#1e6e43; }
+details.group summary { cursor:pointer; color:#1e6e43; list-style:none; user-select:none; }
+details.group summary::before { content:'\25B8'; display:inline-block; margin-right:6px; transition:transform .15s; }
+details.group[open] summary::before { transform:rotate(90deg); }
+details.group summary::-webkit-details-marker { display:none; }
 .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:10px; }
 .field { display:flex; flex-direction:column; gap:4px; }
 .field label { font-size:12px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
@@ -203,45 +207,45 @@ details.group summary { cursor:pointer; color:#1e6e43; }
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
                 <?php
-                // Everything shows AUTO (filled from GreySheet + ODS constants)
-                // except the four the operator must set: SKU, Price, Quantity, Cost.
+                // Collapsible sections keep the big form uncluttered. Everything
+                // shows AUTO (filled from GreySheet + ODS constants) except the
+                // four the operator must set: SKU, Price, Quantity, Cost.
                 $required = ['sku','price','quantity','cost'];
-                $reduced  = ['sku','category_name','coin_type','year','mint_mark','mint_location',
-                             'denomination','coin_variety_1','coin_variety_2','grade',
-                             'designation_abbrivation','strike_type','circulated_or_uncirculated','style',
-                             'composition','fineness','diameter','weight',
-                             'precious_metal_content','total_precious_metal_content',
-                             'single_coin_or_set','set_count','country_of_manufacture','brand','title_suffix',
-                             'bullion_shape','coin_design',
-                             'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
-                             'package_weight','exact_image',
-                             'name','description','red_book_description',
-                             'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
-                             'price','cost','quantity'];
+                $sections = [
+                    'Coin details' => ['open' => true, 'fields' => [
+                        'sku','category_name','coin_type','year','mint_mark','mint_location',
+                        'denomination','coin_variety_1','coin_variety_2','grade',
+                        'designation_abbrivation','strike_type','circulated_or_uncirculated','style',
+                        'composition','fineness','diameter','weight',
+                        'precious_metal_content','total_precious_metal_content',
+                        'single_coin_or_set','set_count','country_of_manufacture','brand','title_suffix',
+                        'bullion_shape','coin_design',
+                        'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
+                        'package_weight','exact_image','price','cost','quantity']],
+                    'Listing content' => ['open' => false, 'fields' => [
+                        'name','description','red_book_description',
+                        'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms']],
+                    'Product images (SKU-based; override if needed)' => ['open' => false, 'images' => true, 'fields' => [
+                        'product_image_1','product_image_2','product_image_3','product_image_4',
+                        'product_image_5','product_image_6','product_image_7','product_image_8']],
+                ];
+                foreach ($sections as $title => $sec) {
+                    echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '') . '>';
+                    echo '<summary>' . sbl_e($title) . '</summary><div class="field-grid">';
+                    foreach ($sec['fields'] as $n) {
+                        if (!isset($byName[$n])) { continue; }
+                        $col = $byName[$n];
+                        $col['required'] = in_array($n, $required, true);
+                        // Images 1-4 are SKU-derived (auto); the rest of a section is auto
+                        // unless required. Manual image slots 5-8 stay plain boxes.
+                        $col['auto'] = !empty($sec['images'])
+                            ? in_array($n, ['product_image_1','product_image_2','product_image_3','product_image_4'], true)
+                            : !$col['required'];
+                        echo $renderField($col);
+                    }
+                    echo '</div></details>';
+                }
                 ?>
-                <fieldset class="card group">
-                    <legend>Auto-filled from GreySheet <span class="req-note">(SKU / Price / Quantity / Cost are required)</span></legend>
-                    <div class="field-grid">
-                        <?php foreach ($reduced as $n) {
-                            if (!isset($byName[$n])) { continue; }
-                            $col = $byName[$n];
-                            $col['required'] = in_array($n, $required, true);
-                            $col['auto']     = !$col['required'];   // all the rest read as AUTO
-                            echo $renderField($col);
-                        } ?>
-                    </div>
-                </fieldset>
-                <fieldset class="card group">
-                    <legend>Product images <span class="req-note">(left blank - paste your own uploaded photo URLs)</span></legend>
-                    <div class="field-grid">
-                        <?php foreach (['product_image_1','product_image_2','product_image_3','product_image_4',
-                                        'product_image_5','product_image_6','product_image_7','product_image_8'] as $n) {
-                            if (!isset($byName[$n])) { continue; }
-                            $col = $byName[$n]; $col['required'] = false; $col['auto'] = false;
-                            echo $renderField($col);
-                        } ?>
-                    </div>
-                </fieldset>
             </form>
 
             <aside class="preview-col">
