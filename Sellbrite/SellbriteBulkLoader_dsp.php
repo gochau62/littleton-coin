@@ -154,16 +154,14 @@ details.group summary::-webkit-details-marker { display:none; }
             <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV for the selected marketplace">Export CSV</button>
         </div>
 
-        <?php if (!$skus): ?>
-            <div class="empty">No SKUs yet. Click <strong>+ New SKU</strong> to add the first one.</div>
-        <?php else: ?>
-        <div class="table-card">
+        <div id="list-empty" class="empty"<?= $skus ? ' style="display:none"' : '' ?>>No SKUs yet. Click <strong>+ New SKU</strong> to add the first one.</div>
+        <div id="list-table" class="table-card"<?= $skus ? '' : ' style="display:none"' ?>>
         <table class="grid">
             <thead><tr><th>SKU</th><th>Category</th><th>Title</th><th>Grade</th>
                 <th class="num">Price</th><th class="num">Qty</th><th>Updated</th><th></th></tr></thead>
-            <tbody>
+            <tbody id="sku-tbody">
             <?php foreach ($skus as $r): ?>
-                <tr>
+                <tr id="sku-row-<?= (int) $r['id'] ?>">
                     <td><span class="sku-link" onclick="sblEdit(<?= (int) $r['id'] ?>)"><?= sbl_e($r['sku']) ?></span></td>
                     <td><?= sbl_e($r['category_name'] ?? '') ?></td>
                     <td><?= sbl_e($r['name'] ?? '') ?></td>
@@ -180,7 +178,6 @@ details.group summary::-webkit-details-marker { display:none; }
             </tbody>
         </table>
         </div>
-        <?php endif; ?>
     </div>
 
     <!-- ============ ADD / EDIT VIEW ============ -->
@@ -200,7 +197,8 @@ details.group summary::-webkit-details-marker { display:none; }
                         title="Fill the highlighted fields from GreySheet">Autofill</button>
             </span>
             <span id="valid-pill" class="pill ok">Ready</span>
-            <button type="button" class="btn" onclick="sblSave()">Save SKU</button>
+            <button type="button" class="btn btn-grey" id="clear-btn" onclick="sblClearAll()" title="Clear the form back to a blank New SKU">Clear</button>
+            <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
 
         <div class="editor">
