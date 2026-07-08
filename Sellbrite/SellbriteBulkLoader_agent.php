@@ -858,6 +858,8 @@ function gsImport(array $params): array
     if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.', 'calls' => $calls]); }
     $out = gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map', $calls);
     $out['raw'] = ['collectible' => $rawCoin, 'pricing' => $price, 'facts_sent_to_ai' => gs_coin_facts($rawCoin)];
+    // Display-only reference image from GreySheet; NOT written to product_image_*.
+    $out['preview_image'] = (string) ($rawCoin['FeaturedImageUrl'] ?? '');
     return $out;
 }
 
