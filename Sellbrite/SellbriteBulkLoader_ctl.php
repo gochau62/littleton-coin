@@ -73,12 +73,18 @@
         sblShow('form');
         sblRecompute();
     }
-    /* Clear the whole form back to a blank New SKU (stays on the form). */
-    function sblClearAll(){
-        sblClearForm();
-        $('#f_id').val('');
-        $('#formTitle').text('New SKU');
-        sblRecompute();
+    /* Delete every SKU from the inventory (home menu). */
+    function sblDeleteAll(){
+        swal({ title:'Delete ALL SKUs?', text:'This permanently removes every record and cannot be undone.',
+               icon:'warning', buttons:['Cancel','Delete all'], dangerMode:true })
+        .then(function(ok){
+            if (!ok) return;
+            $.post('SellbriteBulkLoader_ajax.php', { action:'deleteAll' }, function(res){
+                if (res && res.returnClass === 'error'){ swal('Not deleted', res.message || 'Database error.', 'error'); return; }
+                $('#sku-tbody').empty(); $('#list-table').hide(); $('#list-empty').show();
+                swal({ title:'Deleted', text:'All SKUs removed.', icon:'success', timer:1500, buttons:false });
+            }, 'json');
+        });
     }
     function sblEdit(id){
         $.post('SellbriteBulkLoader_ajax.php', { action:'find', id:id }, function(res){

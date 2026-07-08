@@ -94,6 +94,12 @@ switch ($action) {
                           'message' => $ok ? '' : 'Delete failed - no database connection or a DB error.']);
         break;
 
+    case 'deleteAll':
+        $ok = sblDeleteAll();
+        echo json_encode(['returnClass' => $ok ? 'success' : 'error',
+                          'message' => $ok ? '' : 'Delete all failed - no database connection or a DB error.']);
+        break;
+
     case 'gsSearch':
         // Coin dropdown: search the learned path memory (0 API calls).
         $s = gsSearch((string) ($_POST['q'] ?? ''));
