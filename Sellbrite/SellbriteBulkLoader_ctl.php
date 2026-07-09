@@ -451,17 +451,42 @@
         // Typing or clicking back in means the user wants the list again.
         $('#gs-series').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
-    /* Year dropdown for the chosen series (distinct, deduplicated). */
+    /* Year combo for the chosen series (distinct, deduplicated) - searchable
+       by typing, same as Series and Coin. */
+    var sblYearList = [];
     function sblLoadYears(){
+        sblYearList = [];
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsNodeYears', path:sblCurPath }, function(res){
-            var sel = $('#gs-year').empty().append('<option value="">3. Year</option>');
-            $.each(res.years || [], function(i, y){ sel.append('<option value="' + y + '">' + y + '</option>'); });
+            sblYearList = $.map(res.years || [], function(y){ return String(y); });
         }, 'json');
-        $('#gs-year').off('change').on('change', function(){
-            sblCurYear = $(this).val();
-            $('#gs-coin').val('').data('sblPicked', 0);
-            sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
-            $('#gs-coin').focus();
+    }
+    function sblYearPicked(y){
+        sblCurYear = y;
+        $('#gs-coin').val('').data('sblPicked', 0);
+        sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
+    }
+    function sblYearAutocomplete(){
+        $('#gs-year').autocomplete({
+            minLength: 0, delay: 0,
+            source: function(req, resp){
+                var t = (req.term || '').trim();
+                resp($.grep(sblYearList, function(y){ return !t || y.indexOf(t) !== -1; }));
+            },
+            select: function(e, ui){
+                $('#gs-year').data('sblPicked', 1).val(ui.item.value).autocomplete('close');
+                sblYearPicked(String(ui.item.value));
+                setTimeout(function(){ $('#gs-coin').focus(); }, 0);
+                return false;
+            }
+        }).autocomplete('widget').addClass('sbl-combo');
+        $('#gs-year').on('focus mousedown', function(){
+            if (!sblCurPath || $(this).data('sblPicked') || $(this).autocomplete('widget').is(':visible')) return;
+            $(this).autocomplete('search', $(this).val());
+        });
+        // Typing (or clearing) filters the coins too, even without a pick.
+        $('#gs-year').on('input', function(){
+            $(this).data('sblPicked', 0);
+            sblYearPicked(this.value.trim());
         });
     }
     /* Level 4 - coins under the series (optionally one year). Labels are trimmed
@@ -528,8 +553,8 @@
         });
     }
     function sblResetBelowSeries(){
-        sblCurYear = ''; sblPendingGsId = 0;
-        $('#gs-year').empty().append('<option value="">3. Year</option>').prop('disabled', true);
+        sblCurYear = ''; sblPendingGsId = 0; sblYearList = [];
+        $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
@@ -645,7 +670,7 @@
 
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();
-        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
+        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
     });
 </script>
 
