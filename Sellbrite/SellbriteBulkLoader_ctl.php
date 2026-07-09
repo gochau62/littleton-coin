@@ -71,7 +71,12 @@
         $("#formView").toggle(view === 'form');
     }
     function sblBackToList(){ sblShow('list'); }
-    function sblExport(){ window.location = 'SellbriteBulkLoader_ajax.php?action=export'; }
+    /* Export the market picked in the home-screen dropdown: only that market's
+       SKUs (All-markets ones included) and only that market's columns. */
+    function sblExport(){
+        var m = $('#export-market').val() || 'all';
+        window.location = 'SellbriteBulkLoader_ajax.php?action=export&market=' + encodeURIComponent(m);
+    }
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
     /* ---- new / edit ---- */
@@ -97,12 +102,10 @@
     }
     function sblNew(){
         sblClearForm();
-        // The market picked at creation carries onto the form: its specific
-        // fields (e.g. the eBay condition set) show, autofill, and validate.
-        var m = $('#new-market').val() || '';
-        $('#f_marketplace').val(m);
+        // The SKU's market is picked with the form's own Market picker (the
+        // home-screen dropdown belongs to Export now); starts as All markets.
         sblMarketApply();
-        $('#formTitle').text('New SKU' + (m ? ' — ' + $('#new-market option:selected').text() : ''));
+        $('#formTitle').text('New SKU');
         sblShow('form');
         sblRecompute();
     }

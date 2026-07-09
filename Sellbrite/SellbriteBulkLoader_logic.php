@@ -380,15 +380,31 @@ final class Exporter
      * Sellbrite export: the five features / search terms / style are Amazon-
      * specific; modified-item fields are eBay-specific. 'all' keeps every
      * column (the house master export). */
-    // Per the sheet's row-1 annotations: only Search Terms is Amazon-specific
-    // (the five features are mandatory for all); the eBay set is the condition
-    // fields. modified_item/modification_description are deprecated.
-    private const AMAZON_ONLY = ['search_terms'];
-    private const EBAY_ONLY   = ['ebay_coin_condition_type','ebay_graded_coin_letter_grade',
+    // Per the sheet's row-1 annotations: Search Terms and Style are Amazon-
+    // specific; the eBay set is the modified pair plus the condition fields.
+    // A market-filtered export drops the OTHER markets' columns entirely.
+    private const AMAZON_ONLY = ['search_terms', 'style'];
+    private const EBAY_ONLY   = ['modified_item', 'modification_description',
+                                 'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                                  'z_ebay_ungraded_coin_condition'];
 
     public static function markets(): array { return ['all', 'amazon', 'ebay', 'walmart']; }
+
+    /* Which LAYOUT column positions a market's file keeps ('all' keeps every
+     * column, header-for-header with Des's workbook). */
+    private static function keepIndexes(string $market): array
+    {
+        $drop = [];
+        if ($market === 'amazon')  { $drop = self::EBAY_ONLY; }
+        if ($market === 'ebay')    { $drop = self::AMAZON_ONLY; }
+        if ($market === 'walmart') { $drop = array_merge(self::AMAZON_ONLY, self::EBAY_ONLY); }
+        $keep = [];
+        foreach (self::LAYOUT as $i => $name) {
+            if (!in_array($name, $drop, true)) { $keep[] = $i; }
+        }
+        return $keep;
+    }
 
     /* Internal working fields with no Sellbrite header (diameter/weight are
      * ours until Des adds them in Sellbrite) - kept out of the upload file. */
@@ -477,28 +493,42 @@ final class Exporter
         return $f;
     }
 
-    /* Colour-coded XLSX matching Des's product_data workbook exactly; returns
-     * null when PhpSpreadsheet isn't available (caller falls back to CSV). */
-    public static function xlsx(array $rows)
+    /* Colour-coded XLSX matching Des's product_data workbook; a specific
+     * market keeps only its own columns (Amazon drops the eBay set and vice
+     * versa). Returns null when PhpSpreadsheet isn't available (caller falls
+     * back to CSV). */
+    public static function xlsx(array $rows, string $market = 'all')
     {
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) { return null; }
         // "A5"-style addresses: works on every PhpSpreadsheet version (the
         // [col,row] array form only exists from 1.23 up).
         $cell = static fn($i, $r) =>
             \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r;
+        $keep  = self::keepIndexes($market);
+        $fills = self::headerFills();
         $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $ws = $ss->getActiveSheet();
         $ws->setTitle('product_data');
-        foreach (self::LAYOUT_NOTES as $i => $t) { $ws->setCellValue($cell($i, 1), $t); }
         $ws->setCellValue('A2', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
             . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 3. *Required Fields.');
-        foreach (self::LAYOUT_HUMAN as $i => $h) { $ws->setCellValue($cell($i, 3), $h); }
-        foreach (self::LAYOUT as $i => $m)       { $ws->setCellValue($cell($i, 4), $m); }
+        foreach ($keep as $i => $orig) {
+            if (isset(self::LAYOUT_NOTES[$orig])) { $ws->setCellValue($cell($i, 1), self::LAYOUT_NOTES[$orig]); }
+            $ws->setCellValue($cell($i, 3), self::LAYOUT_HUMAN[$orig]);
+            $ws->setCellValue($cell($i, 4), self::LAYOUT[$orig]);
+            if (isset($fills[$orig])) {
+                foreach ([1, 3, 4] as $rowNo) {
+                    $ws->getStyle($cell($i, $rowNo))->getFill()
+                       ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                       ->getStartColor()->setARGB($fills[$orig]);
+                }
+            }
+        }
         $r = 5;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
-            foreach (self::LAYOUT as $i => $name) {
-                $src = $name;
+            foreach ($keep as $i => $orig) {
+                $name = self::LAYOUT[$orig];
+                $src  = $name;
                 if ($name === 'parent_sku')           { $src = 'category_name'; }
                 if ($name === 'red_book_description') { $src = 'extended_description'; }
                 $v = (string) ($row[$src] ?? '');
@@ -509,32 +539,31 @@ final class Exporter
             }
             $r++;
         }
-        foreach (self::headerFills() as $i => $argb) {
-            foreach ([1, 3, 4] as $rowNo) {
-                $ws->getStyle($cell($i, $rowNo))->getFill()
-                   ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                   ->getStartColor()->setARGB($argb);
-            }
-        }
         return $ss;
     }
 
     public static function csv(array $rows, string $market = 'all'): string
     {
-        $n = count(self::LAYOUT);
+        $keep = self::keepIndexes($market);
+        $n = count($keep);
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
         $fh = fopen('php://temp', 'r+');
-        $notes = array_fill(0, $n, '');
-        foreach (self::LAYOUT_NOTES as $i => $t) { $notes[$i] = $t; }
+        $notes = $human = $machine = [];
+        foreach ($keep as $orig) {
+            $notes[]   = self::LAYOUT_NOTES[$orig] ?? '';
+            $human[]   = self::LAYOUT_HUMAN[$orig];
+            $machine[] = self::LAYOUT[$orig];
+        }
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
         fputcsv($fh, $notes); fputcsv($fh, $bannerRow);
-        fputcsv($fh, self::LAYOUT_HUMAN); fputcsv($fh, self::LAYOUT);
+        fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
             $mkt  = strtolower(trim((string) ($row['marketplace'] ?? '')));
             $line = [];
-            foreach (self::LAYOUT as $name) {
+            foreach ($keep as $orig) {
+                $name = self::LAYOUT[$orig];
                 // Internal names differ for two Sellbrite headers.
                 $src = $name;
                 if ($name === 'parent_sku')           { $src = 'category_name'; }         // store category
