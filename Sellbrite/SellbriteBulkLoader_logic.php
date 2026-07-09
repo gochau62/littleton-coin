@@ -84,6 +84,23 @@ final class Schema
         if ($col['dropdown'] === 'brand') {
             return ['U.S. Mint', 'Bureau of Engraving and Printing'];
         }
+        // Small fixed vocabularies for the other GreySheet-autofilled fields
+        // (same lists the AI is constrained to). Unknown autofill values still
+        // land - the select gains the option on the fly.
+        static $small = [
+            'single_coin_or_set' => ['Single Coin', 'Set'],
+            'circulated_or_uncirculated' => ['Circulated', 'Uncirculated'],
+            'strike_type' => ['Business', 'Burnished', 'Enhanced Uncirculated', 'Matte', 'Proof-Like',
+                              'Satin', 'Specimen', 'Proof', 'Brilliant Proof', 'Reverse Proof', 'Satin Proof'],
+            'certification' => ['Uncertified', 'ANACS', 'CAC', 'ICG', 'NGC', 'NGC & CAC', 'PCGS', 'PCGS & CAC',
+                                'U.S. Mint', 'PCGS Banknote Grading', 'PCGS Currency', 'PMG', 'Legacy Currency Grading'],
+            'mint_mark' => ['No Mint Mark', 'C', 'CC', 'D', 'O', 'P', 'S', 'W', 'M', 'Various Mint Marks'],
+            'mint_location' => ['Philadelphia', 'Denver', 'San Francisco', 'West Point', 'Carson City',
+                                'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
+            'designation_abbrivation' => ['BN', 'RB', 'RD', 'CAM', 'DCAM', 'UCAM', 'PL', 'DMPL',
+                                          'FB', 'FBL', 'FS', '5FS', '6FS', 'FH', 'FT', 'SP', 'RD DCAM'],
+        ];
+        if (isset($small[$col['dropdown']])) { return $small[$col['dropdown']]; }
         return self::values()[$col['dropdown']] ?? [];
     }
     public static function lookups(): array
