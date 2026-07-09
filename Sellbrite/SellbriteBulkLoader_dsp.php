@@ -16,7 +16,7 @@ function dspBulkLoader(&$screenData)
     $byName    = Schema::byName();
     $groups    = Schema::groups();
     $textareas = ['description','red_book_description','feature_1','feature_2','feature_3',
-                  'feature_4','feature_5','condition_note','search_terms','modification_description'];
+                  'feature_4','feature_5','condition_note','search_terms'];
 
     // One form control.
     $renderField = function (array $col) use ($textareas): string {
@@ -190,7 +190,7 @@ details.group summary::-webkit-details-marker { display:none; }
         <div class="sbl-tools">
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
-            <label class="mkt-pick" title="Marketplace for this SKU - reveals that market's specific fields">Market
+            <label class="mkt-pick" title="Marketplace for this SKU">Market
                 <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()">
                     <option value="">All</option>
                     <option value="amazon">Amazon</option>
@@ -233,8 +233,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'condition','bullion_shape','coin_design',
                         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
                         'package_weight','exact_image','price','cost','quantity']],
-                    'Marketplace fields (pick a Market above)' => ['open' => false, 'fields' => [
-                        'modified_item','modification_description',
+                    'Marketplace fields' => ['open' => false, 'fields' => [
                         'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                         'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                         'z_ebay_ungraded_coin_condition']],
@@ -251,7 +250,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     'Listing content' => ['open' => false, 'fields' => [
                         'name','description','red_book_description',
                         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms']],
-                    'Product images (SKU-based; override if needed)' => ['open' => false, 'images' => true, 'fields' => [
+                    'Product images' => ['open' => false, 'images' => true, 'fields' => [
                         'product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
                 ];

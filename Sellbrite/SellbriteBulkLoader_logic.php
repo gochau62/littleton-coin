@@ -50,6 +50,16 @@ final class Schema
     public static function optionsFor(array $col): array
     {
         if (empty($col['dropdown'])) { return []; }
+        if ($col['dropdown'] === 'store_category') {
+            // SKU of Parent Product: every VLOOKUP store category plus the
+            // non-coin product lines PCC also lists.
+            $cats = array_keys(self::lookups()['category_copy'] ?? []);
+            foreach (['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
+                      'Wristwatches', 'Coin Album', 'Other Exonumia'] as $x) {
+                if (!in_array($x, $cats, true)) { $cats[] = $x; }
+            }
+            return $cats;
+        }
         return self::values()[$col['dropdown']] ?? [];
     }
     public static function lookups(): array
@@ -79,8 +89,7 @@ final class Schema
     {
         return [
             'amazon'  => ['fields' => [], 'required' => []],
-            'ebay'    => ['fields' => ['modified_item', 'modification_description',
-                                       'ebay_coin_condition_type', 'ebay_graded_coin_letter_grade',
+            'ebay'    => ['fields' => ['ebay_coin_condition_type', 'ebay_graded_coin_letter_grade',
                                        'ebay_graded_coin_numerical_grade', 'ebay_graded_coin_professional_grader',
                                        'z_ebay_ungraded_coin_condition'],
                           'required' => ['ebay_coin_condition_type']],
@@ -98,7 +107,7 @@ final class Schema
                 'certification','certification_number','circulated_or_uncirculated',
                 'strike_type','composition','fineness','precious_metal_content',
                 'single_coin_or_set','set_count','country_of_manufacture','brand',
-                'modified_item','modification_description','bullion_shape','coin_design',
+                'bullion_shape','coin_design',
             ],
             'Pricing & Inventory' => ['price','cost','quantity','upc','original_retail'],
             'Listing Content'     => [
@@ -321,9 +330,11 @@ final class Exporter
      * Sellbrite export: the five features / search terms / style are Amazon-
      * specific; modified-item fields are eBay-specific. 'all' keeps every
      * column (the house master export). */
-    private const AMAZON_ONLY = ['feature_1','feature_2','feature_3','feature_4','feature_5','search_terms'];
-    private const EBAY_ONLY   = ['modified_item','modification_description',
-                                 'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
+    // Per the sheet's row-1 annotations: only Search Terms is Amazon-specific
+    // (the five features are mandatory for all); the eBay set is the condition
+    // fields. modified_item/modification_description are deprecated.
+    private const AMAZON_ONLY = ['search_terms'];
+    private const EBAY_ONLY   = ['ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                                  'z_ebay_ungraded_coin_condition'];
 

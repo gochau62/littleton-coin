@@ -636,7 +636,6 @@ function sbl_field_guide(): array
         'country_of_manufacture' => ['src' => 'CatalogPath CountryName', 'desc' => 'full country name', 'const' => 'United States'],
         'certification'  => ['opts' => $cert, 'const' => 'Uncertified', 'desc' => 'Uncertified unless slabbed'],
         'title_suffix'   => ['desc' => 'operator catch-all appended to the title (grade details, error details, packaging, slab-label text) - leave BLANK; "Coin Collectible" is added to the title automatically'],
-        'modified_item'  => ['opts' => ['No','Yes'], 'const' => 'No'],
         'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
         'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
@@ -742,7 +741,6 @@ function gsMapToProduct(array $c): array
     // 1+2 = description split, 3 = exact-image line, 5 = PCC blurb. "Coin
     // Collectible" is appended to the TITLE by Computer, not stored here -
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
-    $row['modified_item'] = 'No';
     $row['certification'] = 'Uncertified';
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
     if (($row['country_of_manufacture'] ?? '') === '') { $row['country_of_manufacture'] = 'United States'; }

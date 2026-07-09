@@ -110,12 +110,12 @@
        "All" shows every market field; a specific market shows just its own. */
     var SBL_MARKET_FIELDS = {
         amazon: [],
-        ebay:   ['modified_item','modification_description','ebay_coin_condition_type',
+        ebay:   ['ebay_coin_condition_type',
                  'ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
                  'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'],
         walmart: []
     };
-    var SBL_ALL_MARKET_FIELDS = ['modified_item','modification_description',
+    var SBL_ALL_MARKET_FIELDS = [
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
     function sblMarketApply(){
@@ -228,7 +228,14 @@
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
-            if (el && v !== null && v !== '') { el.value = v; }
+            if (el && v !== null && v !== '') {
+                // Selects (e.g. SKU of Parent Product): add the option if missing
+                // so unmatched GreySheet names still land.
+                if (el.tagName === 'SELECT' && !el.querySelector('option[value="' + CSS.escape(String(v)) + '"]')){
+                    var o = document.createElement('option'); o.value = o.textContent = v; el.appendChild(o);
+                }
+                el.value = v;
+            }
         });
         sblYearRefresh(row && row.year);   // constrain Year to the series' real years
         sblFieldVisibility();              // show only this category's boxes
@@ -295,7 +302,6 @@
                   'circulated_or_uncirculated','strike_type','certification','certification_number',
                   'composition','fineness','precious_metal_content','single_coin_or_set',
                   'total_precious_metal_content','diameter','weight',
-                  'modified_item','modification_description',
                   'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                   'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                   'z_ebay_ungraded_coin_condition'],
@@ -412,6 +418,10 @@
             select: function(e, ui){
                 sblCurPath = ui.item.path || '';
                 $('#gs-series').val(ui.item.value).autocomplete('close').blur();
+                var cel = document.getElementById('f_category_name');
+                if (cel && cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(ui.item.value) + '"]')){
+                    var co = document.createElement('option'); co.value = co.textContent = ui.item.value; cel.appendChild(co);
+                }
                 $('#f_category_name').val(ui.item.value).trigger('change');
                 sblResetBelowSeries();
                 sblLoadYears();

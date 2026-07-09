@@ -259,10 +259,10 @@ return [
         ],
         [
             'name' => 'category_name',
-            'label' => 'Sellbrite Category Name',
+            'label' => 'SKU of Parent Product',
+            'dropdown' => 'store_category',
             'required' => false,
             'auto' => false,
-            'dropdown' => 'category_name',
         ],
         [
             'name' => 'year',
@@ -437,19 +437,7 @@ return [
             'auto' => true,
             'dropdown' => 'brand',
         ],
-        [
-            'name' => 'modified_item',
-            'label' => 'Modified Item',
-            'required' => false,
-            'auto' => false,
-            'dropdown' => 'modified_item',
-        ],
-        [
-            'name' => 'modification_description',
-            'label' => 'Modification Description',
-            'required' => false,
-            'auto' => false,
-        ],
+        // modified_item + modification_description deprecated per the sheet (eBay, could depreciate)
         [
             // Sellbrite mandatory group: new / used / reconditioned.
             'name' => 'condition',
