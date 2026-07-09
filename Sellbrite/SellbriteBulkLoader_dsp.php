@@ -233,7 +233,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'single_coin_or_set','set_count','country_of_manufacture','brand','title_suffix',
                         'condition','bullion_shape','coin_design',
                         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
-                        'package_weight','price','cost','quantity']],
+                        'price','cost','quantity']],
                     'Marketplace fields' => ['open' => false, 'fields' => [
                         'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                         'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
@@ -248,11 +248,13 @@ details.group summary::-webkit-details-marker { display:none; }
                         'watch_case_size','watch_department','watch_display_type',
                         'watch_manufacturer_warranty','watch_movement_type','watch_water_resistance',
                         'stamp_color','stamp_quality','stamp_type','nativity_item_type']],
+                    'Packaging' => ['open' => false, 'fields' => [
+                        'package_weight','package_height','package_length','package_width','condition_note']],
                     'Listing content' => ['open' => false, 'fields' => [
-                        'name','description','extended_description','exact_image',
+                        'name','description','extended_description',
                         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
-                        'product_image_1','product_image_2','product_image_3','product_image_4',
+                        'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
                 ];
                 foreach ($sections as $title => $sec) {

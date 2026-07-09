@@ -74,9 +74,6 @@ final class Schema
             sort($out, SORT_NATURAL | SORT_FLAG_CASE);
             return $out;
         }
-        if ($col['dropdown'] === 'brand') {
-            return ['U.S. Mint', 'Bureau of Engraving and Printing'];
-        }
         // Small fixed vocabularies for the other GreySheet-autofilled fields
         // (same lists the AI is constrained to). Unknown autofill values still
         // land - the select gains the option on the fly.
