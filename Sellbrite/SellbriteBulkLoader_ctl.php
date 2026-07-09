@@ -536,7 +536,15 @@
                 minLength: 0, delay: 0,
                 source: function(req, resp){
                     var t = (req.term || '').toLowerCase();
-                    resp($.grep(opts, function(v){ return !t || v.toLowerCase().indexOf(t) !== -1; }));
+                    var pool = opts;
+                    // Coin Type / Denomination narrow to the chosen country's
+                    // valid values; unknown/blank country keeps the full list.
+                    if (typeof SBL_COUNTRY_OPTS !== 'undefined' && SBL_COUNTRY_OPTS[inp.attr('name')]){
+                        var c = ($('#f_country_of_manufacture').val() || '').trim();
+                        var m = SBL_COUNTRY_OPTS[inp.attr('name')][c];
+                        if (m && m.length) pool = m;
+                    }
+                    resp($.grep(pool, function(v){ return !t || v.toLowerCase().indexOf(t) !== -1; }));
                 },
                 select: function(){
                     // Value is applied right after this handler - recompute then.
