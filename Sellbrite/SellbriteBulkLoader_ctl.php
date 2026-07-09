@@ -285,7 +285,7 @@
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
         'country_of_manufacture','brand','bullion_shape','coin_design','condition',
         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
-        'package_weight','exact_image','name','description','red_book_description',
+        'package_weight','exact_image','name','description','extended_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];

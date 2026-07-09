@@ -15,7 +15,7 @@ function dspBulkLoader(&$screenData)
     $skus      = $screenData['skus'] ?? [];
     $byName    = Schema::byName();
     $groups    = Schema::groups();
-    $textareas = ['description','red_book_description','feature_1','feature_2','feature_3',
+    $textareas = ['description','extended_description','feature_1','feature_2','feature_3',
                   'feature_4','feature_5','condition_note','search_terms'];
 
     // One form control.
@@ -112,7 +112,7 @@ details.group summary::-webkit-details-marker { display:none; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
 .field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#e0a800; background:#fffaf0; } .field.is-action .field-msg { color:#9a6a14; }
-.field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="red_book_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
+.field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; color:#1C4532; }
 .preview-img { aspect-ratio:1/1; border-radius:6px; overflow:hidden; background:#f8f8f8; display:grid; place-items:center; margin-bottom:10px; border:1px solid #b4b4b4; position:relative; }
@@ -248,7 +248,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'watch_manufacturer_warranty','watch_movement_type','watch_water_resistance',
                         'stamp_color','stamp_quality','stamp_type','nativity_item_type']],
                     'Listing content' => ['open' => false, 'fields' => [
-                        'name','description','red_book_description',
+                        'name','description','extended_description',
                         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
                         'product_image_1','product_image_2','product_image_3','product_image_4',
@@ -261,7 +261,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
                     // Computed fields keep updating live even though they are
                     // required (Product Name, Description, the derived copy...).
-                    $autoAlways = ['name','description','red_book_description',
+                    $autoAlways = ['name','description','extended_description',
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',
                                    'search_terms','creation_date','condition','exact_image',
                                    'country_of_manufacture','brand'];

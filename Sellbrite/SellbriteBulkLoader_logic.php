@@ -74,7 +74,7 @@ final class Schema
      * extra image slots are left off (the workbook itself makes them optional). */
     public static function requiredNames(): array
     {
-        return ['sku', 'name', 'description', 'red_book_description',
+        return ['sku', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'brand', 'country_of_manufacture', 'price', 'creation_date', 'condition',
                 'package_weight', 'package_length', 'package_width', 'package_height',
@@ -111,7 +111,7 @@ final class Schema
             ],
             'Pricing & Inventory' => ['price','cost','quantity','upc','original_retail'],
             'Listing Content'     => [
-                'exact_image','name','description','red_book_description',
+                'exact_image','name','description','extended_description',
                 'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
             ],
             'Images'              => [
@@ -426,7 +426,10 @@ final class Exporter
         foreach ($rows as $row) {
             $line = [];
             foreach (self::LAYOUT as $name) {
-                $src = $name === 'parent_sku' ? 'category_name' : $name;   // store category
+                // Internal names differ for two Sellbrite headers.
+                $src = $name;
+                if ($name === 'parent_sku')           { $src = 'category_name'; }         // store category
+                if ($name === 'red_book_description') { $src = 'extended_description'; }  // renamed internally
                 $line[] = (string) ($row[$src] ?? '');
             }
             fputcsv($fh, $line);
