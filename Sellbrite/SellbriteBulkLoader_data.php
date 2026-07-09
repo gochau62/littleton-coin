@@ -328,7 +328,7 @@ return [
         [
             // Sellbrite mandatory group: new / used / reconditioned.
             'name' => 'condition',
-            'label' => 'Condition (new, used, reconditioned)',
+            'label' => 'Condition',
             'required' => false,
             'auto' => true,
             'dropdown' => 'condition',
@@ -445,6 +445,8 @@ return [
             'auto' => false,
         ],
         [
+            // Amazon-specific per the workbook's row-1 note: only filled /
+            // exported when the SKU's market is Amazon (or all markets).
             'name' => 'search_terms',
             'label' => 'Search Terms',
             'required' => false,

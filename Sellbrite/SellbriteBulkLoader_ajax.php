@@ -6,10 +6,11 @@
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
 <!--  ***************************************************   */
-?>
 
-<?php
 // AJAX endpoint for the Sellbrite Bulk Loader.
+// Buffer from the very start: the shared includes can echo whitespace, and a
+// single stray byte in front of an .xlsx download corrupts it for Excel.
+ob_start();
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
@@ -32,9 +33,13 @@ if ($action === 'export') {
     if (file_exists($vendor)) { require_once $vendor; }
     $rows = sblGetAllFull();
     $ss   = Exporter::xlsx($rows);
+    // Throw away anything echoed so far (include noise, notices, the header
+    // comment's newline) - the download must start at byte 0.
+    while (ob_get_level() > 0) { ob_end_clean(); }
     if ($ss !== null) {
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="sellbrite_products_' . date('Ymd_His') . '.xlsx"');
+        header('Cache-Control: max-age=0');
         (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save('php://output');
         exit;
     }
@@ -44,6 +49,8 @@ if ($action === 'export') {
     exit;
 }
 
+// JSON answers get the same treatment - discard any stray include output.
+while (ob_get_level() > 0) { ob_end_clean(); }
 header('Content-Type: application/json');
 
 switch ($action) {

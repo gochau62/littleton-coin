@@ -63,8 +63,12 @@ function dspBulkLoader(&$screenData)
 .gs-dd:focus { border-color:#007bff; }
 .mkt-pick { font-size:12px; font-weight:700; color:#1C4532; display:inline-flex; align-items:center; gap:6px; }
 .mkt-pick .gs-dd { max-width:120px; }
-.ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; }
+.ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; background:#fff; }
 .ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
+/* Valid-value combo menus on the form: tighter + capped so 279 grades don't
+   swallow the screen, but still readable. */
+.ui-autocomplete.sbl-combo { max-height:230px; font-size:12.5px; line-height:1.35; }
+.ui-autocomplete.sbl-combo .ui-menu-item-wrapper { padding:4px 9px; white-space:normal; }
 .ui-autocomplete .gs-path { color:#5f6b62; font-size:11px; }
 .req-note { font-weight:400; font-size:11px; color:#b3261e; }
 .card.apilog ul { list-style:none; margin:0; padding:0; font-size:11.5px; }
@@ -227,18 +231,22 @@ details.group summary::-webkit-details-marker { display:none; }
                 $required = array_merge(Schema::requiredNames(), ['quantity', 'cost']);
                 $required = array_values(array_unique($required));
                 $sections = [
+                    // Fields appear in the example workbook's column order; the
+                    // non-sheet extras (diameter/weight, inventory cost/qty) close
+                    // the section.
                     'Coin details' => ['open' => true, 'fields' => [
-                        'sku','category_name','coin_type','year','mint_mark','mint_location',
-                        'denomination','coin_variety_1','coin_variety_2','grade',
-                        'designation_abbrivation','strike_type','circulated_or_uncirculated',
-                        'certification','certification_number',
-                        'composition','fineness','diameter','weight',
-                        'precious_metal_content','total_precious_metal_content',
-                        'single_coin_or_set','set_count','country_of_manufacture','brand','title_suffix',
-                        'condition','bullion_shape','coin_design',
-                        'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
-                        'price','cost','quantity']],
-                    'Marketplace fields' => ['open' => false, 'fields' => [
+                        'sku','category_name','brand','country_of_manufacture','price','condition',
+                        'coin_type','denomination','year','mint_mark','mint_location',
+                        'coin_variety_1','coin_variety_2','coin_design','grade',
+                        'designation_abbrivation','title_suffix','circulated_or_uncirculated',
+                        'strike_type','certification','certification_number',
+                        'composition','fineness','precious_metal_content',
+                        'single_coin_or_set','set_count','total_precious_metal_content',
+                        'bullion_shape',
+                        'paper_money_grade_designation','paper_money_series_designation','paper_money_type',
+                        'diameter','weight','cost','quantity']],
+                    'Market specific fields' => ['open' => false, 'fields' => [
+                        'search_terms',
                         'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
                         'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                         'z_ebay_ungraded_coin_condition']],
@@ -256,7 +264,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'package_weight','package_height','package_length','package_width','condition_note']],
                     'Listing content' => ['open' => false, 'fields' => [
                         'name','description','extended_description',
-                        'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms']],
+                        'feature_1','feature_2','feature_3','feature_4','feature_5']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
                         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
