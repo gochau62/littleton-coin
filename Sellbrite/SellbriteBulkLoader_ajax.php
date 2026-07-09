@@ -188,6 +188,14 @@ switch ($action) {
                           'total_calls' => (int) ($_SESSION['gs_api_calls'] ?? 0), 'message' => $imp['error']]);
         break;
 
+    case 'gsListingFill':
+        // Listing content only: Gemini writes the EMPTY Description /
+        // Extended Description / Feature 4, house layout, never overwriting.
+        $r = gsListingFill($_POST);
+        echo json_encode(['returnClass' => $r['ok'] ? 'success' : 'error',
+                          'row' => $r['row'], 'message' => $r['error']]);
+        break;
+
     case 'gsGenerate':
         // Coin GreySheet doesn't carry: Gemini drafts the whole listing.
         $gen = gsGenerate($_POST);

@@ -79,6 +79,35 @@
     }
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
+    /* Listing content only: Gemini writes the EMPTY Description / Extended
+       Description / Feature 4 (collector's note) in the house layout. Typed
+       text is never touched; Name and features 1/2/3/5 stay formula-built. */
+    function sblListingGenerate(){
+        var need = ['description','extended_description','feature_4'].filter(function(n){
+            var el = document.getElementById('f_' + n);
+            var v = el ? String(el.value || '').trim() : '';
+            return el && (v === '' || v.indexOf('***') === 0);
+        });
+        if (!need.length){ $('#genai-msg').text('Nothing empty - Description, Extended Description and Feature 4 are all filled.'); return; }
+        $('#genai-btn').prop('disabled', true);
+        $('#genai-msg').text('Writing ' + need.join(', ') + '…');
+        $.post('SellbriteBulkLoader_ajax.php', sblFormSerialize() + '&action=gsListingFill', function(res){
+            $('#genai-btn').prop('disabled', false);
+            if (res.returnClass !== 'success'){ $('#genai-msg').text(res.message || 'Generation failed.'); return; }
+            var wrote = [];
+            $.each(res.row || {}, function(k, v){
+                var el = document.getElementById('f_' + k);
+                var cur = el ? String(el.value || '').trim() : 'x';
+                if (el && v && (cur === '' || cur.indexOf('***') === 0)){ el.value = v; wrote.push(k); }
+            });
+            $('#genai-msg').text(wrote.length ? 'Wrote ' + wrote.join(', ') + '.' : 'Nothing came back - fill manually.');
+            sblRecompute();
+        }, 'json').fail(function(){
+            $('#genai-btn').prop('disabled', false);
+            $('#genai-msg').text('Generation failed - server error.');
+        });
+    }
+
     /* ---- new / edit ---- */
     function sblClearForm(){
         $('#sku-form')[0].reset();

@@ -891,6 +891,81 @@ function gsAiMap(array $coin, array $example = []): array
     }
     return sbl_snap_row($row);
 }
+/* Listing-content gap fill: Gemini writes ONLY the empty ones among
+ * description / extended_description / feature_4 (collector's note), in the
+ * exact same house layout and rules as the autofill writer. Product Name,
+ * features 1/2/3/5 and Search Terms stay formula-derived, and anything the
+ * operator already typed is never overwritten. Works from the form's own
+ * facts, so it also covers non-GreySheet products (watches, calendars...). */
+function gsListingFill(array $post): array
+{
+    $want = [];
+    foreach (['description', 'extended_description', 'feature_4'] as $f) {
+        $v = trim((string) ($post[$f] ?? ''));
+        if ($v === '' || strncmp($v, '***', 3) === 0) { $want[] = $f; }
+    }
+    if (!$want) { return ['ok' => true, 'row' => [], 'via' => 'nothing empty', 'error' => '']; }
+
+    $row = [];
+    // LEARN first: the newest saved listing in this category donates its
+    // category-level copy verbatim - consistent and free (no AI call).
+    $example = function_exists('sblCategoryExample') ? sblCategoryExample($post['category_name'] ?? '') : [];
+    foreach (['extended_description', 'feature_4'] as $f) {
+        if (in_array($f, $want, true) && trim((string) ($example[$f] ?? '')) !== '') {
+            $row[$f] = trim((string) $example[$f]);
+            $want = array_values(array_diff($want, [$f]));
+        }
+    }
+
+    if ($want && geminiConfigured()) {
+        $facts = [];
+        foreach (['sku','category_name','name','coin_type','denomination','year','mint_mark','mint_location',
+                  'grade','circulated_or_uncirculated','strike_type','certification','composition','fineness',
+                  'precious_metal_content','single_coin_or_set','set_count','country_of_manufacture','brand',
+                  'coin_design','coin_variety_1','coin_variety_2','paper_money_type','title_suffix',
+                  'description','extended_description'] as $f) {
+            $v = trim((string) ($post[$f] ?? ''));
+            if ($v !== '' && strncmp($v, '***', 3) !== 0) { $facts[$f] = $v; }
+        }
+        $guide = sbl_field_guide();
+        $spec  = '';
+        foreach ($want as $f) { $spec .= '- ' . $f . ': ' . ($guide[$f]['desc'] ?? '') . "\n"; }
+        $sys = "You are the listing writer for Littleton Coin Company's Sellbrite listings. Write ONLY the "
+             . "requested listing-copy fields from the product facts given.\n"
+             . "RULES:\n"
+             . "1. Never invent facts - build only on the facts provided.\n"
+             . "2. description keeps its exact one-sentence house shape.\n"
+             . "3. extended_description is the EXPANDED DESCRIPTION for the whole category/series: 2-4 factual "
+             . "sentences (history, composition, design) written so the SAME text fits EVERY item in this "
+             . "category - no grade, date, mint or price.\n"
+             . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level and "
+             . "distinct from extended_description; do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
+             . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.\n"
+             . "6. When a HOUSE EXAMPLE is given, match its style and reuse its category-level wording.";
+        $user = "FIELDS TO WRITE (only these):\n" . $spec
+              . "\nPRODUCT FACTS (from the entry form):\n"
+              . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        $ex = [];
+        foreach (['category_name','description','extended_description','feature_4'] as $f) {
+            if (trim((string) ($example[$f] ?? '')) !== '') { $ex[$f] = $example[$f]; }
+        }
+        if ($ex) {
+            $user .= "\n\nHOUSE EXAMPLE (a saved listing in this same category):\n"
+                   . json_encode($ex, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        }
+        $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
+        foreach ($want as $f) {
+            if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
+        }
+    }
+    // COLLECTOR'S NOTE fallback: reuse the expanded copy (form's or just written).
+    if (in_array('feature_4', $want, true) && trim((string) ($row['feature_4'] ?? '')) === '') {
+        $src = trim((string) ($row['extended_description'] ?? '')) ?: trim((string) ($post['extended_description'] ?? ''));
+        if ($src !== '' && strncmp($src, '***', 3) !== 0) { $row['feature_4'] = mb_substr($src, 0, 1400); }
+    }
+    $err = !$row && !geminiConfigured() ? 'GEMINI_API_KEY not set (add the secrets file) and no saved category example to learn from.' : '';
+    return ['ok' => $err === '', 'row' => $row, 'via' => 'listing gap fill', 'error' => $err];
+}
 function gsSearch(string $q): array
 {
     $q = trim($q);

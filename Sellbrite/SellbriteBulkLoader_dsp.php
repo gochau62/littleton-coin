@@ -142,6 +142,8 @@ details.group summary::-webkit-details-marker { display:none; }
    the label marks them. Required fields go red via .is-error when empty. */
 .badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
+.genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
+#genai-msg { font-size:11px; color:#5f6b62; }
 .field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#e0a800; background:#fffaf0; } .field.is-action .field-msg { color:#9a6a14; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
@@ -296,7 +298,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'stamp_color','stamp_quality','stamp_type','nativity_item_type']],
                     'Packaging' => ['open' => false, 'fields' => [
                         'package_weight','package_height','package_length','package_width','condition_note']],
-                    'Listing content' => ['open' => false, 'fields' => [
+                    'Listing content' => ['open' => false, 'ai' => true, 'fields' => [
                         'name','description','extended_description',
                         'feature_1','feature_2','feature_3','feature_4','feature_5']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
@@ -306,7 +308,16 @@ details.group summary::-webkit-details-marker { display:none; }
                 foreach ($sections as $title => $sec) {
                     echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '')
                        . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
-                    echo '<summary>' . sbl_e($title) . '</summary><div class="field-grid">';
+                    echo '<summary>' . sbl_e($title) . '</summary>';
+                    if (!empty($sec['ai'])) {
+                        // Gemini fills ONLY the empty Description / Extended
+                        // Description / Feature 4 - never anything typed.
+                        echo '<div class="genai-row"><button type="button" class="mini" id="genai-btn" '
+                           . 'onclick="sblListingGenerate()">Write empty fields with AI '
+                           . '(Description &middot; Extended Description &middot; Feature 4)</button>'
+                           . '<span id="genai-msg"></span></div>';
+                    }
+                    echo '<div class="field-grid">';
                     $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
                     // Computed fields keep updating live even though they are
                     // required (Product Name, Description, the derived copy...).
