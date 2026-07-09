@@ -51,19 +51,12 @@ final class Schema
     {
         if (empty($col['dropdown'])) { return []; }
         if ($col['dropdown'] === 'store_category') {
-            // SKU of Parent Product: the dropdown only offers the NON-coin
-            // product lines (paper money, watches, calendars, stamps, nativity,
-            // albums...). Coin categories are set automatically by the
-            // GreySheet pick, which appends its option on the fly.
-            $cats = [];
-            foreach (array_keys(self::lookups()['category_copy'] ?? []) as $c) {
-                if (preg_match('/note|currency|paper/i', $c)) { $cats[] = $c; }
-            }
-            foreach (['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
-                      'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'] as $x) {
-                if (!in_array($x, $cats, true)) { $cats[] = $x; }
-            }
-            return $cats;
+            // SKU of Parent Product: the dropdown only offers the product lines
+            // that are NOT on GreySheet (watches, calendars, stamps, nativity,
+            // albums...). Coin AND currency categories are set automatically by
+            // the GreySheet pick, which appends its option on the fly.
+            return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
+                    'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'];
         }
         // Derived dropdowns: distinct values straight out of the embedded ODS
         // VLOOKUP table - nothing to hand-manage. Autofill can still land any
