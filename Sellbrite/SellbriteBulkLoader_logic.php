@@ -107,7 +107,7 @@ final class Schema
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'brand', 'country_of_manufacture', 'price', 'creation_date', 'condition',
                 'package_weight', 'package_length', 'package_width', 'package_height',
-                'exact_image', 'product_image_1', 'search_terms', 'quantity', 'cost'];
+                'exact_image', 'product_image_1', 'quantity', 'cost'];
     }
     /* Extra fields a marketplace needs, shown only when that market is chosen
      * for the SKU (from the Sellbrite export's market groups). Only fields that
@@ -117,7 +117,8 @@ final class Schema
     public static function marketFields(): array
     {
         return [
-            'amazon'  => ['fields' => [], 'required' => []],
+            // Search Terms are Amazon-specific (workbook row-1 note on col 30).
+            'amazon'  => ['fields' => ['search_terms'], 'required' => ['search_terms']],
             'ebay'    => ['fields' => ['ebay_coin_condition_type', 'ebay_graded_coin_letter_grade',
                                        'ebay_graded_coin_numerical_grade', 'ebay_graded_coin_professional_grader',
                                        'z_ebay_ungraded_coin_condition'],
@@ -171,17 +172,22 @@ final class Computer
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
         $copyVal = static fn(string $k): string => self::lookupValue($copy[$k] ?? '', '');
-        $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
-        // Deterministic fallback so search terms always fill (even if the AI didn't).
-        if (trim((string) $row['search_terms']) === '') {
-            $words = [];
-            foreach ([$g('coin_type'), $g('category_name'), $g('composition'),
-                      $g('denomination'), 'coin', 'numismatics', 'collectible'] as $src) {
-                foreach (preg_split('/[^a-z0-9]+/', strtolower(trim((string) $src))) as $w) {
-                    if ($w !== '' && !in_array($w, $words, true)) { $words[] = $w; }
+        // Search Terms are Amazon-specific: only auto-build them when the SKU
+        // can go to Amazon (market blank / all / amazon).
+        $mkt = strtolower($g('marketplace'));
+        if ($mkt === '' || $mkt === 'all' || $mkt === 'amazon') {
+            $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
+            // Deterministic fallback so search terms always fill (even if the AI didn't).
+            if (trim((string) $row['search_terms']) === '') {
+                $words = [];
+                foreach ([$g('coin_type'), $g('category_name'), $g('composition'),
+                          $g('denomination'), 'coin', 'numismatics', 'collectible'] as $src) {
+                    foreach (preg_split('/[^a-z0-9]+/', strtolower(trim((string) $src))) as $w) {
+                        if ($w !== '' && !in_array($w, $words, true)) { $words[] = $w; }
+                    }
                 }
+                $row['search_terms'] = implode(' ', $words);
             }
-            $row['search_terms'] = implode(' ', $words);
         }
         if ($g('composition') === '' && $copyVal('composition') !== '') { $row['composition'] = $copyVal('composition'); }
         if ($g('fineness') === '' && $copyVal('fineness') !== '') { $row['fineness'] = $copyVal('fineness'); }
@@ -322,6 +328,11 @@ final class Validator
         $isOther = (bool) preg_match('/advent|watch|wristwatch|stamp|postage|nativity|album/i', $catText);
         if (!$isPaper) {
             foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
+        }
+        // Search Terms are Amazon-only, but not coin-only: required whenever the
+        // SKU can go to Amazon ('all' / blank / amazon), even for paper money.
+        if ($market === '' || $market === 'all' || $market === 'amazon') {
+            $required['search_terms'] = true;
         }
         // Mandatory-for-coins: the coin block's core fields are required for
         // coin listings (not paper money / other product types).
@@ -485,11 +496,14 @@ final class Exporter
         foreach (self::LAYOUT as $i => $m)       { $ws->setCellValue($cell($i, 4), $m); }
         $r = 5;
         foreach ($rows as $row) {
+            $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
             foreach (self::LAYOUT as $i => $name) {
                 $src = $name;
                 if ($name === 'parent_sku')           { $src = 'category_name'; }
                 if ($name === 'red_book_description') { $src = 'extended_description'; }
                 $v = (string) ($row[$src] ?? '');
+                // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
+                if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
                 if ($v !== '') { $ws->setCellValueExplicit($cell($i, $r), $v,
                     \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING); }
             }
@@ -518,13 +532,17 @@ final class Exporter
         fputcsv($fh, $notes); fputcsv($fh, $bannerRow);
         fputcsv($fh, self::LAYOUT_HUMAN); fputcsv($fh, self::LAYOUT);
         foreach ($rows as $row) {
+            $mkt  = strtolower(trim((string) ($row['marketplace'] ?? '')));
             $line = [];
             foreach (self::LAYOUT as $name) {
                 // Internal names differ for two Sellbrite headers.
                 $src = $name;
                 if ($name === 'parent_sku')           { $src = 'category_name'; }         // store category
                 if ($name === 'red_book_description') { $src = 'extended_description'; }  // renamed internally
-                $line[] = (string) ($row[$src] ?? '');
+                $v = (string) ($row[$src] ?? '');
+                // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
+                if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
+                $line[] = $v;
             }
             fputcsv($fh, $line);
         }

@@ -109,21 +109,27 @@
     /* Marketplace picker: reveal only the chosen market's specific fields.
        "All" shows every market field; a specific market shows just its own. */
     var SBL_MARKET_FIELDS = {
-        amazon: [],
+        amazon: ['search_terms'],                      // Search Terms are Amazon-specific
         ebay:   ['ebay_coin_condition_type',
                  'ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
                  'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'],
         walmart: []
     };
     var SBL_ALL_MARKET_FIELDS = [
+        'search_terms',
+        'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
+        'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
+    // The eBay grading fields are coin-specific and drop off for currency;
+    // Search Terms apply to anything sold on Amazon.
+    var SBL_COIN_ONLY_MARKET_FIELDS = [
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
     function sblMarketApply(){
         var m = $('#f_marketplace').val() || '';
-        // The market fields are all coin-specific: never show them for currency.
         var cat = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
         var paper = /currency|paper money|banknote|\bnote\b/.test(cat);
-        var show = paper ? [] : ((m === '') ? SBL_ALL_MARKET_FIELDS : (SBL_MARKET_FIELDS[m] || []));
+        var show = (m === '') ? SBL_ALL_MARKET_FIELDS.slice() : (SBL_MARKET_FIELDS[m] || []).slice();
+        if (paper) show = show.filter(function(n){ return SBL_COIN_ONLY_MARKET_FIELDS.indexOf(n) < 0; });
         SBL_ALL_MARKET_FIELDS.forEach(function(n){
             var el = document.querySelector('#sku-form [data-name="' + n + '"]');
             if (!el) return; var field = el.closest('.field'); if (!field) return;
@@ -393,7 +399,7 @@
         }, 'json');
         $('#gs-root').on('change', function(){
             sblRootPath = $(this).val();
-            $('#gs-series').val('').prop('disabled', !sblRootPath);
+            $('#gs-series').val('').data('sblPicked', 0).prop('disabled', !sblRootPath);
             sblResetBelowSeries();
             sblFieldVisibility();   // Currency trees swap in the paper-money boxes right away
             sblMarketApply();       // and drop the coin-only market fields
@@ -408,6 +414,9 @@
             source: function(req, resp){
                 if (!sblRootPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php', { action:'gsSeries', root:sblRootPath, q:req.term }, function(res){
+                    // A search answer that lands AFTER the user already picked
+                    // would re-open the menu - swallow it.
+                    if ($('#gs-series').data('sblPicked')){ resp([]); return; }
                     resp($.map(res.matches || [], function(c){
                         return { label: c.name, value: c.name, path: c.path, count: c.count };
                     }));
@@ -415,7 +424,7 @@
             },
             select: function(e, ui){
                 sblCurPath = ui.item.path || '';
-                $('#gs-series').val(ui.item.value).autocomplete('close').blur();
+                $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
                 var cel = document.getElementById('f_category_name');
                 if (cel && cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(ui.item.value) + '"]')){
                     var co = document.createElement('option'); co.value = co.textContent = ui.item.value; cel.appendChild(co);
@@ -431,7 +440,11 @@
             return $('<li>').append('<div>' + sblEsc(item.label)
                      + (item.count ? ' <span class="gs-path">' + item.count + ' coins</span>' : '') + '</div>').appendTo(ul);
         };
-        $('#gs-series').on('focus', function(){ if (sblRootPath) $(this).autocomplete('search', $(this).val()); });
+        $('#gs-series').on('focus', function(){
+            if (sblRootPath && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
+        });
+        // Typing or clicking back in means the user wants the list again.
+        $('#gs-series').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
     /* Year dropdown for the chosen series (distinct, deduplicated). */
     function sblLoadYears(){
@@ -441,7 +454,7 @@
         }, 'json');
         $('#gs-year').off('change').on('change', function(){
             sblCurYear = $(this).val();
-            $('#gs-coin').val('');
+            $('#gs-coin').val('').data('sblPicked', 0);
             sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
             $('#gs-coin').focus();
         });
@@ -455,6 +468,9 @@
                 if (!sblCurPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php',
                     { action:'gsCoins', path:sblCurPath, year:sblCurYear, q:req.term }, function(res){
+                    // Late answer after the user already picked - swallow it
+                    // so the menu doesn't pop back open.
+                    if ($('#gs-coin').data('sblPicked')){ resp([]); return; }
                     var items = $.map(res.matches || [], function(c){
                         return { label: c.label, value: c.label, gs_id: c.gs_id };
                     });
@@ -463,7 +479,7 @@
             },
             select: function(e, ui){
                 sblPendingGsId = ui.item.gs_id;
-                $('#gs-coin').val(ui.item.display || ui.item.label).autocomplete('close');
+                $('#gs-coin').data('sblPicked', 1).val(ui.item.display || ui.item.label).autocomplete('close');
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
                 return false;
@@ -471,12 +487,45 @@
         }).autocomplete('instance')._renderItem = function(ul, item){
             return $('<li>').append('<div>' + sblEsc(item.display || item.label) + '</div>').appendTo(ul);
         };
-        $('#gs-coin').on('focus', function(){ if (sblCurPath) $(this).autocomplete('search', $(this).val()); });
+        $('#gs-coin').on('focus', function(){
+            if (sblCurPath && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
+        });
+        $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
+    }
+    /* The valid-value form fields (Grade, Brand, Designation...) use the same
+       compact jQuery UI menu as Series/Coin instead of the browser's native
+       datalist popup (which can't be styled and renders huge). The operator
+       can still type any value manually - the list is only suggestions. */
+    function sblFieldCombos(){
+        $('#sku-form input[list]').each(function(){
+            var inp = $(this), dl = document.getElementById(inp.attr('list'));
+            if (!dl) return;
+            var opts = $.map(dl.querySelectorAll('option'), function(o){ return o.value; });
+            inp.removeAttr('list');   // drop the native popup
+            inp.autocomplete({
+                minLength: 0, delay: 0,
+                source: function(req, resp){
+                    var t = (req.term || '').toLowerCase();
+                    resp($.grep(opts, function(v){ return !t || v.toLowerCase().indexOf(t) !== -1; }));
+                },
+                select: function(){
+                    // Value is applied right after this handler - recompute then.
+                    var el = $(this); setTimeout(function(){ el.trigger('change'); }, 0);
+                }
+            }).autocomplete('widget').addClass('sbl-combo');
+            // Clicking shows the whole list when the box already holds a valid
+            // pick (so it's easy to change); otherwise it filters by the text.
+            inp.on('mousedown focus', function(){
+                if (inp.prop('disabled') || inp.autocomplete('widget').is(':visible')) return;
+                var v = inp.val();
+                inp.autocomplete('search', (v && opts.indexOf(v) !== -1) ? '' : v);
+            });
+        });
     }
     function sblResetBelowSeries(){
         sblCurYear = ''; sblPendingGsId = 0;
         $('#gs-year').empty().append('<option value="">Year (all)</option>').prop('disabled', true);
-        $('#gs-coin').val('').prop('disabled', true);
+        $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
     }
@@ -591,7 +640,7 @@
 
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();
-        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblCoinAutocomplete(); }
+        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
     });
 </script>
 
