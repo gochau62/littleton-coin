@@ -136,6 +136,7 @@ function sbl_table_columns()
 function sbl_writable_columns()
 {
     $cols  = sbl_columns();
+    $cols[] = 'marketplace';   // per-SKU market; not a Sellbrite header, so not in the schema
     $tcols = sbl_table_columns();
     if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
@@ -164,7 +165,9 @@ function sbl_select($sql, array $params = [])
 function sblGetAll($q = '')
 {
     $q = trim((string) $q);
-    $sql = 'SELECT id, sku, category_name, name, grade, price, quantity, '
+    // marketplace only exists after its ALTER; select '' until then.
+    $mk  = isset(sbl_table_columns()['marketplace']) ? 'marketplace' : "'' AS marketplace";
+    $sql = 'SELECT id, sku, ' . $mk . ', category_name, name, grade, price, quantity, '
          . "VARCHAR_FORMAT(updated_at, 'YYYY-MM-DD HH24:MI') AS updated_at "
          . 'FROM ' . SBL_TABLE;
     $params = [];

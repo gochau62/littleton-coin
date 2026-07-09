@@ -85,6 +85,7 @@ switch ($action) {
             'row'         => [
                 'id'            => $id,
                 'sku'           => $computed['sku'] ?? '',
+                'marketplace'   => $computed['marketplace'] ?? '',
                 'category_name' => $computed['category_name'] ?? '',
                 'name'          => $computed['name'] ?? '',
                 'grade'         => $computed['grade'] ?? '',

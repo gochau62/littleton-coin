@@ -71,10 +71,7 @@
         $("#formView").toggle(view === 'form');
     }
     function sblBackToList(){ sblShow('list'); }
-    function sblExport(){
-        var m = $('#export-market').val() || 'all';
-        window.location = 'SellbriteBulkLoader_ajax.php?action=export&market=' + encodeURIComponent(m);
-    }
+    function sblExport(){ window.location = 'SellbriteBulkLoader_ajax.php?action=export'; }
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
     /* ---- new / edit ---- */
@@ -157,6 +154,8 @@
                 if (el) { el.value = (v === null ? '' : v); }
             });
             $('#f_id').val(res.row.id);
+            $('#f_marketplace').val(res.row.marketplace || '');
+            sblMarketApply();
             $('#formTitle').text('Edit SKU - ' + (res.row.sku || ''));
             sblShow('form');
             sblRecompute();
@@ -207,7 +206,9 @@
         if (!row || !row.id) return;
         var price = row.price ? '$' + sblEsc(row.price) : '—';
         var qty   = (row.quantity !== undefined && row.quantity !== null && row.quantity !== '') ? sblEsc(row.quantity) : '—';
-        var cells = '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
+        var mkt = row.marketplace ? row.marketplace.charAt(0).toUpperCase() + row.marketplace.slice(1) : 'All';
+        var cells = '<td>' + sblEsc(mkt) + '</td>'
+                  + '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
                   + '<td>' + sblEsc(row.category_name || '') + '</td>'
                   + '<td>' + sblEsc(row.name || '') + '</td>'
                   + '<td>' + sblEsc(row.grade || '') + '</td>'

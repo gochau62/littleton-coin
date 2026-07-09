@@ -154,24 +154,19 @@ details.group summary::-webkit-details-marker { display:none; }
                 <option value="walmart">Walmart</option>
             </select>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <select id="export-market" class="gs-dd" title="Which marketplace's columns to export">
-                <option value="all">All columns</option>
-                <option value="amazon">Amazon</option>
-                <option value="ebay">eBay</option>
-                <option value="walmart">Walmart</option>
-            </select>
-            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV for the selected marketplace">Export CSV</button>
+            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV">Export CSV</button>
             <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
 
         <div id="list-empty" class="empty"<?= $skus ? ' style="display:none"' : '' ?>>No SKUs yet. Click <strong>+ New SKU</strong> to add the first one.</div>
         <div id="list-table" class="table-card"<?= $skus ? '' : ' style="display:none"' ?>>
         <table class="grid">
-            <thead><tr><th>SKU</th><th>Category</th><th>Title</th><th>Grade</th>
+            <thead><tr><th>Market</th><th>SKU</th><th>Category</th><th>Title</th><th>Grade</th>
                 <th class="num">Price</th><th class="num">Qty</th><th>Updated</th><th></th></tr></thead>
             <tbody id="sku-tbody">
             <?php foreach ($skus as $r): ?>
                 <tr id="sku-row-<?= (int) $r['id'] ?>">
+                    <td><?= sbl_e(ucfirst((string) ($r['marketplace'] ?? ''))) ?: 'All' ?></td>
                     <td><span class="sku-link" onclick="sblEdit(<?= (int) $r['id'] ?>)"><?= sbl_e($r['sku']) ?></span></td>
                     <td><?= sbl_e($r['category_name'] ?? '') ?></td>
                     <td><?= sbl_e($r['name'] ?? '') ?></td>
