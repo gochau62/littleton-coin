@@ -354,5 +354,10 @@ details.group summary::-webkit-details-marker { display:none; }
         </div>
     </div>
 </div>
+<script>
+/* Coin Type / Denomination valid values per Country of Manufacture - the
+   combo menus narrow to the chosen country (full list when none is set). */
+var SBL_COUNTRY_OPTS = <?= json_encode(Schema::countryFieldOptions()) ?>;
+</script>
 <?php
 }

@@ -96,6 +96,29 @@ final class Schema
         if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
     }
+    /* Coin Type / Denomination valid values grouped by Country of Manufacture
+     * (from the embedded VLOOKUP table). The form's combo menus narrow to the
+     * chosen country's list; no country (or an unknown one) shows everything. */
+    public static function countryFieldOptions(): array
+    {
+        $out = ['coin_type' => [], 'denomination' => []];
+        foreach (self::lookups()['category_copy'] ?? [] as $c) {
+            $country = trim((string) ($c['country'] ?? ''));
+            if ($country === '') { continue; }   // stays in the full-list fallback only
+            foreach (array_keys($out) as $f) {
+                $v = trim((string) ($c[$f] ?? ''));
+                if ($v === '') { continue; }
+                if (!in_array($v, $out[$f][$country] ?? [], true)) { $out[$f][$country][] = $v; }
+            }
+        }
+        foreach ($out as $f => $byCountry) {
+            foreach ($byCountry as $k => $list) {
+                sort($list, SORT_NATURAL | SORT_FLAG_CASE);
+                $out[$f][$k] = $list;
+            }
+        }
+        return $out;
+    }
     /* Fields required for EVERY listing - the Sellbrite export's peach
      * "Mandatory for all listings" group (plus Quantity/Cost from the inventory
      * file). An empty required field flags the listing "needs attention" but
