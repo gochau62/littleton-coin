@@ -67,13 +67,18 @@ function dspBulkLoader(&$screenData)
 .gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
 .gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
-/* Export control: label + market picker + download button read as ONE unit,
-   visually separate from + New SKU. */
-.export-group { display:inline-flex; align-items:center; gap:8px; padding:6px 6px 6px 14px;
-                border:2px solid #1e6e43; border-radius:50px; background:#eaf6ee; }
-.export-group .export-lbl { font-size:12px; font-weight:700; text-transform:uppercase;
-                            letter-spacing:.5px; color:#1e6e43; }
-.export-group .gs-dd { box-shadow:none; }
+/* Toolbar groups: a labelled pill holds each control set so the toolbar reads
+   as units (Search / Export), minimal and consistent. */
+.tool-group { display:inline-flex; align-items:center; gap:8px; padding:5px 5px 5px 14px;
+              border:2px solid #b9c8be; border-radius:50px; background:#fff; }
+.tool-group .tg-lbl { font-size:11px; font-weight:700; text-transform:uppercase;
+                      letter-spacing:.6px; color:#5f6b62; white-space:nowrap; }
+.tool-group .tg-input { border:none; background:transparent; outline:none; font-size:13px;
+                        font-family:inherit; padding:6px 2px; width:220px; }
+.tool-group .gs-dd { box-shadow:none; border-color:#dfe6e1; }
+.btn.btn-sm { padding:7px 16px; font-size:13px; }
+.export-group { border-color:#1e6e43; background:#eaf6ee; }
+.export-group .tg-lbl { color:#1e6e43; }
 .gs-dd { padding:9px 12px; border-radius:50px; border:2px solid #ccc; font-size:13px; background:#fff; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; max-width:170px; }
 .gs-dd:focus { border-color:#007bff; }
 .mkt-pick { font-size:12px; font-weight:700; color:#1C4532; display:inline-flex; align-items:center; gap:6px; }
@@ -166,20 +171,23 @@ details.group summary::-webkit-details-marker { display:none; }
     <!-- ============ INVENTORY VIEW ============ -->
     <div id="listView">
         <div class="sbl-tools">
-            <input type="search" id="sbl-search" class="sbl-search" placeholder="Search SKU, category or title&hellip;"
-                   onkeyup="if(event.key==='Enter'){sblSearch();}">
-            <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
+            <span class="tool-group">
+                <span class="tg-lbl">Search</span>
+                <input type="search" id="sbl-search" class="tg-input" placeholder="SKU, category or title&hellip;"
+                       onkeyup="if(event.key==='Enter'){sblSearch();}">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="sblSearch()">Go</button>
+            </span>
             <span class="spacer"></span>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <span class="export-group">
-                <span class="export-lbl">Export</span>
+            <span class="tool-group export-group">
+                <span class="tg-lbl">Export</span>
                 <select id="export-market" class="gs-dd">
                     <option value="">All markets</option>
                     <option value="amazon">Amazon</option>
                     <option value="ebay">eBay</option>
                     <option value="walmart">Walmart</option>
                 </select>
-                <button type="button" class="btn btn-green" onclick="sblExport()">Download</button>
+                <button type="button" class="btn btn-green btn-sm" onclick="sblExport()">Download</button>
             </span>
             <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
