@@ -11,6 +11,20 @@ return [
     // Valid Values (ODS) for the operator-entered fields GreySheet cannot
     // autofill during SKU entry. Entries starting with dashes are separators.
     'values' => [
+        'designation_abbrivation' => [
+            '5DP', '5FS', '5PL', '6DP', '6FS', '6PL',
+            'BM', 'BMCA', 'BN', 'BNC', 'BNM', 'BNP',
+            'BNU', 'C', 'CA', 'CAM', 'CP', 'DC',
+            'DCAM', 'DCP', 'DFM', 'DM', 'DME', 'DMPL',
+            'DPL', 'EH', 'ER', 'FB', 'FBL', 'FBP',
+            'FD', 'FDD', 'FDP', 'FH', 'FLP', 'FM',
+            'FS', 'FSB', 'FT', 'FTC', 'FTP', 'FTU',
+            'MA', 'ME', 'MS', 'P', 'PFM', 'PL',
+            'PME', 'Pos. A', 'Pos. B', 'RB', 'RBC', 'RBP',
+            'RBU', 'RD', 'RD CAM', 'RD DCAM', 'RD UCAM', 'RDC',
+            'RDP', 'RDU', 'RFD', 'RFY', 'RY', 'SA',
+            'SF', 'SP', 'UC', 'UCAM',
+        ],
         'brand' => [
             'U.S. Mint', 'Anonymous Mint', 'Art of Coins',
             'Austrian Mint', 'Blockchain Mint', 'Chinese Mint',

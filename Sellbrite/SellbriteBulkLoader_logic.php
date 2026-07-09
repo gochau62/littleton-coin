@@ -86,9 +86,7 @@ final class Schema
                                 'U.S. Mint', 'PCGS Banknote Grading', 'PCGS Currency', 'PMG', 'Legacy Currency Grading'],
             'mint_mark' => ['No Mint Mark', 'C', 'CC', 'D', 'O', 'P', 'S', 'W', 'M', 'Various Mint Marks'],
             'mint_location' => ['Philadelphia', 'Denver', 'San Francisco', 'West Point', 'Carson City',
-                                'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
-            'designation_abbrivation' => ['BN', 'RB', 'RD', 'CAM', 'DCAM', 'UCAM', 'PL', 'DMPL',
-                                          'FB', 'FBL', 'FS', '5FS', '6FS', 'FH', 'FT', 'SP', 'RD DCAM'],
+                                'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
         ];
         if (isset($small[$col['dropdown']])) { return $small[$col['dropdown']]; }
         return self::values()[$col['dropdown']] ?? [];

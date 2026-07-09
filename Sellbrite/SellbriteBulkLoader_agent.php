@@ -609,7 +609,7 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
-        'coin_type'      => ['src' => 'store category (VLOOKUP)', 'desc' => 'the series/design type for the store category, e.g. "Lincoln Wheat" (not just "Lincoln"), "Morgan","American Eagle","American Women"; commemoratives use "Commemorative" or the program name'],
+        'coin_type'      => ['src' => 'store category (VLOOKUP)', 'desc' => 'work out what the actual parent product/series is, then pick the CLOSEST option from the list, e.g. "Lincoln Wheat" (never just "Lincoln"), "Morgan", "American Eagle", "American Women"; commemoratives use "Commemorative"'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],

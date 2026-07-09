@@ -30,12 +30,16 @@ function dspBulkLoader(&$screenData)
         $h .= '</label>';
         $da = ' data-name="' . sbl_e($name) . '"' . ($auto ? ' data-auto="1"' : '') . ($req ? ' data-required="1"' : '');
         if ($opts) {
-            $h .= '<select id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '"' . $da . '><option value="">&mdash; select &mdash;</option>';
+            // Combo box: searchable suggestions from the valid values, but the
+            // operator can also type any value manually.
+            $h .= '<input type="text" id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '"'
+                . ' list="dl_' . sbl_e($name) . '" value=""' . $da . '>';
+            $h .= '<datalist id="dl_' . sbl_e($name) . '">';
             foreach ($opts as $o) {
-                if (preg_match('/^-{2,}/', $o)) { $h .= '<option disabled>' . sbl_e($o) . '</option>'; continue; }
-                $h .= '<option value="' . sbl_e($o) . '">' . sbl_e($o) . '</option>';
+                if (preg_match('/^-{2,}/', $o)) { continue; }   // separators aren't options
+                $h .= '<option value="' . sbl_e($o) . '"></option>';
             }
-            $h .= '</select>';
+            $h .= '</datalist>';
         } elseif (in_array($name, $textareas, true)) {
             $h .= '<textarea id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '" rows="2"' . $da . '></textarea>';
         } else {
