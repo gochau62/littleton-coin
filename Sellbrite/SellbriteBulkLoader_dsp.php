@@ -58,7 +58,22 @@ function dspBulkLoader(&$screenData)
 .sbl-search { padding:9px 16px; border-radius:50px; border:2px solid #ccc; font-size:13px; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; width:280px; }
 .sbl-search:focus { border-color:#007bff; }
 .gs-cascade { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.gs-cascade input:disabled, .gs-cascade select:disabled { opacity:.5; }
+.gs-cascade input:disabled, .gs-cascade select:disabled,
+.gs-bar input:disabled, .gs-bar select:disabled { opacity:.5; }
+/* GreySheet drill-down bar on the SKU form: one aligned row, steps in order. */
+.gs-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#fff;
+          border:1px solid #a9e2a9; border-radius:12px; padding:10px 14px; margin-bottom:16px;
+          box-shadow:0 4px 8px rgba(0,0,0,.06); }
+.gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+                color:#1C4532; white-space:nowrap; margin-right:2px; }
+.gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
+/* Export control: label + market picker + download button read as ONE unit,
+   visually separate from + New SKU. */
+.export-group { display:inline-flex; align-items:center; gap:8px; padding:6px 6px 6px 14px;
+                border:2px solid #1e6e43; border-radius:50px; background:#eaf6ee; }
+.export-group .export-lbl { font-size:12px; font-weight:700; text-transform:uppercase;
+                            letter-spacing:.5px; color:#1e6e43; }
+.export-group .gs-dd { box-shadow:none; }
 .gs-dd { padding:9px 12px; border-radius:50px; border:2px solid #ccc; font-size:13px; background:#fff; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; max-width:170px; }
 .gs-dd:focus { border-color:#007bff; }
 .mkt-pick { font-size:12px; font-weight:700; color:#1C4532; display:inline-flex; align-items:center; gap:6px; }
@@ -156,13 +171,16 @@ details.group summary::-webkit-details-marker { display:none; }
             <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
             <span class="spacer"></span>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <select id="export-market" class="gs-dd" title="What the Export button downloads: a specific market exports only that market's SKUs (plus 'All markets' ones) with only that market's columns; 'All markets' is the full house master file.">
-                <option value="" title="Every SKU, every column - the house master file">All markets</option>
-                <option value="amazon" title="Amazon + All-markets SKUs; drops the eBay-only columns">Amazon</option>
-                <option value="ebay" title="eBay + All-markets SKUs; drops the Amazon-only columns (Search Terms)">eBay</option>
-                <option value="walmart" title="Walmart + All-markets SKUs; drops Amazon- and eBay-only columns">Walmart</option>
-            </select>
-            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product_data workbook (color-coded) for the market picked on the left">Export</button>
+            <span class="export-group">
+                <span class="export-lbl">Export</span>
+                <select id="export-market" class="gs-dd">
+                    <option value="">All markets</option>
+                    <option value="amazon">Amazon</option>
+                    <option value="ebay">eBay</option>
+                    <option value="walmart">Walmart</option>
+                </select>
+                <button type="button" class="btn btn-green" onclick="sblExport()">Download</button>
+            </span>
             <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
 
@@ -198,28 +216,29 @@ details.group summary::-webkit-details-marker { display:none; }
         <div class="sbl-tools">
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
-            <label class="mkt-pick" title="Marketplace for this SKU">Market
-                <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()"
-                        title="'All' = this SKU goes to every channel, so every market's fields show and export; picking one market keeps only its fields.">
-                    <option value="" title="One listing for every channel - shows Amazon + eBay fields together">All</option>
+            <label class="mkt-pick">Market
+                <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()">
+                    <option value="">All</option>
                     <option value="amazon">Amazon</option>
                     <option value="ebay">eBay</option>
                     <option value="walmart">Walmart</option>
                 </select>
             </label>
             <span class="spacer"></span>
-            <span class="gs-cascade" title="Tree &rarr; series &rarr; year &rarr; coin, then Autofill">
-                <select id="gs-root" class="gs-dd"><option value="">1. Tree&hellip;</option></select>
-                <input type="text" id="gs-series" class="sbl-search" style="width:180px" autocomplete="off"
-                       placeholder="2. Series (Morgan Dollars)&hellip;" disabled>
-                <select id="gs-year" class="gs-dd" disabled><option value="">Year</option></select>
-                <input type="text" id="gs-coin" class="sbl-search" style="width:180px" autocomplete="off"
-                       placeholder="4. Coin&hellip;" disabled>
-                <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
-                        title="Fill the highlighted fields from GreySheet">Autofill</button>
-            </span>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
+        </div>
+
+        <div class="gs-bar" title="Pick 1-4 in order, then Autofill fills the form from GreySheet">
+            <span class="gs-bar-label">GreySheet lookup</span>
+            <select id="gs-root" class="gs-dd"><option value="">1. Tree</option></select>
+            <input type="text" id="gs-series" class="sbl-search gs-grow" autocomplete="off"
+                   placeholder="2. Series" disabled>
+            <select id="gs-year" class="gs-dd" disabled><option value="">3. Year</option></select>
+            <input type="text" id="gs-coin" class="sbl-search gs-grow" autocomplete="off"
+                   placeholder="4. Coin" disabled>
+            <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
+                    title="Fill the highlighted fields from GreySheet">Autofill</button>
         </div>
 
         <div class="editor">
