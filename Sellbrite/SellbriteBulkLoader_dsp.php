@@ -259,13 +259,20 @@ details.group summary::-webkit-details-marker { display:none; }
                        . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
                     echo '<summary>' . sbl_e($title) . '</summary><div class="field-grid">';
                     $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
+                    // Computed fields keep updating live even though they are
+                    // required (Product Name, Description, the derived copy...).
+                    $autoAlways = ['name','description','red_book_description',
+                                   'feature_1','feature_2','feature_3','feature_4','feature_5',
+                                   'search_terms','creation_date','condition','exact_image',
+                                   'country_of_manufacture','brand'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
                         $col['required'] = in_array($n, $required, true);
                         // Product images are manual (operator pastes real photo URLs);
-                        // other sections are auto unless required.
-                        $col['auto'] = !empty($sec['images']) ? false : (!$manual && !$col['required']);
+                        // other sections are auto unless required-and-operator-owned.
+                        $col['auto'] = !empty($sec['images']) ? false
+                            : (!$manual && (!$col['required'] || in_array($n, $autoAlways, true)));
                         echo $renderField($col);
                     }
                     echo '</div></details>';
