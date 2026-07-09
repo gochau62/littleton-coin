@@ -65,6 +65,25 @@ final class Schema
             }
             return $cats;
         }
+        // Derived dropdowns: distinct values straight out of the embedded ODS
+        // VLOOKUP table - nothing to hand-manage. Autofill can still land any
+        // other value (the select gains its option on the fly).
+        static $vlookupKey = ['coin_type' => 'coin_type', 'denomination' => 'denomination',
+                              'composition' => 'composition', 'fineness' => 'fineness',
+                              'country_of_manufacture' => 'country'];
+        if (isset($vlookupKey[$col['dropdown']])) {
+            $k = $vlookupKey[$col['dropdown']];
+            $out = [];
+            foreach (self::lookups()['category_copy'] ?? [] as $c) {
+                $v = trim((string) ($c[$k] ?? ''));
+                if ($v !== '' && !in_array($v, $out, true)) { $out[] = $v; }
+            }
+            sort($out, SORT_NATURAL | SORT_FLAG_CASE);
+            return $out;
+        }
+        if ($col['dropdown'] === 'brand') {
+            return ['U.S. Mint', 'Bureau of Engraving and Printing'];
+        }
         return self::values()[$col['dropdown']] ?? [];
     }
     public static function lookups(): array
