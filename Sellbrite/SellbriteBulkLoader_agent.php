@@ -883,6 +883,12 @@ function gsAiMap(array $coin, array $example = []): array
         $notes = trim(preg_replace('/\s+/', ' ', $notes));
         if ($notes !== '') { $row['extended_description'] = mb_substr($notes, 0, 1900); }
     }
+    // COLLECTOR'S NOTE fallback: when the AI didn't write one, reuse the
+    // category-level expanded copy so feature 4 is never blank (Computer adds
+    // the "COLLECTOR'S NOTE:" label).
+    if (trim((string) ($row['feature_4'] ?? '')) === '' && trim((string) ($row['extended_description'] ?? '')) !== '') {
+        $row['feature_4'] = mb_substr(trim((string) $row['extended_description']), 0, 1400);
+    }
     return sbl_snap_row($row);
 }
 function gsSearch(string $q): array
