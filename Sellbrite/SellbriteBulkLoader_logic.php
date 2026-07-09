@@ -51,11 +51,16 @@ final class Schema
     {
         if (empty($col['dropdown'])) { return []; }
         if ($col['dropdown'] === 'store_category') {
-            // SKU of Parent Product: every VLOOKUP store category plus the
-            // non-coin product lines PCC also lists.
-            $cats = array_keys(self::lookups()['category_copy'] ?? []);
+            // SKU of Parent Product: the dropdown only offers the NON-coin
+            // product lines (paper money, watches, calendars, stamps, nativity,
+            // albums...). Coin categories are set automatically by the
+            // GreySheet pick, which appends its option on the fly.
+            $cats = [];
+            foreach (array_keys(self::lookups()['category_copy'] ?? []) as $c) {
+                if (preg_match('/note|currency|paper/i', $c)) { $cats[] = $c; }
+            }
             foreach (['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
-                      'Wristwatches', 'Coin Album', 'Other Exonumia'] as $x) {
+                      'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'] as $x) {
                 if (!in_array($x, $cats, true)) { $cats[] = $x; }
             }
             return $cats;
@@ -194,7 +199,14 @@ final class Computer
             $core = preg_replace('/^A genuine\s+/i', '', $desc);
             $bits = preg_split('/,\s*in\s+/i', $core, 2);
             $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .');
-            if (!empty($bits[1])) { $row['feature_2'] = 'CONDITION: ' . rtrim(trim($bits[1]), ' .'); }
+        }
+        // CONDITION bullet derives from grade/circulated directly, so it fills
+        // even when the description carries no condition clause yet.
+        $condBits = $g('grade') !== '' && strcasecmp($g('grade'), 'Ungraded') !== 0
+                  ? $g('grade') : $g('circulated_or_uncirculated');
+        if ($condBits !== '') {
+            if (!preg_match('/condition$/i', $condBits)) { $condBits .= ' Condition'; }
+            $row['feature_2'] = 'CONDITION: ' . $condBits;
         }
         // Sellbrite Condition (new/used/reconditioned): collectible coins list
         // as "used" (Des's export rows do) unless the operator overrides.
