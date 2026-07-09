@@ -106,8 +106,8 @@ details.group summary::-webkit-details-marker { display:none; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
-.field.is-auto input,.field.is-auto textarea,.field.is-auto select,
-.field.is-gsauto input,.field.is-gsauto textarea,.field.is-gsauto select { background:#eef7ff; border-style:dashed; border-color:#8fbff0; }
+/* Auto-filled inputs stay the normal grey box - only the blue AUTO badge on
+   the label marks them. Required fields go red via .is-error when empty. */
 .badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
 .field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
