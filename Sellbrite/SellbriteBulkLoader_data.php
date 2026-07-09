@@ -12,6 +12,9 @@
 return [
     // Dropdown option lists, extracted from the ODS "Valid Values" sheet.
     'values' => [
+        'condition' => [
+            'new', 'used', 'reconditioned',
+        ],
         'bullion_shape' => [
             'Bar', 'Round',
         ],
@@ -444,6 +447,7 @@ return [
             'label' => 'Condition (new, used, reconditioned)',
             'required' => false,
             'auto' => true,
+            'dropdown' => 'condition',
         ],
         [
             'name' => 'ebay_coin_condition_type',
