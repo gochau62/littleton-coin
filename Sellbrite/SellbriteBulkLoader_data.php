@@ -11,6 +11,23 @@ return [
     // Valid Values (ODS) for the operator-entered fields GreySheet cannot
     // autofill during SKU entry. Entries starting with dashes are separators.
     'values' => [
+        'brand' => [
+            'U.S. Mint', 'Anonymous Mint', 'Art of Coins',
+            'Austrian Mint', 'Blockchain Mint', 'Chinese Mint',
+            'Coin Invest Trust', 'CoinJewels', 'French Mint',
+            'Germania Mint', 'Golden State Mint', 'Littleton Coin Company',
+            'Mason Mint', 'MDM Wholesale', 'Mexican Mint',
+            'Mint of Poland', 'MintID', 'Moscow Mint',
+            'Native American Mint', 'New Hampshire Pewter', 'New York Mint',
+            'New Zealand Mint', 'North American Mint', 'Osborne Mint',
+            'Pamp Suisse', 'Paris Mint (Monnaie de Paris)', 'Pheli Mint',
+            'Pobjoy Mint', 'Royal Australian Mint', 'Royal Canadian Mint',
+            'Saint Petersburg Mint', 'Scottsdale Mint', 'Shanghai Mint',
+            'Shenzhen Guobao Mint', 'SilverTowne', 'South African Mint',
+            'Sunshine Mint', 'The Bureau of Engraving & Printing', 'The Crown Mint',
+            'The East India Company', 'The Perth Mint', 'The Royal Mint',
+            'The Singapore Mint', 'Mixed Lot', 'Unbranded',
+        ],
         'bullion_shape' => [
             'Bar', 'Round',
         ],
