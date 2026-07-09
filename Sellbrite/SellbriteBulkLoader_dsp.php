@@ -227,6 +227,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'sku','category_name','coin_type','year','mint_mark','mint_location',
                         'denomination','coin_variety_1','coin_variety_2','grade',
                         'designation_abbrivation','strike_type','circulated_or_uncirculated',
+                        'certification','certification_number',
                         'composition','fineness','diameter','weight',
                         'precious_metal_content','total_precious_metal_content',
                         'single_coin_or_set','set_count','country_of_manufacture','brand','title_suffix',
