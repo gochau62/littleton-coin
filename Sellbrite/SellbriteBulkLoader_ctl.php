@@ -452,7 +452,7 @@
     /* Year dropdown for the chosen series (distinct, deduplicated). */
     function sblLoadYears(){
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsNodeYears', path:sblCurPath }, function(res){
-            var sel = $('#gs-year').empty().append('<option value="">Year (all)</option>');
+            var sel = $('#gs-year').empty().append('<option value="">3. Year</option>');
             $.each(res.years || [], function(i, y){ sel.append('<option value="' + y + '">' + y + '</option>'); });
         }, 'json');
         $('#gs-year').off('change').on('change', function(){
@@ -527,7 +527,7 @@
     }
     function sblResetBelowSeries(){
         sblCurYear = ''; sblPendingGsId = 0;
-        $('#gs-year').empty().append('<option value="">Year (all)</option>').prop('disabled', true);
+        $('#gs-year').empty().append('<option value="">3. Year</option>').prop('disabled', true);
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
