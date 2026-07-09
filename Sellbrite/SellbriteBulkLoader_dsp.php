@@ -155,14 +155,14 @@ details.group summary::-webkit-details-marker { display:none; }
                    onkeyup="if(event.key==='Enter'){sblSearch();}">
             <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
             <span class="spacer"></span>
-            <select id="new-market" class="gs-dd" title="Marketplace this SKU is being made for. 'All markets' = one listing carrying every market's fields (Amazon Search Terms + eBay condition) so Sellbrite can push it to every channel; a specific market shows and exports only that market's fields.">
-                <option value="" title="One listing for every channel - shows Amazon + eBay fields together">All markets</option>
-                <option value="amazon">Amazon</option>
-                <option value="ebay">eBay</option>
-                <option value="walmart">Walmart</option>
-            </select>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product_data workbook (color-coded)">Export</button>
+            <select id="export-market" class="gs-dd" title="What the Export button downloads: a specific market exports only that market's SKUs (plus 'All markets' ones) with only that market's columns; 'All markets' is the full house master file.">
+                <option value="" title="Every SKU, every column - the house master file">All markets</option>
+                <option value="amazon" title="Amazon + All-markets SKUs; drops the eBay-only columns">Amazon</option>
+                <option value="ebay" title="eBay + All-markets SKUs; drops the Amazon-only columns (Search Terms)">eBay</option>
+                <option value="walmart" title="Walmart + All-markets SKUs; drops Amazon- and eBay-only columns">Walmart</option>
+            </select>
+            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product_data workbook (color-coded) for the market picked on the left">Export</button>
             <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
 

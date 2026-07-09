@@ -31,21 +31,33 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 if ($action === 'export') {
     $vendor = '/www/seidenphp/htdocs/vendor/autoload.php';
     if (file_exists($vendor)) { require_once $vendor; }
+    // Market filter from the home-screen picker: a specific market exports
+    // only its SKUs ("All markets" SKUs belong everywhere, so they're kept)
+    // and only its columns; 'all' is the full house master file.
+    $market = strtolower(trim((string) ($_GET['market'] ?? $_POST['market'] ?? 'all')));
+    if ($market === '' || !in_array($market, Exporter::markets(), true)) { $market = 'all'; }
     $rows = sblGetAllFull();
-    $ss   = Exporter::xlsx($rows);
+    if ($market !== 'all') {
+        $rows = array_values(array_filter($rows, static function ($r) use ($market) {
+            $m = strtolower(trim((string) ($r['marketplace'] ?? '')));
+            return $m === '' || $m === 'all' || $m === $market;
+        }));
+    }
+    $fname = 'sellbrite_products_' . $market . '_' . date('Ymd_His');
+    $ss    = Exporter::xlsx($rows, $market);
     // Throw away anything echoed so far (include noise, notices, the header
     // comment's newline) - the download must start at byte 0.
     while (ob_get_level() > 0) { ob_end_clean(); }
     if ($ss !== null) {
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="sellbrite_products_' . date('Ymd_His') . '.xlsx"');
+        header('Content-Disposition: attachment; filename="' . $fname . '.xlsx"');
         header('Cache-Control: max-age=0');
         (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save('php://output');
         exit;
     }
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="sellbrite_products_' . date('Ymd_His') . '.csv"');
-    echo Exporter::csv($rows);
+    header('Content-Disposition: attachment; filename="' . $fname . '.csv"');
+    echo Exporter::csv($rows, $market);
     exit;
 }
 
