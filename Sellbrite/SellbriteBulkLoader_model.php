@@ -198,6 +198,12 @@ function sblCategoryExample($category)
     return $rows[0] ?? [];
 }
 
+/** Every product row IN FULL (all columns) for the export. */
+function sblGetAllFull()
+{
+    return sbl_select('SELECT * FROM ' . SBL_TABLE . ' ORDER BY updated_at DESC');
+}
+
 /** Fetch a single row (full record) for the edit form, or false if not found. */
 function sblFind($id)
 {

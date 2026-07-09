@@ -86,7 +86,7 @@ final class Schema
                                 'U.S. Mint', 'PCGS Banknote Grading', 'PCGS Currency', 'PMG', 'Legacy Currency Grading'],
             'mint_mark' => ['No Mint Mark', 'C', 'CC', 'D', 'O', 'P', 'S', 'W', 'M', 'Various Mint Marks'],
             'mint_location' => ['Philadelphia', 'Denver', 'San Francisco', 'West Point', 'Carson City',
-                                'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
+                                'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
         ];
         if (isset($small[$col['dropdown']])) { return $small[$col['dropdown']]; }
         return self::values()[$col['dropdown']] ?? [];
@@ -446,6 +446,64 @@ final class Exporter
         84 => 'Stamp Category Only',
         87 => 'Nativity Product Category Only',
     ];
+
+    /* Column fills exactly as in Des's workbook (0-based column => ARGB). */
+    public static function headerFills(): array
+    {
+        $f = [];
+        $paint = static function ($a, $b, $c) use (&$f) { for ($i = $a; $i <= $b; $i++) { $f[$i] = $c; } };
+        $paint(0, 30, 'FFFFDBB6');   // mandatory for all (peach)
+        $paint(31, 51, 'FFFFF5CE');  // coin block (yellow)
+        $paint(52, 52, 'FFDEDCE6');  // style (purple)
+        $paint(53, 54, 'FFDDE8CB');  // modified pair (green)
+        $paint(55, 59, 'FFFFD8CE');  // eBay mandatory (pink)
+        $paint(60, 60, 'FFFFDBB6');  // bullion
+        $paint(61, 63, 'FFFFF5CE');  // paper money
+        $paint(64, 73, 'FFDEDCE6');  // advent
+        $paint(74, 83, 'FFDDE8CB');  // watch
+        $paint(84, 86, 'FFFFDBB6');  // stamp
+        $paint(87, 87, 'FFFFF5CE');  // nativity
+        return $f;
+    }
+
+    /* Colour-coded XLSX matching Des's product_data workbook exactly; returns
+     * null when PhpSpreadsheet isn't available (caller falls back to CSV). */
+    public static function xlsx(array $rows)
+    {
+        if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) { return null; }
+        // "A5"-style addresses: works on every PhpSpreadsheet version (the
+        // [col,row] array form only exists from 1.23 up).
+        $cell = static fn($i, $r) =>
+            \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r;
+        $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $ws = $ss->getActiveSheet();
+        $ws->setTitle('product_data');
+        foreach (self::LAYOUT_NOTES as $i => $t) { $ws->setCellValue($cell($i, 1), $t); }
+        $ws->setCellValue('A2', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
+            . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 3. *Required Fields.');
+        foreach (self::LAYOUT_HUMAN as $i => $h) { $ws->setCellValue($cell($i, 3), $h); }
+        foreach (self::LAYOUT as $i => $m)       { $ws->setCellValue($cell($i, 4), $m); }
+        $r = 5;
+        foreach ($rows as $row) {
+            foreach (self::LAYOUT as $i => $name) {
+                $src = $name;
+                if ($name === 'parent_sku')           { $src = 'category_name'; }
+                if ($name === 'red_book_description') { $src = 'extended_description'; }
+                $v = (string) ($row[$src] ?? '');
+                if ($v !== '') { $ws->setCellValueExplicit($cell($i, $r), $v,
+                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING); }
+            }
+            $r++;
+        }
+        foreach (self::headerFills() as $i => $argb) {
+            foreach ([1, 3, 4] as $rowNo) {
+                $ws->getStyle($cell($i, $rowNo))->getFill()
+                   ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                   ->getStartColor()->setARGB($argb);
+            }
+        }
+        return $ss;
+    }
 
     public static function csv(array $rows, string $market = 'all'): string
     {

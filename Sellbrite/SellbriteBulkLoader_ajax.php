@@ -24,15 +24,23 @@ $password = $_SESSION['password'] ?? '';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// CSV export streams a file, so handle it before JSON. One product CSV,
-// tailored per marketplace (all / amazon / ebay / walmart).
+// Export streams a file, so handle it before JSON. Colour-coded XLSX matching
+// Des's product_data workbook when PhpSpreadsheet is on the box (IBM i vendor
+// dir, same as GFTCRDCVP); otherwise the identical layout as a plain CSV.
 if ($action === 'export') {
-    $market = strtolower((string) ($_GET['market'] ?? $_POST['market'] ?? 'all'));
-    if (!in_array($market, Exporter::markets(), true)) { $market = 'all'; }
-    $csv = Exporter::csv(sblGetAll(), $market);
+    $vendor = '/www/seidenphp/htdocs/vendor/autoload.php';
+    if (file_exists($vendor)) { require_once $vendor; }
+    $rows = sblGetAllFull();
+    $ss   = Exporter::xlsx($rows);
+    if ($ss !== null) {
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="sellbrite_products_' . date('Ymd_His') . '.xlsx"');
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save('php://output');
+        exit;
+    }
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="sellbrite_products_' . $market . '_' . date('Ymd_His') . '.csv"');
-    echo $csv;
+    header('Content-Disposition: attachment; filename="sellbrite_products_' . date('Ymd_His') . '.csv"');
+    echo Exporter::csv($rows);
     exit;
 }
 
