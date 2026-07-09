@@ -280,7 +280,7 @@ return [
             'auto' => true,
         ],
         [
-            'name' => 'red_book_description',
+            'name' => 'extended_description',
             'label' => 'Extended Description',
             'required' => false,
             'auto' => false,
