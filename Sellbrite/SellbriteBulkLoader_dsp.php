@@ -155,8 +155,8 @@ details.group summary::-webkit-details-marker { display:none; }
                    onkeyup="if(event.key==='Enter'){sblSearch();}">
             <button type="button" class="btn btn-ghost" onclick="sblSearch()">Search</button>
             <span class="spacer"></span>
-            <select id="new-market" class="gs-dd" title="Marketplace this SKU is being made for - its market fields autofill and appear on the form">
-                <option value="">All markets</option>
+            <select id="new-market" class="gs-dd" title="Marketplace this SKU is being made for. 'All markets' = one listing carrying every market's fields (Amazon Search Terms + eBay condition) so Sellbrite can push it to every channel; a specific market shows and exports only that market's fields.">
+                <option value="" title="One listing for every channel - shows Amazon + eBay fields together">All markets</option>
                 <option value="amazon">Amazon</option>
                 <option value="ebay">eBay</option>
                 <option value="walmart">Walmart</option>
@@ -199,8 +199,9 @@ details.group summary::-webkit-details-marker { display:none; }
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <span id="formTitle" style="font-weight:700;color:#1C4532;"></span>
             <label class="mkt-pick" title="Marketplace for this SKU">Market
-                <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()">
-                    <option value="">All</option>
+                <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()"
+                        title="'All' = this SKU goes to every channel, so every market's fields show and export; picking one market keeps only its fields.">
+                    <option value="" title="One listing for every channel - shows Amazon + eBay fields together">All</option>
                     <option value="amazon">Amazon</option>
                     <option value="ebay">eBay</option>
                     <option value="walmart">Walmart</option>
