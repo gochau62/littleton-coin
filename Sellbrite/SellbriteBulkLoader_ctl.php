@@ -170,22 +170,20 @@
     function sblSave(){
         var data = sblFormSerialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
-            if (res && res.returnClass === 'invalid'){
-                // Hard gate: required fields incomplete - stay on the form.
-                sblRecompute();   // refresh the red highlights + validation panel
-                swal({ title:'Cannot save yet',
-                       text:'Complete the required fields first:\n\n' + (res.missing || []).slice(0, 12).join(', ')
-                            + ((res.missing || []).length > 12 ? ' …' : ''),
-                       type:'error' });
-                return;
-            }
             if (!res || res.returnClass === 'error'){
                 swal('Not saved', (res && res.message) || 'The database rejected the save (no DB connection?).', 'error');
                 return;
             }
             sblUpsertListRow(res.row);       // update the inventory row in place (AJAX, no reload)
             sblBackToList();                 // back to the main inventory page
-            swal({ title:'Saved', text:'SKU saved.', type:'success', timer:1500, showConfirmButton:false });
+            if (res.returnClass === 'warning'){
+                swal({ title:'Saved with warnings',
+                       text:'Still empty: ' + (res.missing || []).slice(0, 12).join(', ')
+                            + ((res.missing || []).length > 12 ? ' …' : ''),
+                       type:'warning' });
+            } else {
+                swal({ title:'Saved', text:'SKU saved.', type:'success', timer:1500, showConfirmButton:false });
+            }
         }, 'json');
     }
     function sblDelete(id, sku){
