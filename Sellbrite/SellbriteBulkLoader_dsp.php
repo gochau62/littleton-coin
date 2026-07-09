@@ -263,11 +263,9 @@ details.group summary::-webkit-details-marker { display:none; }
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
                         $col['required'] = in_array($n, $required, true);
-                        // Images 1-4 are SKU-derived (auto); the rest of a section is auto
-                        // unless required. Manual image slots 5-8 stay plain boxes.
-                        $col['auto'] = !empty($sec['images'])
-                            ? in_array($n, ['product_image_1','product_image_2','product_image_3','product_image_4'], true)
-                            : (!$manual && !$col['required']);
+                        // Product images are manual (operator pastes real photo URLs);
+                        // other sections are auto unless required.
+                        $col['auto'] = !empty($sec['images']) ? false : (!$manual && !$col['required']);
                         echo $renderField($col);
                     }
                     echo '</div></details>';

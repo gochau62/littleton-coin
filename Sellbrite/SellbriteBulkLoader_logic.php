@@ -137,13 +137,8 @@ final class Computer
         $meta = $lookups['category_meta'][$category] ?? [];
         $copy = $lookups['category_copy'][$category] ?? [];
 
-        // Image URLs (deterministic — exact workbook formulas from the SKU).
-        if ($sku !== '') {
-            $row['product_image_1'] = SBL_CDN_PREFIX . $sku . '-obv.jpg';
-            $row['product_image_2'] = SBL_CDN_PREFIX . $sku . '-det1.jpg';
-            $row['product_image_3'] = SBL_CDN_PREFIX . $sku . '-det1.jpg';
-            $row['product_image_4'] = SBL_CDN_PREFIX . $sku . '-det2.jpg';
-        }
+        // Product image URLs are NOT auto-generated (the SKU-based guesses were
+        // wrong) - the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
         $copyVal = static fn(string $k): string => self::lookupValue($copy[$k] ?? '', '');
