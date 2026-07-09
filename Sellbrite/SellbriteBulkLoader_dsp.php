@@ -70,6 +70,7 @@ function dspBulkLoader(&$screenData)
 .gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
 .gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
+.gs-bar .gs-year { flex:0 0 110px; width:110px; min-width:0; }
 /* Toolbar groups: a labelled pill holds each control set so the toolbar reads
    as units (Search / Export), minimal and consistent. */
 .tool-group { display:inline-flex; align-items:center; gap:8px; padding:5px 5px 5px 14px;
@@ -245,7 +246,8 @@ details.group summary::-webkit-details-marker { display:none; }
             <select id="gs-root" class="gs-dd"><option value="">1. Tree</option></select>
             <input type="text" id="gs-series" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="2. Series" disabled>
-            <select id="gs-year" class="gs-dd" disabled><option value="">3. Year</option></select>
+            <input type="text" id="gs-year" class="sbl-search gs-year" autocomplete="off"
+                   placeholder="3. Year" disabled>
             <input type="text" id="gs-coin" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="4. Coin" disabled>
             <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
@@ -266,7 +268,8 @@ details.group summary::-webkit-details-marker { display:none; }
                     // non-sheet extras (diameter/weight, inventory cost/qty) close
                     // the section.
                     'Coin details' => ['open' => true, 'fields' => [
-                        'sku','category_name','brand','country_of_manufacture','price','condition',
+                        'sku','category_name','brand','country_of_manufacture',
+                        'price','original_retail','creation_date','condition',
                         'coin_type','denomination','year','mint_mark','mint_location',
                         'coin_variety_1','coin_variety_2','coin_design','grade',
                         'designation_abbrivation','title_suffix','circulated_or_uncirculated',
@@ -311,8 +314,9 @@ details.group summary::-webkit-details-marker { display:none; }
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',
                                    'search_terms','creation_date','condition','exact_image',
                                    'country_of_manufacture','brand'];
-                    // Operator-owned picks: still autofill, but no AUTO badge.
-                    $noBadge = ['coin_type', 'grade', 'brand'];
+                    // Operator-owned picks: still autofill, but no AUTO badge
+                    // (original_retail has no autofill source at all).
+                    $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
