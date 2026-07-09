@@ -523,6 +523,10 @@ final class Exporter
                 }
             }
         }
+        // Column widths follow the content (header + widest cell), capped so
+        // the copy-heavy columns (description, features) stay readable.
+        $widths = [];
+        foreach ($keep as $i => $orig) { $widths[$i] = strlen(self::LAYOUT_HUMAN[$orig]); }
         $r = 5;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
@@ -534,10 +538,18 @@ final class Exporter
                 $v = (string) ($row[$src] ?? '');
                 // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
                 if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
-                if ($v !== '') { $ws->setCellValueExplicit($cell($i, $r), $v,
-                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING); }
+                if ($v !== '') {
+                    $ws->setCellValueExplicit($cell($i, $r), $v,
+                        \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                    // Multi-line text: the longest line drives the width.
+                    foreach (explode("\n", $v) as $ln) { $widths[$i] = max($widths[$i], strlen($ln)); }
+                }
             }
             $r++;
+        }
+        foreach ($widths as $i => $w) {
+            $ws->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1))
+               ->setWidth(min(max($w + 2, 10), 60));
         }
         return $ss;
     }
