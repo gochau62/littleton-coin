@@ -286,11 +286,13 @@
     /* Auto fields that get the blue "AUTO" preview when a coin is picked.
        SKU/Price/Quantity/Cost are excluded - they're the required fields the
        operator confirms (autofill still suggests price/cost). */
-    var SBL_GS_FIELDS = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
-        'coin_variety_1','coin_variety_2','grade','designation_abbrivation','strike_type',
+    /* coin_type / grade / brand still autofill but carry NO badge - they are
+       operator-owned picks (also skipped in the display's badge rendering). */
+    var SBL_GS_FIELDS = ['category_name','year','mint_mark','mint_location','denomination',
+        'coin_variety_1','coin_variety_2','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
-        'country_of_manufacture','brand','bullion_shape','coin_design','condition',
+        'country_of_manufacture','bullion_shape','coin_design','condition',
         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
         'package_weight','exact_image','name','description','extended_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
