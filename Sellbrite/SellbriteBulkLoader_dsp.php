@@ -158,7 +158,7 @@ details.group summary::-webkit-details-marker { display:none; }
                 <option value="walmart">Walmart</option>
             </select>
             <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
-            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product CSV">Export CSV</button>
+            <button type="button" class="btn btn-green" onclick="sblExport()" title="Sellbrite product_data workbook (color-coded)">Export</button>
             <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
 
