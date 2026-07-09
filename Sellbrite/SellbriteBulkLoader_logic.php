@@ -281,10 +281,18 @@ final class Validator
         $required = array_flip(Schema::requiredNames());
         $market   = strtolower(trim((string) ($row['marketplace'] ?? '')));
         // Market-required fields are coin-specific; paper money is exempt.
-        $isPaper = (bool) preg_match('/currency|paper money|banknote|\bnote\b/i',
-            ($row['category_name'] ?? '') . ' ' . ($row['paper_money_type'] ?? ''));
+        $catText = ($row['category_name'] ?? '') . ' ' . ($row['paper_money_type'] ?? '');
+        $isPaper = (bool) preg_match('/currency|paper money|banknote|\bnote\b/i', $catText);
+        $isOther = (bool) preg_match('/advent|watch|wristwatch|stamp|postage|nativity|album/i', $catText);
         if (!$isPaper) {
             foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
+        }
+        // Mandatory-for-coins: the coin block's core fields are required for
+        // coin listings (not paper money / other product types).
+        if (!$isPaper && !$isOther) {
+            foreach (['coin_type', 'denomination', 'year', 'mint_mark', 'mint_location',
+                      'grade', 'circulated_or_uncirculated', 'strike_type', 'certification',
+                      'composition', 'single_coin_or_set'] as $cf) { $required[$cf] = true; }
         }
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
@@ -339,35 +347,88 @@ final class Exporter
      * ours until Des adds them in Sellbrite) - kept out of the upload file. */
     private const INTERNAL_ONLY = ['diameter', 'weight'];
 
+    /* The EXACT Sellbrite product_data layout (Des's file): 88 machine names in
+     * order. Deprecated columns (style, modified_item, ...) still export as
+     * empty columns so the file matches header-for-header. */
+    private const LAYOUT = [
+        'sku','parent_sku','name','description','red_book_description',
+        'feature_1','feature_2','feature_3','feature_4','feature_5',
+        'brand','country_of_manufacture','price','original_retail','creation_date',
+        'condition','condition_note','package_weight','package_height','package_length','package_width',
+        'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
+        'product_image_5','product_image_6','product_image_7','product_image_8','search_terms',
+        'coin_type','denomination','year','mint_mark','mint_location','coin_variety_1','coin_variety_2',
+        'coin_design','grade','designation_abbrivation','title_suffix','circulated_or_uncirculated',
+        'strike_type','certification','certification_number','composition','fineness',
+        'precious_metal_content','single_coin_or_set','set_count','total_precious_metal_content',
+        'style','modified_item','modification_description',
+        'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
+        'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition',
+        'bullion_shape','paper_money_grade_designation','paper_money_series_designation','paper_money_type',
+        'advent_calendar_item_height','advent_calendar_item_length','advent_calendar_item_weight',
+        'advent_calendar_item_width','advent_calendar_material','advent_calendar_number_of_items',
+        'advent_calendar_occasion','advent_calendar_shape','advent_calendar_theme','advent_calendar_type',
+        'watch_band_material','watch_band_type','watch_band_width','watch_case_material','watch_case_size',
+        'watch_department','watch_display_type','watch_manufacturer_warranty','watch_movement_type',
+        'watch_water_resistance','stamp_color','stamp_quality','stamp_type','nativity_item_type',
+    ];
+    private const LAYOUT_HUMAN = [
+        'SKU*','SKU of Parent Product','Product Name','Product Description','Red Book Description',
+        'Feature 1','Feature 2','Feature 3','Feature 4','Feature 5',
+        'Brand Name','Country of Manufacture','Price','Original Retail','Creation Date',
+        'Condition (new, used, reconditioned)','Condition Note','Package Weight (pounds)',
+        'Package Height (inches)','Package Length (inches)','Package Width (inches)',
+        'Exact Image','Product Image URL 1','Product Image URL 2','Product Image URL 3','Product Image URL 4',
+        'Product Image URL 5','Product Image URL 6','Product Image URL 7','Product Image URL 8','Search Terms',
+        'Coin Type','Denomination','Year','Mint Mark','Mint Location','Coin Variety 1','Coin Variety 2',
+        'Coin Design','Grade','Designation Abbrivation','Title Suffix','Circulated or Uncirculated',
+        'Strike Type','Certification','Certification Number','Composition','Fineness',
+        'Precious Metal Content','Single Coin or Set','Set Count','Total Precious Metal Content',
+        'Style','Modified Item','Modification Description',
+        'eBay Coin Condition Type','eBay Graded Coin Letter Grade','eBay Graded Coin Numerical Grade',
+        'eBay Graded Coin Professional Grader','z eBay Ungraded Coin Condition',
+        'Bullion Shape','Paper Money Grade Designation','Paper Money Series Designation','Paper Money Type',
+        'Advent Calendar Item Height','Advent Calendar Item Length','Advent Calendar Item Weight',
+        'Advent Calendar Item Width','Advent Calendar Material','Advent Calendar Number of Items',
+        'Advent Calendar Occasion','Advent Calendar Shape','Advent Calendar Theme','Advent Calendar Type',
+        'Watch Band Material','Watch Band Type','Watch Band Width','Watch Case Material','Watch Case Size',
+        'Watch Department','Watch Display Type','Watch Manufacturer Warranty','Watch Movement Type',
+        'Watch Water Resistance','Stamp Color','Stamp Quality','Stamp Type','Nativity Item Type',
+    ];
+    // Row-1 group annotations at their exact column positions (0-based).
+    private const LAYOUT_NOTES = [
+        2  => 'Mandatory for all listings, independent of product category',
+        30 => 'Amazon specific',
+        31 => 'US Coin and World Coin used by all stores',
+        52 => 'US Coin and World Coin, Amazon Specific, could depreciate',
+        53 => 'US Coin and World Coin, eBay Specific, could depreciate',
+        55 => 'US Coin and World Coin, eBay Specific, mandatory and specific',
+        60 => 'Bullion Category Only',
+        61 => 'Paper Money Category Only',
+        64 => 'Advent Calendar Category Only',
+        74 => 'Watch Category Only',
+        84 => 'Stamp Category Only',
+        87 => 'Nativity Product Category Only',
+    ];
+
     public static function csv(array $rows, string $market = 'all'): string
     {
-        $drop = self::INTERNAL_ONLY;
-        if ($market === 'amazon')  { $drop = array_merge($drop, self::EBAY_ONLY); }
-        if ($market === 'ebay')    { $drop = array_merge($drop, self::AMAZON_ONLY); }
-        if ($market === 'walmart') { $drop = array_merge($drop, self::AMAZON_ONLY, self::EBAY_ONLY); }
-        $columns = array_values(array_filter(Schema::columns(),
-            static fn($c) => !in_array($c['name'], $drop, true)));
+        $n = count(self::LAYOUT);
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
-        // Sellbrite's real headers differ from two display names: the store
-        // category exports as "SKU of Parent Product"/parent_sku, and the
-        // "Extended Description" display label is still Sellbrite's
-        // "Red Book Description" header.
-        $human   = array_map(static function ($c) {
-            $label = $c['label'];
-            if ($c['name'] === 'category_name')        { $label = 'SKU of Parent Product'; }
-            if ($c['name'] === 'red_book_description') { $label = 'Red Book Description'; }
-            return $label . (!empty($c['required']) ? '*' : '');
-        }, $columns);
-        $machine = array_map(static fn($c) => $c['name'] === 'category_name' ? 'parent_sku' : $c['name'], $columns);
-        $source  = array_map(static fn($c) => $c['name'], $columns);   // our field names for the data rows
         $fh = fopen('php://temp', 'r+');
-        $bannerRow = array_fill(0, count($columns), ''); $bannerRow[0] = $banner;
-        fputcsv($fh, $bannerRow); fputcsv($fh, $human); fputcsv($fh, $machine);
+        $notes = array_fill(0, $n, '');
+        foreach (self::LAYOUT_NOTES as $i => $t) { $notes[$i] = $t; }
+        $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
+        fputcsv($fh, $notes); fputcsv($fh, $bannerRow);
+        fputcsv($fh, self::LAYOUT_HUMAN); fputcsv($fh, self::LAYOUT);
         foreach ($rows as $row) {
             $line = [];
-            foreach ($source as $name) { $line[] = (string) ($row[$name] ?? ''); }
+            foreach (self::LAYOUT as $name) {
+                $src = $name === 'parent_sku' ? 'category_name' : $name;   // store category
+                $line[] = (string) ($row[$src] ?? '');
+            }
             fputcsv($fh, $line);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);
