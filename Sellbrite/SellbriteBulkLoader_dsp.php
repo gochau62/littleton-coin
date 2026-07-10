@@ -288,7 +288,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'single_coin_or_set','set_count','total_precious_metal_content',
                         'bullion_shape',
                         'paper_money_grade_designation','paper_money_series_designation','paper_money_type',
-                        'diameter','weight','cost','quantity']],
+                        'diameter','cost','quantity']],
                     'Market specific fields' => ['open' => false, 'fields' => [
                         'search_terms',
                         'ebay_coin_condition_type','ebay_graded_coin_letter_grade',

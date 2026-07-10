@@ -128,9 +128,11 @@ final class Schema
      * extra image slots are left off (the workbook itself makes them optional). */
     public static function requiredNames(): array
     {
-        return ['sku', 'name', 'description', 'extended_description',
+        // Coin details keeps ONLY SKU / SKU of Parent Product / Cost / Quantity
+        // required; every other coin-details box is optional. The other
+        // sections (listing copy, packaging, images) keep their requirements.
+        return ['sku', 'category_name', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
-                'brand', 'country_of_manufacture', 'price', 'creation_date', 'condition',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'quantity', 'cost'];
     }
@@ -350,7 +352,6 @@ final class Validator
         // Market-required fields are coin-specific; paper money is exempt.
         $catText = ($row['category_name'] ?? '') . ' ' . ($row['paper_money_type'] ?? '');
         $isPaper = (bool) preg_match('/currency|paper money|banknote|\bnote\b/i', $catText);
-        $isOther = (bool) preg_match('/advent|watch|wristwatch|stamp|postage|nativity|album/i', $catText);
         if (!$isPaper) {
             foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
         }
@@ -359,13 +360,8 @@ final class Validator
         if ($market === '' || $market === 'all' || $market === 'amazon') {
             $required['search_terms'] = true;
         }
-        // Mandatory-for-coins: the coin block's core fields are required for
-        // coin listings (not paper money / other product types).
-        if (!$isPaper && !$isOther) {
-            foreach (['coin_type', 'denomination', 'year', 'mint_mark',
-                      'grade', 'circulated_or_uncirculated', 'strike_type', 'certification',
-                      'composition', 'single_coin_or_set'] as $cf) { $required[$cf] = true; }
-        }
+        // Coin details requires only SKU / SKU of Parent / Cost / Quantity -
+        // the coin block itself is optional (autofill supplies it anyway).
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
             if ($val !== '' && str_starts_with($val, '***')) {
@@ -380,11 +376,13 @@ final class Validator
         if ($year !== '' && (!ctype_digit($year) || strlen($year) !== 4)) {
             $statuses['year'] = 'action'; $messages['year'] = 'Year should be 4 digits';
         }
-        // Price, Cost and Quantity are operator-required (autofill only suggests price/cost).
-        foreach (['price','cost'] as $m) {
-            $v = $g($m);
-            if ($v === '')           { $statuses[$m] = 'error'; $messages[$m] = 'Required field'; }
-            elseif (!is_numeric($v)) { $statuses[$m] = 'error'; $messages[$m] = 'Must be a number'; }
+        // Cost and Quantity are operator-required; Price only has to be a
+        // number when entered (autofill suggests it).
+        $cost = $g('cost');
+        if ($cost === '')           { $statuses['cost'] = 'error'; $messages['cost'] = 'Required field'; }
+        elseif (!is_numeric($cost)) { $statuses['cost'] = 'error'; $messages['cost'] = 'Must be a number'; }
+        if ($g('price') !== '' && !is_numeric($g('price'))) {
+            $statuses['price'] = 'error'; $messages['price'] = 'Must be a number';
         }
         if ($g('original_retail') !== '' && !is_numeric($g('original_retail'))) {
             $statuses['original_retail'] = 'error'; $messages['original_retail'] = 'Must be a number';
