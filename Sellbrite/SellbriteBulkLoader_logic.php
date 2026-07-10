@@ -72,6 +72,8 @@ final class Schema
                 if ($v !== '' && !in_array($v, $out, true)) { $out[] = $v; }
             }
             sort($out, SORT_NATURAL | SORT_FLAG_CASE);
+            // Only FOREIGN countries are stored (US is the default everywhere).
+            if ($k === 'country') { array_unshift($out, 'United States'); }
             return $out;
         }
         // Small fixed vocabularies for the other GreySheet-autofilled fields
@@ -128,8 +130,8 @@ final class Schema
     {
         $out = ['coin_type' => []];
         foreach (self::lookups()['category_copy'] ?? [] as $c) {
-            $country = trim((string) ($c['country'] ?? ''));
-            if ($country === '') { continue; }   // stays in the full-list fallback only
+            // Only foreign countries are stored; missing = United States.
+            $country = trim((string) ($c['country'] ?? '')) ?: 'United States';
             foreach (array_keys($out) as $f) {
                 $v = trim((string) ($c[$f] ?? ''));
                 if ($v === '') { continue; }
@@ -296,10 +298,22 @@ final class Computer
         // The description REBUILDS while it still has the standard house shape
         // ("A genuine ..."), so editing the coin (year, grade, mint...) keeps
         // the copy - and the DETAILS bullet below - in sync. A hand-written
-        // description that abandons the house shape is never touched.
+        // description that abandons the house shape is never touched, and any
+        // FLAVOR sentences added after the formulaic base (privy-mark notes,
+        // history) are carried over onto the rebuilt base.
         $curDesc = trim((string) ($row['description'] ?? ''));
         if ($curDesc === '' || preg_match('/^A genuine\b/i', $curDesc)) {
-            $row['description'] = self::buildDescription($row, $copy);
+            $built = self::buildDescription($row, $copy);
+            if ($built !== '' && $curDesc !== '') {
+                $keep = [];
+                foreach (array_slice(preg_split('/(?<=\.)\s+/', $curDesc), 1) as $s) {
+                    $s = trim($s);
+                    if ($s === '' || preg_match('/^(Contains |Comes with|Coin only\.?$|Does not include|.*\bcomposition\.$)/i', $s)) { continue; }
+                    $keep[] = $s;
+                }
+                if ($keep) { $built .= ' ' . implode(' ', $keep); }
+            }
+            $row['description'] = $built;
         }
 
         // Amazon bullet points, PCC layout (from the real exports):
@@ -308,9 +322,12 @@ final class Computer
         // which we split into the DETAILS and CONDITION bullets.
         $desc = trim((string) ($row['description'] ?? ''));
         if ($desc !== '') {
-            $core = preg_replace('/^A genuine\s+/i', '', $desc);
-            $bits = preg_split('/,\s*in\s+/i', $core, 2);
-            $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .');
+            // DETAILS = the identity part of sentence 1 (before the brand /
+            // condition / certification clause).
+            $first = preg_split('/(?<=\.)\s/', $desc, 2)[0];
+            $core  = preg_replace('/^A genuine\s+/i', '', $first);
+            $bits  = preg_split('/,\s*(?:in|graded and certified|from|with)\s+/i', $core, 2);
+            $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .,');
         }
         // CONDITION bullet derives from grade/circulated directly, so it fills
         // even when the description carries no condition clause yet.
@@ -360,41 +377,120 @@ final class Computer
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('category_name') === '') { return ''; }
+        $disp  = Schema::lookups()['display'] ?? [];
+        $denom = $g('denomination');
+        $dd    = $disp['denom'][$denom][0] ?? '';                    // "25C" -> "25c"
+        $cert  = $g('certification');
+        $certT = $disp['cert_title'][$cert] ?? $cert;                // "NGC & CAC" -> "NGC CAC"
         $parts = [
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
             $g('category_name'),
             $g('coin_variety_1'),   // the distinguishing issue ("Anna May Wong")
             $g('coin_variety_2'),
-            $g('denomination'),
+            $dd !== '' ? $dd : $denom,
             $g('grade') !== '' && $g('grade') !== 'Ungraded' ? $g('grade') : '',
-            $g('certification') !== '' && $g('certification') !== 'Uncertified' ? $g('certification') : '',
+            $cert !== '' && $cert !== 'Uncertified' ? $certT : '',
             $g('title_suffix'),   // operator catch-all: grade/error/packaging/slab details
             'Coin Collectible',   // constant title tail (ODS hardcodes this, not title_suffix)
         ];
         $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
     }
-    /* Fallback description (used only when the agent didn't write one). Same
-     * shape as the real listings: "A genuine <specs> Coin, in <condition>
-     * Condition." The DETAILS/CONDITION bullets are split back out of it. */
+    /* Deterministic house description, shaped like the real listings:
+     *   S1  "A genuine {year} {mint} {variety} {type} {metal} {denomination
+     *        in words} {strike} [Bullion] Coin[, from {brand}]{condition}."
+     *   S2  "Contains {content} {fineness} {Metal}."     (precious metals)
+     *   S3  packaging sentence expanded from the Title Suffix.
+     * Every word is translated through the workbook 'display' tables; a
+     * missing table entry just means the raw value is used. */
     private static function buildDescription(array $row, array $copy): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('category_name') === '') { return ''; }
-        $specs = trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
-            $g('year'),
-            $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
-            $g('coin_type') !== '' ? $g('coin_type') : $g('category_name'),
-            $g('coin_variety_1'),   // "Anna May Wong" - carries into the DETAILS bullet
-            $g('coin_variety_2'),
-            $g('denomination'),
-        ]))));
-        $d = 'A genuine ' . $specs . ' Coin';
-        $cond = $g('grade') !== '' && $g('grade') !== 'Ungraded'
-              ? $g('grade') : $g('circulated_or_uncirculated');
-        if ($cond !== '') { $d .= ', in ' . $cond . ' Condition'; }
-        return $d . '.';
+        $disp = Schema::lookups()['display'] ?? [];
+        $T = static function (string $tbl, string $key, int $i = 0) use ($disp): string {
+            $v = $disp[$tbl][$key] ?? '';
+            if (is_array($v)) { $v = $v[$i] ?? ''; }
+            return trim((string) $v);
+        };
+        $cat = $g('category_name'); $comp = $g('composition'); $denom = $g('denomination');
+        $isPaper = (bool) preg_match('/currency|paper money|banknote|\bnote\b|certificate/i',
+                                     $cat . ' ' . $g('paper_money_type'));
+
+        // Varieties: the table's "before" text (or the raw variety) reads
+        // before the type; "after" text becomes a clause after the condition.
+        $before = []; $after = [];
+        foreach (['coin_variety_1', 'coin_variety_2'] as $vf) {
+            $v = $g($vf);
+            if ($v === '') { continue; }
+            $b = $T('variety_text', $v, 0); $a = $T('variety_text', $v, 1);
+            if ($b === '' && $a === '') { $before[] = $v; }
+            else { if ($b !== '') { $before[] = $b; } if ($a !== '') { $after[] = $a; } }
+        }
+        $type      = $g('coin_type') !== '' ? $g('coin_type') : $cat;
+        $type      = $T('coin_type', $type) !== '' ? $T('coin_type', $type) : $type;
+        $metal     = $T('composition', $comp, 0);              // Silver / Clad / Steel...
+        // Gold eagle family reads as words too (the sheet leaves these blank).
+        static $goldWords = ['$2.50' => 'Quarter Eagle', '$5' => 'Half Eagle', '$10' => 'Eagle', '$20' => 'Double Eagle'];
+        $denomFull = $T('denom', $denom, 1) !== '' ? $T('denom', $denom, 1) : ($goldWords[$denom] ?? $denom);
+        $strike    = $T('strike_title', $g('strike_type'));    // Business stays hidden
+        $parts = [$g('year'),
+                  $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : ''];
+        $parts = array_merge($parts, $before);
+        // Eagle-family gold shows the face value up front: "$5 ... Half Eagle".
+        if (isset($goldWords[$denom])) { $parts[] = $denom; }
+        if ($isPaper) {
+            $parts[] = $denom;
+            $parts[] = $g('paper_money_type') !== '' ? $g('paper_money_type') : $type;
+        } else {
+            $parts = array_merge($parts, [$type, $metal, $denomFull, $strike,
+                $copy['prefix'] ?? '',                          // "Penny" tail for cents
+                stripos($cat, 'bullion') !== false ? 'Bullion' : '']);
+        }
+        $s1 = 'A genuine ' . trim(preg_replace('/\s+/', ' ',
+                implode(' ', array_filter($parts, static fn($p) => $p !== ''))))
+            . ($isPaper ? '' : ' Coin');
+        if ($g('brand') !== '' && $g('brand') !== 'U.S. Mint') { $s1 .= ', from ' . $g('brand'); }
+
+        // Condition clause: certified vs raw (raw grades gain their AU/BU
+        // prefix or "Mint State" suffix from the grade table).
+        $grade = $g('grade'); $cert = $g('certification');
+        $certified = $cert !== '' && strcasecmp($cert, 'Uncertified') !== 0 && strcasecmp($cert, 'U.S. Mint') !== 0;
+        if ($certified && $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0) {
+            $s1 .= ', graded and certified ' . trim($grade . ' ' . $g('designation_abbrivation'))
+                 . ' by ' . ($T('cert_title', $cert) !== '' ? $T('cert_title', $cert) : $cert);
+        } else {
+            $cond = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0 ? $grade : $g('circulated_or_uncirculated');
+            if ($cond !== '') {
+                $s1 .= ', in ' . trim($T('grade_fix', $cond, 0) . ' ' . $cond . ' ' . $T('grade_fix', $cond, 1)) . ' Condition';
+            }
+        }
+        foreach ($after as $a) { $s1 .= ', ' . $a; }
+        $out = $s1 . '.';
+
+        // Metal content (precious) / clad note (commemoratives).
+        $metalWord = $T('composition', $comp, 1);
+        if ($metalWord !== '') {
+            $fin = $T('fineness', $g('fineness'), 1) !== '' ? $T('fineness', $g('fineness'), 1) : $g('fineness');
+            $bits = array_filter([$g('precious_metal_content'), $fin, $metalWord], static fn($b) => $b !== '');
+            $out .= ' Contains ' . implode(' ', $bits) . '.';
+        } elseif (stripos($cat, 'commemorative') !== false && stripos($comp, 'clad') !== false) {
+            $out .= ' ' . ucfirst(strtolower($comp)) . ' composition.';
+        }
+
+        // Packaging sentence expanded from the operator's Title Suffix.
+        $sfx = strtolower($g('title_suffix'));
+        if ($sfx !== '') {
+            if (strpos($sfx, 'no box') !== false) {
+                $out .= ' Coin only. Does not include any original packaging or a certificate of authenticity.';
+            } elseif (preg_match('/(box|packaging|ogp).*(coa|certificate)|(coa|certificate).*(box|packaging|ogp)/', $sfx)) {
+                $out .= ' Comes with the original government packaging, including a certificate of authenticity.';
+            } elseif (preg_match('/\b(box|ogp|government packaging|mint packaging)\b/', $sfx)) {
+                $out .= ' Comes with the original government packaging.';
+            }
+        }
+        return $out;
     }
 }
 
