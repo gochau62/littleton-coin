@@ -308,7 +308,8 @@ final class Computer
                 $keep = [];
                 foreach (array_slice(preg_split('/(?<=\.)\s+/', $curDesc), 1) as $s) {
                     $s = trim($s);
-                    if ($s === '' || preg_match('/^(Contains |Comes with|Coin only\.?$|Does not include|.*\bcomposition\.$)/i', $s)) { continue; }
+                    // Skip only the sentences the builder itself regenerates.
+                    if ($s === '' || preg_match('/^(Contains |.*\bcomposition\.$)/i', $s)) { continue; }
                     $keep[] = $s;
                 }
                 if ($keep) { $built .= ' ' . implode(' ', $keep); }
@@ -479,17 +480,6 @@ final class Computer
             $out .= ' ' . ucfirst(strtolower($comp)) . ' composition.';
         }
 
-        // Packaging sentence expanded from the operator's Title Suffix.
-        $sfx = strtolower($g('title_suffix'));
-        if ($sfx !== '') {
-            if (strpos($sfx, 'no box') !== false) {
-                $out .= ' Coin only. Does not include any original packaging or a certificate of authenticity.';
-            } elseif (preg_match('/(box|packaging|ogp).*(coa|certificate)|(coa|certificate).*(box|packaging|ogp)/', $sfx)) {
-                $out .= ' Comes with the original government packaging, including a certificate of authenticity.';
-            } elseif (preg_match('/\b(box|ogp|government packaging|mint packaging)\b/', $sfx)) {
-                $out .= ' Comes with the original government packaging.';
-            }
-        }
         return $out;
     }
 }
