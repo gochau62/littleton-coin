@@ -271,7 +271,9 @@ details.group summary::-webkit-details-marker { display:none; }
                 // Collapsible sections keep the big form uncluttered. Required
                 // fields (Sellbrite "mandatory for all") come from the schema;
                 // most auto-fill, so requiring them just flags what a listing needs.
-                $required = array_merge(Schema::requiredNames(), ['quantity', 'cost']);
+                // search_terms is starred because it is only VISIBLE for the
+                // markets where it is required (All / Amazon).
+                $required = array_merge(Schema::requiredNames(), ['quantity', 'cost', 'search_terms']);
                 $required = array_values(array_unique($required));
                 $sections = [
                     // Fields appear in the example workbook's column order; the
