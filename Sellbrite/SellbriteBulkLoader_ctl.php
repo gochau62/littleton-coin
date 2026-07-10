@@ -630,7 +630,18 @@
     /* Autofill button: pull full collectible + pricing from GreySheet and fill. */
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:$('#f_grade').val() || '' }, function(res){
+        // Every autofill starts CLEAN: wipe the product fields (keeping the
+        // operator's SKU, market and quantity) so nothing from a previous
+        // coin lingers when a new one is pulled.
+        var grade = $('#f_grade').val() || '';
+        var keep = ['sku', 'marketplace', 'quantity'];
+        $('#sku-form [data-name]').each(function(){
+            if (keep.indexOf(this.getAttribute('data-name')) < 0) this.value = '';
+        });
+        $('#sku-form .field').removeClass('is-ok is-error is-action');
+        $('#sku-form .field-msg').text('');
+        sblResetAutoBadges();
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:grade }, function(res){
             sblRenderCalls(res.calls, res.total_calls);
             sblRenderRaw(res.raw);
             sblGsHandle(res, $('#gs-coin').val());
