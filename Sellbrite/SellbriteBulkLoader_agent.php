@@ -549,8 +549,14 @@ function sbl_norm_category(string $gs): string
     if (preg_match('/platinum eagle/', $l))            { return 'Platinum Bullion Coin'; }
     if (preg_match('/palladium eagle/', $l))           { return 'Palladium Bullion Coin'; }
     if (preg_match('/america the beautiful.*5 oz/', $l)) { return 'Silver Bullion Coin'; }
+    // Store categories never carry dates: whatever we return, strip the
+    // "(2022-2025)" ranges and bare years GreySheet appends to series names.
+    $clean = preg_replace('/\((?:[^)]*\d{4}[^)]*)\)/u', ' ', $gs);          // "(1909-1958)", "(2022-Present)"
+    $clean = preg_replace('/\b\d{4}\s*[-\x{2013}]\s*(?:\d{2,4}|present|date)\b/iu', ' ', $clean);
+    $clean = trim(preg_replace('/\s+/', ' ', $clean), " -\t");
+    if ($clean === '') { $clean = trim($gs); }
     $cats = array_keys(Schema::lookups()['category_copy'] ?? []);
-    if (!$cats || trim($gs) === '') { return trim($gs); }
+    if (!$cats || trim($gs) === '') { return $clean; }
     $tok = static function (string $s): array {
         $s = strtolower(preg_replace('/\([^)]*\)/', ' ', $s));       // drop "(1909-1958)"
         $s = preg_replace('/[^a-z0-9 ]/', ' ', $s);
@@ -563,7 +569,7 @@ function sbl_norm_category(string $gs): string
         return $words;
     };
     $g = $tok($gs);
-    if (!$g) { return trim($gs); }
+    if (!$g) { return $clean; }
     $best = ''; $bestScore = 0.0;
     foreach ($cats as $cat) {
         $c = $tok($cat);
@@ -574,7 +580,7 @@ function sbl_norm_category(string $gs): string
         $score = ($inter / count($c)) * 0.7 + ($inter / count($g)) * 0.3;
         if ($score > $bestScore) { $bestScore = $score; $best = $cat; }
     }
-    return $bestScore >= 0.7 ? $best : trim($gs);
+    return $bestScore >= 0.7 ? $best : $clean;
 }
 /* Mint letter -> mint city (from the ODS Mint Location logic). */
 function sbl_mint_location(string $mm): string
