@@ -735,6 +735,12 @@ function gsMapToProduct(array $c): array
         foreach ($c['CatalogPath'] as $node) {
             if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
         }
+        // World trees name the country as the path's second node even when the
+        // CountryName attribute is blank: "World Coins > Austria > ...".
+        if (($row['country_of_manufacture'] ?? '') === '' && $isWorld && count($c['CatalogPath']) > 1) {
+            $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($c['CatalogPath'][1]['Name'] ?? '')));
+            if ($n !== '') { $row['country_of_manufacture'] = $n; }
+        }
     }
     // Category defaults from the ODS VLOOKUP: coin_type is authoritative here
     // ("Lincoln Wheat", "Morgan", "American Eagle"), plus denomination /
