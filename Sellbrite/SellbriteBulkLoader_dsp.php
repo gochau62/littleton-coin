@@ -341,7 +341,8 @@ details.group summary::-webkit-details-marker { display:none; }
                     $autoAlways = ['name','description','extended_description',
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',
                                    'search_terms','creation_date','condition','exact_image',
-                                   'country_of_manufacture','brand'];
+                                   'country_of_manufacture','brand',
+                                   'package_weight','package_height','package_length','package_width'];
                     // Operator-owned picks: still autofill, but no AUTO badge
                     // (original_retail has no autofill source at all).
                     $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];

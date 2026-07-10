@@ -229,10 +229,38 @@ final class Computer
             $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
         }
 
+        // Package weight, ported from Des's sheet formula: base coin/holder
+        // weight by store category (with her special cases), plus the
+        // certification packaging add-on. Sets stay manual (she weighs them).
         $weight = $g('package_weight');
-        if ($weight === '') {
-            $weight = self::lookupValue($meta['weight_lb'] ?? '', '');
-            if ($weight !== '') { $row['package_weight'] = $weight; }
+        $pw = $lookups['package_weights'] ?? [];
+        if ($weight === '' && $pw && $g('single_coin_or_set') !== 'Set') {
+            $isGsa = stripos($g('coin_variety_1'), 'GSA') !== false
+                  || stripos($g('coin_variety_2'), 'GSA') !== false;
+            $noBox = $g('title_suffix') === '' || strcasecmp($g('title_suffix'), 'No Box or COA') === 0;
+            $base  = null;
+            if ($category === 'Indian Head Small Cent' && stripos($g('composition'), 'Copper-Nickel') !== false) {
+                $base = $pw['alt_comp'][$category] ?? null;      // CN cents weigh more
+            }
+            if ($base === null && $noBox
+                && in_array($category, ['Silver Bullion Coin', 'Gold Bullion Coin',
+                                        'Platinum Bullion Coin', 'Palladium Bullion Coin'], true)) {
+                $base = $pw['bullion_content'][$g('precious_metal_content')] ?? null;
+            }
+            if ($base === null && $isGsa) { $base = $pw['gsa'][$g('title_suffix')] ?? null; }
+            if ($base === null && $noBox
+                && in_array($category, ['Modern Silver/Clad Commemorative', 'Classic Silver Commemorative'], true)) {
+                $base = $pw['commem_denom'][$g('denomination')] ?? null;
+            }
+            if ($base === null) { $base = $pw['category'][$category] ?? null; }
+            // Her sheet says "*** WEIGH ***" for unknown categories; we can do
+            // better - GreySheet's coin weight (troy oz) converted to pounds.
+            if ($base === null && is_numeric($g('weight'))) { $base = (float) $g('weight') * 0.0685714; }
+            if ($base !== null) {
+                $add = !$isGsa ? ($pw['certification'][$g('certification')] ?? 0) : 0;
+                $weight = (string) round($base + $add, 2);
+                $row['package_weight'] = $weight;
+            }
         }
         if (is_numeric($weight)) {
             $w = (float) $weight;
