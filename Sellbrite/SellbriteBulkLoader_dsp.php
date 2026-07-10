@@ -81,6 +81,8 @@ function dspBulkLoader(&$screenData)
                         font-family:inherit; padding:6px 2px; width:220px; }
 .tool-group .gs-dd { box-shadow:none; border-color:#dfe6e1; }
 .btn.btn-sm { padding:7px 16px; font-size:13px; }
+.btn-stack { display:inline-flex; flex-direction:column; gap:6px; }
+.btn-stack .btn { justify-content:center; }
 .export-group { border-color:#1e6e43; background:#eaf6ee; }
 .export-group .tg-lbl { color:#1e6e43; }
 .gs-dd { padding:9px 12px; border-radius:50px; border:2px solid #ccc; font-size:13px; background:#fff; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; max-width:170px; }
@@ -184,7 +186,10 @@ details.group summary::-webkit-details-marker { display:none; }
                 <button type="button" class="btn btn-ghost btn-sm" onclick="sblSearch()">Go</button>
             </span>
             <span class="spacer"></span>
-            <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
+            <span class="btn-stack">
+                <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
+            </span>
             <span class="tool-group export-group">
                 <span class="tg-lbl">Export</span>
                 <select id="export-market" class="gs-dd">
@@ -195,7 +200,6 @@ details.group summary::-webkit-details-marker { display:none; }
                 </select>
                 <button type="button" class="btn btn-green btn-sm" onclick="sblExport()">Download</button>
             </span>
-            <button type="button" class="btn btn-danger" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
         </div>
 
         <div id="list-empty" class="empty"<?= $skus ? ' style="display:none"' : '' ?>>No SKUs yet. Click <strong>+ New SKU</strong> to add the first one.</div>
