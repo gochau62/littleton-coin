@@ -65,10 +65,24 @@
         });
     }
 
+    /* Labels never wrap; shrink each one's font (down to 8.5px) until it fits
+       its column, so long names stay on one line at any width. */
+    function sblFitLabels(){
+        $('#sku-form .field > label').each(function(){
+            if (!this.offsetParent) return;            // hidden section - measure when opened
+            this.style.fontSize = '';
+            var size = 11.5;
+            while (this.scrollWidth > this.clientWidth && size > 8.5){
+                size -= 0.5; this.style.fontSize = size + 'px';
+            }
+        });
+    }
+
     /* ---- view switching ---- */
     function sblShow(view){
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
+        if (view === 'form') sblFitLabels();   // labels are measurable only once visible
     }
     function sblBackToList(){ sblShow('list'); }
     /* Export the market picked in the home-screen dropdown: only that market's
@@ -708,6 +722,12 @@
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();
         if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
+
+        // One-line labels: fit now, when a section opens, and on resize.
+        sblFitLabels();
+        $('#sku-form details.group').on('toggle', sblFitLabels);
+        var fitTimer = null;
+        $(window).on('resize', function(){ clearTimeout(fitTimer); fitTimer = setTimeout(sblFitLabels, 150); });
     });
 </script>
 
