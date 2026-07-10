@@ -617,7 +617,7 @@ function sbl_field_guide(): array
         'coin_variety_1' => ['src' => 'Variety'],
         'coin_variety_2' => ['src' => 'Variety2'],
         'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
-        'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'leave blank unless a graded example; the operator sets it'],
+        'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'autofilled from the pricing call\'s GradeLabel; the operator can override'],
         'strike_type'    => ['src' => 'StrikeType', 'opts' => $strike],
         'circulated_or_uncirculated' => ['desc' => 'Uncirculated for MS/PR/proof/BU/mint-state, Circulated otherwise', 'opts' => ['Circulated','Uncirculated']],
         'composition'    => ['src' => 'Composition', 'opts' => $comp],
@@ -1010,8 +1010,9 @@ function gsImport(array $params): array
                                    . ($price['GradeLabel'] ?? '' ? '  (' . $price['GradeLabel'] . ')' : ''))
                                 : 'no pricing (basic tier or none)'];
     if ($price) {
-        $coin['CpgVal']  = $price['CpgVal'] ?? '';
-        $coin['GreyVal'] = $price['GreyVal'] ?? '';
+        $coin['CpgVal']     = $price['CpgVal'] ?? '';
+        $coin['GreyVal']    = $price['GreyVal'] ?? '';
+        $coin['GradeLabel'] = $price['GradeLabel'] ?? '';
     }
 
     // LEARN: pull the house copy from a prior saved listing in this category.
@@ -1030,6 +1031,11 @@ function gsImport(array $params): array
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
+    // Pricing names the grade it priced (GradeLabel): autofill Grade with it,
+    // normalized to the house "MS 65" shape, unless the operator already chose.
+    if (($coin['GradeLabel'] ?? '') !== '' && ($row['grade'] ?? '') === '') {
+        $row['grade'] = preg_replace('/^([A-Za-z]{1,4})\s*-?\s*(\d)/', '$1 $2', trim((string) $coin['GradeLabel']));
+    }
     if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.', 'calls' => $calls]); }
     $out = gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map', $calls);
     $out['raw'] = ['collectible' => $rawCoin, 'pricing' => $price, 'facts_sent_to_ai' => gs_coin_facts($rawCoin)];
