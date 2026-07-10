@@ -386,9 +386,6 @@ details.group summary::-webkit-details-marker { display:none; }
     </div>
 </div>
 <script>
-/* Coin Type / Denomination valid values per Country of Manufacture - the
-   combo menus narrow to the chosen country (full list when none is set). */
-var SBL_COUNTRY_OPTS = <?= json_encode(Schema::countryFieldOptions()) ?>;
 /* Grade pools: the Grade menu offers coin vs paper-money grades, certified
    vs raw, based on the SKU's category and Certification. */
 var SBL_GRADE_POOLS = <?= json_encode(Schema::gradePools()) ?>;

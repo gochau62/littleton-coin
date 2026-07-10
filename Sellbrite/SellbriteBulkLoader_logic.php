@@ -61,7 +61,7 @@ final class Schema
         // Derived dropdowns: distinct values straight out of the embedded ODS
         // VLOOKUP table - nothing to hand-manage. Autofill can still land any
         // other value (the select gains its option on the fly).
-        static $vlookupKey = ['coin_type' => 'coin_type', 'denomination' => 'denomination',
+        static $vlookupKey = ['denomination' => 'denomination',
                               'composition' => 'composition', 'fineness' => 'fineness'];
         if (isset($vlookupKey[$col['dropdown']])) {
             $k = $vlookupKey[$col['dropdown']];
@@ -123,30 +123,6 @@ final class Schema
         $pools['coin_uncertified']  = array_merge($lead, $pools['coin_uncertified']);
         $pools['paper_uncertified'] = array_merge($lead, $pools['paper_uncertified']);
         return $pools;
-    }
-    /* Coin Type valid values grouped by Country of Manufacture (from the
-     * embedded VLOOKUP table). The form's combo menu narrows to the chosen
-     * country's list; no country (or an unknown one) shows everything.
-     * (Denomination is a plain GreySheet-filled text box - no menu.) */
-    public static function countryFieldOptions(): array
-    {
-        $out = ['coin_type' => []];
-        foreach (self::lookups()['category_copy'] ?? [] as $c) {
-            // Only foreign countries are stored; missing = United States.
-            $country = trim((string) ($c['country'] ?? '')) ?: 'United States';
-            foreach (array_keys($out) as $f) {
-                $v = trim((string) ($c[$f] ?? ''));
-                if ($v === '') { continue; }
-                if (!in_array($v, $out[$f][$country] ?? [], true)) { $out[$f][$country][] = $v; }
-            }
-        }
-        foreach ($out as $f => $byCountry) {
-            foreach ($byCountry as $k => $list) {
-                sort($list, SORT_NATURAL | SORT_FLAG_CASE);
-                $out[$f][$k] = $list;
-            }
-        }
-        return $out;
     }
     /* Fields required for EVERY listing - the Sellbrite export's peach
      * "Mandatory for all listings" group (plus Quantity/Cost from the inventory
@@ -249,7 +225,9 @@ final class Computer
         // country (US trees -> United States); world coins without one stay
         // blank for the operator's country dropdown.
         if ($g('brand') === '' && $copyVal('brand') !== '') { $row['brand'] = $copyVal('brand'); }
-        if ($g('coin_type') === '' && $copyVal('coin_type') !== '') { $row['coin_type'] = $copyVal('coin_type'); }
+        // Coin Type isn't hardcoded anywhere: the GreySheet series (= store
+        // category) names it; the operator refines when needed.
+        if ($g('coin_type') === '' && $category !== '') { $row['coin_type'] = $category; }
         if ($g('denomination') === '' && $copyVal('denomination') !== '') { $row['denomination'] = $copyVal('denomination'); }
 
         $grade = $g('grade');
@@ -257,33 +235,19 @@ final class Computer
             $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
         }
 
-        // Package weight, ported from Des's sheet formula: base coin/holder
-        // weight by store category (with her special cases), plus the
-        // certification packaging add-on. Sets stay manual (she weighs them).
+        // Package weight = the coin's own weight FROM GREYSHEET (troy oz ->
+        // pounds) plus the certification wrap/slab add-on; a GSA holder's
+        // table weight replaces both (holder includes the coin). Sets and
+        // coins GreySheet gave no weight for stay manual (weigh them).
         $weight = $g('package_weight');
         $pw = $lookups['package_weights'] ?? [];
-        if ($weight === '' && $pw && $g('single_coin_or_set') !== 'Set') {
+        if ($weight === '' && $g('single_coin_or_set') !== 'Set') {
             $isGsa = stripos($g('coin_variety_1'), 'GSA') !== false
                   || stripos($g('coin_variety_2'), 'GSA') !== false;
-            $noBox = $g('title_suffix') === '' || strcasecmp($g('title_suffix'), 'No Box or COA') === 0;
-            $base  = null;
-            if ($category === 'Indian Head Small Cent' && stripos($g('composition'), 'Copper-Nickel') !== false) {
-                $base = $pw['alt_comp'][$category] ?? null;      // CN cents weigh more
+            $base = $isGsa ? ($pw['gsa'][$g('title_suffix')] ?? null) : null;
+            if ($base === null && !$isGsa && is_numeric($g('weight'))) {
+                $base = (float) $g('weight') * 0.0685714;   // troy oz -> lb
             }
-            if ($base === null && $noBox
-                && in_array($category, ['Silver Bullion Coin', 'Gold Bullion Coin',
-                                        'Platinum Bullion Coin', 'Palladium Bullion Coin'], true)) {
-                $base = $pw['bullion_content'][$g('precious_metal_content')] ?? null;
-            }
-            if ($base === null && $isGsa) { $base = $pw['gsa'][$g('title_suffix')] ?? null; }
-            if ($base === null && $noBox
-                && in_array($category, ['Modern Silver/Clad Commemorative', 'Classic Silver Commemorative'], true)) {
-                $base = $pw['commem_denom'][$g('denomination')] ?? null;
-            }
-            if ($base === null) { $base = $pw['category'][$category] ?? null; }
-            // Her sheet says "*** WEIGH ***" for unknown categories; we can do
-            // better - GreySheet's coin weight (troy oz) converted to pounds.
-            if ($base === null && is_numeric($g('weight'))) { $base = (float) $g('weight') * 0.0685714; }
             if ($base !== null) {
                 $add = !$isGsa ? ($pw['certification'][$g('certification')] ?? 0) : 0;
                 $weight = (string) round($base + $add, 2);
