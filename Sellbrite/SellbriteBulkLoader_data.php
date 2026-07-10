@@ -179,11 +179,12 @@ return [
             'dropdown' => 'coin_type',
         ],
         [
+            // Plain text (no dropdown): GreySheet generates it - US short form
+            // ("1C", "$1") or the world coins' spoken form ("5 Euros").
             'name' => 'denomination',
             'label' => 'Denomination',
             'required' => false,
             'auto' => true,
-            'dropdown' => 'denomination',
         ],
         [
             'name' => 'coin_variety_1',
