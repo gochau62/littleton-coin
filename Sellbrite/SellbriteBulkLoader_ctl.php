@@ -477,6 +477,13 @@
                     var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
                 }
                 $('#f_category_name').val(cat).trigger('change');
+                // Country straight from the memory-table path:
+                // "World Coins > Austria > ..." names it; U.S. trees are US.
+                var seg = (sblCurPath || '').split(' > ');
+                var country = '';
+                if (/^world/i.test(seg[0] || '')) country = (seg[1] || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+                else if (/^u\.?s\.?/i.test(seg[0] || '')) country = 'United States';
+                if (country) $('#f_country_of_manufacture').val(country);
                 sblResetBelowSeries();
                 sblLoadYears();
                 $('#gs-year, #gs-coin').prop('disabled', false);
