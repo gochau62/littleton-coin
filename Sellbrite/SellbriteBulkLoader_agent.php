@@ -853,20 +853,11 @@ function sbl_snap_row(array $row): array
     }
     return $row;
 }
-/* $example is the most recent saved listing in this coin's category (see
- * sblCategoryExample) - the tool's learned house copy. Its category-level
- * fields are reused verbatim and its style is shown to the AI to mirror. */
-function gsAiMap(array $coin, array $example = []): array
+/* Gemini ALWAYS writes the category-level copy fresh from the GreySheet
+ * facts (GeneralNotes / obverse / reverse) - no saved-listing template. */
+function gsAiMap(array $coin): array
 {
     $base = gsMapToProduct($coin);   // trustworthy deterministic fields + ODS constants
-
-    // LEARN: reuse the category-level copy from a prior saved listing so every
-    // coin in a category matches, and each saved edit becomes the new template.
-    foreach (['extended_description', 'feature_4'] as $f) {
-        if (($base[$f] ?? '') === '' && trim((string) ($example[$f] ?? '')) !== '') {
-            $base[$f] = trim((string) $example[$f]);
-        }
-    }
     if (!geminiConfigured()) { return sbl_snap_row($base); }
 
     $sys = "You are the listing writer for Littleton Coin Company's Sellbrite coin listings. From the "
@@ -888,30 +879,17 @@ function gsAiMap(array $coin, array $example = []): array
          . "and distinct from extended_description; do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
          . "5. Do NOT fill feature_1, feature_2, feature_3 or feature_5 - the system derives them from the "
          . "description, condition, image line and company blurb.\n"
-         . "6. When a HOUSE EXAMPLE is given, reuse its extended_description and feature_4 wording for that "
-         . "category and match its style.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET COIN FACTS:\n"
           . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-    if ($example) {
-        $ex = [];
-        foreach (['category_name','coin_type','description','extended_description','feature_4','search_terms'] as $f) {
-            if (trim((string) ($example[$f] ?? '')) !== '') { $ex[$f] = $example[$f]; }
-        }
-        if ($ex) {
-            $user .= "\n\nHOUSE EXAMPLE (a saved listing in this same category - match its style, especially "
-                   . "description, extended_description and feature_4):\n"
-                   . json_encode($ex, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        }
-    }
     $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
 
     // Deterministic base wins; the AI only fills the gaps it left (e.g. coin_type).
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
 
-    // Expanded Description fallback: if it still has none (AI failed / 429 and no
-    // category example), use the GreySheet GeneralNotes cleaned up.
+    // Expanded Description fallback: if the AI failed (e.g. 429), use the
+    // GreySheet GeneralNotes cleaned up.
     if (trim((string) ($row['extended_description'] ?? '')) === '' && !empty($coin['GeneralNotes'])) {
         $notes = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $coin['GeneralNotes'])));
         $notes = trim(preg_replace('/\s+/', ' ', $notes));
@@ -941,16 +919,7 @@ function gsListingFill(array $post): array
     if (!$want) { return ['ok' => true, 'row' => [], 'via' => 'nothing empty', 'error' => '']; }
 
     $row = [];
-    // LEARN first: the newest saved listing in this category donates its
-    // category-level copy verbatim - consistent and free (no AI call).
-    $example = function_exists('sblCategoryExample') ? sblCategoryExample($post['category_name'] ?? '') : [];
-    foreach (['extended_description', 'feature_4'] as $f) {
-        if (in_array($f, $want, true) && trim((string) ($example[$f] ?? '')) !== '') {
-            $row[$f] = trim((string) $example[$f]);
-            $want = array_values(array_diff($want, [$f]));
-        }
-    }
-
+    // Gemini writes everything fresh - no saved-listing template.
     if ($want && geminiConfigured()) {
         $facts = [];
         foreach (['sku','category_name','name','coin_type','denomination','year','mint_mark','mint_location',
@@ -974,19 +943,10 @@ function gsListingFill(array $post): array
              . "category - no grade, date, mint or price.\n"
              . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level and "
              . "distinct from extended_description; do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
-             . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.\n"
-             . "6. When a HOUSE EXAMPLE is given, match its style and reuse its category-level wording.";
+             . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.";
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        $ex = [];
-        foreach (['category_name','description','extended_description','feature_4'] as $f) {
-            if (trim((string) ($example[$f] ?? '')) !== '') { $ex[$f] = $example[$f]; }
-        }
-        if ($ex) {
-            $user .= "\n\nHOUSE EXAMPLE (a saved listing in this same category):\n"
-                   . json_encode($ex, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        }
         $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
@@ -997,7 +957,7 @@ function gsListingFill(array $post): array
         $src = trim((string) ($row['extended_description'] ?? '')) ?: trim((string) ($post['extended_description'] ?? ''));
         if ($src !== '' && strncmp($src, '***', 3) !== 0) { $row['feature_4'] = mb_substr($src, 0, 1400); }
     }
-    $err = !$row && !geminiConfigured() ? 'GEMINI_API_KEY not set (add the secrets file) and no saved category example to learn from.' : '';
+    $err = !$row && !geminiConfigured() ? 'GEMINI_API_KEY not set (add the secrets file).' : '';
     return ['ok' => $err === '', 'row' => $row, 'via' => 'listing gap fill', 'error' => $err];
 }
 function gsSearch(string $q): array
@@ -1047,19 +1007,9 @@ function gsImport(array $params): array
         $coin['GradeLabel'] = $price['GradeLabel'] ?? '';
     }
 
-    // LEARN: pull the house copy from a prior saved listing in this category.
-    $exCat = '';
-    if (!empty($coin['CatalogPath']) && is_array($coin['CatalogPath'])) {
-        $last  = end($coin['CatalogPath']);
-        $exCat = is_array($last) ? trim((string) ($last['Name'] ?? '')) : '';
-    }
-    $example = function_exists('sblCategoryExample') ? sblCategoryExample($exCat) : [];
-    if ($example) {
-        $calls[] = ['call' => 'Category memory', 'got' => 'reused house copy from a saved "' . $exCat
-                    . '" listing (#' . ($example['id'] ?? '?') . ')'];
-    }
-
-    $row = gsAiMap($coin, $example);
+    // Gemini writes the category-level copy fresh from the GreySheet notes
+    // every time - no saved-listing template.
+    $row = gsAiMap($coin);
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
