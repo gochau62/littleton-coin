@@ -499,14 +499,11 @@
             minLength: 0, delay: 0,
             source: function(req, resp){
                 var t = (req.term || '').trim();
-                // Default state is every year; picking "All years" restores it.
-                if (!t || t.toLowerCase() === 'all years'){ resp(['All years'].concat(sblYearList)); return; }
-                resp($.grep(sblYearList, function(y){ return y.indexOf(t) !== -1; }));
+                resp($.grep(sblYearList, function(y){ return !t || y.indexOf(t) !== -1; }));
             },
             select: function(e, ui){
-                var all = ui.item.value === 'All years';
-                $('#gs-year').data('sblPicked', 1).val(all ? '' : ui.item.value).autocomplete('close');
-                sblYearPicked(all ? '' : String(ui.item.value));
+                $('#gs-year').data('sblPicked', 1).val(ui.item.value).autocomplete('close');
+                sblYearPicked(String(ui.item.value));
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
                 return false;
             }
@@ -542,8 +539,6 @@
             select: function(e, ui){
                 sblPendingGsId = ui.item.gs_id;
                 $('#gs-coin').data('sblPicked', 1).val(ui.item.display || ui.item.label).autocomplete('close');
-                // Coin picked without narrowing the year: say so explicitly.
-                if (!sblCurYear) $('#gs-year').val('All years');
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
                 return false;
