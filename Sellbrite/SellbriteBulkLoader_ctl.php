@@ -312,6 +312,15 @@
     /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
     var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
 
+    /* Store categories never carry dates - drop "(2022-2025)" style ranges
+       and bare year ranges from a GreySheet series name. */
+    function sblCleanCategory(name){
+        return String(name || '')
+            .replace(/\([^)]*\d{4}[^)]*\)/g, ' ')
+            .replace(/\b\d{4}\s*[-–]\s*(?:\d{2,4}|present|date)\b/gi, ' ')
+            .replace(/\s+/g, ' ').replace(/^[\s-]+|[\s-]+$/g, '');
+    }
+
     /* Auto fields that get the blue "AUTO" preview when a coin is picked.
        SKU/Price/Quantity/Cost are excluded - they're the required fields the
        operator confirms (autofill still suggests price/cost). */
@@ -459,11 +468,15 @@
             select: function(e, ui){
                 sblCurPath = ui.item.path || '';
                 $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
+                // SKU of Parent Product never carries dates: strip GreySheet's
+                // "(2022-2025)" ranges right when the series is picked (the
+                // Autofill later swaps in the exact store category anyway).
+                var cat = sblCleanCategory(ui.item.value);
                 var cel = document.getElementById('f_category_name');
-                if (cel && cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(ui.item.value) + '"]')){
-                    var co = document.createElement('option'); co.value = co.textContent = ui.item.value; cel.appendChild(co);
+                if (cel && cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(cat) + '"]')){
+                    var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
                 }
-                $('#f_category_name').val(ui.item.value).trigger('change');
+                $('#f_category_name').val(cat).trigger('change');
                 sblResetBelowSeries();
                 sblLoadYears();
                 $('#gs-year, #gs-coin').prop('disabled', false);
