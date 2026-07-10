@@ -84,7 +84,9 @@ final class Schema
                               'Satin', 'Specimen', 'Proof', 'Brilliant Proof', 'Reverse Proof', 'Satin Proof'],
             'certification' => ['Uncertified', 'ANACS', 'CAC', 'ICG', 'NGC', 'NGC & CAC', 'PCGS', 'PCGS & CAC',
                                 'U.S. Mint', 'PCGS Banknote Grading', 'PCGS Currency', 'PMG', 'Legacy Currency Grading'],
-            'mint_mark' => ['No Mint Mark', 'C', 'CC', 'D', 'O', 'P', 'S', 'W', 'M', 'Various Mint Marks'],
+            'mint_mark' => ['No Mint Mark', 'CC', 'D', 'D/D', 'D/S', 'Mo', 'O', 'O/CC', 'O/O', 'O/S',
+                            'P', 'P, D', 'P, D, S', 'P, D, S, W', 'P, D, W', 'P, S', 'P, S, W', 'P, W',
+                            'S', 'S, W', 'S/S', 'W', 'Various Mint Marks'],
             'mint_location' => ['Philadelphia', 'Denver', 'San Francisco', 'West Point', 'Carson City',
                                 'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
         ];
@@ -360,7 +362,7 @@ final class Validator
         // Mandatory-for-coins: the coin block's core fields are required for
         // coin listings (not paper money / other product types).
         if (!$isPaper && !$isOther) {
-            foreach (['coin_type', 'denomination', 'year', 'mint_mark', 'mint_location',
+            foreach (['coin_type', 'denomination', 'year', 'mint_mark',
                       'grade', 'circulated_or_uncirculated', 'strike_type', 'certification',
                       'composition', 'single_coin_or_set'] as $cf) { $required[$cf] = true; }
         }
