@@ -34,8 +34,9 @@ function dspBulkLoader(&$screenData)
         $da = ' data-name="' . sbl_e($name) . '"' . ($auto ? ' data-auto="1"' : '') . ($req ? ' data-required="1"' : '');
         if ($opts) {
             // Combo box: searchable suggestions from the valid values, but the
-            // operator can also type any value manually.
-            $h .= '<input type="text" id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '"'
+            // operator can also type any value manually. .has-menu paints the
+            // caret so these read as dropdowns, not plain text boxes.
+            $h .= '<input type="text" id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '" class="has-menu"'
                 . ' list="dl_' . sbl_e($name) . '" value=""' . $da . '>';
             $h .= '<datalist id="dl_' . sbl_e($name) . '">';
             foreach ($opts as $o) {
@@ -141,6 +142,10 @@ details.group summary::-webkit-details-marker { display:none; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
+/* Valid-values combo boxes show a caret so users know a menu opens on click. */
+.field input.has-menu { padding-right:30px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6b62'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 11px center; }
 /* Auto-filled inputs stay the normal grey box - only the blue AUTO badge on
    the label marks them. Required fields go red via .is-error when empty. */
 .badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
@@ -339,13 +344,15 @@ details.group summary::-webkit-details-marker { display:none; }
                     // Operator-owned picks: still autofill, but no AUTO badge
                     // (original_retail has no autofill source at all).
                     $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
+                    // Fully manual: no badge AND no formula refresh.
+                    $manualAlways = ['title_suffix', 'certification_number'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
                         $col['required'] = in_array($n, $required, true);
                         // Product images are manual (operator pastes real photo URLs);
                         // other sections are auto unless required-and-operator-owned.
-                        $col['auto'] = !empty($sec['images']) ? false
+                        $col['auto'] = !empty($sec['images']) || in_array($n, $manualAlways, true) ? false
                             : (!$manual && (!$col['required'] || in_array($n, $autoAlways, true)));
                         $col['nobadge'] = in_array($n, $noBadge, true);
                         echo $renderField($col);
