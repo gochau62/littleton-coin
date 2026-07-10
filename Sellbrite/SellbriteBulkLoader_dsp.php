@@ -146,6 +146,7 @@ details.group summary::-webkit-details-marker { display:none; }
 .badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
 .genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
+#genai-btn { font-size:13.5px; padding:9px 22px; }
 #genai-msg { font-size:11px; color:#5f6b62; }
 .field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#e0a800; background:#fffaf0; } .field.is-action .field-msg { color:#9a6a14; }
