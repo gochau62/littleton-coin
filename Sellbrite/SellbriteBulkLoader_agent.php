@@ -613,7 +613,7 @@ function sbl_field_guide(): array
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
-        'denomination'   => ['src' => 'DenominationShort', 'desc' => 'face value, e.g. 1C, 5C, 10C, 25C, 50C, $1'],
+        'denomination'   => ['src' => 'DenominationShort (US) / DenominationLong (world)', 'desc' => 'face value, e.g. 1C, 50C, $1 for US; "5 Euros" spoken form for world coins'],
         'coin_variety_1' => ['src' => 'Variety'],
         'coin_variety_2' => ['src' => 'Variety2'],
         'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
@@ -657,10 +657,11 @@ function gsMapToProduct(array $c): array
     $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
     // Paper money (U.S./World Currency trees): the coin-only fields (mint mark
     // and location) are never stamped onto a note.
-    $isPaper = false;
+    $isPaper = false; $isWorld = false;
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $rootName = strtolower((string) (($c['CatalogPath'][0]['Name'] ?? '')));
         $isPaper  = strpos($rootName, 'currency') !== false;
+        $isWorld  = strpos($rootName, 'world') !== false;
     }
     $row = [];
     if (preg_match('/\d{4}/', $g('CoinDate'), $m)) { $row['year'] = $m[0]; }
@@ -669,7 +670,11 @@ function gsMapToProduct(array $c): array
         $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
         $row['mint_location'] = sbl_mint_location($mm);
     }
-    if ($g('DenominationShort') !== '') { $row['denomination']   = $g('DenominationShort'); }
+    // World coins list the spoken face value ("5 Euros") - the short form's
+    // leading S/G/P is a metal prefix ("S€5" = silver €5), not the value.
+    // U.S. coins keep the house short form ("1C", "50C", "$1").
+    if ($isWorld && $g('DenominationLong') !== '') { $row['denomination'] = $g('DenominationLong'); }
+    elseif ($g('DenominationShort') !== '')        { $row['denomination'] = $g('DenominationShort'); }
     if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
     // Designation abbreviation (Des): the special strike/color designation only -
@@ -725,7 +730,11 @@ function gsMapToProduct(array $c): array
         // coin_type and denomination use the HOUSE values ("Lincoln Wheat", "1C");
         // composition/fineness/country only fill gaps GreySheet left.
         if (!empty($vc['coin_type']))    { $row['coin_type']    = $vc['coin_type']; }
-        if (!empty($vc['denomination'])) { $row['denomination'] = $vc['denomination']; }
+        // World coins keep GreySheet's spoken denomination; the house short
+        // form only fills a gap there.
+        if (!empty($vc['denomination']) && (!$isWorld || ($row['denomination'] ?? '') === '')) {
+            $row['denomination'] = $vc['denomination'];
+        }
         foreach (['composition' => 'composition', 'fineness' => 'fineness',
                   'country' => 'country_of_manufacture'] as $vk => $f) {
             if (!empty($vc[$vk]) && ($row[$f] ?? '') === '') { $row[$f] = $vc[$vk]; }
