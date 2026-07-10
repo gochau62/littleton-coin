@@ -83,6 +83,7 @@ function dspBulkLoader(&$screenData)
 .btn.btn-sm { padding:7px 16px; font-size:13px; }
 .btn-stack { display:inline-flex; flex-direction:column; gap:6px; }
 .btn-stack .btn { justify-content:center; }
+.tool-stack { display:inline-flex; flex-direction:column; gap:8px; align-items:flex-start; }
 .export-group { border-color:#1e6e43; background:#eaf6ee; }
 .export-group .tg-lbl { color:#1e6e43; }
 .gs-dd { padding:9px 12px; border-radius:50px; border:2px solid #ccc; font-size:13px; background:#fff; box-shadow:0 4px 8px rgba(0,0,0,.1); outline:none; max-width:170px; }
@@ -179,26 +180,28 @@ details.group summary::-webkit-details-marker { display:none; }
     <!-- ============ INVENTORY VIEW ============ -->
     <div id="listView">
         <div class="sbl-tools">
-            <span class="tool-group">
-                <span class="tg-lbl">Search</span>
-                <input type="search" id="sbl-search" class="tg-input" placeholder="SKU, category or title&hellip;"
-                       onkeyup="if(event.key==='Enter'){sblSearch();}">
-                <button type="button" class="btn btn-ghost btn-sm" onclick="sblSearch()">Go</button>
+            <span class="tool-stack">
+                <span class="tool-group">
+                    <span class="tg-lbl">Search</span>
+                    <input type="search" id="sbl-search" class="tg-input" placeholder="SKU, category or title&hellip;"
+                           onkeyup="if(event.key==='Enter'){sblSearch();}">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="sblSearch()">Go</button>
+                </span>
+                <span class="tool-group export-group">
+                    <span class="tg-lbl">Export</span>
+                    <select id="export-market" class="gs-dd">
+                        <option value="">All markets</option>
+                        <option value="amazon">Amazon</option>
+                        <option value="ebay">eBay</option>
+                        <option value="walmart">Walmart</option>
+                    </select>
+                    <button type="button" class="btn btn-green btn-sm" onclick="sblExport()">Download</button>
+                </span>
             </span>
             <span class="spacer"></span>
             <span class="btn-stack">
                 <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
-            </span>
-            <span class="tool-group export-group">
-                <span class="tg-lbl">Export</span>
-                <select id="export-market" class="gs-dd">
-                    <option value="">All markets</option>
-                    <option value="amazon">Amazon</option>
-                    <option value="ebay">eBay</option>
-                    <option value="walmart">Walmart</option>
-                </select>
-                <button type="button" class="btn btn-green btn-sm" onclick="sblExport()">Download</button>
             </span>
         </div>
 
