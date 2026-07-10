@@ -66,16 +66,22 @@
     }
 
     /* Labels never wrap; shrink each one's font (down to 8.5px) until it fits
-       its column, so long names stay on one line at any width. */
+       its column. ALL sections are measured in one pass (closed ones are
+       opened invisibly for the measurement, before the browser paints), so
+       expanding a section later never re-sizes anything. */
     function sblFitLabels(){
+        var closed = $('#sku-form details.group:not([open])').get();
+        closed.forEach(function(d){ d.setAttribute('open', ''); d.style.visibility = 'hidden'; });
         $('#sku-form .field > label').each(function(){
-            if (!this.offsetParent) return;            // hidden section - measure when opened
             this.style.fontSize = '';
             var size = 11.5;
+            // While the form view itself is hidden this measures 0/0 and
+            // no-ops; sblShow('form') re-fits once visible.
             while (this.scrollWidth > this.clientWidth && size > 8.5){
                 size -= 0.5; this.style.fontSize = size + 'px';
             }
         });
+        closed.forEach(function(d){ d.removeAttribute('open'); d.style.visibility = ''; });
     }
 
     /* ---- view switching ---- */
@@ -723,9 +729,9 @@
         sblLoadRoots();
         if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
 
-        // One-line labels: fit now, when a section opens, and on resize.
+        // One-line labels: every section is fitted up front, so opening one
+        // later shifts nothing. Only a real window resize re-fits.
         sblFitLabels();
-        $('#sku-form details.group').on('toggle', sblFitLabels);
         var fitTimer = null;
         $(window).on('resize', function(){ clearTimeout(fitTimer); fitTimer = setTimeout(sblFitLabels, 150); });
     });

@@ -55,6 +55,9 @@ function dspBulkLoader(&$screenData)
     ?>
 <style>
 /* ----- green work area + components (shell header/footer come from LCC) ----- */
+/* Always reserve the scrollbar gutter so opening a section (page grows
+   taller) doesn't shift the layout sideways. */
+html { overflow-y:scroll; }
 #stdPage { background:#CCFFCC; padding:18px 26px 28px; font-family:Arial,Helvetica,sans-serif; color:#222; }
 #stdPage h1 { font-size:1.3rem; letter-spacing:1px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 14px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #a9e2a9; }
