@@ -624,7 +624,7 @@ function sbl_field_guide(): array
         'fineness'       => ['src' => 'Fineness', 'desc' => 'decimal purity, e.g. 0.9, 0.999'],
         'single_coin_or_set' => ['src' => 'IsSet', 'opts' => ['Single Coin','Set'], 'const' => 'Single Coin'],
         'set_count'      => ['desc' => 'number of coins ONLY when a set; blank for single coins'],
-        'bullion_shape'  => ['opts' => ['Bar','Round'], 'desc' => 'bullion categories only; blank otherwise'],
+        'bullion_shape'  => ['src' => 'CoinShape', 'opts' => ['Bar','Round'], 'desc' => 'GreySheet CoinShape; bullion categories only, blank otherwise'],
         'coin_design'    => ['opts' => ['Shield-Type Cob','Pillars-Type Cob','Milled-Pillar Type','Milled-Bust Type'],
                              'desc' => 'Spanish colonial cob/milled coinage only; blank otherwise'],
         'paper_money_type' => ['src' => 'catalog path', 'desc' => 'paper money ONLY (e.g. Banknotes, Replacement Notes); blank for coins',
@@ -682,6 +682,8 @@ function gsMapToProduct(array $c): array
     if ($g('Fineness')    !== '')       { $row['fineness']    = $g('Fineness'); }
     // Added per Des: diameter (mm) and weight (troy oz) straight from GreySheet.
     if ($g('Diameter') !== '')          { $row['diameter']    = $g('Diameter'); }
+    // GreySheet CoinShape = Sellbrite Bullion Shape.
+    if ($g('CoinShape') !== '')         { $row['bullion_shape'] = $g('CoinShape'); }
     if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces'])) {
         $row['weight'] = rtrim(rtrim(number_format((float) $c['WeightOunces'], 4, '.', ''), '0'), '.');
     }
