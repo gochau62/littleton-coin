@@ -263,7 +263,7 @@ details.group summary::-webkit-details-marker { display:none; }
             <input type="text" id="gs-series" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="2. Series" disabled>
             <input type="text" id="gs-year" class="sbl-search gs-year" autocomplete="off"
-                   placeholder="3. All years" disabled>
+                   placeholder="3. Years" disabled>
             <input type="text" id="gs-coin" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="4. Coin" disabled>
             <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled

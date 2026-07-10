@@ -542,6 +542,8 @@
             select: function(e, ui){
                 sblPendingGsId = ui.item.gs_id;
                 $('#gs-coin').data('sblPicked', 1).val(ui.item.display || ui.item.label).autocomplete('close');
+                // Coin picked without narrowing the year: say so explicitly.
+                if (!sblCurYear) $('#gs-year').val('All years');
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
                 return false;
