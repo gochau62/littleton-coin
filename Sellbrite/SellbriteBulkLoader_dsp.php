@@ -55,9 +55,6 @@ function dspBulkLoader(&$screenData)
     ?>
 <style>
 /* ----- green work area + components (shell header/footer come from LCC) ----- */
-/* Always reserve the scrollbar gutter so opening a section (page grows
-   taller) doesn't shift the layout sideways. */
-html { overflow-y:scroll; }
 #stdPage { background:#CCFFCC; padding:18px 26px 28px; font-family:Arial,Helvetica,sans-serif; color:#222; }
 #stdPage h1 { font-size:1.3rem; letter-spacing:1px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 14px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #a9e2a9; }
@@ -129,10 +126,7 @@ table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:
 .mini:hover{ color:#007bff; border-color:#007bff; } .mini.danger:hover{ color:#fff; background:#cd0a0a; border-color:#cd0a0a; }
 .empty { text-align:center; padding:40px; color:#5f6b62; }
 /* form */
-/* minmax(0,..) pins the column widths: a section's CONTENT can never widen
-   the form column, so opening a collapsed section leaves every other
-   section's width exactly as it was. */
-.editor { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start; margin-top:6px; }
+.editor { display:grid; grid-template-columns:1fr 300px; gap:20px; align-items:start; margin-top:6px; }
 .form-col { display:flex; flex-direction:column; gap:14px; }
 .card { background:#fff; border:1px solid #b4b4b4; border-radius:8px; padding:16px; }
 fieldset.group, details.group { border:1px solid #b4b4b4; border-radius:8px; }
@@ -142,8 +136,7 @@ details.group summary { cursor:pointer; color:#1e6e43; list-style:none; user-sel
 details.group summary::before { content:'\25B8'; display:inline-block; margin-right:6px; transition:transform .15s; }
 details.group[open] summary::before { transform:rotate(90deg); }
 details.group summary::-webkit-details-marker { display:none; }
-.field-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 16px; margin-top:10px; }
-.field { min-width:0; }
+.field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:10px; }
 .field { display:flex; flex-direction:column; gap:4px; }
 /* One-line labels: never wrap; sblFitLabels() shrinks each label's font just
    enough to fit its column. Box sizing/spacing unchanged. */
