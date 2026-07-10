@@ -320,8 +320,9 @@ details.group summary::-webkit-details-marker { display:none; }
                         // Gemini fills ONLY the empty Description / Extended
                         // Description / Feature 4 - never anything typed.
                         echo '<div class="genai-row"><button type="button" class="mini" id="genai-btn" '
-                           . 'onclick="sblListingGenerate()">Write empty fields with AI '
-                           . '(Description &middot; Extended Description &middot; Feature 4)</button>'
+                           . 'onclick="sblListingGenerate()" title="Fills only the empty Description, '
+                           . 'Extended Description and Feature 4 - never overwrites typed text">'
+                           . 'Generate Product details with AI</button>'
                            . '<span id="genai-msg"></span></div>';
                     }
                     echo '<div class="field-grid">';
