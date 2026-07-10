@@ -98,6 +98,28 @@ final class Schema
         if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
     }
+    /* The grade list split into its "---" sections, so the Grade menu only
+     * offers what fits the SKU: coin vs paper money, certified vs raw.
+     * (Ungraded/Various Grades lead both uncertified pools.) */
+    public static function gradePools(): array
+    {
+        $pools = ['coin_uncertified' => [], 'coin_certified' => [],
+                  'paper_uncertified' => [], 'paper_certified' => []];
+        $map = ['--- UNCERTIED US COINS ---' => 'coin_uncertified',
+                '--- CERTIFIED COINS ---' => 'coin_certified',
+                '--- UNCERTIFIED PAPER MONEY ---' => 'paper_uncertified',
+                '--- CERTIFIED PAPER MONEY ---' => 'paper_certified'];
+        $cur = null; $lead = [];
+        foreach (self::values()['grade'] ?? [] as $v) {
+            if (isset($map[$v])) { $cur = $map[$v]; continue; }
+            if (strpos($v, '---') === 0) { $cur = null; continue; }   // unknown section
+            if ($cur === null) { $lead[] = $v; continue; }            // Ungraded / Various Grades
+            $pools[$cur][] = $v;
+        }
+        $pools['coin_uncertified']  = array_merge($lead, $pools['coin_uncertified']);
+        $pools['paper_uncertified'] = array_merge($lead, $pools['paper_uncertified']);
+        return $pools;
+    }
     /* Coin Type valid values grouped by Country of Manufacture (from the
      * embedded VLOOKUP table). The form's combo menu narrows to the chosen
      * country's list; no country (or an unknown one) shows everything.
@@ -342,6 +364,8 @@ final class Computer
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
             $g('category_name'),
+            $g('coin_variety_1'),   // the distinguishing issue ("Anna May Wong")
+            $g('coin_variety_2'),
             $g('denomination'),
             $g('grade') !== '' && $g('grade') !== 'Ungraded' ? $g('grade') : '',
             $g('certification') !== '' && $g('certification') !== 'Uncertified' ? $g('certification') : '',
@@ -362,6 +386,8 @@ final class Computer
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
             $g('coin_type') !== '' ? $g('coin_type') : $g('category_name'),
+            $g('coin_variety_1'),   // "Anna May Wong" - carries into the DETAILS bullet
+            $g('coin_variety_2'),
             $g('denomination'),
         ]))));
         $d = 'A genuine ' . $specs . ' Coin';

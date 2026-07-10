@@ -119,8 +119,7 @@ return [
         '8', '8 Details', '10', '10 Details', '12', '12 Details', '15', '15 Details', '20', '20 Details',
         '25', '25 Details', '30', '30 Details', '35', '35 Details', '40', '40 Details', '45', '45 Details',
         '50', '50 Details', '53', '53 Details', '55', '55 Details', '58', '58 Details', '60', '60 Details',
-        '61', '62', '63', '64', '65', '66', '67', '68', '69', '70', '--- ANCIENTS ---', 'Choice Fine',
-        'Choice Very Fine', 'Choice Extremely Fine', 'Choice Mint State',
+        '61', '62', '63', '64', '65', '66', '67', '68', '69', '70',
     ],
     // Paper Money Type (currency SKUs only).
     'paper_money_type' => [
