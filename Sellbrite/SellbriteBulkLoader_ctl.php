@@ -499,11 +499,14 @@
             minLength: 0, delay: 0,
             source: function(req, resp){
                 var t = (req.term || '').trim();
-                resp($.grep(sblYearList, function(y){ return !t || y.indexOf(t) !== -1; }));
+                // Default state is every year; picking "All years" restores it.
+                if (!t || t.toLowerCase() === 'all years'){ resp(['All years'].concat(sblYearList)); return; }
+                resp($.grep(sblYearList, function(y){ return y.indexOf(t) !== -1; }));
             },
             select: function(e, ui){
-                $('#gs-year').data('sblPicked', 1).val(ui.item.value).autocomplete('close');
-                sblYearPicked(String(ui.item.value));
+                var all = ui.item.value === 'All years';
+                $('#gs-year').data('sblPicked', 1).val(all ? '' : ui.item.value).autocomplete('close');
+                sblYearPicked(all ? '' : String(ui.item.value));
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
                 return false;
             }
