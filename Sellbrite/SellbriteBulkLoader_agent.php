@@ -774,7 +774,11 @@ function gsMapToProduct(array $c): array
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
     $row['certification'] = 'Uncertified';
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
-    if (($row['country_of_manufacture'] ?? '') === '') { $row['country_of_manufacture'] = 'United States'; }
+    // United States only for the U.S. trees; a world coin whose path didn't
+    // name a country stays blank for the operator's dropdown pick.
+    if (($row['country_of_manufacture'] ?? '') === '' && !$isWorld) {
+        $row['country_of_manufacture'] = 'United States';
+    }
     return array_filter($row, static fn($v) => $v !== '' && $v !== null);
 }
 /* Compact, populated-only view of the coin for the AI prompt (drops the ~55
