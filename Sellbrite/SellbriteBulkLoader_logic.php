@@ -129,10 +129,10 @@ final class Schema
      * extra image slots are left off (the workbook itself makes them optional). */
     public static function requiredNames(): array
     {
-        // Coin details keeps ONLY SKU / SKU of Parent Product / Cost / Quantity
-        // required; every other coin-details box is optional. The other
-        // sections (listing copy, packaging, images) keep their requirements.
-        return ['sku', 'category_name', 'name', 'description', 'extended_description',
+        // Coin details keeps ONLY SKU / SKU of Parent Product / Price / Cost /
+        // Quantity required; every other coin-details box is optional. The
+        // other sections (listing copy, packaging, images) keep theirs.
+        return ['sku', 'category_name', 'price', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'quantity', 'cost'];
