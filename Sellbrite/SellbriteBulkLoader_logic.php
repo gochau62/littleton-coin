@@ -271,8 +271,12 @@ final class Computer
         if (stripos($sku, '.WS') !== false && $g('price') !== '') { $row['original_retail'] = $g('price'); }
 
         $row['name'] = self::buildTitle($row);
-        // Keep an author-supplied (e.g. AI) description; only build one if empty.
-        if (trim((string) ($row['description'] ?? '')) === '') {
+        // The description REBUILDS while it still has the standard house shape
+        // ("A genuine ..."), so editing the coin (year, grade, mint...) keeps
+        // the copy - and the DETAILS bullet below - in sync. A hand-written
+        // description that abandons the house shape is never touched.
+        $curDesc = trim((string) ($row['description'] ?? ''));
+        if ($curDesc === '' || preg_match('/^A genuine\b/i', $curDesc)) {
             $row['description'] = self::buildDescription($row, $copy);
         }
 
