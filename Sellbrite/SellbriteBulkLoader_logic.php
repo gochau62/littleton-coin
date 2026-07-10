@@ -62,8 +62,7 @@ final class Schema
         // VLOOKUP table - nothing to hand-manage. Autofill can still land any
         // other value (the select gains its option on the fly).
         static $vlookupKey = ['coin_type' => 'coin_type', 'denomination' => 'denomination',
-                              'composition' => 'composition', 'fineness' => 'fineness',
-                              'country_of_manufacture' => 'country'];
+                              'composition' => 'composition', 'fineness' => 'fineness'];
         if (isset($vlookupKey[$col['dropdown']])) {
             $k = $vlookupKey[$col['dropdown']];
             $out = [];
@@ -72,8 +71,6 @@ final class Schema
                 if ($v !== '' && !in_array($v, $out, true)) { $out[] = $v; }
             }
             sort($out, SORT_NATURAL | SORT_FLAG_CASE);
-            // Only FOREIGN countries are stored (US is the default everywhere).
-            if ($k === 'country') { array_unshift($out, 'United States'); }
             return $out;
         }
         // Small fixed vocabularies for the other GreySheet-autofilled fields
@@ -91,6 +88,11 @@ final class Schema
                             'S', 'S, W', 'S/S', 'W', 'Various Mint Marks'],
             'mint_location' => ['Philadelphia', 'Denver', 'San Francisco', 'West Point', 'Carson City',
                                 'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
+            // Country autofills from the drill-down / GreySheet path; this
+            // list is just the combo menu for manual entries.
+            'country_of_manufacture' => ['United States', 'Australia', 'Austria', 'Canada', 'China',
+                                'France', 'Germany', 'India', 'Indonesia', 'Isle of Man', 'Italy',
+                                'Japan', 'Mexico', 'Russia', 'South Africa', 'Sweden', 'United Kingdom'],
         ];
         if (isset($small[$col['dropdown']])) { return $small[$col['dropdown']]; }
         return self::values()[$col['dropdown']] ?? [];
