@@ -138,9 +138,8 @@ details.group[open] summary::before { transform:rotate(90deg); }
 details.group summary::-webkit-details-marker { display:none; }
 .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:10px; }
 .field { display:flex; flex-direction:column; gap:4px; }
-/* 11px keeps long labels ("SKU of Parent Product", "Total Precious Metal
-   Content") on one line; nothing else about the layout is touched. */
-.field label { font-size:11px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
+/* Small label text so even the longest names stay on one line. */
+.field label { font-size:8px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
