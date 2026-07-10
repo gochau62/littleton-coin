@@ -615,7 +615,7 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
-        'coin_type'      => ['src' => 'store category (VLOOKUP)', 'desc' => 'work out what the actual parent product/series is, then pick the CLOSEST option from the list, e.g. "Lincoln Wheat" (never just "Lincoln"), "Morgan", "American Eagle", "American Women"; commemoratives use "Commemorative"'],
+        'coin_type'      => ['src' => 'GreySheet series', 'desc' => 'the series/type from the GreySheet catalog path, e.g. "Morgan Dollar", "Lincoln Wheat Small Cent" - never just "Lincoln"'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
@@ -742,14 +742,11 @@ function gsMapToProduct(array $c): array
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
     }
-    // Category defaults from the ODS VLOOKUP: coin_type is authoritative here
-    // ("Lincoln Wheat", "Morgan", "American Eagle"), plus denomination /
-    // composition / fineness / country when GreySheet left them blank.
+    // Category defaults from the ODS VLOOKUP: denomination / composition /
+    // fineness fill the gaps GreySheet left. Coin Type is NOT hardcoded -
+    // the series / store category names it (Computer fills it when empty).
     $vc = Schema::lookups()['category_copy'][$row['category_name'] ?? ''] ?? [];
     if ($vc) {
-        // coin_type and denomination use the HOUSE values ("Lincoln Wheat", "1C");
-        // composition/fineness/country only fill gaps GreySheet left.
-        if (!empty($vc['coin_type']))    { $row['coin_type']    = $vc['coin_type']; }
         // World coins keep GreySheet's spoken denomination; the house short
         // form only fills a gap there.
         if (!empty($vc['denomination']) && (!$isWorld || ($row['denomination'] ?? '') === '')) {

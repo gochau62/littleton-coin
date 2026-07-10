@@ -586,13 +586,6 @@
                 source: function(req, resp){
                     var t = (req.term || '').toLowerCase();
                     var pool = opts;
-                    // Coin Type narrows to the chosen country's valid values;
-                    // unknown/blank country keeps the full list.
-                    if (typeof SBL_COUNTRY_OPTS !== 'undefined' && SBL_COUNTRY_OPTS[inp.attr('name')]){
-                        var c = ($('#f_country_of_manufacture').val() || '').trim();
-                        var m = SBL_COUNTRY_OPTS[inp.attr('name')][c];
-                        if (m && m.length) pool = m;
-                    }
                     // Grade offers only what fits: paper vs coin grades, and
                     // certified grades only once a grading service is chosen.
                     if (inp.attr('name') === 'grade' && typeof SBL_GRADE_POOLS !== 'undefined'){
