@@ -305,12 +305,11 @@ final class Computer
         if ($curDesc === '' || preg_match('/^A genuine\b/i', $curDesc)) {
             $built = self::buildDescription($row, $copy);
             if ($built !== '' && $curDesc !== '') {
+                // Only the first sentence is formulaic - keep everything after
+                // it (the AI's "Contains ..." line, privy notes, flavor text).
                 $keep = [];
                 foreach (array_slice(preg_split('/(?<=\.)\s+/', $curDesc), 1) as $s) {
-                    $s = trim($s);
-                    // Skip only the sentences the builder itself regenerates.
-                    if ($s === '' || preg_match('/^(Contains |.*\bcomposition\.$)/i', $s)) { continue; }
-                    $keep[] = $s;
+                    if (trim($s) !== '') { $keep[] = trim($s); }
                 }
                 if ($keep) { $built .= ' ' . implode(' ', $keep); }
             }
@@ -378,109 +377,49 @@ final class Computer
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('category_name') === '') { return ''; }
-        $disp  = Schema::lookups()['display'] ?? [];
-        $denom = $g('denomination');
-        $dd    = $disp['denom'][$denom][0] ?? '';                    // "25C" -> "25c"
-        $cert  = $g('certification');
-        $certT = $disp['cert_title'][$cert] ?? $cert;                // "NGC & CAC" -> "NGC CAC"
         $parts = [
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
             $g('category_name'),
             $g('coin_variety_1'),   // the distinguishing issue ("Anna May Wong")
             $g('coin_variety_2'),
-            $dd !== '' ? $dd : $denom,
+            $g('denomination'),
             $g('grade') !== '' && $g('grade') !== 'Ungraded' ? $g('grade') : '',
-            $cert !== '' && $cert !== 'Uncertified' ? $certT : '',
+            $g('certification') !== '' && $g('certification') !== 'Uncertified' ? $g('certification') : '',
             $g('title_suffix'),   // operator catch-all: grade/error/packaging/slab details
             'Coin Collectible',   // constant title tail (ODS hardcodes this, not title_suffix)
         ];
         $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
     }
-    /* Deterministic house description, shaped like the real listings:
-     *   S1  "A genuine {year} {mint} {variety} {type} {metal} {denomination
-     *        in words} {strike} [Bullion] Coin[, from {brand}]{condition}."
-     *   S2  "Contains {content} {fineness} {Metal}."     (precious metals)
-     *   S3  packaging sentence expanded from the Title Suffix.
-     * Every word is translated through the workbook 'display' tables; a
-     * missing table entry just means the raw value is used. */
+    /* Simple deterministic fallback using the RAW field values, in the house
+     * one-sentence shape. Gemini writes the polished sentence during autofill
+     * (its guide carries a full-criteria example); this fills gaps and keeps
+     * year/grade edits in sync. Sentences after the first are preserved. */
     private static function buildDescription(array $row, array $copy): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('category_name') === '') { return ''; }
-        $disp = Schema::lookups()['display'] ?? [];
-        $T = static function (string $tbl, string $key, int $i = 0) use ($disp): string {
-            $v = $disp[$tbl][$key] ?? '';
-            if (is_array($v)) { $v = $v[$i] ?? ''; }
-            return trim((string) $v);
-        };
-        $cat = $g('category_name'); $comp = $g('composition'); $denom = $g('denomination');
-        $isPaper = (bool) preg_match('/currency|paper money|banknote|\bnote\b|certificate/i',
-                                     $cat . ' ' . $g('paper_money_type'));
-
-        // Varieties: the table's "before" text (or the raw variety) reads
-        // before the type; "after" text becomes a clause after the condition.
-        $before = []; $after = [];
-        foreach (['coin_variety_1', 'coin_variety_2'] as $vf) {
-            $v = $g($vf);
-            if ($v === '') { continue; }
-            $b = $T('variety_text', $v, 0); $a = $T('variety_text', $v, 1);
-            if ($b === '' && $a === '') { $before[] = $v; }
-            else { if ($b !== '') { $before[] = $b; } if ($a !== '') { $after[] = $a; } }
-        }
-        $type      = $g('coin_type') !== '' ? $g('coin_type') : $cat;
-        $type      = $T('coin_type', $type) !== '' ? $T('coin_type', $type) : $type;
-        $metal     = $T('composition', $comp, 0);              // Silver / Clad / Steel...
-        // Gold eagle family reads as words too (the sheet leaves these blank).
-        static $goldWords = ['$2.50' => 'Quarter Eagle', '$5' => 'Half Eagle', '$10' => 'Eagle', '$20' => 'Double Eagle'];
-        $denomFull = $T('denom', $denom, 1) !== '' ? $T('denom', $denom, 1) : ($goldWords[$denom] ?? $denom);
-        $strike    = $T('strike_title', $g('strike_type'));    // Business stays hidden
-        $parts = [$g('year'),
-                  $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : ''];
-        $parts = array_merge($parts, $before);
-        // Eagle-family gold shows the face value up front: "$5 ... Half Eagle".
-        if (isset($goldWords[$denom])) { $parts[] = $denom; }
-        if ($isPaper) {
-            $parts[] = $denom;
-            $parts[] = $g('paper_money_type') !== '' ? $g('paper_money_type') : $type;
-        } else {
-            $parts = array_merge($parts, [$type, $metal, $denomFull, $strike,
-                $copy['prefix'] ?? '',                          // "Penny" tail for cents
-                stripos($cat, 'bullion') !== false ? 'Bullion' : '']);
-        }
-        $s1 = 'A genuine ' . trim(preg_replace('/\s+/', ' ',
-                implode(' ', array_filter($parts, static fn($p) => $p !== ''))))
-            . ($isPaper ? '' : ' Coin');
-        if ($g('brand') !== '' && $g('brand') !== 'U.S. Mint') { $s1 .= ', from ' . $g('brand'); }
-
-        // Condition clause: certified vs raw (raw grades gain their AU/BU
-        // prefix or "Mint State" suffix from the grade table).
+        // Coin Type deliberately NOT used here: editing it must not rewrite
+        // the description / DETAILS bullet (the category names the series).
+        $specs = trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
+            $g('year'),
+            $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
+            $g('coin_variety_1'),   // "Anna May Wong" - carries into the DETAILS bullet
+            $g('coin_variety_2'),
+            $g('category_name'),
+            $g('denomination'),
+        ]))));
+        $d = 'A genuine ' . $specs . ' Coin';
         $grade = $g('grade'); $cert = $g('certification');
         $certified = $cert !== '' && strcasecmp($cert, 'Uncertified') !== 0 && strcasecmp($cert, 'U.S. Mint') !== 0;
         if ($certified && $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0) {
-            $s1 .= ', graded and certified ' . trim($grade . ' ' . $g('designation_abbrivation'))
-                 . ' by ' . ($T('cert_title', $cert) !== '' ? $T('cert_title', $cert) : $cert);
+            $d .= ', graded and certified ' . trim($grade . ' ' . $g('designation_abbrivation')) . ' by ' . $cert;
         } else {
             $cond = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0 ? $grade : $g('circulated_or_uncirculated');
-            if ($cond !== '') {
-                $s1 .= ', in ' . trim($T('grade_fix', $cond, 0) . ' ' . $cond . ' ' . $T('grade_fix', $cond, 1)) . ' Condition';
-            }
+            if ($cond !== '') { $d .= ', in ' . $cond . ' Condition'; }
         }
-        foreach ($after as $a) { $s1 .= ', ' . $a; }
-        $out = $s1 . '.';
-
-        // Metal content (precious) / clad note (commemoratives).
-        $metalWord = $T('composition', $comp, 1);
-        if ($metalWord !== '') {
-            $fin = $T('fineness', $g('fineness'), 1) !== '' ? $T('fineness', $g('fineness'), 1) : $g('fineness');
-            $bits = array_filter([$g('precious_metal_content'), $fin, $metalWord], static fn($b) => $b !== '');
-            $out .= ' Contains ' . implode(' ', $bits) . '.';
-        } elseif (stripos($cat, 'commemorative') !== false && stripos($comp, 'clad') !== false) {
-            $out .= ' ' . ucfirst(strtolower($comp)) . ' composition.';
-        }
-
-        return $out;
+        return $d . '.';
     }
 }
 

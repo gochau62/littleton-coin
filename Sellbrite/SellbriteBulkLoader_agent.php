@@ -645,7 +645,15 @@ function sbl_field_guide(): array
         'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
         'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
-        'description'    => ['desc' => 'ONE sentence, this EXACT shape: "A genuine {year} {mint mark if any} {series/type} {metal e.g. Steel/Silver} {denomination in words e.g. Cent Penny / Silver Dollar} Coin, in {grade or condition} Condition." e.g. "A genuine 1943 Lincoln Wheat Steel Cent Penny Coin, in AU About Uncirculated Condition." No hype.'],
+        'description'    => ['desc' => 'A natural sentence built from the ACTUAL field values, house shape: '
+            . '"A genuine {year} {mint mark} {variety} {series/type} {metal} {denomination IN WORDS - Quarter, Half Dollar, Cent Penny} '
+            . '{strike if special} Coin[, from {brand} when not U.S. Mint]'
+            . '[, in {grade} Condition -OR- , graded and certified {grade} {designation} by {certification} when slabbed]'
+            . '[, {special feature clause, e.g. privy mark}]. [Contains {content} {fineness} {Metal}. - precious metals only]" '
+            . 'Example using every criteria: "A genuine 2025 W American Eagle Silver Dollar Proof Bullion Coin, '
+            . 'graded and certified PR 70 DCAM by PCGS, with the special privy mark honoring the 250th anniversary '
+            . 'of the United States Army. Contains 1 oz 0.999 Silver." Plain raw grade examples: '
+            . '"A genuine 1943 Lincoln Wheat Steel Cent Penny Coin, in AU About Uncirculated Condition." No hype.'],
         'extended_description' => ['desc' => 'EXPANDED DESCRIPTION for the whole category: 2-4 factual sentences built from YOUR description PLUS the GreySheet GeneralNotes/Obverse/Reverse text (composition, design, designer, history). Write it so the SAME text fits every coin in this category - no grade, date, mint or price.'],
         'feature_4'      => ['desc' => 'a COLLECTOR\'S NOTE about the SERIES (history, design, collector appeal) - category-level, 2-4 sentences, no this-coin grade/date/price. Do NOT add the "COLLECTOR\'S NOTE:" prefix; the system adds it.'],
         'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
@@ -862,7 +870,10 @@ function gsAiMap(array $coin, array $example = []): array
          . "RULES:\n"
          . "1. For any field with a \"MUST be one of\" list, copy one option EXACTLY or leave it empty. "
          . "Never invent facts - leave a field empty if the data does not support it.\n"
-         . "2. WRITE THE DESCRIPTION FIRST, in its exact one-sentence shape. Everything else builds on it.\n"
+         . "2. WRITE THE DESCRIPTION FIRST: one natural sentence that works the ACTUAL field values into the "
+         . "house shape shown in its guide (follow its full-criteria example - certified vs raw grade wording, "
+         . "brand clause, privy/feature clause, then the 'Contains ...' metal sentence for precious metals). "
+         . "Everything else builds on it.\n"
          . "3. extended_description is the EXPANDED DESCRIPTION for the whole category/series: write 2-4 "
          . "factual sentences by combining your description with the GreySheet GeneralNotes / obverse / "
          . "reverse text (history, composition, design, designer). It must read so the SAME text fits "
