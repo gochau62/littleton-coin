@@ -138,10 +138,9 @@ details.group[open] summary::before { transform:rotate(90deg); }
 details.group summary::-webkit-details-marker { display:none; }
 .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:10px; }
 .field { display:flex; flex-direction:column; gap:4px; }
-/* Labels grow to the tallest one in the row, so the input boxes of adjacent
-   fields sit on the same level even when a long label wraps. */
-.field label { font-size:11.5px; line-height:1.3; color:#5f6b62; font-weight:700;
-               display:flex; gap:6px; align-items:flex-end; flex-wrap:wrap; flex:1 0 auto; }
+/* Slightly smaller label text so long names ("SKU of Parent Product") stay
+   on one line; box sizing/spacing unchanged. */
+.field label { font-size:11.5px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
