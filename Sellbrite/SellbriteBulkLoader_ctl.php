@@ -344,7 +344,9 @@
         paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
         // The sheet's whole "US Coin and World Coin" block - none of it shows
         // for the Currency trees.
-        coin:    ['coin_type','denomination','year','mint_mark','mint_location',
+        // coin_type is NOT here: its dropdown shows for every tree (the pool
+        // itself adapts - note types for Currency, coin series for Coins).
+        coin:    ['denomination','year','mint_mark','mint_location',
                   'coin_variety_1','coin_variety_2','grade','designation_abbrivation',
                   'circulated_or_uncirculated','strike_type','certification','certification_number',
                   'composition','fineness','precious_metal_content','single_coin_or_set',

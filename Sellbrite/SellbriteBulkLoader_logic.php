@@ -219,7 +219,7 @@ final class Computer
         $sku = $g('sku'); $category = $g('category_name');
         $lookups = Schema::lookups();
         $meta = $lookups['category_meta'][$category] ?? [];
-        $copy = $lookups['category_copy'][$category] ?? [];
+        $copy = [];   // no per-category facts stored anymore
 
         // Product image URLs are NOT auto-generated (the SKU-based guesses were
         // wrong) - the operator pastes the real uploaded photo URLs.
