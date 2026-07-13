@@ -58,25 +58,17 @@ final class Schema
             return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
                     'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'];
         }
-        // Derived dropdowns: distinct values straight out of the embedded ODS
-        // VLOOKUP table - nothing to hand-manage. Autofill can still land any
-        // other value (the select gains its option on the fly).
-        static $vlookupKey = ['denomination' => 'denomination',
-                              'composition' => 'composition', 'fineness' => 'fineness'];
-        if (isset($vlookupKey[$col['dropdown']])) {
-            $k = $vlookupKey[$col['dropdown']];
-            $out = [];
-            foreach (self::lookups()['category_copy'] ?? [] as $c) {
-                $v = trim((string) ($c[$k] ?? ''));
-                if ($v !== '' && !in_array($v, $out, true)) { $out[] = $v; }
-            }
-            sort($out, SORT_NATURAL | SORT_FLAG_CASE);
-            return $out;
-        }
-        // Small fixed vocabularies for the other GreySheet-autofilled fields
-        // (same lists the AI is constrained to). Unknown autofill values still
-        // land - the select gains the option on the fly.
+        // Small fixed vocabularies for the GreySheet-autofilled fields (same
+        // lists the AI is constrained to). Unknown autofill values still
+        // land - the combo accepts anything typed.
         static $small = [
+            'composition' => ['Silver', 'Gold', 'Platinum', 'Palladium', 'Copper', 'Copper-Nickel',
+                              'Copper-Nickel Clad', 'Copper-Plated Zinc', 'Silver Clad', 'Sterling Silver',
+                              'Bronze', 'Brass', 'Manganese-Brass', 'Aluminum-Bronze', 'Zinc-Coated Steel',
+                              'Nickel-Plated Steel', 'Bi-Metallic', 'Titanium', 'Pewter', 'Paper'],
+            'fineness' => ['0.35', '0.4', '0.5', '0.75', '0.8', '0.8292', '0.835', '0.8924', '0.9',
+                           '0.9167', '0.925', '0.999', '0.9995', '0.9999',
+                           '9K', '10K', '12K', '14K', '18K', '22K', '24K'],
             'single_coin_or_set' => ['Single Coin', 'Set'],
             'circulated_or_uncirculated' => ['Circulated', 'Uncirculated'],
             'strike_type' => ['Business', 'Burnished', 'Enhanced Uncirculated', 'Matte', 'Proof-Like',
@@ -122,6 +114,36 @@ final class Schema
         }
         $pools['coin_uncertified']  = array_merge($lead, $pools['coin_uncertified']);
         $pools['paper_uncertified'] = array_merge($lead, $pools['paper_uncertified']);
+        return $pools;
+    }
+    /* Coin Type valid values pooled by the drill-down TREE: U.S. Coins gets
+     * the US sections, U.S. Currency the paper-money sections, World Coins
+     * the bullion/ancients sections, World Currency the foreign notes. */
+    public static function coinTypePools(): array
+    {
+        $map = [
+            '--- US COINS ---' => 'us_coins', '--- US GOLD ---' => 'us_coins',
+            '--- COMMEMORATIVE ---' => 'us_coins', '--- HAWAIIAN ---' => 'us_coins',
+            '--- U.S. PHILIPPINES ---' => 'us_coins',
+            '--- BULLION ---' => 'us_coins world_coins',   // eagles + world bullion series
+            '--- U.S. MINT SETS (STANDARD RELEASES) ---' => 'us_coins',
+            '--- U.S. MINT SETS (NON-STANDARD RELEASES) ---' => 'us_coins',
+            '--- COLONIAL ---' => 'us_coins', '--- FRACTIONAL PIONEER GOLD ---' => 'us_coins',
+            '--- EXONUMIA ---' => 'us_coins',
+            '--- PAPER MONEY ---' => 'us_currency', '--- OBSOLETE CURRENCY ---' => 'us_currency',
+            '--- FOREIGN PAPER MONEY ---' => 'world_currency',
+            '--- ANCIENTS: ROMAN RULERS ---' => 'world_coins',
+            '--- ANCIENTS: ROMAN REPUBLIC ---' => 'world_coins',
+            '--- ANCIENTS: BYZANTINE ---' => 'world_coins',
+            '--- ANCIENTS: GREEK ---' => 'world_coins', '--- ANCIENTS: GAULISH ---' => 'world_coins',
+            '--- BULLION (OTHER) ---' => 'world_coins',
+        ];
+        $pools = ['us_coins' => [], 'us_currency' => [], 'world_coins' => [], 'world_currency' => []];
+        $cur = [];
+        foreach (self::values()['coin_type'] ?? [] as $v) {
+            if (strpos($v, '---') === 0) { $cur = explode(' ', $map[$v] ?? ''); continue; }
+            foreach ($cur as $p) { if ($p !== '') { $pools[$p][] = $v; } }
+        }
         return $pools;
     }
     /* Fields required for EVERY listing - the Sellbrite export's peach
@@ -201,7 +223,6 @@ final class Computer
         // wrong) - the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        $copyVal = static fn(string $k): string => self::lookupValue($copy[$k] ?? '', '');
         // Search Terms are Amazon-specific: only auto-build them when the SKU
         // can go to Amazon (market blank / all / amazon).
         $mkt = strtolower($g('marketplace'));
@@ -219,16 +240,10 @@ final class Computer
                 $row['search_terms'] = implode(' ', $words);
             }
         }
-        if ($g('composition') === '' && $copyVal('composition') !== '') { $row['composition'] = $copyVal('composition'); }
-        if ($g('fineness') === '' && $copyVal('fineness') !== '') { $row['fineness'] = $copyVal('fineness'); }
-        // No blanket US default: the drill-down/GreySheet path names the
-        // country (US trees -> United States); world coins without one stay
-        // blank for the operator's country dropdown.
-        if ($g('brand') === '' && $copyVal('brand') !== '') { $row['brand'] = $copyVal('brand'); }
-        // Coin Type isn't hardcoded anywhere: the GreySheet series (= store
-        // category) names it; the operator refines when needed.
-        if ($g('coin_type') === '' && $category !== '') { $row['coin_type'] = $category; }
-        if ($g('denomination') === '' && $copyVal('denomination') !== '') { $row['denomination'] = $copyVal('denomination'); }
+        // GreySheet provides denomination/composition/fineness by the time the
+        // coin is picked; country comes from the drill-down/catalog path (no
+        // blanket US default). Coin Type is OPERATOR-PICKED from the tree's
+        // valid values - never auto-written.
 
         $grade = $g('grade');
         if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
