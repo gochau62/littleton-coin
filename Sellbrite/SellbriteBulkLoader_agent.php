@@ -1,4 +1,12 @@
 <?php
+/*    ***************************************************  -->
+<!--  * Program Name - SellbriteBulkLoader_agent.php    *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  *             Littleton Coin Company              *  -->
+<!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************   */
 /*
  *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
