@@ -38,10 +38,13 @@
   Run the pending ALTERs (condition, the five eBay columns, marketplace,
   extended_description, diameter, weight) to make those fields stick.
 - `LSCDEVLIBP.SBLMEMORYT` — the GreySheet path memory. **Do not drop or rebuild it**;
-  reseeding costs thousands of API calls. It is additive: live lookups keep teaching it,
-  and `_seed.php` can crawl an *unseeded* tree (e.g. Ancient Coins) without touching the
-  rest. If a coin/series is missing from the dropdowns, that part of the tree simply was
-  never crawled.
+  reseeding costs thousands of API calls. In the normal flow it is **read-only**: the
+  drill-down dropdowns and the Autofill (which always has the picked coin's GsId) never
+  write to it. It only grows two ways: running `_seed.php` against an *unseeded* tree
+  (e.g. Ancient Coins) — additive, doesn't touch the rest — or the rare live-navigation
+  fallbacks (`gsImport` without a gs_id, and the Year lookup for a category memory has
+  never seen), which learn the nodes they visit as a side effect. If a coin/series is
+  missing from the dropdowns, that part of the tree simply was never crawled.
 
 ## 4. Cookbook — the changes you'll actually make
 

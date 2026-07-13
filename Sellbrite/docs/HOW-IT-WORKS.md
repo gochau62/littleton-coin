@@ -51,9 +51,10 @@ other LCC tool.
 
 - `SBLPRODUCT` — one row per listing (~90 columns, machine names = Sellbrite headers).
 - `SBLMEMORYT` — the **path memory**: every GreySheet node (`kind='N'`) and coin
-  (`kind='C'`) the screen has seen: ref_id (node/gs id), name, path
+  (`kind='C'`) from the seed crawl: ref_id (node/gs id), name, path
   (`U.S. Coins > Morgan Dollar…`), coin_date, mint_mark, coin_count. Powers all
-  drill-down dropdowns with **zero API calls**.
+  drill-down dropdowns with **zero API calls**. Read-only in the normal flow — it only
+  grows via `_seed.php` or the rare live-navigation fallbacks (see §8).
 
 ## 3. The two views
 
