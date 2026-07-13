@@ -610,16 +610,16 @@
                             ? $.grep(opts, function(v){ return v !== 'United States'; })
                             : ['United States'];
                     }
-                    // Grade offers only what fits: paper vs coin grades, and
-                    // certified grades only once a grading service is chosen.
+                    // Grade offers only what fits: paper grades for paper money,
+                    // coin grades for everything else (certified + raw merged).
                     if (inp.attr('name') === 'grade' && typeof SBL_GRADE_POOLS !== 'undefined'){
                         var cat = (($('#f_category_name').val() || '') + ' ' + ($('#f_paper_money_type').val() || '')
                                    + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
                         var paper = /currency|paper money|banknote|\bnote\b/.test(cat);
-                        var cert = ($('#f_certification').val() || '').trim().toLowerCase();
-                        var certified = cert !== '' && cert !== 'uncertified' && cert !== 'u.s. mint';
-                        var gp = SBL_GRADE_POOLS[(paper ? 'paper' : 'coin') + '_' + (certified ? 'certified' : 'uncertified')];
-                        if (gp && gp.length) pool = gp;
+                        var base = paper ? 'paper' : 'coin';
+                        var gp = (SBL_GRADE_POOLS[base + '_uncertified'] || [])
+                                     .concat(SBL_GRADE_POOLS[base + '_certified'] || []);
+                        if (gp.length) pool = gp;
                     }
                     resp($.grep(pool, function(v){ return !t || v.toLowerCase().indexOf(t) !== -1; }));
                 },
