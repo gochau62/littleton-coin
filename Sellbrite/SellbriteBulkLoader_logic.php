@@ -262,23 +262,36 @@ final class Computer
 
         // Package weight = the coin's own weight FROM GREYSHEET (troy oz ->
         // pounds) plus the certification wrap/slab add-on; a GSA holder's
-        // table weight replaces both (holder includes the coin). Sets and
-        // coins GreySheet gave no weight for stay manual (weigh them).
+        // table weight replaces both (holder includes the coin). It fills
+        // right at autofill using the Uncertified wrap as the default, then
+        // UPDATES itself when the operator picks/changes Certification. A
+        // hand-typed weight (Sets, coins GreySheet has no weight for) never
+        // matches a formula value and is left alone.
         $weight = $g('package_weight');
         $pw = $lookups['package_weights'] ?? [];
-        if ($weight === '' && $g('single_coin_or_set') !== 'Set') {
+        if ($g('single_coin_or_set') !== 'Set') {
             $isGsa = stripos($g('coin_variety_1'), 'GSA') !== false
                   || stripos($g('coin_variety_2'), 'GSA') !== false;
             $base = $isGsa ? ($pw['gsa'][$g('title_suffix')] ?? null) : null;
             if ($base === null && !$isGsa && is_numeric($g('weight'))) {
                 $base = (float) $g('weight') * 0.0685714;   // troy oz -> lb
             }
-            // Non-GSA weight waits for the Certification pick (operator-owned)
-            // so the wrap/slab add-on is the right one, not a blank-cert zero.
-            if ($base !== null && ($isGsa || $g('certification') !== '')) {
-                $add = !$isGsa ? ($pw['certification'][$g('certification')] ?? 0) : 0;
-                $weight = (string) round($base + $add, 2);
-                $row['package_weight'] = $weight;
+            if ($base !== null) {
+                $certAdds = $pw['certification'] ?? [];
+                $add = !$isGsa ? ($certAdds[$g('certification')] ?? $certAdds['Uncertified'] ?? 0) : 0;
+                $new = (string) round($base + $add, 2);
+                // Ours to manage when empty OR still holding a value this same
+                // formula produced earlier (any certification's add-on).
+                $ours = $weight === '';
+                if (!$ours && !$isGsa) {
+                    foreach ($certAdds as $a) {
+                        if ((string) round($base + $a, 2) === $weight) { $ours = true; break; }
+                    }
+                }
+                if (!$ours && in_array($weight, array_map('strval', array_values($pw['gsa'] ?? [])), true)) {
+                    $ours = true;
+                }
+                if ($ours) { $weight = $new; $row['package_weight'] = $new; }
             }
         }
         if (is_numeric($weight)) {
