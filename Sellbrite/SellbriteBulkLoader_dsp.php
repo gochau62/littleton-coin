@@ -39,6 +39,7 @@ function dspBulkLoader(&$screenData)
     $textareas = ['description','extended_description','feature_1','feature_2','feature_3',
                   'feature_4','feature_5','condition_note','search_terms'];
 
+    // PLAIN: Draws ONE form box: label, red star, blue badge, the right control, and the message line. Every box goes through here.
     // One form control.
     $renderField = function (array $col) use ($textareas): string {
         $name = $col['name']; $auto = !empty($col['auto']); $req = !empty($col['required']);

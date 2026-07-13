@@ -42,6 +42,7 @@ if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativela
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
 // (SBL_ABOUT_SELLER / SBL_EXACT_IMAGE_DEFAULT constants live in the logic file.)
 
+// PLAIN: Adds one line to the debug log file.
 /* =========================================================================
  * SECTION 1 - HTTP: GreySheet API + Gemini
  * gsApiGet is the ONLY GreySheet caller (headers, timeout, logging);
@@ -54,6 +55,7 @@ function gsLog($msg)
     else { error_log($line); }
 }
 
+// PLAIN: THE one phone line to GreySheet: adds the keys, enforces the timeout, records the call.
 function gsApiGet($path, array $params = [], &$meta = [])
 {
     $meta = ['status' => 0, 'error' => '', 'ms' => 0, 'url' => ''];
@@ -112,13 +114,16 @@ function gsApiGet($path, array $params = [], &$meta = [])
     return $data;
 }
 
+// PLAIN: Unwraps GreySheet's answer envelope to get the actual data.
 function gsData($resp): array
 {
     return (is_array($resp) && isset($resp['Data']) && is_array($resp['Data']))
         ? array_values(array_filter($resp['Data'], 'is_array')) : [];
 }
 
+// PLAIN: "Do we even have an AI key?" If not, every AI step quietly skips.
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
+// PLAIN: THE one phone line to Gemini: asks for a JSON answer, retries on the backup model when busy.
 function geminiJson($system, $user, &$meta = [])
 {
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
@@ -164,6 +169,7 @@ function geminiJson($system, $user, &$meta = [])
 
 if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
+// PLAIN: Makes typed text consistent to search with (lower-case, single spaces).
 /* =========================================================================
  * SECTION 2 - PATH MEMORY writes (DB2 SBLMEMORYT: kind N=node, C=coin)
  * Everything the screen sees on GreySheet is upserted here so the
@@ -173,6 +179,7 @@ function gsNorm($s): string
 {
     return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
 }
+// PLAIN: Runs one WRITE against the coin phone book (SBLMEMORYT).
 function gsMemExec(string $sql, array $params): bool
 {
     $conn = function_exists('sbl_conn') ? sbl_conn() : false;
@@ -180,10 +187,12 @@ function gsMemExec(string $sql, array $params): bool
     $stmt = db2_prepare($conn, $sql);
     return $stmt ? (bool) @db2_execute($stmt, $params) : false;
 }
+// PLAIN: Runs one READ against the coin phone book.
 function gsMemRows(string $sql, array $params = []): array
 {
     return function_exists('sbl_select') ? sbl_select($sql, $params) : [];
 }
+// PLAIN: Writes one folder or coin into the phone book (or refreshes it if already there).
 function gsMemUpsert(string $kind, int $refId, string $name, string $path,
                      string $date = '', string $mm = '', int $parent = 0,
                      int $coinCount = 0, string $done = 'N'): void
@@ -204,11 +213,13 @@ function gsMemUpsert(string $kind, int $refId, string $name, string $path,
         );
     }
 }
+// PLAIN: "Remember this folder" - only runs during seeding or the rare live tree-walks.
 function gsMemLearnNode(int $id, string $name, string $path, int $parent = 0,
                         int $coinCount = 0, string $done = 'N'): void
 {
     gsMemUpsert('N', $id, $name, $path, '', '', $parent, $coinCount, $done);
 }
+// PLAIN: "Remember these coins" - same rare paths as above.
 function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): void
 {
     foreach ($coins as $c) {
@@ -218,20 +229,24 @@ function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): voi
                     (string) ($c['CoinDate'] ?? ''), (string) ($c['MintMark'] ?? ''), $parentNodeId);
     }
 }
+// PLAIN: Marks a folder as fully crawled.
 function gsMemMarkDone(int $nodeId): void
 {
     gsMemExec('UPDATE ' . SBL_GSMEM_TABLE . " SET done = 'Y' WHERE kind = 'N' AND ref_id = ?", [$nodeId]);
 }
+// PLAIN: Phone-book folder list (used by the seeder).
 function gsMemNodes(): array
 {
     return gsMemRows('SELECT ref_id, parent_id, name, path, coin_count, done FROM '
                    . SBL_GSMEM_TABLE . " WHERE kind = 'N'");
 }
+// PLAIN: Phone-book subfolder list (used by the seeder).
 function gsMemNodeChildren(int $parentId): array
 {
     return gsMemRows('SELECT ref_id, name, path, coin_count, done FROM ' . SBL_GSMEM_TABLE
                    . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
 }
+// PLAIN: Free-text coin search across the whole phone book.
 /* =========================================================================
  * SECTION 3 - PATH MEMORY reads (the drill-down dropdowns)
  * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins power the
@@ -254,12 +269,14 @@ function gsMemSearch(string $q, int $limit = 40): array
     }
     return $out;
 }
+// PLAIN: Stops %, _ and \ inside a name from acting as search wildcards.
 /* Escape the LIKE metacharacters in a literal so a path/name used as a prefix
  * can't act as a wildcard. Pair with  ... LIKE ? ESCAPE '\'  in the SQL. */
 function gsLikeEsc(string $s): string
 {
     return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
 }
+// PLAIN: The four "1. Tree" choices.
 /* Drill-down level 1: the broad trees present in memory (parent_id = 0):
  * U.S. Coins, U.S. Currency, World Coins, World Currency. 0 API calls. */
 function gsMemRoots(): array
@@ -272,6 +289,7 @@ function gsMemRoots(): array
     }
     return $out;
 }
+// PLAIN: Every series under the chosen tree - the "2. Series" menu.
 /* Drill-down level 2: the coin-holding series (leaf nodes) under a chosen root,
  * matched by catalog path so intermediate folders are flattened away. The user
  * goes root -> series -> coin. Searchable. 0 API calls. */
@@ -298,6 +316,7 @@ function gsMemSeries(string $rootPath, string $q = '', int $limit = 10000): arra
     }
     return $out;
 }
+// PLAIN: The years that series actually exists for - the "3. Year" menu.
 /* Distinct years for the coins under a node (its own dropdown, deduplicated). */
 function gsMemYears(string $nodePath): array
 {
@@ -315,6 +334,7 @@ function gsMemYears(string $nodePath): array
     sort($out);
     return $out;
 }
+// PLAIN: Every coin in the series - the "4. Coin" menu.
 /* Coins under a node (any level), by catalog path. Optional $year narrows to one
  * year, optional $q narrows by coin name. Returns full names; the front-end
  * strips the shared prefix so only the distinguishing part shows. 0 API calls.
@@ -345,6 +365,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
     }
     return $out;
 }
+// PLAIN: Live GreySheet: list one folder's subfolders (fallback path only).
 /* =========================================================================
  * SECTION 4 - LIVE GreySheet navigation + endpoints
  * Used when a coin is NOT in memory: walk the node tree (Gemini breaks
@@ -361,6 +382,7 @@ function gsChildren(int $nodeId): array
     }
     return $out;
 }
+// PLAIN: Picks the obviously-matching subfolder; Gemini breaks the ties.
 function gsNavPick(array $children, string $target, string $context)
 {
     $t = gsNorm($target);
@@ -383,6 +405,7 @@ function gsNavPick(array $children, string $target, string $context)
     }
     return $hits[0] ?? null;
 }
+// PLAIN: Picks the exact coin from a leaf folder's list.
 function gsPickCoin(array $coins, array $attrs): int
 {
     $year = trim((string) ($attrs['year'] ?? ''));
@@ -414,6 +437,7 @@ function gsPickCoin(array $coins, array $attrs): int
     return (int) ($cands[0]['Gsid'] ?? 0);
 }
 
+// PLAIN: Live GreySheet root folders.
 /* The catalog has NO single root node. Four trees sit side by side at the top:
  *   1 = U.S. Coins    2 = U.S. Currency    6 = World Coins    12 = World Currency
  * Every node under them has either child nodes OR collectibles, never both.
@@ -422,6 +446,7 @@ function gsRoots(): array
 {
     return [1 => 'U.S. Coins', 2 => 'U.S. Currency', 6 => 'World Coins', 12 => 'World Currency'];
 }
+// PLAIN: Picks which top-level tree a described coin belongs to.
 function gsPickRoot(array $attrs, string $desc): array
 {
     $roots   = gsRoots();
@@ -436,6 +461,7 @@ function gsPickRoot(array $attrs, string $desc): array
     return ['id' => $id, 'name' => $roots[$id] ?? ('(root ' . $id . ')')];
 }
 
+// PLAIN: Walks the live tree down to the coins, learning every folder it visits.
 function gsResolveLeaf(array $attrs, array &$trace = []): array
 {
     $none = ['coins' => [], 'path' => ''];
@@ -487,12 +513,14 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
     return $none;
 }
 
+// PLAIN: Find a coin by description: walk down, then pick it. Returns its GreySheet id.
 function gsResolve(array $attrs, array &$trace = []): int
 {
     $leaf = gsResolveLeaf($attrs, $trace);
     return $leaf['coins'] ? gsPickCoin($leaf['coins'], $attrs) : 0;
 }
 
+// PLAIN: Years for a typed category: phone book first; one live walk only if it knows nothing.
 function gsYearsFor(string $category, bool $liveLookup = true): array
 {
     $ck = gsNorm($category);
@@ -516,6 +544,7 @@ function gsYearsFor(string $category, bool $liveLookup = true): array
     return $out;
 }
 
+// PLAIN: Fetches one coin's full fact sheet.
 function gsCollectible(int $gsId, &$meta = []): array
 {
     $meta = [];
@@ -523,6 +552,7 @@ function gsCollectible(int $gsId, &$meta = []): array
     $resp = gsApiGet('GetCollectibleRequest', ['GsId' => $gsId], $meta);
     return gsData($resp)[0] ?? [];
 }
+// PLAIN: Fetches one coin's price row (often empty for world coins - GreySheet pricing is US-centric).
 function gsPricing(int $gsId, $grade = null, &$meta = []): array
 {
     $meta = [];
@@ -533,11 +563,13 @@ function gsPricing(int $gsId, $grade = null, &$meta = []): array
     $first = gsData($resp)[0] ?? [];
     return $first['PricingData'][0] ?? [];
 }
+// PLAIN: Cleans a price string into a plain number.
 function gsPriceNum($v): string
 {
     $v = preg_replace('/[^0-9.]/', '', (string) $v);
     return is_numeric($v) ? $v : '';
 }
+// PLAIN: "90% silver; 10% copper" becomes the one metal word ("Silver").
 /* Normalize a free-text GreySheet composition to an ODS "Valid Values" option
  * (e.g. "99.99% gold" -> "Gold", "Copper-Nickel Clad" stays). */
 /* =========================================================================
@@ -559,6 +591,7 @@ function sbl_norm_composition(string $c): string
     foreach ($pairs as $needle => $val) { if (strpos($l, $needle) !== false) { return $val; } }
     return trim($c);
 }
+// PLAIN: Strips "(2022-2025)" style date ranges off a series name - how SKU of Parent loses its dates.
 /* Normalize a GreySheet series name ("Lincoln Cents - Wheat Reverse
  * (1909-1958)", "Morgan Dollars") to the PCC STORE CATEGORY from the ODS
  * VLOOKUP sheet ("Lincoln Wheat Small Cent", "Morgan Dollar"). These store
@@ -574,6 +607,7 @@ function sbl_norm_category(string $gs): string
     $clean = trim(preg_replace("/\\s+/", " ", $clean), " -\t");
     return $clean !== "" ? $clean : trim($gs);
 }
+// PLAIN: Mint mark letter to city ("D" -> "Denver, Colorado").
 /* Mint letter -> mint city (from the ODS Mint Location logic). */
 function sbl_mint_location(string $mm): string
 {
@@ -586,6 +620,7 @@ function sbl_mint_location(string $mm): string
             'M' => 'Manila', 'MO' => 'Mexico City'];
     return $map[strtoupper($mm)] ?? '';
 }
+// PLAIN: Snaps an almost-right value onto the exact valid option.
 /* Snap a value to the closest allowed option (exact, then case-insensitive). */
 function sbl_snap(string $v, array $opts): string
 {
@@ -595,6 +630,7 @@ function sbl_snap(string $v, array $opts): string
     foreach ($opts as $o) { if (strcasecmp($o, $v) === 0) { return $o; } }
     return $v;   // leave as-is; the human can correct it
 }
+// PLAIN: The AI's instruction sheet, field by field - the house examples live here. EDIT THIS WORDING to change how the AI writes.
 /* The ODS-derived field guide: for each Sellbrite field, where its value comes
  * from, how to fill it, the allowed options (from the ODS "Valid Values" sheet)
  * and any hardcoded constant. Drives BOTH the deterministic map and the Gemini
@@ -661,6 +697,7 @@ function sbl_field_guide(): array
         'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
     ];
 }
+// PLAIN: Turns GreySheet's fact sheet into form values, no AI - THE place that decides which fact lands in which box.
 /* Deterministic mapping: fills every field it reliably can straight from the
  * GreySheet data + the ODS constants. This is the trustworthy base; Gemini only
  * fills the gaps it leaves (coin_type, refinements). */
@@ -797,6 +834,7 @@ function gsMapToProduct(array $c): array
     }
     return array_filter($row, static fn($v) => $v !== '' && $v !== null);
 }
+// PLAIN: The facts package we send to the AI.
 /* Compact, populated-only view of the coin for the AI prompt (drops the ~55
  * empty / currency-only keys so the model isn't reading noise). */
 function gs_coin_facts(array $c): array
@@ -815,6 +853,7 @@ function gs_coin_facts(array $c): array
     }
     return $out;
 }
+// PLAIN: One field's allowed options, for the prompt.
 /* The allowed values for a field, straight from the ODS "Valid Values" sheet
  * (Schema::values), with group separators / hint rows removed. This is the ONE
  * source of truth the agent must conform to, both in the prompt and when
@@ -826,6 +865,7 @@ function sbl_field_options(string $name): array
     if (!$opts) { $opts = sbl_field_guide()[$name]['opts'] ?? []; }
     return array_values(array_filter($opts, static fn($o) => !preg_match('/^\s*(-{2,}|\*{3})/', (string) $o)));
 }
+// PLAIN: Turns the instruction sheet into the actual prompt text.
 function sbl_field_spec(): string
 {
     static $spec = null;
@@ -850,6 +890,7 @@ function sbl_field_spec(): string
     }
     return $spec = implode("\n", $lines);
 }
+// PLAIN: Tidies the AI's answer (drops invented fields, trims strings).
 function sbl_clean_ai_row($data): array
 {
     if (!is_array($data)) { return []; }
@@ -860,6 +901,7 @@ function sbl_clean_ai_row($data): array
     }
     return $row;
 }
+// PLAIN: Snaps every AI value onto the exact valid options.
 /* Snap every controlled field in a row to its ODS "Valid Values" list. Runs on
  * the final row so both the deterministic base and the AI output conform. */
 function sbl_snap_row(array $row): array
@@ -873,6 +915,7 @@ function sbl_snap_row(array $row): array
     }
     return $row;
 }
+// PLAIN: The full autofill writer: facts first (they always win), then Gemini writes the copy; safe fallbacks if the AI call fails.
 /* Gemini ALWAYS writes the category-level copy fresh from the GreySheet
  * facts (GeneralNotes / obverse / reverse) - no saved-listing template. */
 function gsAiMap(array $coin): array
@@ -931,6 +974,7 @@ function gsAiMap(array $coin): array
     }
     return sbl_snap_row($row);
 }
+// PLAIN: The "Generate Product details with AI" button: writes ONLY the empty Listing Content boxes from what's on the form.
 /* Listing-content gap fill: Gemini writes ONLY the empty ones among
  * description / extended_description / feature_4 (collector's note), in the
  * exact same house layout and rules as the autofill writer. Product Name,
@@ -990,6 +1034,7 @@ function gsListingFill(array $post): array
     $err = !$row && !geminiConfigured() ? 'GEMINI_API_KEY not set (add the secrets file).' : '';
     return ['ok' => $err === '', 'row' => $row, 'via' => 'listing gap fill', 'error' => $err];
 }
+// PLAIN: Free-text coin search for the page.
 /* =========================================================================
  * SECTION 8 - AJAX entry points (called from _ajax.php)
  * gsSearch / gsImport / gsGenerate / gs_finalize (compute + validate).
@@ -1000,6 +1045,7 @@ function gsSearch(string $q): array
     if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Type something to search for.']; }
     return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
 }
+// PLAIN: Last step of any import: run the calculator, then the proofreader.
 function gs_finalize(array $row, $source, string $via, array $calls = []): array
 {
     $row   = Computer::apply($row);
@@ -1008,6 +1054,7 @@ function gs_finalize(array $row, $source, string $via, array $calls = []): array
             'messages' => $check['messages'], 'valid' => $check['valid'], 'source' => $source,
             'error' => '', 'via' => $via, 'calls' => $calls];
 }
+// PLAIN: The Autofill: fetch the coin + its price, map the facts, write the copy, finalize.
 function gsImport(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
@@ -1060,6 +1107,7 @@ function gsImport(array $params): array
     return $out;
 }
 
+// PLAIN: Find-and-import in one go, for coins described rather than picked.
 function gsGenerate(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],

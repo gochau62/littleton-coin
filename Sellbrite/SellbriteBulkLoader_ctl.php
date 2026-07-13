@@ -62,6 +62,7 @@
     var sblPreviewImg = '';    // GreySheet reference image for the preview pane (display only)
     var sblAutofilled = false; // once true, AUTO badges track actual values
 
+    // PLAIN: After an autofill, keep the blue "auto" badges only on boxes autofill actually wrote.
     /* After an autofill, only fields that ACTUALLY got a value keep the blue
        AUTO look - GreySheet didn't provide the empty ones. */
     function sblSyncAutoBadges(){
@@ -76,6 +77,7 @@
             if (badge) badge.style.display = has ? '' : 'none';
         });
     }
+    // PLAIN: Puts every blue badge back, for a fresh form.
     /* Restore the default AUTO look on all auto-eligible fields (blank form). */
     function sblResetAutoBadges(){
         $('#sku-form [data-name]').each(function(){
@@ -88,20 +90,25 @@
         });
     }
 
+    // PLAIN: Flips the page between the home list and the SKU form.
     /* ---- view switching ---- */
     function sblShow(view){
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
     }
+    // PLAIN: The Back button.
     function sblBackToList(){ sblShow('list'); }
+    // PLAIN: Starts the spreadsheet download for the market picked in the Export pill.
     /* Export the market picked in the home-screen dropdown: only that market's
        SKUs (All-markets ones included) and only that market's columns. */
     function sblExport(){
         var m = $('#export-market').val() || 'all';
         window.location = 'SellbriteBulkLoader_ajax.php?action=export&market=' + encodeURIComponent(m);
     }
+    // PLAIN: Filters the home grid by the search text.
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
+    // PLAIN: The AI button: asks the server to fill the empty listing boxes, then reports what is still empty.
     /* Listing content only: Gemini writes the EMPTY Description / Extended
        Description / Feature 4 (collector's note) in the house layout. Typed
        text is never touched; Name and features 1/2/3/5 stay formula-built. */
@@ -131,6 +138,7 @@
         });
     }
 
+    // PLAIN: Empties everything - form, drill-down, preview, badges. Used by "+ New SKU".
     /* ---- new / edit ---- */
     function sblClearForm(){
         $('#sku-form')[0].reset();
@@ -153,6 +161,7 @@
         sblMarketApply();
         sblCertNumGate(false);             // blank certification -> Cert Number locked
     }
+    // PLAIN: "+ New SKU": clear the form and show it.
     function sblNew(){
         sblClearForm();
         // The SKU's market is picked with the form's own Market picker (the
@@ -180,6 +189,7 @@
     var SBL_COIN_ONLY_MARKET_FIELDS = [
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
+    // PLAIN: Shows only the chosen marketplace's extra boxes.
     function sblMarketApply(){
         var m = $('#f_marketplace').val() || '';
         var cat = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
@@ -193,6 +203,7 @@
         });
         sblRecompute();   // re-validate for the chosen market
     }
+    // PLAIN: Double-confirms, then deletes every SKU.
     /* Delete every SKU from the inventory (home menu). */
     function sblDeleteAll(){
         swal({ title:'Delete ALL SKUs?', text:'This permanently removes every record and cannot be undone.',
@@ -207,6 +218,7 @@
             }, 'json');
         });
     }
+    // PLAIN: Fetches one saved row and fills the form for editing.
     function sblEdit(id){
         $.post('SellbriteBulkLoader_ajax.php', { action:'find', id:id }, function(res){
             if (res.returnClass !== 'success' || !res.row){ swal('Not found','That record could not be loaded.','error'); return; }
@@ -224,11 +236,13 @@
         }, 'json');
     }
 
+    // PLAIN: Packs the whole form into one request string (hidden boxes included).
     /* ---- save / delete (AJAX, no page reload) ---- */
     /* Form fields + the marketplace picker (which lives in the toolbar). */
     function sblFormSerialize(){
         return $('#sku-form').serialize() + '&marketplace=' + encodeURIComponent($('#f_marketplace').val() || '');
     }
+    // PLAIN: Saves the form and updates the grid row in place.
     function sblSave(){
         var data = sblFormSerialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
@@ -248,6 +262,7 @@
             }
         }, 'json');
     }
+    // PLAIN: Deletes one SKU after confirming.
     function sblDelete(id, sku){
         swal({ title:'Delete ' + sku + '?', text:'This permanently removes the record.',
                type:'warning', showCancelButton:true, confirmButtonColor:'#c0392b',
@@ -261,6 +276,7 @@
             }, 'json');
         });
     }
+    // PLAIN: Updates or inserts one row of the home grid without reloading the page.
     /* Insert or update one row in the inventory table without reloading. */
     function sblUpsertListRow(row){
         if (!row || !row.id) return;
@@ -285,6 +301,7 @@
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    // PLAIN: The Certification Number doorman: the box only exists once a grading service is picked.
     /* Certification Number only exists once a grading service is picked -
        raw/U.S. Mint coins have no slab, so the box disappears entirely.
        Hidden via the cert-locked CLASS (not inline display) so it stacks
@@ -303,6 +320,7 @@
         // never on a plain page/row load (no silent data loss).
         if (!certified && clearIt && box.val()) box.val('');
     }
+    // PLAIN: Pours an autofill/edit result into the form (never overwrites a non-empty Country).
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
@@ -325,6 +343,7 @@
         sblRecompute();
     }
 
+    // PLAIN: Rebuilds the Year box: a menu of the series' real years, or free typing when unknown.
     /* ---- dynamic Year dropdown: only the years the series exists for ---- */
     function sblYearApply(years, keep){
         var cur = (keep !== undefined && keep !== null && keep !== '') ? keep : $('#f_year').val();
@@ -341,6 +360,7 @@
         }
         $('#f_year').replaceWith(h + '</select>');
     }
+    // PLAIN: Fetches those years for the current category.
     function sblYearRefresh(keep){
         var cat = $('#f_category_name').val();
         if (!cat){ sblYearApply([], keep); return; }
@@ -357,6 +377,7 @@
     /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
     var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
 
+    // PLAIN: Strips "(2022-2025)" date ranges off a series name (the JS twin of the server cleaner).
     /* Store categories never carry dates - drop "(2022-2025)" style ranges
        and bare year ranges from a GreySheet series name. */
     function sblCleanCategory(name){
@@ -412,6 +433,7 @@
         stamp:   ['stamp_color','stamp_quality','stamp_type'],
         nativity:['nativity_item_type']
     };
+    // PLAIN: Shows only the boxes that apply: paper boxes for currency, coin boxes for coins, set count for Sets...
     function sblFieldVisibility(){
         var cat  = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
         var paper = /currency|paper money|banknote|\bnote\b/.test(cat);
@@ -444,6 +466,7 @@
         }
     }
 
+    // PLAIN: Turns the "from GreySheet" badges on or off.
     function sblMarkGsFields(on){
         $.each(SBL_GS_FIELDS, function(i, name){
             var el = document.querySelector('#sku-form [data-name="' + name + '"]');
@@ -460,6 +483,7 @@
         });
     }
 
+    // PLAIN: Shortens coin menu entries by hiding the part of the name every entry shares.
     /* Strip the shared leading words so the coin box shows only what DIFFERS
        (e.g. "VAM-38 MS" instead of the whole "1878 7/8TF $1 Strong, 7/5, ..."). */
     function sblCoinDisplays(items){
@@ -478,6 +502,7 @@
         return items;
     }
 
+    // PLAIN: Fills the "1. Tree" menu (picking a tree also sets the Country rule).
     /* Level 1 - the broad trees (US Coins, US Currency, World Coins, World
        Currency). Native <select>: opens on click, no typing. 0 API calls. */
     function sblLoadRoots(){
@@ -499,6 +524,7 @@
             if (sblRootPath) $('#gs-series').focus();
         });
     }
+    // PLAIN: The "2. Series" searchable menu - picking fills SKU of Parent + category.
     /* Level 2 - the coin-holding series under the chosen tree. Searchable box
        that opens its dropdown on focus. 0 API calls. */
     function sblSeriesAutocomplete(){
@@ -553,17 +579,20 @@
     /* Year combo for the chosen series (distinct, deduplicated) - searchable
        by typing, same as Series and Coin. */
     var sblYearList = [];
+    // PLAIN: Fills "3. Year" for the picked series.
     function sblLoadYears(){
         sblYearList = [];
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsNodeYears', path:sblCurPath }, function(res){
             sblYearList = $.map(res.years || [], function(y){ return String(y); });
         }, 'json');
     }
+    // PLAIN: Remembers the year and narrows the coin menu.
     function sblYearPicked(y){
         sblCurYear = y;
         $('#gs-coin').val('').data('sblPicked', 0);
         sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
     }
+    // PLAIN: The "3. Year" searchable menu.
     function sblYearAutocomplete(){
         $('#gs-year').autocomplete({
             minLength: 0, delay: 0,
@@ -588,6 +617,7 @@
             sblYearPicked(this.value.trim());
         });
     }
+    // PLAIN: The "4. Coin" searchable menu - picking arms the Autofill button.
     /* Level 4 - coins under the series (optionally one year). Labels are trimmed
        to just the distinguishing part. Opens on focus. 0 API calls. */
     function sblCoinAutocomplete(){
@@ -621,6 +651,7 @@
         });
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
+    // PLAIN: Converts every dropdown box into the same searchable menu, and holds the menu pools: Grade (paper vs coin), Coin Type (by tree), Country (US locked / world list).
     /* The valid-value form fields (Grade, Brand, Designation...) use the same
        compact jQuery UI menu as Series/Coin instead of the browser's native
        datalist popup (which can't be styled and renders huge). The operator
@@ -680,6 +711,7 @@
             });
         });
     }
+    // PLAIN: Changing the series clears Year + Coin below it.
     function sblResetBelowSeries(){
         sblCurYear = ''; sblPendingGsId = 0; sblYearList = [];
         $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
@@ -687,6 +719,7 @@
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
     }
+    // PLAIN: The Autofill button: wipe the form (keeping operator-owned boxes), import the picked coin, pour it in.
     /* Autofill button: pull full collectible + pricing from GreySheet and fill. */
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
@@ -710,10 +743,12 @@
             sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
     }
+    // PLAIN: Fills the raw-response panel.
     /* Full GreySheet collectible + pricing response, for reference. */
     function sblRenderRaw(raw){
         $('#gs-raw').text(raw ? JSON.stringify(raw, null, 2) : 'No data returned.');
     }
+    // PLAIN: Fills the API call log panel.
     /* Small box: the API calls that Autofill made and what each returned, plus
        the running total of GreySheet calls used this session. */
     function sblRenderCalls(calls, total){
@@ -727,6 +762,7 @@
                     + '</div><div class="got">&rarr; ' + sblEsc(c.got) + '</div></li>');
         });
     }
+    // PLAIN: Receives an import result: fill the form, or explain what failed.
     function sblGsHandle(res, hint){
         if (res.returnClass === 'notfound'){
             swal({ title:"GreySheet doesn't have this coin",
@@ -742,6 +778,7 @@
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
     }
+    // PLAIN: Import for described (not picked) coins - the fallback path.
     function sblGsGenerate(hint){
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
             if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
@@ -751,6 +788,7 @@
         }, 'json');
     }
 
+    // PLAIN: The live recalculation: posts the form, writes back every auto box, paints the colors, refreshes the preview.
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
     function sblRecompute(){
         var data = sblFormSerialize() + '&action=compute';
@@ -774,6 +812,7 @@
             if (sblAutofilled) sblSyncAutoBadges();
         }, 'json');
     }
+    // PLAIN: Updates the listing preview card.
     function sblPreview(f){
         $('#pv-title').text(f.name || 'Product title appears here');
         $('#pv-desc').text(f.description || '');
@@ -784,6 +823,7 @@
         var img = document.getElementById('pv-img');
         if (img && sblPreviewImg && img.getAttribute('src') !== sblPreviewImg){ img.classList.remove('broken'); img.src = sblPreviewImg; }
     }
+    // PLAIN: Updates the Ready / Needs-attention pill and the issue list.
     function sblValidity(res){
         var pill = $('#valid-pill');
         pill.removeClass('ok err').addClass(res.valid ? 'ok' : 'err').text(res.valid ? 'Ready' : 'Needs attention');
