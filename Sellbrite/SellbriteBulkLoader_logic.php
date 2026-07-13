@@ -62,6 +62,8 @@ final class Schema
         // lists the AI is constrained to). Unknown autofill values still
         // land - the combo accepts anything typed.
         static $small = [
+            // Sellbrite condition; collectible coins list as "used" (default).
+            'condition' => ['new', 'used'],
             'composition' => ['Silver', 'Gold', 'Platinum', 'Palladium', 'Copper', 'Copper-Nickel',
                               'Copper-Nickel Clad', 'Copper-Plated Zinc', 'Silver Clad', 'Sterling Silver',
                               'Bronze', 'Brass', 'Manganese-Brass', 'Aluminum-Bronze', 'Zinc-Coated Steel',
