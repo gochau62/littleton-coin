@@ -280,6 +280,11 @@ details.group summary::-webkit-details-marker { display:none; }
         <div class="editor">
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
+                <!-- The coin's own GreySheet weight (troy oz) rides along hidden:
+                     no visible box (removed on request), but the packaging
+                     formula needs it AFTER the operator picks Certification.
+                     data-name so the autofill wipe clears it between coins. -->
+                <input type="hidden" name="weight" id="f_weight" value="" data-name="weight">
                 <?php
                 // Collapsible sections keep the big form uncluttered. Required
                 // fields (Sellbrite "mandatory for all") come from the schema;
