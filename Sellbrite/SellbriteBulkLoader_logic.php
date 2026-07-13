@@ -164,9 +164,9 @@ final class Schema
     public static function requiredNames(): array
     {
         // Coin details keeps ONLY SKU / SKU of Parent Product / Price / Cost /
-        // Quantity / Condition required; every other coin-details box is
+        // Quantity / Condition / Certification required; every other coin-details box is
         // optional. Other sections (listing copy, packaging, images) keep theirs.
-        return ['sku', 'category_name', 'price', 'condition', 'name', 'description', 'extended_description',
+        return ['sku', 'category_name', 'price', 'condition', 'certification', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'quantity', 'cost'];
@@ -273,7 +273,9 @@ final class Computer
             if ($base === null && !$isGsa && is_numeric($g('weight'))) {
                 $base = (float) $g('weight') * 0.0685714;   // troy oz -> lb
             }
-            if ($base !== null) {
+            // Non-GSA weight waits for the Certification pick (operator-owned)
+            // so the wrap/slab add-on is the right one, not a blank-cert zero.
+            if ($base !== null && ($isGsa || $g('certification') !== '')) {
                 $add = !$isGsa ? ($pw['certification'][$g('certification')] ?? 0) : 0;
                 $weight = (string) round($base + $add, 2);
                 $row['package_weight'] = $weight;
@@ -466,6 +468,13 @@ final class Validator
         $qty = $g('quantity');
         if ($qty === '')            { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Required field'; }
         elseif (!ctype_digit($qty)) { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Whole number only'; }
+        // Certification Number opens once a grading service is picked - nudge
+        // (yellow) until the slab's number is typed in.
+        $vCert = $g('certification');
+        if ($vCert !== '' && strcasecmp($vCert, 'Uncertified') !== 0 && strcasecmp($vCert, 'U.S. Mint') !== 0
+            && $g('certification_number') === '') {
+            $statuses['certification_number'] = 'action'; $messages['certification_number'] = 'Enter the certification number';
+        }
         if ($g('single_coin_or_set') === 'Set' && $g('set_count') === '') {
             $statuses['set_count'] = 'action'; $messages['set_count'] = 'Enter number of coins in the set';
         }

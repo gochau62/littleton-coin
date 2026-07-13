@@ -128,6 +128,7 @@
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
+        sblCertNumGate(false);             // blank certification -> Cert Number locked
     }
     function sblNew(){
         sblClearForm();
@@ -261,6 +262,21 @@
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    /* Certification Number only opens once a grading service is picked -
+       raw/U.S. Mint coins have no slab, so there is no number to type.
+       The yellow "Enter the certification number" nudge comes from the
+       server Validator (is-action), same as the other prompts. */
+    function sblCertNumGate(clearIt){
+        var box = $('#f_certification_number'); if (!box.length) return;
+        var cert = String($('#f_certification').val() || '').trim().toLowerCase();
+        var certified = cert !== '' && cert !== 'uncertified' && cert !== 'u.s. mint';
+        // readonly (not disabled) so any kept value still reaches save/compute -
+        // jQuery serialize() drops disabled inputs entirely.
+        box.prop('readOnly', !certified).toggleClass('is-locked', !certified);
+        // Only wipe the number when the OPERATOR switches back to raw -
+        // never on a plain page/row load (no silent data loss).
+        if (!certified && clearIt && box.val()) box.val('');
+    }
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
@@ -278,6 +294,7 @@
         sblYearRefresh(row && row.year);   // constrain Year to the series' real years
         sblFieldVisibility();              // show only this category's boxes
         sblMarketApply();                  // and only the chosen market's boxes
+        sblCertNumGate(false);             // lock/unlock Cert Number for this row
         sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
     }
@@ -653,7 +670,8 @@
         // the drill-down already set (parent = the picked series; country is
         // fixed by the tree and never churns).
         var grade = $('#f_grade').val() || '';
-        var keep = ['sku', 'marketplace', 'quantity', 'category_name', 'country_of_manufacture', 'condition'];
+        var keep = ['sku', 'marketplace', 'quantity', 'category_name', 'country_of_manufacture', 'condition',
+                    'certification', 'certification_number'];
         $('#sku-form [data-name]').each(function(){
             if (keep.indexOf(this.getAttribute('data-name')) < 0) this.value = '';
         });
@@ -765,6 +783,12 @@
         });
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
         $('#sku-form').on('change', sblRecompute);
+
+        // Certification gates the Cert Number box: picking a grading service
+        // opens it; switching back to raw locks AND clears it.
+        $('#sku-form').on('change', '#f_certification', function(){ sblCertNumGate(true); });
+        $('#sku-form').on('input',  '#f_certification', function(){ sblCertNumGate(false); });
+        sblCertNumGate(false);
 
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();

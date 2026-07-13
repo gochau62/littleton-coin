@@ -610,7 +610,7 @@ function sbl_field_guide(): array
                                           'Uncut Sheets','Wartime Occupation']],
         'paper_money_grade_designation' => ['desc' => 'paper money ONLY, e.g. EPQ, PPQ, Star; blank for coins'],
         'country_of_manufacture' => ['src' => 'CatalogPath CountryName', 'desc' => 'full country name', 'const' => 'United States'],
-        'certification'  => ['opts' => $cert, 'const' => 'Uncertified', 'desc' => 'Uncertified unless slabbed'],
+        'certification'  => ['opts' => $cert, 'desc' => 'OPERATOR-PICKED from the valid values (grading service, or Uncertified) - leave EMPTY; do not guess'],
         'title_suffix'   => ['desc' => 'operator catch-all appended to the title (grade details, error details, packaging, slab-label text) - leave BLANK; "Coin Collectible" is added to the title automatically'],
         'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
@@ -750,7 +750,6 @@ function gsMapToProduct(array $c): array
     // 1+2 = description split, 3 = exact-image line, 5 = PCC blurb. "Coin
     // Collectible" is appended to the TITLE by Computer, not stored here -
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
-    $row['certification'] = 'Uncertified';
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
     // Brand from GreySheet's image attribution when it carries one; no
     // attribution just leaves the box as it is.
