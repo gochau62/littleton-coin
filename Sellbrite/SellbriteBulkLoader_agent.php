@@ -260,7 +260,7 @@ function gsMemRoots(): array
 /* Drill-down level 2: the coin-holding series (leaf nodes) under a chosen root,
  * matched by catalog path so intermediate folders are flattened away. The user
  * goes root -> series -> coin. Searchable. 0 API calls. */
-function gsMemSeries(string $rootPath, string $q = '', int $limit = 200): array
+function gsMemSeries(string $rootPath, string $q = '', int $limit = 10000): array
 {
     $sql = 'SELECT ref_id, name, path, coin_count FROM ' . SBL_GSMEM_TABLE
          . " WHERE kind = 'N' AND coin_count > 0";
@@ -305,7 +305,7 @@ function gsMemYears(string $nodePath): array
  * strips the shared prefix so only the distinguishing part shows. 0 API calls.
  * Limit is high so big series (Morgan Dollars 1878-1921 with all VAMs) list in
  * full; the Year dropdown is the quick way to narrow them. */
-function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $limit = 3000): array
+function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $limit = 50000): array
 {
     $nodePath = trim($nodePath);
     if ($nodePath === '') { return []; }
