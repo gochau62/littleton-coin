@@ -586,6 +586,15 @@
                 source: function(req, resp){
                     var t = (req.term || '').toLowerCase();
                     var pool = opts;
+                    // Coin Type pools by the drill-down tree: U.S. Coins vs
+                    // U.S. Currency vs World Coins vs World Currency. No tree
+                    // picked (manual SKU) = the full list.
+                    if (inp.attr('name') === 'coin_type' && typeof SBL_COINTYPE_POOLS !== 'undefined' && sblRootPath){
+                        var world = /world/i.test(sblRootPath);
+                        var curr  = /currency/i.test(sblRootPath);
+                        var tp = SBL_COINTYPE_POOLS[(world ? 'world' : 'us') + '_' + (curr ? 'currency' : 'coins')];
+                        if (tp && tp.length) pool = tp;
+                    }
                     // Grade offers only what fits: paper vs coin grades, and
                     // certified grades only once a grading service is chosen.
                     if (inp.attr('name') === 'grade' && typeof SBL_GRADE_POOLS !== 'undefined'){

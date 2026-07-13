@@ -617,7 +617,7 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
-        'coin_type'      => ['src' => 'GreySheet series', 'desc' => 'the series/type from the GreySheet catalog path, e.g. "Morgan Dollar", "Lincoln Wheat Small Cent" - never just "Lincoln"'],
+        'coin_type'      => ['desc' => 'OPERATOR-PICKED from the valid values - leave EMPTY; do not guess'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
@@ -744,21 +744,9 @@ function gsMapToProduct(array $c): array
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
     }
-    // Category defaults from the ODS VLOOKUP: denomination / composition /
-    // fineness fill the gaps GreySheet left. Coin Type is NOT hardcoded -
-    // the series / store category names it (Computer fills it when empty).
-    $vc = Schema::lookups()['category_copy'][$row['category_name'] ?? ''] ?? [];
-    if ($vc) {
-        // World coins keep GreySheet's spoken denomination; the house short
-        // form only fills a gap there.
-        if (!empty($vc['denomination']) && (!$isWorld || ($row['denomination'] ?? '') === '')) {
-            $row['denomination'] = $vc['denomination'];
-        }
-        foreach (['composition' => 'composition', 'fineness' => 'fineness',
-                  'country' => 'country_of_manufacture'] as $vk => $f) {
-            if (!empty($vc[$vk]) && ($row[$f] ?? '') === '') { $row[$f] = $vc[$vk]; }
-        }
-    }
+    // No per-category facts anywhere: GreySheet provides denomination,
+    // composition, fineness and weight with the coin; the category_copy KEYS
+    // only exist to normalize the series name into the store category.
     // Precious-metal content = metal weight x fineness (troy oz), precious metals only.
     $fin = (float) preg_replace('/[^0-9.]/', '', $g('Fineness'));
     if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces']) && $fin > 0 && $fin <= 1) {

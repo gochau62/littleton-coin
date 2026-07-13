@@ -389,6 +389,9 @@ details.group summary::-webkit-details-marker { display:none; }
 /* Grade pools: the Grade menu offers coin vs paper-money grades, certified
    vs raw, based on the SKU's category and Certification. */
 var SBL_GRADE_POOLS = <?= json_encode(Schema::gradePools()) ?>;
+/* Coin Type pools by drill-down tree: U.S. Coins / U.S. Currency /
+   World Coins / World Currency each get their own valid values. */
+var SBL_COINTYPE_POOLS = <?= json_encode(Schema::coinTypePools()) ?>;
 </script>
 <?php
 }
