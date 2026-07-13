@@ -752,9 +752,14 @@ function gsMapToProduct(array $c): array
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
     $row['certification'] = 'Uncertified';
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
-    // United States only for the U.S. trees; a world coin whose path didn't
-    // name a country stays blank for the operator's dropdown pick.
-    if (($row['country_of_manufacture'] ?? '') === '' && !$isWorld) {
+    // Brand from GreySheet's image attribution when it carries one; no
+    // attribution just leaves the box as it is.
+    if ($g('FeaturedImageAttribution') !== '') { $row['brand'] = $g('FeaturedImageAttribution'); }
+    // United States ONLY when the path root is explicitly a U.S. tree; any
+    // other/unknown root leaves the country alone (the drill-down tree set
+    // it on the form, and the fill never overwrites a non-empty country).
+    $rootName2 = strtolower((string) ($c['CatalogPath'][0]['Name'] ?? ''));
+    if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $rootName2)) {
         $row['country_of_manufacture'] = 'United States';
     }
     return array_filter($row, static fn($v) => $v !== '' && $v !== null);
