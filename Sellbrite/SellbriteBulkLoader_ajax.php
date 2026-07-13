@@ -76,6 +76,7 @@ header('Content-Type: application/json');
 
 switch ($action) {
 
+    // PLAIN: The live recalculation: fill the auto boxes, return the colors.
     case 'compute':
         $computed   = Computer::apply($_POST);
         $validation = Validator::check($computed);
@@ -88,6 +89,7 @@ switch ($action) {
         ]);
         break;
 
+    // PLAIN: Save the form to the database (recomputes first, so what is stored is what you saw).
     case 'save':
         $computed   = Computer::apply($_POST);
         $validation = Validator::check($computed);
@@ -127,6 +129,7 @@ switch ($action) {
         ]);
         break;
 
+    // PLAIN: Fetch one row for the edit form.
     case 'find':
         $row = sblFind((int) ($_POST['id'] ?? 0));
         echo json_encode([
@@ -135,6 +138,7 @@ switch ($action) {
         ]);
         break;
 
+    // PLAIN: Delete one SKU.
     case 'delete':
         $id = (int) ($_POST['id'] ?? 0);
         $ok = $id > 0 ? sblDelete($id) : false;
@@ -142,12 +146,14 @@ switch ($action) {
                           'message' => $ok ? '' : 'Delete failed - no database connection or a DB error.']);
         break;
 
+    // PLAIN: Delete every SKU.
     case 'deleteAll':
         $ok = sblDeleteAll();
         echo json_encode(['returnClass' => $ok ? 'success' : 'error',
                           'message' => $ok ? '' : 'Delete all failed - no database connection or a DB error.']);
         break;
 
+    // PLAIN: Free-text coin search.
     case 'gsSearch':
         // Coin dropdown: search the learned path memory (0 API calls).
         $s = gsSearch((string) ($_POST['q'] ?? ''));
@@ -155,22 +161,26 @@ switch ($action) {
                           'matches' => $s['matches'], 'message' => $s['error']]);
         break;
 
+    // PLAIN: The "1. Tree" menu.
     case 'gsRoots':
         // Drill-down 1: the broad trees (US Coins, US Currency, ...). 0 API calls.
         echo json_encode(['returnClass' => 'success', 'matches' => gsMemRoots()]);
         break;
 
+    // PLAIN: The "2. Series" menu.
     case 'gsSeries':
         // Drill-down 2: coin-holding series under a root, searchable. 0 API calls.
         echo json_encode(['returnClass' => 'success',
                           'matches' => gsMemSeries((string) ($_POST['root'] ?? ''), (string) ($_POST['q'] ?? ''))]);
         break;
 
+    // PLAIN: The "3. Year" menu.
     case 'gsNodeYears':
         // Year dropdown for a series (deduplicated). 0 API calls.
         echo json_encode(['returnClass' => 'success', 'years' => gsMemYears((string) ($_POST['path'] ?? ''))]);
         break;
 
+    // PLAIN: The "4. Coin" menu.
     case 'gsCoins':
         // Drill-down 3: coins under the series, optional year filter. 0 API calls.
         echo json_encode(['returnClass' => 'success',
@@ -179,12 +189,14 @@ switch ($action) {
                                                   (string) ($_POST['year'] ?? ''))]);
         break;
 
+    // PLAIN: Years for a typed category (rebuilds the form's Year box).
     case 'gsYears':
         // Dynamic Year dropdown: only the years this series exists for.
         $years = gsYearsFor((string) ($_POST['category'] ?? ''));
         echo json_encode(['returnClass' => 'success', 'years' => $years]);
         break;
 
+    // PLAIN: The Autofill button.
     case 'gsImport':
         // Auto-fill from GreySheet: by gs_id (dropdown pick) or by navigating
         // the tree from the form's attributes (learning the path as it goes).
@@ -197,6 +209,7 @@ switch ($action) {
                           'total_calls' => (int) ($_SESSION['gs_api_calls'] ?? 0), 'message' => $imp['error']]);
         break;
 
+    // PLAIN: The "Generate Product details with AI" button.
     case 'gsListingFill':
         // Listing content only: Gemini writes the EMPTY Description /
         // Extended Description / Feature 4, house layout, never overwriting.
@@ -205,6 +218,7 @@ switch ($action) {
                           'row' => $r['row'], 'message' => $r['error']]);
         break;
 
+    // PLAIN: Find-and-import for described coins.
     case 'gsGenerate':
         // Coin GreySheet doesn't carry: Gemini drafts the whole listing.
         $gen = gsGenerate($_POST);

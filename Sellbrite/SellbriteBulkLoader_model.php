@@ -28,6 +28,7 @@ if (!defined('SBL_TABLE')) {
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
 
+// PLAIN: Opens the connection to the database (once per request).
 /** Open (once) and reuse a DB2 connection from the session credentials. */
 /* =========================================================================
  * SECTION 1 - connection + error/commit helpers
@@ -43,6 +44,7 @@ function sbl_conn()
     return $conn;
 }
 
+// PLAIN: Reads the database's error message so failures say why.
 /** Log a DB error through the LCCOnline logger when available; always returns false. */
 function sbl_db_err($where)
 {
@@ -52,6 +54,7 @@ function sbl_db_err($where)
     return false;
 }
 
+// PLAIN: Finalizes a write.
 /**
  * Commit the current unit of work. Required if the connection is under manual
  * commitment control (common on IBM i) - without it, a "successful" INSERT /
@@ -64,6 +67,7 @@ function sbl_commit($conn)
     return (bool) db2_commit($conn);
 }
 
+// PLAIN: Cleans a typed date into the format the database wants.
 /** Normalize a user date (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) to ISO, or '' if unusable. */
 /* =========================================================================
  * SECTION 2 - value coercion + live column discovery
@@ -78,6 +82,7 @@ function sbl_norm_date($v)
     return $ts === false ? '' : date('Y-m-d', $ts);
 }
 
+// PLAIN: Cleans one value before saving (numbers to numbers, blanks to NULL).
 /** Coerce one value to what its DB2 column expects (NULL for blanks/placeholders/bad input). */
 function sbl_coerce($name, $val)
 {
@@ -108,6 +113,7 @@ function sbl_coerce($name, $val)
     return $v === '' ? null : $v;                     // other text: '' -> NULL
 }
 
+// PLAIN: The form boxes the screen knows about (from the reference binder).
 /** The product column names, in schema order. */
 function sbl_columns()
 {
@@ -116,6 +122,7 @@ function sbl_columns()
     return $cols;
 }
 
+// PLAIN: Asks the database "which columns do you ACTUALLY have?"
 /** The columns that ACTUALLY exist on the DB2 table (lowercased), cached. */
 function sbl_table_columns()
 {
@@ -135,6 +142,7 @@ function sbl_table_columns()
     return $set;
 }
 
+// PLAIN: The overlap of "boxes the form knows" and "columns the table has" - why a new box added before its ALTER never crashes saves.
 /**
  * Schema columns to write, intersected with what the table really has. This
  * keeps a newly-added schema column (before its ALTER TABLE runs) from breaking
@@ -150,6 +158,7 @@ function sbl_writable_columns()
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
 }
 
+// PLAIN: The shared "read rows" helper (also lower-cases DB2's upper-case column names).
 /** Run a prepared SELECT with params and return all rows as lowercase-keyed assoc arrays. */
 /* =========================================================================
  * SECTION 3 - reads (grid list, single row, full export set)
@@ -172,6 +181,7 @@ function sbl_select($sql, array $params = [])
 /*  Public API (called by SellbriteBulkLoader_ajax.php / _ctl.php)     */
 /* ------------------------------------------------------------------ */
 
+// PLAIN: The home-screen grid: newest first, optionally filtered by the search text.
 /** List rows for the grid, optionally filtered by a search string. */
 function sblGetAll($q = '')
 {
@@ -191,6 +201,7 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
+// PLAIN: Fetches a saved row from the same category (currently unused).
 /**
  * The most recently saved listing in a category - the tool's "learned" house
  * copy for that category. Autofill reuses its category-level fields (Expanded
@@ -209,12 +220,14 @@ function sblCategoryExample($category)
     return $rows[0] ?? [];
 }
 
+// PLAIN: Every column of every row - what the export reads.
 /** Every product row IN FULL (all columns) for the export. */
 function sblGetAllFull()
 {
     return sbl_select('SELECT * FROM ' . SBL_TABLE . ' ORDER BY updated_at DESC');
 }
 
+// PLAIN: One row by id, for the edit form.
 /** Fetch a single row (full record) for the edit form, or false if not found. */
 function sblFind($id)
 {
@@ -224,6 +237,7 @@ function sblFind($id)
     return $rows[0] ?? false;
 }
 
+// PLAIN: Files a brand-new row.
 /** Insert a new product row; returns the new id, or false on error. */
 /* =========================================================================
  * SECTION 4 - writes (insert / update / save / delete)
@@ -247,6 +261,7 @@ function sblInsert(array $row)
     return $id;
 }
 
+// PLAIN: Rewrites an existing row.
 /** Update an existing product row by id; returns true on success. */
 function sblUpdate($id, array $row)
 {
@@ -265,6 +280,7 @@ function sblUpdate($id, array $row)
     return true;
 }
 
+// PLAIN: Saves a row: insert if new, update if it already has an id.
 /** Insert or update depending on whether the row carries an id. Returns the id (or false). */
 function sblSave(array $row)
 {
@@ -273,6 +289,7 @@ function sblSave(array $row)
     return sblInsert($row);
 }
 
+// PLAIN: Deletes every SKU row.
 /** Delete EVERY product row (home-menu "Delete All"); returns true on success. */
 function sblDeleteAll()
 {
@@ -285,6 +302,7 @@ function sblDeleteAll()
     return true;
 }
 
+// PLAIN: Deletes one SKU row.
 /** Delete a product row by id; returns true on success. */
 function sblDelete($id)
 {
