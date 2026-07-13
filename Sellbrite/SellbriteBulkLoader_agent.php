@@ -7,6 +7,19 @@
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 07/01/2026                         *  -->
 <!--  ***************************************************   */
+/*    ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  * Date      - 07/01/2026                          *  -->
+<!--  * Purpose   - GreySheet + Gemini autofill agent   *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  * Date      - 07/13/2026                          *  -->
+<!--  * Purpose   - Operator-picked Certification,      *  -->
+<!--  *             collector's note rules, plain-      *  -->
+<!--  *             English comment pass                *  -->
+<!--  ***************************************************   */
 /*
  *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
