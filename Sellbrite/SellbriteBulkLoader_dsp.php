@@ -147,6 +147,9 @@ details.group summary::-webkit-details-marker { display:none; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background-color:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
 /* Locked boxes (e.g. Cert Number before a grading service is picked). */
 .field input:disabled, .field input.is-locked { opacity:.5; cursor:not-allowed; pointer-events:none; }
+/* Cert Number vanishes for raw coins - !important outranks the inline
+   display sblFieldVisibility sets, so the two never fight. */
+.field.cert-locked { display:none !important; }
 /* Valid-values combo boxes show a caret so users know a menu opens on click. */
 .field input.has-menu { padding-right:30px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6b62'/%3E%3C/svg%3E");

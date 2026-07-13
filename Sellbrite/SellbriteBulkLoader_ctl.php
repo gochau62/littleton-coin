@@ -262,17 +262,20 @@
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-    /* Certification Number only opens once a grading service is picked -
-       raw/U.S. Mint coins have no slab, so there is no number to type.
-       The yellow "Enter the certification number" nudge comes from the
-       server Validator (is-action), same as the other prompts. */
+    /* Certification Number only exists once a grading service is picked -
+       raw/U.S. Mint coins have no slab, so the box disappears entirely.
+       Hidden via the cert-locked CLASS (not inline display) so it stacks
+       with sblFieldVisibility's own show/hide without fighting it. The
+       yellow "Enter the certification number" nudge comes from the server
+       Validator (is-action), same as the other prompts. */
     function sblCertNumGate(clearIt){
         var box = $('#f_certification_number'); if (!box.length) return;
         var cert = String($('#f_certification').val() || '').trim().toLowerCase();
         var certified = cert !== '' && cert !== 'uncertified' && cert !== 'u.s. mint';
+        box.closest('.field').toggleClass('cert-locked', !certified);
         // readonly (not disabled) so any kept value still reaches save/compute -
         // jQuery serialize() drops disabled inputs entirely.
-        box.prop('readOnly', !certified).toggleClass('is-locked', !certified);
+        box.prop('readOnly', !certified);
         // Only wipe the number when the OPERATOR switches back to raw -
         // never on a plain page/row load (no silent data loss).
         if (!certified && clearIt && box.val()) box.val('');
