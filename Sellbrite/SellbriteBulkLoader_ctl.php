@@ -264,6 +264,8 @@
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
+            // Country is set ONCE by the tree - autofill never overwrites it.
+            if (k === 'country_of_manufacture' && el && String(el.value || '').trim() !== '') return;
             if (el && v !== null && v !== '') {
                 // Selects (e.g. SKU of Parent Product): add the option if missing
                 // so unmatched GreySheet names still land.
