@@ -743,6 +743,30 @@ function gsMapToProduct(array $c): array
             $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($c['CatalogPath'][1]['Name'] ?? '')));
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
+        // Coin Type: TRY to autofill by best-matching the tree's valid values
+        // against the series/category wording ("Morgan Dollars" -> "Morgan",
+        // "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat"). No stored
+        // mapping - longest option whose every word appears wins; no match
+        // leaves the dropdown to the operator.
+        if (($row['coin_type'] ?? '') === '') {
+            $poolKey = ($isWorld ? 'world' : 'us') . '_' . ($isPaper ? 'currency' : 'coins');
+            $hay = strtolower(($row['category_name'] ?? '') . ' '
+                 . implode(' ', array_map(static fn($n) => is_array($n) ? (string) ($n['Name'] ?? '') : '', $c['CatalogPath'])));
+            $best = '';
+            // GreySheet says "Silver Eagles"; the valid value is "American Eagle".
+            if (preg_match('/(silver|gold|platinum|palladium) eagle/', $hay)) { $best = 'American Eagle'; }
+            elseif (strpos($hay, 'gold buffalo') !== false) { $best = 'American Buffalo'; }
+            else {
+                foreach (Schema::coinTypePools()[$poolKey] ?? [] as $opt) {
+                    $all = true;
+                    foreach (preg_split('/\s+/', strtolower($opt)) as $tk) {
+                        if ($tk !== '' && strpos($hay, $tk) === false) { $all = false; break; }
+                    }
+                    if ($all && strlen($opt) > strlen($best)) { $best = $opt; }
+                }
+            }
+            if ($best !== '') { $row['coin_type'] = $best; }
+        }
     }
     // No per-category facts anywhere: GreySheet provides denomination,
     // composition, fineness and weight with the coin; the category_copy KEYS
