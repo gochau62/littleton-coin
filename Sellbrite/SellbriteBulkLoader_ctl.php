@@ -29,6 +29,29 @@
     
     document.title = "Sellbrite Bulk Loader";
 
+    /* =====================================================================
+     * SellbriteBulkLoader_ctl.php - controller: ALL the screen's JavaScript,
+     * then (at the bottom of the file) the PHP authority check that renders
+     * the page via SellbriteBulkLoader_dsp.php.
+     *
+     * MAP OF THIS SCRIPT (sections in order, marked with ---- banners):
+     *   message helpers      LCC error/success boxes
+     *   AUTO badges          blue "auto" badges track what autofill wrote
+     *   view switching       home list <-> SKU form; export; search; AI button
+     *   new / edit           sblClearForm/sblNew/sblEdit + market field toggle
+     *   save / delete        serialize -> AJAX save; grid row upsert
+     *   coin finder          sblCertNumGate (Cert Number gating) +
+     *                        sblFillFromRow (autofill -> form, country rules)
+     *   Year dropdown        select rebuilt from the series' real years
+     *   drill-down           1.Tree 2.Series 3.Year 4.Coin pickers, the
+     *                        jQuery-UI combo conversion (sblFieldCombos:
+     *                        grade/coin-type/country pools live here),
+     *                        sblGsAutofill (the wipe + import call)
+     *   live recompute       sblRecompute: posts the form to 'compute',
+     *                        writes back [data-auto] fields + statuses
+     *   document ready       bindings: input/change -> recompute, cert gate
+     * ===================================================================== */
+
     /* ---- message helpers (jQuery-UI state boxes, LCC convention) ---- */
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }

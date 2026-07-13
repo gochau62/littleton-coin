@@ -42,6 +42,11 @@ if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativela
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
 // (SBL_ABOUT_SELLER / SBL_EXACT_IMAGE_DEFAULT constants live in the logic file.)
 
+/* =========================================================================
+ * SECTION 1 - HTTP: GreySheet API + Gemini
+ * gsApiGet is the ONLY GreySheet caller (headers, timeout, logging);
+ * geminiJson is the ONLY Gemini caller (JSON-mode, model fallback).
+ * ========================================================================= */
 function gsLog($msg)
 {
     $line = 'Sellbrite ' . $msg;
@@ -159,6 +164,11 @@ function geminiJson($system, $user, &$meta = [])
 
 if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
+/* =========================================================================
+ * SECTION 2 - PATH MEMORY writes (DB2 SBLMEMORYT: kind N=node, C=coin)
+ * Everything the screen sees on GreySheet is upserted here so the
+ * drill-down dropdowns cost 0 API calls next time.
+ * ========================================================================= */
 function gsNorm($s): string
 {
     return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
@@ -222,6 +232,11 @@ function gsMemNodeChildren(int $parentId): array
     return gsMemRows('SELECT ref_id, name, path, coin_count, done FROM ' . SBL_GSMEM_TABLE
                    . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
 }
+/* =========================================================================
+ * SECTION 3 - PATH MEMORY reads (the drill-down dropdowns)
+ * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins power the
+ * 1.Tree / 2.Series / 3.Year / 4.Coin pickers.
+ * ========================================================================= */
 function gsMemSearch(string $q, int $limit = 40): array
 {
     $words = array_filter(explode(' ', gsNorm($q)));
@@ -330,6 +345,11 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
     }
     return $out;
 }
+/* =========================================================================
+ * SECTION 4 - LIVE GreySheet navigation + endpoints
+ * Used when a coin is NOT in memory: walk the node tree (Gemini breaks
+ * ties), learn everything visited, then fetch the collectible/pricing.
+ * ========================================================================= */
 function gsChildren(int $nodeId): array
 {
     $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => $nodeId], $m);
@@ -520,6 +540,10 @@ function gsPriceNum($v): string
 }
 /* Normalize a free-text GreySheet composition to an ODS "Valid Values" option
  * (e.g. "99.99% gold" -> "Gold", "Copper-Nickel Clad" stays). */
+/* =========================================================================
+ * SECTION 5 - field normalizers (composition, category date-strip,
+ * mint location, dropdown snapping)
+ * ========================================================================= */
 function sbl_norm_composition(string $c): string
 {
     $l = strtolower($c);
@@ -575,6 +599,10 @@ function sbl_snap(string $v, array $opts): string
  * from, how to fill it, the allowed options (from the ODS "Valid Values" sheet)
  * and any hardcoded constant. Drives BOTH the deterministic map and the Gemini
  * prompt. Only the fields the autofill is responsible for are listed. */
+/* =========================================================================
+ * SECTION 6 - the AI writing brief: per-field guides, option lists,
+ * JSON spec, and response cleanup
+ * ========================================================================= */
 function sbl_field_guide(): array
 {
     static $g = null;
@@ -636,6 +664,12 @@ function sbl_field_guide(): array
 /* Deterministic mapping: fills every field it reliably can straight from the
  * GreySheet data + the ODS constants. This is the trustworthy base; Gemini only
  * fills the gaps it leaves (coin_type, refinements). */
+/* =========================================================================
+ * SECTION 7 - GreySheet -> product row mapping
+ * gsMapToProduct = deterministic field mapping (no AI);
+ * gsAiMap = gsMapToProduct + Gemini listing copy on top;
+ * gsListingFill = Gemini gap-fill for the Listing Content boxes only.
+ * ========================================================================= */
 function gsMapToProduct(array $c): array
 {
     $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
@@ -956,6 +990,10 @@ function gsListingFill(array $post): array
     $err = !$row && !geminiConfigured() ? 'GEMINI_API_KEY not set (add the secrets file).' : '';
     return ['ok' => $err === '', 'row' => $row, 'via' => 'listing gap fill', 'error' => $err];
 }
+/* =========================================================================
+ * SECTION 8 - AJAX entry points (called from _ajax.php)
+ * gsSearch / gsImport / gsGenerate / gs_finalize (compute + validate).
+ * ========================================================================= */
 function gsSearch(string $q): array
 {
     $q = trim($q);
