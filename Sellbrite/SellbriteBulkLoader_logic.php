@@ -156,9 +156,9 @@ final class Schema
     public static function requiredNames(): array
     {
         // Coin details keeps ONLY SKU / SKU of Parent Product / Price / Cost /
-        // Quantity required; every other coin-details box is optional. The
-        // other sections (listing copy, packaging, images) keep theirs.
-        return ['sku', 'category_name', 'price', 'name', 'description', 'extended_description',
+        // Quantity / Condition required; every other coin-details box is
+        // optional. Other sections (listing copy, packaging, images) keep theirs.
+        return ['sku', 'category_name', 'price', 'condition', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'quantity', 'cost'];
@@ -324,7 +324,6 @@ final class Computer
         }
         // Sellbrite Condition (new/used/reconditioned): collectible coins list
         // as "used" (Des's export rows do) unless the operator overrides.
-        if ($g('condition') === '') { $row['condition'] = 'used'; }
 
         // eBay condition fields, derived from certification + grade:
         //   certified/slabbed -> Graded (grader + letter/numerical grade)

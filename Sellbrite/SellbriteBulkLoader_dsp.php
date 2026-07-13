@@ -340,14 +340,15 @@ details.group summary::-webkit-details-marker { display:none; }
                     // required (Product Name, Description, the derived copy...).
                     $autoAlways = ['name','description','extended_description',
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',
-                                   'search_terms','creation_date','condition','exact_image',
+                                   'search_terms','creation_date','exact_image',
                                    'country_of_manufacture','brand',
                                    'package_weight','package_height','package_length','package_width'];
                     // Operator-owned picks: still autofill, but no AUTO badge
                     // (original_retail has no autofill source at all).
                     $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
-                    // Fully manual: no badge AND no formula refresh.
-                    $manualAlways = ['title_suffix', 'certification_number'];
+                    // Fully manual: no badge AND no formula refresh. Condition
+                    // starts blank; staff pick used (or new) themselves.
+                    $manualAlways = ['title_suffix', 'certification_number', 'condition'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
