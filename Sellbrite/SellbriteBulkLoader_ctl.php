@@ -595,6 +595,14 @@
                         var tp = SBL_COINTYPE_POOLS[(world ? 'world' : 'us') + '_' + (curr ? 'currency' : 'coins')];
                         if (tp && tp.length) pool = tp;
                     }
+                    // Country pools by the tree: U.S. trees are United States;
+                    // World trees offer the world countries (the DB2 path
+                    // usually fills it before the menu is even needed).
+                    if (inp.attr('name') === 'country_of_manufacture' && sblRootPath){
+                        pool = /world/i.test(sblRootPath)
+                            ? $.grep(opts, function(v){ return v !== 'United States'; })
+                            : ['United States'];
+                    }
                     // Grade offers only what fits: paper vs coin grades, and
                     // certified grades only once a grading service is chosen.
                     if (inp.attr('name') === 'grade' && typeof SBL_GRADE_POOLS !== 'undefined'){
