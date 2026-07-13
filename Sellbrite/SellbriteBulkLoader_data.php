@@ -8,14 +8,13 @@
  *   'schema'  - one row per Sellbrite column: label / required / auto /
  *               which 'values' or derived list feeds its dropdown.
  *               Machine names MUST match the Sellbrite export headers.
- *   'lookups' - category_copy    the store-category VOCABULARY (keys only):
- *                                matched against GreySheet series names to
- *                                fill SKU of Parent Product.
- *               package_weights  PACKAGING weights only (certification
- *                                wrap/slab add-on, GSA holders).
+ *   'lookups' - package_weights: PACKAGING weights only (certification
+ *               wrap/slab add-on, GSA holders).
  *
  * NOT stored here (GreySheet / the drill-down provides it per coin):
- *   - coin type (the series names it), denomination, composition, fineness
+ *   - SKU of Parent Product: the series name, date range stripped
+ *   - coin type (best-matched from the valid values), denomination,
+ *     composition, fineness
  *   - coin weight (WeightOunces drives the package weight)
  *   - mint mark (MintMark field); mint location derives from the mark
  *   - country: the path names it (World Coins > Austria > ...); U.S. trees
@@ -341,100 +340,6 @@ return [
         // Store category -> catalog facts (VLOOKUP tab A:I). Keys double as
         // the store-category vocabulary for GreySheet series matching - an
         // empty [] row still declares a valid store category.
-        // Store-category VOCABULARY: the keys are matched against GreySheet
-        // series names to fill SKU of Parent Product. No facts stored -
-        // GreySheet provides them by the time the coin is picked.
-        'category_copy' => [
-            'Liberty Cap Half Cent' => [], 'Draped Bust Half Cent' => [], 'Classic Head Half Cent' => [],
-            'Braided Hair Half Cent' => [], 'Flowing Hair Large Cent' => [],
-            'Liberty Cap Large Cent' => [], 'Draped Bust Large Cent' => [],
-            'Classic Head Large Cent' => [], 'Coronet Head Large Cent' => [],
-            'Braided Hair Large Cent' => [], 'Flying Eagle Small Cent' => [],
-            'Indian Head Small Cent' => [], 'Lincoln Wheat Small Cent' => [],
-            'Lincoln Memorial Small Cent' => [], 'Lincoln Bicentennial Small Cent' => [],
-            'Lincoln Shield Small Cent' => [], 'Two Cent' => [], 'Three Cent Silver' => [],
-            'Three Cent Nickel' => [], 'Flowing Hair Half Dime' => [], 'Draped Bust Half Dime' => [],
-            'Capped Bust Half Dime' => [], 'Seated Half Dime' => [], 'Shield Nickel' => [],
-            'Liberty Nickel' => [], 'Buffalo Nickel' => [], 'Jefferson Nickel' => [],
-            'Draped Bust Dime' => [], 'Capped Bust Dime' => [], 'Seated Liberty Dime' => [],
-            'Barber Dime' => [], 'Mercury Dime' => [], 'Roosevelt Dime' => [],
-            'Semiquincentennial Dime' => [], 'Twenty Cent' => [], 'Draped Bust Quarter' => [],
-            'Capped Bust Quarter' => [], 'Seated Liberty Quarter' => [], 'Barber Quarter' => [],
-            'Standing Liberty Quarter' => [], 'Washington Quarter' => [], 'State Quarter' => [],
-            'DC & US Territories Quarter' => [], 'America the Beautiful Quarter' => [],
-            'American Women Quarter' => [], 'Semiquincentennial Quarter' => [],
-            'Draped Bust Half Dollar' => [], 'Capped Bust Half Dollar' => [],
-            'Seated Liberty Half Dollar' => [], 'Barber Half Dollar' => [],
-            'Liberty Walking Half Dollar' => [], 'Franklin Half Dollar' => [], 'Kennedy Half Dollar' => [],
-            'Semiquincentennial Half Dollar' => [], 'Draped Bust Dollar' => [],
-            'Seated Liberty Dollar' => [], 'Trade Dollar' => [], 'Morgan Dollar' => [],
-            'Morgan Dollar Toned' => [], 'Peace Dollar' => [], 'Eisenhower Dollar' => [],
-            'Susan B Anthony Dollar' => [], 'Native American Dollar' => [], 'Presidential Dollar' => [],
-            'American Innovation Dollar' => [], 'Gold $1' => [], 'Gold $2.50 Quarter Eagle' => [],
-            'Gold $3' => [], 'Gold $5 Half Eagle' => [], 'Gold $10 Eagle' => [],
-            'Gold $20 Double Eagle' => [], 'Fractional Pioneer Gold' => [],
-            'Classic Silver Commemorative' => [], 'Classic Gold Commemorative' => [],
-            'Modern Gold Commemorative' => [], 'US Small Cent Mixed Lot' => [],
-            'US Nickel Mixed Lot' => [], 'US Half Dollar Mixed Lot' => [], 'US Dollar Mixed Lot' => [],
-            'US Gold Mixed Lot' => [], 'Silver Bullion Coin' => [], 'Silver Bar or Round' => [],
-            'Other Silver Bullion' => [], 'Gold Bullion Coin' => [], 'Gold Bar or Round' => [],
-            'Gold Leaf or Flake' => [], 'Gold Nugget' => [], 'Platinum Bullion Coin' => [],
-            'Platinum Bar or Round' => [], 'Palladium Bullion Coin' => [], 'Titanium Bar or Round' => [],
-            'Copper Bar or Round' => [], 'Large Size Federal Reserve Bank Note' => [],
-            'Large Size Federal Reserve Note' => [], 'Large Size Gold Certificate' => [],
-            'Large Size Legal Tender Note' => [], 'Large Size National Banknote' => [],
-            'Large Size Silver Certificate' => [], 'Large Size Paper Money Mixed Lot' => [],
-            'Small Size Federal Reserve Bank Note' => [], 'Small Size Federal Reserve Note' => [],
-            'Small Size Gold Certificate' => [], 'Small Size Legal Tender Note' => [],
-            'Small Size National Banknote' => [], 'Small Size Silver Certificate' => [],
-            'Small Size WWII Emergency Note' => [], 'Colonial Currency' => [],
-            'Confederate Currency' => [], 'Fractional Currency' => [],
-            'Military Payment Certificate' => [], 'Obsolete Currency' => [], 'Obsolete Bank Check' => [],
-            'Treasury Note' => [], 'Canada Large Cent' => [], 'Canada Small Cent' => [],
-            'Canada Five Cent Silver' => [], 'Canada Five Cent' => [], 'Canada Ten Cent' => [],
-            'Canada Twenty Cent' => [], 'Canada Twenty Five Cent' => [], 'Canada Fifty Cent' => [],
-            'Canada Dollar' => [], 'Canada Two Dollar' => [], 'China Paper Money' => [],
-            'France Allied Military Currency' => [], 'Italy Allied Military Currency' => [],
-            'Japan Allied Military Currency' => [], 'Hobo Nickel' => [], 'Disney Dollars' => [],
-            'Novelty US Paper Money' => [], 'U.S. Philippine Coin' => [],
-            'Modern Silver/Clad Commemorative' => [], 'Australia Proof Set' => [], 'Canada Mint Set' => [],
-            'Canada Proof Set' => [], 'Canada Specimen Set' => [], 'Hawaiian Coin' => [],
-            'Love Token' => [], 'Colonial' => [], 'Post Colonial' => [], 'Australia Collection' => [],
-            'Australia Commemorative' => [], 'Austria Coin' => [], 'British India Coin' => [],
-            'Canada Commemorative' => [], 'Canada Token' => [], 'East Germany Coin' => [],
-            'German States Coin' => [], 'German Empire Coin' => [], 'Germany Weimar Republic Coin' => [],
-            'Germany Third Reich Coin' => [], 'Germany West & Unified Coin' => [], 'Indonesia Coin' => [],
-            'Isle of Man Coin' => [], 'Mexico Colonial Coin' => [],
-            'Mexico War of Independence Coin' => [], 'Mexico Empire of Iturbide Coin' => [],
-            'Mexico First Republic Coin' => [], 'Mexico Empire of Maximilian Coin' => [],
-            'Mexico Second Republic Coin' => [], 'Mexico Modern Coin' => [], 'Mexico Mixed Lot' => [],
-            'Russia Empire Coin' => [], 'Russia USSR Coin' => [], 'Russia Federation Coin' => [],
-            'Sweden Coin' => [], 'UK / Great Britain Penny' => [], 'UK / Great Britain Threepence' => [],
-            'UK / Great Britain Sixpence' => [], 'UK / Great Britain Commemorative' => [],
-            'Other UK / Great Britain Coin' => [], 'Error Coin' => [], 'Mint Set' => [], 'Proof Set' => [],
-            'US Coin Mixed Lot' => [], 'US Rolls' => [], 'Other US Coin' => [],
-            'Small Size Paper Money Mixed Lot' => [], 'Other US Paper Money' => [],
-            'Paper Money Mixed Lot' => [], 'Native American Coin' => [], 'Other Bullion' => [],
-            'Cameroon Coin' => [], 'Cayman Islands Coin' => [], 'Canada Pre-Confederation Coin' => [],
-            'Other Canada Coin' => [], 'Canada Mixed Lot' => [], 'Cook Islands Coin' => [],
-            'Egypt Coin' => [], 'Fiji Coin' => [], 'Ghana Coin' => [], 'Italy Coin' => [],
-            'Liberia Coin' => [], 'Maldives Coin' => [], 'Malta Coin' => [], 'Nepal Coin' => [],
-            'Netherlands Coin' => [], 'Solomon Islands Coin' => [], 'Spanish Coin' => [],
-            'Swiss Coin' => [], 'Tuvalu Coin' => [], 'Vanuatu Coin' => [], 'Other Asia Coin' => [],
-            'World Coin Mixed Lot' => [], 'Ancient Byzantine Coin' => [], 'Ancient Gaulish Coin' => [],
-            'Ancient Greek Coin' => [], 'Ancient Roman Imperial Coin' => [],
-            'Ancient Roman Provincial Coin' => [], 'Ancient Roman Republic Coin' => [],
-            'Other Ancient Coin' => [], 'Car Wash Token' => [], 'Civil War Token' => [],
-            'Good Luck Token' => [], 'Hard Times Token' => [], 'Parking Token' => [],
-            'Recovery Program Token' => [], 'Tax Token' => [], 'Transit Token' => [],
-            'US Trade Token' => [], 'Other Token' => [], 'Medal' => [], 'Snuff Opium Coin' => [],
-            'So-Called Dollar' => [], 'Other Exonumia' => [], 'Advent Calendar' => [],
-            'Challenge Coin' => [], 'Christmas Nativity Items' => [], 'Christmas Tree Ornaments' => [],
-            'Gift Box' => [], 'Keychain' => [], 'Necklace' => [], 'Other Historical Memorabilia' => [],
-            'Other Star Trek Collectible' => [], 'Palm Stone' => [], 'Postcards' => [],
-            'Role Playing Game Accessories' => [], 'United States Postage Stamp' => [],
-            'Wristwatches' => [], 'Coin Album' => [], 'Other Coin & Money Supplies' => [], 'Earring' => [],
-        ],
         // PACKAGING weight tables (pounds): what the wrap/slab or GSA holder
         // adds. The coin itself weighs what GreySheet says it weighs.
         'package_weights' => [

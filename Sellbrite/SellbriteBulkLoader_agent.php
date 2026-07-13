@@ -540,47 +540,15 @@ function sbl_norm_composition(string $c): string
  * VLOOKUP sheet ("Lincoln Wheat Small Cent", "Morgan Dollar"). These store
  * categories are what Sellbrite's "SKU of Parent Product" carries. Returns the
  * store category, or the input unchanged if nothing matches well. */
+/* SKU of Parent Product = the GreySheet SERIES name, date ranges stripped
+ * ("American Women Quarters (2022-2025)" -> "American Women Quarters").
+ * Same cleaning the display JS applies when the series is picked. */
 function sbl_norm_category(string $gs): string
 {
-    // Known renames the token matcher can't infer (GreySheet name -> store category).
-    $l = strtolower($gs);
-    if (preg_match('/silver eagle/', $l))              { return 'Silver Bullion Coin'; }
-    if (preg_match('/gold (eagle|buffalo)/', $l))      { return 'Gold Bullion Coin'; }
-    if (preg_match('/platinum eagle/', $l))            { return 'Platinum Bullion Coin'; }
-    if (preg_match('/palladium eagle/', $l))           { return 'Palladium Bullion Coin'; }
-    if (preg_match('/america the beautiful.*5 oz/', $l)) { return 'Silver Bullion Coin'; }
-    // Store categories never carry dates: whatever we return, strip the
-    // "(2022-2025)" ranges and bare years GreySheet appends to series names.
-    $clean = preg_replace('/\((?:[^)]*\d{4}[^)]*)\)/u', ' ', $gs);          // "(1909-1958)", "(2022-Present)"
-    $clean = preg_replace('/\b\d{4}\s*[-\x{2013}]\s*(?:\d{2,4}|present|date)\b/iu', ' ', $clean);
-    $clean = trim(preg_replace('/\s+/', ' ', $clean), " -\t");
-    if ($clean === '') { $clean = trim($gs); }
-    $cats = array_keys(Schema::lookups()['category_copy'] ?? []);
-    if (!$cats || trim($gs) === '') { return $clean; }
-    $tok = static function (string $s): array {
-        $s = strtolower(preg_replace('/\([^)]*\)/', ' ', $s));       // drop "(1909-1958)"
-        $s = preg_replace('/[^a-z0-9 ]/', ' ', $s);
-        $words = [];
-        foreach (preg_split('/\s+/', $s, -1, PREG_SPLIT_NO_EMPTY) as $w) {
-            if (preg_match('/^\d{3,4}$/', $w)) { continue; }          // bare years
-            if (strlen($w) > 3 && substr($w, -1) === 's') { $w = substr($w, 0, -1); }  // dollars->dollar
-            $words[$w] = true;
-        }
-        return $words;
-    };
-    $g = $tok($gs);
-    if (!$g) { return $clean; }
-    $best = ''; $bestScore = 0.0;
-    foreach ($cats as $cat) {
-        $c = $tok($cat);
-        if (!$c) { continue; }
-        $inter = count(array_intersect_key($g, $c));
-        if ($inter === 0) { continue; }
-        // Jaccard, weighted toward covering the STORE category's words.
-        $score = ($inter / count($c)) * 0.7 + ($inter / count($g)) * 0.3;
-        if ($score > $bestScore) { $bestScore = $score; $best = $cat; }
-    }
-    return $bestScore >= 0.7 ? $best : $clean;
+    $clean = preg_replace("/\\((?:[^)]*\\d{4}[^)]*)\\)/u", " ", $gs);
+    $clean = preg_replace("/\\b\\d{4}\\s*[-\\x{2013}]\\s*(?:\\d{2,4}|present|date)\\b/iu", " ", $clean);
+    $clean = trim(preg_replace("/\\s+/", " ", $clean), " -\t");
+    return $clean !== "" ? $clean : trim($gs);
 }
 /* Mint letter -> mint city (from the ODS Mint Location logic). */
 function sbl_mint_location(string $mm): string
@@ -730,8 +698,7 @@ function gsMapToProduct(array $c): array
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $last = end($c['CatalogPath']);
         if (is_array($last) && !empty($last['Name'])) {
-            // Normalize the GreySheet series to the PCC STORE CATEGORY (the ODS
-            // VLOOKUP "Store Category" = Sellbrite "SKU of Parent Product").
+            // SKU of Parent Product = the series name, date range stripped.
             $row['category_name'] = sbl_norm_category(trim((string) $last['Name']));
         }
         foreach ($c['CatalogPath'] as $node) {
@@ -769,8 +736,8 @@ function gsMapToProduct(array $c): array
         }
     }
     // No per-category facts anywhere: GreySheet provides denomination,
-    // composition, fineness and weight with the coin; the category_copy KEYS
-    // only exist to normalize the series name into the store category.
+    // composition, fineness and weight with the coin; nothing per-category is stored;
+    // the parent SKU is the series name itself (dates stripped).
     // Precious-metal content = metal weight x fineness (troy oz), precious metals only.
     $fin = (float) preg_replace('/[^0-9.]/', '', $g('Fineness'));
     if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces']) && $fin > 0 && $fin <= 1) {
