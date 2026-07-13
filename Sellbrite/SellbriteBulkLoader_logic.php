@@ -19,26 +19,6 @@
  *
  * Constants below are Des's fixed listing copy (feature 3/5 text).
  */
-/*
- * SellbriteBulkLoader_logic.php - the RULES of the screen (no DB, no HTTP).
- *
- * MAP OF THIS FILE (4 classes, in order):
- *   Schema    - reads SellbriteBulkLoader_data.php; answers every "what
- *               fields/values/lookups exist?" question (columns, dropdown
- *               options, grade & coin-type pools, required names, market
- *               fields, form groups).
- *   Computer  - the spreadsheet formulas. Computer::apply($row) fills every
- *               derivable box: title, description, features 1-5, packaging
- *               (weight + dims), eBay condition fields, search terms...
- *               Runs on every keystroke (AJAX 'compute') and after autofill.
- *   Validator - Validator::check($row) -> statuses (ok/action/error) and
- *               messages per field; drives the red/yellow boxes and the
- *               Ready/Needs-attention pill.
- *   Exporter  - the Sellbrite spreadsheet writer: fixed column LAYOUT,
- *               per-market column trimming, xlsx (PhpSpreadsheet) and CSV.
- *
- * Constants below are Des's fixed listing copy (feature 3/5 text).
- */
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }
@@ -57,10 +37,6 @@ if (!function_exists('sbl_e')) {
     function sbl_e($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 }
 
-/* =========================================================================
- * SCHEMA - reference data reader (fields, valid values, lookups, pools)
- * Source of truth: the array in SellbriteBulkLoader_data.php.
- * ========================================================================= */
 /* =========================================================================
  * SCHEMA - reference data reader (fields, valid values, lookups, pools)
  * Source of truth: the array in SellbriteBulkLoader_data.php.
@@ -281,16 +257,13 @@ final class Schema
  * COMPUTER - the spreadsheet formulas (title/copy/packaging/eBay fields)
  * Fills only boxes it owns: empties, or values it computed itself.
  * ========================================================================= */
-/* =========================================================================
- * COMPUTER - the spreadsheet formulas (title/copy/packaging/eBay fields)
- * Fills only boxes it owns: empties, or values it computed itself.
- * ========================================================================= */
 final class Computer
 {
     // PLAIN: The calculator: takes everything typed in the form and fills in whatever can be derived. Runs after every keystroke.
     /** Return a copy of $row with all auto/derived columns (re)computed. */
     public static function apply(array $row): array
     {
+        // Shorthand used all through this function: $g('year') = the trimmed text of that box ('' when empty).
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         $sku = $g('sku'); $category = $g('category_name');
         $lookups = Schema::lookups();
@@ -400,8 +373,10 @@ final class Computer
         if ($desc !== '') {
             // DETAILS = the identity part of sentence 1 (before the brand /
             // condition / certification clause).
+            // First sentence only ("(?<=\.)" means: split at a space that follows a period).
             $first = preg_split('/(?<=\.)\s/', $desc, 2)[0];
             $core  = preg_replace('/^A genuine\s+/i', '', $first);
+            // Cut at the first ", in ..." / ", graded and certified ..." clause: the left half is the coin itself (DETAILS), the right is condition wording.
             $bits  = preg_split('/,\s*(?:in|graded and certified|from|with)\s+/i', $core, 2);
             $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .,');
         }
@@ -426,6 +401,7 @@ final class Computer
         if ($graded) {
             if ($g('ebay_graded_coin_professional_grader') === '') { $row['ebay_graded_coin_professional_grader'] = $cert; }
             if ($g('ebay_graded_coin_letter_grade') === '' && $grade !== '') { $row['ebay_graded_coin_letter_grade'] = $grade; }
+            // Pull the first 1-2 digit number out of the grade ("MS 65" -> 65).
             if ($g('ebay_graded_coin_numerical_grade') === '' && preg_match('/\d{1,2}/', $grade, $gm)) {
                 $row['ebay_graded_coin_numerical_grade'] = $gm[0];
             }
@@ -504,15 +480,13 @@ final class Computer
 /* =========================================================================
  * VALIDATOR - per-field statuses + messages (required/format/nudges)
  * ========================================================================= */
-/* =========================================================================
- * VALIDATOR - per-field statuses + messages (required/format/nudges)
- * ========================================================================= */
 final class Validator
 {
     // PLAIN: The proofreader: every box gets a color - red must fix, yellow look at this, green fine.
     public static function check(array $row): array
     {
         $statuses = []; $messages = [];
+        // Same shorthand as the calculator: $g('year') = the trimmed text of that box.
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         // Required = schema flag OR the Sellbrite "mandatory for all" set OR the
         // chosen marketplace's required fields.
@@ -533,6 +507,7 @@ final class Validator
         // the coin block itself is optional (autofill supplies it anyway).
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
+            // Values starting "***" are the agent's own "check this" notes - surface them as the yellow message.
             if ($val !== '' && str_starts_with($val, '***')) {
                 $statuses[$name] = 'action'; $messages[$name] = trim($val, '* '); continue;
             }
@@ -573,9 +548,6 @@ final class Validator
     }
 }
 
-/* =========================================================================
- * EXPORTER - Sellbrite spreadsheet layout, per-market columns, xlsx/csv
- * ========================================================================= */
 /* =========================================================================
  * EXPORTER - Sellbrite spreadsheet layout, per-market columns, xlsx/csv
  * ========================================================================= */
@@ -711,6 +683,7 @@ final class Exporter
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) { return null; }
         // "A5"-style addresses: works on every PhpSpreadsheet version (the
         // [col,row] array form only exists from 1.23 up).
+        // Turns column number + row number into an Excel address ("A5", "BK12") - works on every PhpSpreadsheet version.
         $cell = static fn($i, $r) =>
             \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r;
         $keep  = self::keepIndexes($market);
@@ -748,6 +721,7 @@ final class Exporter
                 // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
                 if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
                 if ($v !== '') {
+                    // "Explicitly TEXT" so Excel never mangles values like the SKU "255R.50" into numbers or dates.
                     $ws->setCellValueExplicit($cell($i, $r), $v,
                         \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                     // Multi-line text: the longest line drives the width.
@@ -758,6 +732,7 @@ final class Exporter
         }
         foreach ($widths as $i => $w) {
             $ws->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1))
+               // Width = longest content + padding, never narrower than 10 or wider than 60 characters.
                ->setWidth(min(max($w + 2, 10), 60));
         }
         return $ss;
