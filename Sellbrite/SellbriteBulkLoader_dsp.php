@@ -142,7 +142,9 @@ details.group summary::-webkit-details-marker { display:none; }
 .field label { font-size:6px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
-.field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
+/* background-COLOR (not the shorthand) in the state rules below: the shorthand
+   would reset background-image and erase the .has-menu dropdown caret. */
+.field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background-color:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
 /* Locked boxes (e.g. Cert Number before a grading service is picked). */
 .field input:disabled, .field input.is-locked { opacity:.5; cursor:not-allowed; pointer-events:none; }
 /* Valid-values combo boxes show a caret so users know a menu opens on click. */
@@ -156,8 +158,8 @@ details.group summary::-webkit-details-marker { display:none; }
 .genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
 #genai-btn { font-size:13.5px; padding:9px 22px; }
 #genai-msg { font-size:11px; color:#5f6b62; }
-.field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
-.field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#e0a800; background:#fffaf0; } .field.is-action .field-msg { color:#9a6a14; }
+.field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#cd0a0a; background-color:#fff6f5; } .field.is-error .field-msg { color:#cd0a0a; }
+.field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#e0a800; background-color:#fffaf0; } .field.is-action .field-msg { color:#9a6a14; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; color:#1C4532; }
