@@ -28,11 +28,11 @@ if (!defined('SBL_TABLE')) {
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
 
-// PLAIN: Opens the connection to the database (once per request).
-/** Open (once) and reuse a DB2 connection from the session credentials. */
 /* =========================================================================
  * SECTION 1 - connection + error/commit helpers
  * ========================================================================= */
+// PLAIN: Opens the connection to the database (once per request).
+/** Open (once) and reuse a DB2 connection from the session credentials. */
 function sbl_conn()
 {
     static $conn = null;
@@ -67,13 +67,13 @@ function sbl_commit($conn)
     return (bool) db2_commit($conn);
 }
 
-// PLAIN: Cleans a typed date into the format the database wants.
-/** Normalize a user date (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) to ISO, or '' if unusable. */
 /* =========================================================================
  * SECTION 2 - value coercion + live column discovery
  * sbl_writable_columns() intersects Schema::columns() with the columns
  * that ACTUALLY exist on SBLPRODUCT, so pending ALTERs never break saves.
  * ========================================================================= */
+// PLAIN: Cleans a typed date into the format the database wants.
+/** Normalize a user date (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) to ISO, or '' if unusable. */
 function sbl_norm_date($v)
 {
     $v = trim((string) $v);
@@ -158,11 +158,11 @@ function sbl_writable_columns()
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
 }
 
-// PLAIN: The shared "read rows" helper (also lower-cases DB2's upper-case column names).
-/** Run a prepared SELECT with params and return all rows as lowercase-keyed assoc arrays. */
 /* =========================================================================
  * SECTION 3 - reads (grid list, single row, full export set)
  * ========================================================================= */
+// PLAIN: The shared "read rows" helper (also lower-cases DB2's upper-case column names).
+/** Run a prepared SELECT with params and return all rows as lowercase-keyed assoc arrays. */
 function sbl_select($sql, array $params = [])
 {
     $conn = sbl_conn();
@@ -237,11 +237,11 @@ function sblFind($id)
     return $rows[0] ?? false;
 }
 
-// PLAIN: Files a brand-new row.
-/** Insert a new product row; returns the new id, or false on error. */
 /* =========================================================================
  * SECTION 4 - writes (insert / update / save / delete)
  * ========================================================================= */
+// PLAIN: Files a brand-new row.
+/** Insert a new product row; returns the new id, or false on error. */
 function sblInsert(array $row)
 {
     $conn = sbl_conn();

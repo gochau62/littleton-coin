@@ -793,6 +793,7 @@
     function sblRecompute(){
         var data = sblFormSerialize() + '&action=compute';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
+            // Remember which box the user is typing in - it must never be overwritten mid-keystroke.
             var active = document.activeElement;
             $('#sku-form [data-auto="1"]').each(function(){
                 if (this === active) return;
@@ -847,6 +848,7 @@
             var lbl = $(this).closest('.field').find('label').text().replace('*','').trim();
             SBL_LABELS[this.name] = lbl;
         });
+        // Wait a quarter-second after typing stops, then recompute once (not on every keystroke).
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
         $('#sku-form').on('change', sblRecompute);
 

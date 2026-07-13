@@ -42,12 +42,12 @@ if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativela
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 40); }
 // (SBL_ABOUT_SELLER / SBL_EXACT_IMAGE_DEFAULT constants live in the logic file.)
 
-// PLAIN: Adds one line to the debug log file.
 /* =========================================================================
  * SECTION 1 - HTTP: GreySheet API + Gemini
  * gsApiGet is the ONLY GreySheet caller (headers, timeout, logging);
  * geminiJson is the ONLY Gemini caller (JSON-mode, model fallback).
  * ========================================================================= */
+// PLAIN: Adds one line to the debug log file.
 function gsLog($msg)
 {
     $line = 'Sellbrite ' . $msg;
@@ -133,6 +133,7 @@ function geminiJson($system, $user, &$meta = [])
     $body = json_encode([
         'systemInstruction' => ['parts' => [['text' => (string) $system]]],
         'contents'          => [['role' => 'user', 'parts' => [['text' => (string) $user]]]],
+        // Low temperature = stick to the facts; responseMimeType asks Gemini for raw JSON with no prose around it.
         'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 2048],
     ], JSON_UNESCAPED_SLASHES);
 
@@ -161,6 +162,7 @@ function geminiJson($system, $user, &$meta = [])
     $meta['tokens'] = (int) ($resp['usageMetadata']['totalTokenCount'] ?? 0);
     $text = $resp['candidates'][0]['content']['parts'][0]['text'] ?? '';
     $data = json_decode($text, true);
+    // Belt and braces: if the model wrapped the JSON in prose anyway, cut out the {...} part and parse that.
     if (!is_array($data) && preg_match('/\{.*\}/s', (string) $text, $m)) { $data = json_decode($m[0], true); }
     if (!is_array($data)) { $meta['error'] = 'Gemini returned no usable JSON'; gsLog($meta['error']); return null; }
     gsLog('gemini ok tokens=' . $meta['tokens'] . ' ms=' . $meta['ms']);
@@ -169,14 +171,15 @@ function geminiJson($system, $user, &$meta = [])
 
 if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
-// PLAIN: Makes typed text consistent to search with (lower-case, single spaces).
 /* =========================================================================
  * SECTION 2 - PATH MEMORY writes (DB2 SBLMEMORYT: kind N=node, C=coin)
  * Everything the screen sees on GreySheet is upserted here so the
  * drill-down dropdowns cost 0 API calls next time.
  * ========================================================================= */
+// PLAIN: Makes typed text consistent to search with (lower-case, single spaces).
 function gsNorm($s): string
 {
+    // Two steps: anything that isn't a letter/number becomes a space, then runs of spaces collapse. "Morgan-Dollars (1878)" -> "morgan dollars 1878".
     return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
 }
 // PLAIN: Runs one WRITE against the coin phone book (SBLMEMORYT).
@@ -198,6 +201,7 @@ function gsMemUpsert(string $kind, int $refId, string $name, string $path,
                      int $coinCount = 0, string $done = 'N'): void
 {
     if ($refId <= 0 || $name === '') { return; }
+    // Poor man's upsert: try INSERT first; the table's key rejects duplicates, and that failure tells us to UPDATE the existing row instead.
     $ins = gsMemExec(
         'INSERT INTO ' . SBL_GSMEM_TABLE
       . ' (kind, ref_id, parent_id, name, path, coin_date, mint_mark, coin_count, done)'
@@ -246,12 +250,12 @@ function gsMemNodeChildren(int $parentId): array
     return gsMemRows('SELECT ref_id, name, path, coin_count, done FROM ' . SBL_GSMEM_TABLE
                    . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
 }
-// PLAIN: Free-text coin search across the whole phone book.
 /* =========================================================================
  * SECTION 3 - PATH MEMORY reads (the drill-down dropdowns)
  * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins power the
  * 1.Tree / 2.Series / 3.Year / 4.Coin pickers.
  * ========================================================================= */
+// PLAIN: Free-text coin search across the whole phone book.
 function gsMemSearch(string $q, int $limit = 40): array
 {
     $words = array_filter(explode(' ', gsNorm($q)));
@@ -365,12 +369,12 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
     }
     return $out;
 }
-// PLAIN: Live GreySheet: list one folder's subfolders (fallback path only).
 /* =========================================================================
  * SECTION 4 - LIVE GreySheet navigation + endpoints
  * Used when a coin is NOT in memory: walk the node tree (Gemini breaks
  * ties), learn everything visited, then fetch the collectible/pricing.
  * ========================================================================= */
+// PLAIN: Live GreySheet: list one folder's subfolders (fallback path only).
 function gsChildren(int $nodeId): array
 {
     $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => $nodeId], $m);
@@ -385,6 +389,7 @@ function gsChildren(int $nodeId): array
 // PLAIN: Picks the obviously-matching subfolder; Gemini breaks the ties.
 function gsNavPick(array $children, string $target, string $context)
 {
+    // Substring match in BOTH directions, so the "Morgan Dollar" folder matches a "Morgan Dollars 1878-1921" target and vice versa.
     $t = gsNorm($target);
     $hits = [];
     foreach ($children as $c) {
@@ -411,6 +416,7 @@ function gsPickCoin(array $coins, array $attrs): int
     $year = trim((string) ($attrs['year'] ?? ''));
     $mm   = trim((string) ($attrs['mint_mark'] ?? ''));
 
+    // Narrow by year, then by mint mark - each filter only sticks if it leaves at least one candidate.
     $cands = $coins;
     if ($year !== '') {
         $byDate = array_values(array_filter($cands, static fn($c) =>
@@ -476,6 +482,7 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
     $path   = $root['name'];
     $trace[] = 'root:' . $root['name'];
     $tk = gsNorm($target);
+    // Shortcut: if the phone book already knows a matching folder, start the walk there instead of at the top of the tree.
     foreach (gsMemNodes() as $n) {
         $k = gsNorm((string) $n['name']);
         if ($k !== '' && (strpos($tk, $k) !== false || strpos($k, $tk) !== false)) {
@@ -485,6 +492,7 @@ function gsResolveLeaf(array $attrs, array &$trace = []): array
             break;
         }
     }
+    // Walk down at most 8 levels - a hard stop so a wrong turn can never loop forever.
     for ($depth = 0; $depth < 8; $depth++) {
         $children = gsChildren($nodeId);
         if (!$children) {
@@ -560,6 +568,7 @@ function gsPricing(int $gsId, $grade = null, &$meta = []): array
     $params = ['Gsid' => $gsId];
     if ($grade !== null && ctype_digit((string) $grade)) { $params['Grade'] = (int) $grade; }
     $resp  = gsApiGet('GetPricingRequest', $params, $meta);
+    // The actual price row is nested one level down, inside PricingData.
     $first = gsData($resp)[0] ?? [];
     return $first['PricingData'][0] ?? [];
 }
@@ -569,13 +578,13 @@ function gsPriceNum($v): string
     $v = preg_replace('/[^0-9.]/', '', (string) $v);
     return is_numeric($v) ? $v : '';
 }
-// PLAIN: "90% silver; 10% copper" becomes the one metal word ("Silver").
-/* Normalize a free-text GreySheet composition to an ODS "Valid Values" option
- * (e.g. "99.99% gold" -> "Gold", "Copper-Nickel Clad" stays). */
 /* =========================================================================
  * SECTION 5 - field normalizers (composition, category date-strip,
  * mint location, dropdown snapping)
  * ========================================================================= */
+// PLAIN: "90% silver; 10% copper" becomes the one metal word ("Silver").
+/* Normalize a free-text GreySheet composition to an ODS "Valid Values" option
+ * (e.g. "99.99% gold" -> "Gold", "Copper-Nickel Clad" stays). */
 function sbl_norm_composition(string $c): string
 {
     $l = strtolower($c);
@@ -630,15 +639,15 @@ function sbl_snap(string $v, array $opts): string
     foreach ($opts as $o) { if (strcasecmp($o, $v) === 0) { return $o; } }
     return $v;   // leave as-is; the human can correct it
 }
+/* =========================================================================
+ * SECTION 6 - the AI writing brief: per-field guides, option lists,
+ * JSON spec, and response cleanup
+ * ========================================================================= */
 // PLAIN: The AI's instruction sheet, field by field - the house examples live here. EDIT THIS WORDING to change how the AI writes.
 /* The ODS-derived field guide: for each Sellbrite field, where its value comes
  * from, how to fill it, the allowed options (from the ODS "Valid Values" sheet)
  * and any hardcoded constant. Drives BOTH the deterministic map and the Gemini
  * prompt. Only the fields the autofill is responsible for are listed. */
-/* =========================================================================
- * SECTION 6 - the AI writing brief: per-field guides, option lists,
- * JSON spec, and response cleanup
- * ========================================================================= */
 function sbl_field_guide(): array
 {
     static $g = null;
@@ -697,16 +706,16 @@ function sbl_field_guide(): array
         'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
     ];
 }
-// PLAIN: Turns GreySheet's fact sheet into form values, no AI - THE place that decides which fact lands in which box.
-/* Deterministic mapping: fills every field it reliably can straight from the
- * GreySheet data + the ODS constants. This is the trustworthy base; Gemini only
- * fills the gaps it leaves (coin_type, refinements). */
 /* =========================================================================
  * SECTION 7 - GreySheet -> product row mapping
  * gsMapToProduct = deterministic field mapping (no AI);
  * gsAiMap = gsMapToProduct + Gemini listing copy on top;
  * gsListingFill = Gemini gap-fill for the Listing Content boxes only.
  * ========================================================================= */
+// PLAIN: Turns GreySheet's fact sheet into form values, no AI - THE place that decides which fact lands in which box.
+/* Deterministic mapping: fills every field it reliably can straight from the
+ * GreySheet data + the ODS constants. This is the trustworthy base; Gemini only
+ * fills the gaps it leaves (coin_type, refinements). */
 function gsMapToProduct(array $c): array
 {
     $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
@@ -1034,11 +1043,11 @@ function gsListingFill(array $post): array
     $err = !$row && !geminiConfigured() ? 'GEMINI_API_KEY not set (add the secrets file).' : '';
     return ['ok' => $err === '', 'row' => $row, 'via' => 'listing gap fill', 'error' => $err];
 }
-// PLAIN: Free-text coin search for the page.
 /* =========================================================================
  * SECTION 8 - AJAX entry points (called from _ajax.php)
  * gsSearch / gsImport / gsGenerate / gs_finalize (compute + validate).
  * ========================================================================= */
+// PLAIN: Free-text coin search for the page.
 function gsSearch(string $q): array
 {
     $q = trim($q);
@@ -1097,6 +1106,7 @@ function gsImport(array $params): array
     // Pricing names the grade it priced (GradeLabel): autofill Grade with it,
     // normalized to the house "MS 65" shape, unless the operator already chose.
     if (($coin['GradeLabel'] ?? '') !== '' && ($row['grade'] ?? '') === '') {
+        // The regex only inserts the house space: "MS65" or "MS-65" -> "MS 65".
         $row['grade'] = preg_replace('/^([A-Za-z]{1,4})\s*-?\s*(\d)/', '$1 $2', trim((string) $coin['GradeLabel']));
     }
     if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.', 'calls' => $calls]); }
