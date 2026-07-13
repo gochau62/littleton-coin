@@ -143,6 +143,8 @@ details.group summary::-webkit-details-marker { display:none; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
+/* Locked boxes (e.g. Cert Number before a grading service is picked). */
+.field input:disabled, .field input.is-locked { opacity:.5; cursor:not-allowed; pointer-events:none; }
 /* Valid-values combo boxes show a caret so users know a menu opens on click. */
 .field input.has-menu { padding-right:30px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6b62'/%3E%3C/svg%3E");
@@ -346,9 +348,11 @@ details.group summary::-webkit-details-marker { display:none; }
                     // Operator-owned picks: still autofill, but no AUTO badge
                     // (original_retail has no autofill source at all).
                     $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
-                    // Fully manual: no badge AND no formula refresh. Condition
-                    // starts blank; staff pick used (or new) themselves.
-                    $manualAlways = ['title_suffix', 'certification_number', 'condition'];
+                    // Fully manual: no badge AND no formula refresh. Condition and
+                    // Certification start blank; staff pick them themselves (GreySheet
+                    // describes the catalog issue, not the slab in hand). Cert Number
+                    // only unlocks once a grading service is picked.
+                    $manualAlways = ['title_suffix', 'certification', 'certification_number', 'condition'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
