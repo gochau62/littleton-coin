@@ -127,7 +127,7 @@ final class Schema
             '--- US COINS ---' => 'us_coins', '--- US GOLD ---' => 'us_coins',
             '--- COMMEMORATIVE ---' => 'us_coins', '--- HAWAIIAN ---' => 'us_coins',
             '--- U.S. PHILIPPINES ---' => 'us_coins',
-            '--- BULLION ---' => 'us_coins world_coins',   // eagles + world bullion series
+            '--- BULLION ---' => 'bullion_split',   // American issues -> US, the rest -> world
             '--- U.S. MINT SETS (STANDARD RELEASES) ---' => 'us_coins',
             '--- U.S. MINT SETS (NON-STANDARD RELEASES) ---' => 'us_coins',
             '--- COLONIAL ---' => 'us_coins', '--- FRACTIONAL PIONEER GOLD ---' => 'us_coins',
@@ -144,7 +144,15 @@ final class Schema
         $cur = [];
         foreach (self::values()['coin_type'] ?? [] as $v) {
             if (strpos($v, '---') === 0) { $cur = explode(' ', $map[$v] ?? ''); continue; }
-            foreach ($cur as $p) { if ($p !== '') { $pools[$p][] = $v; } }
+            foreach ($cur as $p) {
+                if ($p === 'bullion_split') {
+                    // "America The Beautiful/American Eagle/Buffalo" are U.S.
+                    // Mint bullion; Maple Leafs, Libertads etc. are world coins.
+                    $pools[strpos($v, 'America') === 0 ? 'us_coins' : 'world_coins'][] = $v;
+                } elseif ($p !== '') {
+                    $pools[$p][] = $v;
+                }
+            }
         }
         return $pools;
     }
