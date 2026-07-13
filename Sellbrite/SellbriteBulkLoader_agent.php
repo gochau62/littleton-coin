@@ -586,7 +586,9 @@ function sbl_norm_category(string $gs): string
 function sbl_mint_location(string $mm): string
 {
     $mm = trim($mm);
-    if ($mm === '' || strcasecmp($mm, 'No Mint Mark') === 0) { return 'Philadelphia'; }
+    // No mint mark = no location claim (early Philadelphia coins carry none,
+    // but so do many others - leave it for the operator).
+    if ($mm === '' || strcasecmp($mm, 'No Mint Mark') === 0) { return ''; }
     $map = ['C' => 'Charlotte', 'CC' => 'Carson City', 'D' => 'Denver', 'O' => 'New Orleans',
             'P' => 'Philadelphia', 'S' => 'San Francisco', 'W' => 'West Point',
             'M' => 'Manila', 'MO' => 'Mexico City'];
