@@ -624,8 +624,8 @@ function sbl_field_guide(): array
             . 'graded and certified PR 70 DCAM by PCGS, with the special privy mark honoring the 250th anniversary '
             . 'of the United States Army. Contains 1 oz 0.999 Silver." Plain raw grade examples: '
             . '"A genuine 1943 Lincoln Wheat Steel Cent Penny Coin, in AU About Uncirculated Condition." No hype.'],
-        'extended_description' => ['desc' => 'EXPANDED DESCRIPTION for the whole category: 2-4 factual sentences built from YOUR description PLUS the GreySheet GeneralNotes/Obverse/Reverse text (composition, design, designer, history). Write it so the SAME text fits every coin in this category - no grade, date, mint or price.'],
-        'feature_4'      => ['desc' => 'a COLLECTOR\'S NOTE about the SERIES (history, design, collector appeal) - category-level, 2-4 sentences, no this-coin grade/date/price. Do NOT add the "COLLECTOR\'S NOTE:" prefix; the system adds it.'],
+        'extended_description' => ['desc' => 'EXPANDED DESCRIPTION for the whole category: 2-4 factual sentences built from YOUR description PLUS the GreySheet GeneralNotes/Obverse/Reverse text (composition, design, designer, history). Write it so the SAME text fits every coin in this category - no grade, date, mint or price. House example: "In 1943, the U.S. Mint struck Lincoln cents in zinc-coated steel to save copper for munitions and other military materials in World War II. Each unique one-year-only issue bears Victor D. Brenner\'s Lincoln portrait obverse and Wheat Ears reverse designs."'],
+        'feature_4'      => ['desc' => 'a COLLECTOR\'S NOTE about the SERIES (history, design, collector appeal) - category-level, 2-4 sentences, no this-coin grade/date/price. REWRITE the facts in YOUR OWN words: it must NOT copy or lightly rephrase the GeneralNotes or the extended_description - no shared sentences. House example: "Lincoln cents with the original Wheat Ears reverse were introduced in 1909 on the 100th anniversary of Abraham Lincoln\'s birth and were struck until 1958. These bronze cents were the first circulating U.S. coins to feature a portrait of a historical figure. Over its decades-long circulation, the Lincoln Wheat Cent only underwent one composition change. In 1943, the composition was changed from bronze to zinc-coated steel to save copper during the war." Do NOT add the "COLLECTOR\'S NOTE:" prefix; the system adds it.'],
         'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
         'weight'         => ['src' => 'WeightOunces', 'desc' => 'coin weight in troy ounces, number only'],
         'search_terms'   => ['desc' => '8-15 lowercase space-separated keywords: metal, type, denomination, mint, theme, "numismatics", "coin"'],
@@ -861,8 +861,10 @@ function gsAiMap(array $coin): array
          . "factual sentences by combining your description with the GreySheet GeneralNotes / obverse / "
          . "reverse text (history, composition, design, designer). It must read so the SAME text fits "
          . "EVERY coin in this category - do not mention this coin's grade, date, mint or price.\n"
-         . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), also category-level "
-         . "and distinct from extended_description; do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
+         . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), also category-level. "
+         . "Write it in YOUR OWN words: it must not repeat or lightly rephrase any sentence from GeneralNotes "
+         . "or from extended_description - pick a different angle (series history, design lineage, collecting "
+         . "appeal, key changes over the years). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
          . "5. Do NOT fill feature_1, feature_2, feature_3 or feature_5 - the system derives them from the "
          . "description, condition, image line and company blurb.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
@@ -874,18 +876,24 @@ function gsAiMap(array $coin): array
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
 
-    // Expanded Description fallback: if the AI failed (e.g. 429), use the
-    // GreySheet GeneralNotes cleaned up.
-    if (trim((string) ($row['extended_description'] ?? '')) === '' && !empty($coin['GeneralNotes'])) {
-        $notes = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $coin['GeneralNotes'])));
-        $notes = trim(preg_replace('/\s+/', ' ', $notes));
-        if ($notes !== '') { $row['extended_description'] = mb_substr($notes, 0, 1900); }
+    // AI-failed fallbacks (e.g. 429): split the two GreySheet texts so the two
+    // boxes never end up as copies of each other. GeneralNotes (the program /
+    // series history) stays the Expanded Description; the obverse + reverse
+    // design text becomes the COLLECTOR'S NOTE. Only when one side is missing
+    // does the other get reused as a last resort.
+    $gsClean = static function ($s): string {
+        $s = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $s)));
+        return trim((string) preg_replace('/\s+/', ' ', $s));
+    };
+    $gsNotes  = $gsClean($coin['GeneralNotes'] ?? '');
+    $gsDesign = trim($gsClean($coin['ObverseDescription'] ?? '') . ' ' . $gsClean($coin['ReverseDescription'] ?? ''));
+    if (trim((string) ($row['extended_description'] ?? '')) === '') {
+        $src = $gsNotes !== '' ? $gsNotes : $gsDesign;
+        if ($src !== '') { $row['extended_description'] = mb_substr($src, 0, 1900); }
     }
-    // COLLECTOR'S NOTE fallback: when the AI didn't write one, reuse the
-    // category-level expanded copy so feature 4 is never blank (Computer adds
-    // the "COLLECTOR'S NOTE:" label).
-    if (trim((string) ($row['feature_4'] ?? '')) === '' && trim((string) ($row['extended_description'] ?? '')) !== '') {
-        $row['feature_4'] = mb_substr(trim((string) $row['extended_description']), 0, 1400);
+    if (trim((string) ($row['feature_4'] ?? '')) === '') {
+        $src = $gsDesign !== '' ? $gsDesign : trim((string) ($row['extended_description'] ?? ''));
+        if ($src !== '') { $row['feature_4'] = mb_substr($src, 0, 1400); }
     }
     return sbl_snap_row($row);
 }
@@ -927,8 +935,10 @@ function gsListingFill(array $post): array
              . "3. extended_description is the EXPANDED DESCRIPTION for the whole category/series: 2-4 factual "
              . "sentences (history, composition, design) written so the SAME text fits EVERY item in this "
              . "category - no grade, date, mint or price.\n"
-             . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level and "
-             . "distinct from extended_description; do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
+             . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level. "
+             . "Write it in YOUR OWN words: it must not repeat or lightly rephrase any sentence from the "
+             . "extended_description - pick a different angle (series history, design lineage, collecting "
+             . "appeal). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
              . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.";
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
