@@ -29,6 +29,9 @@ if (!defined('SBL_TABLE')) {
 }
 
 /** Open (once) and reuse a DB2 connection from the session credentials. */
+/* =========================================================================
+ * SECTION 1 - connection + error/commit helpers
+ * ========================================================================= */
 function sbl_conn()
 {
     static $conn = null;
@@ -62,6 +65,11 @@ function sbl_commit($conn)
 }
 
 /** Normalize a user date (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) to ISO, or '' if unusable. */
+/* =========================================================================
+ * SECTION 2 - value coercion + live column discovery
+ * sbl_writable_columns() intersects Schema::columns() with the columns
+ * that ACTUALLY exist on SBLPRODUCT, so pending ALTERs never break saves.
+ * ========================================================================= */
 function sbl_norm_date($v)
 {
     $v = trim((string) $v);
@@ -143,6 +151,9 @@ function sbl_writable_columns()
 }
 
 /** Run a prepared SELECT with params and return all rows as lowercase-keyed assoc arrays. */
+/* =========================================================================
+ * SECTION 3 - reads (grid list, single row, full export set)
+ * ========================================================================= */
 function sbl_select($sql, array $params = [])
 {
     $conn = sbl_conn();
@@ -214,6 +225,9 @@ function sblFind($id)
 }
 
 /** Insert a new product row; returns the new id, or false on error. */
+/* =========================================================================
+ * SECTION 4 - writes (insert / update / save / delete)
+ * ========================================================================= */
 function sblInsert(array $row)
 {
     $conn = sbl_conn();

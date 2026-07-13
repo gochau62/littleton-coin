@@ -7,6 +7,15 @@
 <!--  *             Littleton NH                        *  -->
 <!--  ***************************************************   */
 
+/*
+ * ACTIONS handled by the switch below (POST 'action'):
+ *   Form lifecycle:  compute | save | find | delete | deleteAll
+ *   Drill-down:      gsRoots | gsSeries | gsNodeYears | gsCoins | gsYears
+ *   GreySheet:       gsSearch | gsImport (autofill one coin)
+ *   AI writing:      gsListingFill (Listing Content gaps) | gsGenerate
+ *   Export:          export (xlsx per market, csv fallback - streams a file
+ *                    and exits; everything else returns JSON)
+ */
 // AJAX endpoint for the Sellbrite Bulk Loader.
 // Buffer from the very start: the shared includes can echo whitespace, and a
 // single stray byte in front of an .xlsx download corrupts it for Excel.

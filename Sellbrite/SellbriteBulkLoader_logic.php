@@ -1,4 +1,44 @@
 <?php
+/*
+ * SellbriteBulkLoader_logic.php - the RULES of the screen (no DB, no HTTP).
+ *
+ * MAP OF THIS FILE (4 classes, in order):
+ *   Schema    - reads SellbriteBulkLoader_data.php; answers every "what
+ *               fields/values/lookups exist?" question (columns, dropdown
+ *               options, grade & coin-type pools, required names, market
+ *               fields, form groups).
+ *   Computer  - the spreadsheet formulas. Computer::apply($row) fills every
+ *               derivable box: title, description, features 1-5, packaging
+ *               (weight + dims), eBay condition fields, search terms...
+ *               Runs on every keystroke (AJAX 'compute') and after autofill.
+ *   Validator - Validator::check($row) -> statuses (ok/action/error) and
+ *               messages per field; drives the red/yellow boxes and the
+ *               Ready/Needs-attention pill.
+ *   Exporter  - the Sellbrite spreadsheet writer: fixed column LAYOUT,
+ *               per-market column trimming, xlsx (PhpSpreadsheet) and CSV.
+ *
+ * Constants below are Des's fixed listing copy (feature 3/5 text).
+ */
+/*
+ * SellbriteBulkLoader_logic.php - the RULES of the screen (no DB, no HTTP).
+ *
+ * MAP OF THIS FILE (4 classes, in order):
+ *   Schema    - reads SellbriteBulkLoader_data.php; answers every "what
+ *               fields/values/lookups exist?" question (columns, dropdown
+ *               options, grade & coin-type pools, required names, market
+ *               fields, form groups).
+ *   Computer  - the spreadsheet formulas. Computer::apply($row) fills every
+ *               derivable box: title, description, features 1-5, packaging
+ *               (weight + dims), eBay condition fields, search terms...
+ *               Runs on every keystroke (AJAX 'compute') and after autofill.
+ *   Validator - Validator::check($row) -> statuses (ok/action/error) and
+ *               messages per field; drives the red/yellow boxes and the
+ *               Ready/Needs-attention pill.
+ *   Exporter  - the Sellbrite spreadsheet writer: fixed column LAYOUT,
+ *               per-market column trimming, xlsx (PhpSpreadsheet) and CSV.
+ *
+ * Constants below are Des's fixed listing copy (feature 3/5 text).
+ */
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }
@@ -17,6 +57,14 @@ if (!function_exists('sbl_e')) {
     function sbl_e($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 }
 
+/* =========================================================================
+ * SCHEMA - reference data reader (fields, valid values, lookups, pools)
+ * Source of truth: the array in SellbriteBulkLoader_data.php.
+ * ========================================================================= */
+/* =========================================================================
+ * SCHEMA - reference data reader (fields, valid values, lookups, pools)
+ * Source of truth: the array in SellbriteBulkLoader_data.php.
+ * ========================================================================= */
 final class Schema
 {
     private static $data = null;
@@ -218,6 +266,14 @@ final class Schema
     }
 }
 
+/* =========================================================================
+ * COMPUTER - the spreadsheet formulas (title/copy/packaging/eBay fields)
+ * Fills only boxes it owns: empties, or values it computed itself.
+ * ========================================================================= */
+/* =========================================================================
+ * COMPUTER - the spreadsheet formulas (title/copy/packaging/eBay fields)
+ * Fills only boxes it owns: empties, or values it computed itself.
+ * ========================================================================= */
 final class Computer
 {
     /** Return a copy of $row with all auto/derived columns (re)computed. */
@@ -430,6 +486,12 @@ final class Computer
     }
 }
 
+/* =========================================================================
+ * VALIDATOR - per-field statuses + messages (required/format/nudges)
+ * ========================================================================= */
+/* =========================================================================
+ * VALIDATOR - per-field statuses + messages (required/format/nudges)
+ * ========================================================================= */
 final class Validator
 {
     public static function check(array $row): array
@@ -495,6 +557,12 @@ final class Validator
     }
 }
 
+/* =========================================================================
+ * EXPORTER - Sellbrite spreadsheet layout, per-market columns, xlsx/csv
+ * ========================================================================= */
+/* =========================================================================
+ * EXPORTER - Sellbrite spreadsheet layout, per-market columns, xlsx/csv
+ * ========================================================================= */
 final class Exporter
 {
     /* One product CSV, tailored per marketplace. Column annotations in Des's

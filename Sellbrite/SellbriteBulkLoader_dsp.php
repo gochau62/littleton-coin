@@ -9,6 +9,27 @@
 ?>
 
 <?php
+/* =========================================================================
+ * SellbriteBulkLoader_dsp.php - display: renders the whole screen.
+ *
+ * MAP OF THIS FILE (top to bottom):
+ *   dspBulkLoader()   entry point (called by _ctl.php after the auth check)
+ *     $renderField    one form control: label + star + AUTO badge, combo
+ *                     input w/ datalist (dropdown caret), textarea, or text
+ *     <style>         all CSS (green page, toolbar pills, .field states:
+ *                     is-error red / is-action yellow / cert-locked hidden)
+ *     home view       toolbar (Search + Export pills, New SKU / Delete All)
+ *                     + the SKU grid
+ *     form view       GreySheet drill-down bar, then the collapsible
+ *                     sections (Coin details / Market specific fields /
+ *                     Other product types / Packaging / Listing content +
+ *                     AI button / Product images) - field order mirrors
+ *                     Des's workbook; $autoAlways / $noBadge / $manualAlways
+ *                     decide badges, $required puts the red stars
+ *     preview column  live listing preview + validation issue list
+ *     <script> tail   emits SBL_GRADE_POOLS / SBL_COINTYPE_POOLS and the
+ *                     field-group JSON the controller's JS reads
+ * ========================================================================= */
 function dspBulkLoader(&$screenData)
 {
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
