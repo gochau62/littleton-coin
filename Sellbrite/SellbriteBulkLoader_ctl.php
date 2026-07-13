@@ -330,7 +330,7 @@
         'coin_variety_1','coin_variety_2','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
-        'country_of_manufacture','bullion_shape','coin_design','condition',
+        'country_of_manufacture','bullion_shape','coin_design',
         'paper_money_grade_designation','paper_money_type','paper_money_series_designation',
         'package_weight','exact_image','name','description','extended_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
@@ -446,6 +446,9 @@
             sblRootPath = $(this).val();
             $('#gs-series').val('').data('sblPicked', 0).prop('disabled', !sblRootPath);
             sblResetBelowSeries();
+            // Country is set ONCE, from the tree: U.S. trees are always
+            // United States; world trees get theirs from the series pick.
+            if (sblRootPath) $('#f_country_of_manufacture').val(/world/i.test(sblRootPath) ? '' : 'United States');
             sblFieldVisibility();   // Currency trees swap in the paper-money boxes right away
             sblMarketApply();       // and drop the coin-only market fields
             if (sblRootPath) $('#gs-series').focus();
@@ -642,11 +645,13 @@
     /* Autofill button: pull full collectible + pricing from GreySheet and fill. */
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
-        // Every autofill starts CLEAN: wipe the product fields (keeping the
-        // operator's SKU, market and quantity) so nothing from a previous
-        // coin lingers when a new one is pulled.
+        // Every autofill starts CLEAN: wipe the product fields so nothing from
+        // a previous coin lingers. Operator-owned fields survive - SKU, market,
+        // quantity, Condition - plus SKU of Parent Product and Country, which
+        // the drill-down already set (parent = the picked series; country is
+        // fixed by the tree and never churns).
         var grade = $('#f_grade').val() || '';
-        var keep = ['sku', 'marketplace', 'quantity'];
+        var keep = ['sku', 'marketplace', 'quantity', 'category_name', 'country_of_manufacture', 'condition'];
         $('#sku-form [data-name]').each(function(){
             if (keep.indexOf(this.getAttribute('data-name')) < 0) this.value = '';
         });
