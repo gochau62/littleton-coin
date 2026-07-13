@@ -19,6 +19,8 @@
 <!--  * Purpose   - Operator-picked Certification,      *  -->
 <!--  *             collector's note rules, plain-      *  -->
 <!--  *             English comment pass                *  -->
+<!--  *                                                 *  -->
+<!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 /*
  *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
