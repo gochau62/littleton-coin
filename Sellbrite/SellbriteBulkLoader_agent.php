@@ -586,7 +586,7 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
-        'coin_type'      => ['desc' => 'OPERATOR-PICKED from the valid values - leave EMPTY; do not guess'],
+        'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that matches the series/path - names may differ slightly (path "Australia > \$2 Kookaburra" -> option "Australian Kookaburra"); copy the option EXACTLY; leave EMPTY if none fits'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
@@ -746,20 +746,13 @@ function gsMapToProduct(array $c): array
             if (preg_match('/(silver|gold|platinum|palladium) eagle/', $hay)) { $best = 'American Eagle'; }
             elseif (strpos($hay, 'gold buffalo') !== false) { $best = 'American Buffalo'; }
             else {
-                // The options use DEMONYMS ("Australian Kookaburra") while the
-                // path names the COUNTRY ("... > Australia > ..."), so a word
-                // like "australian" can never appear literally - translate it.
-                $demonym = ['australian' => 'australia', 'austrian' => 'austria',
-                            'canadian' => 'canada', 'chinese' => 'china',
-                            'mexican' => 'mexico', 'african' => 'africa',
-                            'american' => 'america', 'uk' => 'kingdom'];
+                // Exact words only. Near-miss names ("Australia" path vs the
+                // "Australian Kookaburra" option) are left EMPTY here - Gemini
+                // gets the tree's option list and resolves those (gsAiMap).
                 foreach (Schema::coinTypePools()[$poolKey] ?? [] as $opt) {
                     $all = true;
                     foreach (preg_split('/\s+/', strtolower($opt)) as $tk) {
-                        if ($tk === '') { continue; }
-                        if (strpos($hay, $tk) !== false) { continue; }
-                        if (isset($demonym[$tk]) && strpos($hay, $demonym[$tk]) !== false) { continue; }
-                        $all = false; break;
+                        if ($tk !== '' && strpos($hay, $tk) === false) { $all = false; break; }
                     }
                     if ($all && strlen($opt) > strlen($best)) { $best = $opt; }
                 }
@@ -915,8 +908,16 @@ function gsAiMap(array $coin): array
          . "description, condition, image line and company blurb.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     // What to fill (the field spec) + what is true (the curated facts packet).
+    // The tree's Coin Type menu (same pool rule as the mapper): Gemini sees the
+    // real options so near-miss names ("Australia" vs "Australian") are its
+    // judgment call, not a string-match problem.
+    $ctRoot = strtolower((string) ($coin['CatalogPath'][0]['Name'] ?? ''));
+    $ctKey  = (strpos($ctRoot, 'world') !== false ? 'world' : 'us') . '_'
+            . (strpos($ctRoot, 'currency') !== false ? 'currency' : 'coins');
+    $ctOpts = Schema::coinTypePools()[$ctKey] ?? [];
     $user = "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nGREYSHEET COIN FACTS:\n"
-          . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+          . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
+          . ($ctOpts ? "\n\nCOIN TYPE OPTIONS (pick ONE exactly, or leave coin_type empty):\n" . implode(' | ', $ctOpts) : '');
     // Ask Gemini; keep only real schema fields from the answer.
     $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
 
