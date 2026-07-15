@@ -162,7 +162,7 @@ Eight sections, in file order.
 **Section 2 — writing to the coin phone book** (`SBLMEMORYT`).
 `gsMemUpsert` writes one folder or coin; `gsMemLearnNode` / `gsMemLearnCoins` /
 `gsMemMarkDone` are the "remember what we just saw" helpers. In the normal daily flow
-these never run — they only run during seeding or the rare live tree-walk fallbacks.
+these never run — the seed crawler is their only caller.
 
 **Section 3 — reading the phone book (what the dropdowns use).**
 - `gsMemRoots()` — the four `1. Tree` choices.
@@ -172,13 +172,12 @@ these never run — they only run during seeding or the rare live tree-walk fall
 - `gsMemSearch(q)` — free-text coin search (used by the older search box path).
 - `gsLikeEsc` / `gsNorm` — tiny helpers that make typed text safe/consistent to search with.
 
-**Section 4 — live GreySheet navigation (the fallback path).**
-Only used when a coin must be *found* rather than picked: `gsChildren` lists a folder,
-`gsNavPick` picks the obviously-matching subfolder (Gemini breaks ties), `gsResolveLeaf`
-walks down to the coins and learns everything visited, `gsPickCoin` picks the exact coin,
-`gsResolve` glues those together. `gsYearsFor` finds a category's years — phone book
-first, one live walk only if the phone book knows nothing. `gsCollectible` / `gsPricing`
-fetch one coin's full facts / price row; `gsPriceNum` cleans a price string.
+**Section 4 — GreySheet endpoints.**
+`gsCollectible` / `gsPricing` fetch one coin's full facts / price row; `gsPriceNum`
+cleans a price string; `gsYearsFor` finds a typed category's years from the phone book.
+(A live tree-walk coin finder — `gsChildren`/`gsNavPick`/`gsResolveLeaf`/`gsPickCoin` —
+used to live here; it was removed 07/13/2026 because the screen always imports by a
+picked GsId. If a coin is missing from the dropdowns, seed that tree with `_seed.php`.)
 
 **Section 5 — little cleaners.**
 `sbl_norm_composition` ("90% silver, 10% copper" → "Silver"), `sbl_norm_category`

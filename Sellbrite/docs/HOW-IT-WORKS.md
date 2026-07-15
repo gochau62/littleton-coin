@@ -53,8 +53,8 @@ other LCC tool.
 - `SBLMEMORYT` — the **path memory**: every GreySheet node (`kind='N'`) and coin
   (`kind='C'`) from the seed crawl: ref_id (node/gs id), name, path
   (`U.S. Coins > Morgan Dollar…`), coin_date, mint_mark, coin_count. Powers all
-  drill-down dropdowns with **zero API calls**. Read-only in the normal flow — it only
-  grows via `_seed.php` or the rare live-navigation fallbacks (see §8).
+  drill-down dropdowns with **zero API calls**. Read-only at runtime — it only grows
+  via `_seed.php` (the live tree-walk fallback was removed 07/13/2026 as unused).
 
 ## 3. The two views
 
@@ -197,8 +197,8 @@ edits to year/grade/certification instantly rebuild the title, description and p
 - **Fallbacks when the AI call fails**: extended description ← cleaned GeneralNotes;
   collector's note ← obverse+reverse design text (each reuses the other only as a last
   resort). Identical boxes therefore mean the Gemini call itself failed (check the API log).
-- Also used (rarely) to break ties when navigating unknown coins down the live GreySheet
-  tree; every node visited is learned into memory.
+- (A third use — breaking ties while walking the live GreySheet tree for unknown coins —
+  was removed with the tree-walk finder on 07/13/2026.)
 
 ## 9. Export
 
