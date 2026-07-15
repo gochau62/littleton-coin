@@ -7,18 +7,7 @@
 <!--  *             Littleton NH                        *  -->
 <!--  ***************************************************   */
 
-/*
- * ACTIONS handled by the switch below (POST 'action'):
- *   Form lifecycle:  compute | save | find | delete | deleteAll
- *   Drill-down:      gsRoots | gsSeries | gsNodeYears | gsCoins | gsYears
- *   GreySheet:       gsSearch | gsImport (autofill one coin)
- *   AI writing:      gsListingFill (Listing Content gaps) | gsGenerate
- *   Export:          export (xlsx per market, csv fallback - streams a file
- *                    and exits; everything else returns JSON)
- */
-// AJAX endpoint for the Sellbrite Bulk Loader.
-// Buffer from the very start: the shared includes can echo whitespace, and a
-// single stray byte in front of an .xlsx download corrupts it for Excel.
+// AJAX endpoint - buffer from byte 0, one stray byte corrupts an .xlsx download
 ob_start();
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
@@ -34,15 +23,11 @@ $password = $_SESSION['password'] ?? '';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// Export streams a file, so handle it before JSON. Colour-coded XLSX matching
-// Des's product_data workbook when PhpSpreadsheet is on the box (IBM i vendor
-// dir, same as GFTCRDCVP); otherwise the identical layout as a plain CSV.
+// export streams a file (XLSX when PhpSpreadsheet exists, else CSV) - handled before JSON
 if ($action === 'export') {
     $vendor = '/www/seidenphp/htdocs/vendor/autoload.php';
     if (file_exists($vendor)) { require_once $vendor; }
-    // Market filter from the home-screen picker: a specific market exports
-    // only its SKUs ("All markets" SKUs belong everywhere, so they're kept)
-    // and only its columns; 'all' is the full house master file.
+    // a specific market exports its SKUs (All-markets rows included) and only its columns
     $market = strtolower(trim((string) ($_GET['market'] ?? $_POST['market'] ?? 'all')));
     if ($market === '' || !in_array($market, Exporter::markets(), true)) { $market = 'all'; }
     $rows = sblGetAllFull();
@@ -54,8 +39,7 @@ if ($action === 'export') {
     }
     $fname = 'sellbrite_products_' . $market . '_' . date('Ymd_His');
     $ss    = Exporter::xlsx($rows, $market);
-    // Throw away anything echoed so far (include noise, notices, the header
-    // comment's newline) - the download must start at byte 0.
+    // discard anything echoed so far - the download must start at byte 0
     while (ob_get_level() > 0) { ob_end_clean(); }
     if ($ss !== null) {
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -76,7 +60,6 @@ header('Content-Type: application/json');
 
 switch ($action) {
 
-    // PLAIN: The live recalculation: fill the auto boxes, return the colors.
     case 'compute':
         $computed   = Computer::apply($_POST);
         $validation = Validator::check($computed);
@@ -89,12 +72,10 @@ switch ($action) {
         ]);
         break;
 
-    // PLAIN: Save the form to the database (recomputes first, so what is stored is what you saw).
     case 'save':
         $computed   = Computer::apply($_POST);
         $validation = Validator::check($computed);
-        // Soft gate: incomplete required fields don't block the save - the
-        // response carries the list so the UI can warn.
+        // incomplete required fields warn but never block the save
         $missing = [];
         if (!$validation['valid']) {
             $labels = [];
@@ -129,7 +110,6 @@ switch ($action) {
         ]);
         break;
 
-    // PLAIN: Fetch one row for the edit form.
     case 'find':
         $row = sblFind((int) ($_POST['id'] ?? 0));
         echo json_encode([
@@ -138,7 +118,6 @@ switch ($action) {
         ]);
         break;
 
-    // PLAIN: Delete one SKU.
     case 'delete':
         $id = (int) ($_POST['id'] ?? 0);
         $ok = $id > 0 ? sblDelete($id) : false;
@@ -146,14 +125,12 @@ switch ($action) {
                           'message' => $ok ? '' : 'Delete failed - no database connection or a DB error.']);
         break;
 
-    // PLAIN: Delete every SKU.
     case 'deleteAll':
         $ok = sblDeleteAll();
         echo json_encode(['returnClass' => $ok ? 'success' : 'error',
                           'message' => $ok ? '' : 'Delete all failed - no database connection or a DB error.']);
         break;
 
-    // PLAIN: Free-text coin search.
     case 'gsSearch':
         // Coin dropdown: search the learned path memory (0 API calls).
         $s = gsSearch((string) ($_POST['q'] ?? ''));
@@ -161,26 +138,22 @@ switch ($action) {
                           'matches' => $s['matches'], 'message' => $s['error']]);
         break;
 
-    // PLAIN: The "1. Tree" menu.
     case 'gsRoots':
         // Drill-down 1: the broad trees (US Coins, US Currency, ...). 0 API calls.
         echo json_encode(['returnClass' => 'success', 'matches' => gsMemRoots()]);
         break;
 
-    // PLAIN: The "2. Series" menu.
     case 'gsSeries':
         // Drill-down 2: coin-holding series under a root, searchable. 0 API calls.
         echo json_encode(['returnClass' => 'success',
                           'matches' => gsMemSeries((string) ($_POST['root'] ?? ''), (string) ($_POST['q'] ?? ''))]);
         break;
 
-    // PLAIN: The "3. Year" menu.
     case 'gsNodeYears':
         // Year dropdown for a series (deduplicated). 0 API calls.
         echo json_encode(['returnClass' => 'success', 'years' => gsMemYears((string) ($_POST['path'] ?? ''))]);
         break;
 
-    // PLAIN: The "4. Coin" menu.
     case 'gsCoins':
         // Drill-down 3: coins under the series, optional year filter. 0 API calls.
         echo json_encode(['returnClass' => 'success',
@@ -189,17 +162,14 @@ switch ($action) {
                                                   (string) ($_POST['year'] ?? ''))]);
         break;
 
-    // PLAIN: Years for a typed category (rebuilds the form's Year box).
     case 'gsYears':
         // Dynamic Year dropdown: only the years this series exists for.
         $years = gsYearsFor((string) ($_POST['category'] ?? ''));
         echo json_encode(['returnClass' => 'success', 'years' => $years]);
         break;
 
-    // PLAIN: The Autofill button.
     case 'gsImport':
-        // Auto-fill from GreySheet: by gs_id (dropdown pick) or by navigating
-        // the tree from the form's attributes (learning the path as it goes).
+        // autofill by the dropdown pick's gs_id
         $imp = gsImport($_POST);
         $rc  = !$imp['ok'] ? 'error' : (!$imp['found'] ? 'notfound' : ($imp['valid'] ? 'success' : 'warning'));
         echo json_encode(['returnClass' => $rc, 'row' => $imp['row'], 'statuses' => $imp['statuses'],
@@ -209,16 +179,13 @@ switch ($action) {
                           'total_calls' => (int) ($_SESSION['gs_api_calls'] ?? 0), 'message' => $imp['error']]);
         break;
 
-    // PLAIN: The "Generate Product details with AI" button.
     case 'gsListingFill':
-        // Listing content only: Gemini writes the EMPTY Description /
-        // Extended Description / Feature 4, house layout, never overwriting.
+        // Gemini writes the EMPTY listing boxes only
         $r = gsListingFill($_POST);
         echo json_encode(['returnClass' => $r['ok'] ? 'success' : 'error',
                           'row' => $r['row'], 'message' => $r['error']]);
         break;
 
-    // PLAIN: Find-and-import for described coins.
     case 'gsGenerate':
         // Coin GreySheet doesn't carry: Gemini drafts the whole listing.
         $gen = gsGenerate($_POST);

@@ -9,27 +9,6 @@
 ?>
 
 <?php
-/* =========================================================================
- * SellbriteBulkLoader_dsp.php - display: renders the whole screen.
- *
- * MAP OF THIS FILE (top to bottom):
- *   dspBulkLoader()   entry point (called by _ctl.php after the auth check)
- *     $renderField    one form control: label + star + AUTO badge, combo
- *                     input w/ datalist (dropdown caret), textarea, or text
- *     <style>         all CSS (green page, toolbar pills, .field states:
- *                     is-error red / is-action yellow / cert-locked hidden)
- *     home view       toolbar (Search + Export pills, New SKU / Delete All)
- *                     + the SKU grid
- *     form view       GreySheet drill-down bar, then the collapsible
- *                     sections (Coin details / Market specific fields /
- *                     Other product types / Packaging / Listing content +
- *                     AI button / Product images) - field order mirrors
- *                     Des's workbook; $autoAlways / $noBadge / $manualAlways
- *                     decide badges, $required puts the red stars
- *     preview column  live listing preview + validation issue list
- *     <script> tail   emits SBL_GRADE_POOLS / SBL_COINTYPE_POOLS and the
- *                     field-group JSON the controller's JS reads
- * ========================================================================= */
 function dspBulkLoader(&$screenData)
 {
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
@@ -39,12 +18,10 @@ function dspBulkLoader(&$screenData)
     $textareas = ['description','extended_description','feature_1','feature_2','feature_3',
                   'feature_4','feature_5','condition_note','search_terms'];
 
-    // PLAIN: Draws ONE form box: label, red star, blue badge, the right control, and the message line. Every box goes through here.
     // One form control.
     $renderField = function (array $col) use ($textareas): string {
         $name = $col['name']; $auto = !empty($col['auto']); $req = !empty($col['required']);
-        // Some fields keep the auto-fill wiring (data-auto) but show no badge -
-        // the operator owns them even though formulas can suggest a value.
+        // data-auto wiring without a badge = operator-owned field
         $badge = $auto && empty($col['nobadge']);
         $opts = Schema::optionsFor($col);
         $cls = 'field' . ($badge ? ' is-auto' : '');
@@ -55,9 +32,7 @@ function dspBulkLoader(&$screenData)
         $h .= '</label>';
         $da = ' data-name="' . sbl_e($name) . '"' . ($auto ? ' data-auto="1"' : '') . ($req ? ' data-required="1"' : '');
         if ($opts) {
-            // Combo box: searchable suggestions from the valid values, but the
-            // operator can also type any value manually. .has-menu paints the
-            // caret so these read as dropdowns, not plain text boxes.
+            // searchable combo of the valid values; the operator can still type anything
             $h .= '<input type="text" id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '" class="has-menu"'
                 . ' list="dl_' . sbl_e($name) . '" value=""' . $da . '>';
             $h .= '<datalist id="dl_' . sbl_e($name) . '">';
@@ -94,8 +69,7 @@ function dspBulkLoader(&$screenData)
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
 .gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
 .gs-bar .gs-year { flex:0 0 110px; width:110px; min-width:0; }
-/* Toolbar groups: a labelled pill holds each control set so the toolbar reads
-   as units (Search / Export), minimal and consistent. */
+/* labelled pills group the toolbar controls (Search / Export) */
 .tool-group { display:inline-flex; align-items:center; gap:8px; padding:5px 5px 5px 14px;
               border:2px solid #b9c8be; border-radius:50px; background:#fff; }
 .tool-group .tg-lbl { font-size:11px; font-weight:700; text-transform:uppercase;
@@ -115,8 +89,7 @@ function dspBulkLoader(&$screenData)
 .mkt-pick .gs-dd { max-width:120px; }
 .ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; background:#fff; }
 .ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
-/* Valid-value combo menus on the form: tighter + capped so 279 grades don't
-   swallow the screen, but still readable. */
+/* compact capped combo menus so 279 grades don't swallow the screen */
 .ui-autocomplete.sbl-combo { max-height:230px; font-size:12.5px; line-height:1.35; }
 .ui-autocomplete.sbl-combo .ui-menu-item-wrapper { padding:4px 9px; white-space:normal; }
 .ui-autocomplete .gs-path { color:#5f6b62; font-size:11px; }
@@ -164,20 +137,17 @@ details.group summary::-webkit-details-marker { display:none; }
 .field label { font-size:6px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
-/* background-COLOR (not the shorthand) in the state rules below: the shorthand
-   would reset background-image and erase the .has-menu dropdown caret. */
+/* background-color only - the shorthand would erase the has-menu caret */
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background-color:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
 /* Locked boxes (e.g. Cert Number before a grading service is picked). */
 .field input:disabled, .field input.is-locked { opacity:.5; cursor:not-allowed; pointer-events:none; }
-/* Cert Number vanishes for raw coins - !important outranks the inline
-   display sblFieldVisibility sets, so the two never fight. */
+/* cert number hides for raw coins; !important beats the inline display toggles */
 .field.cert-locked { display:none !important; }
 /* Valid-values combo boxes show a caret so users know a menu opens on click. */
 .field input.has-menu { padding-right:30px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6b62'/%3E%3C/svg%3E");
     background-repeat:no-repeat; background-position:right 11px center; }
-/* Auto-filled inputs stay the normal grey box - only the blue AUTO badge on
-   the label marks them. Required fields go red via .is-error when empty. */
+/* auto inputs stay grey - only the blue AUTO badge marks them */
 .badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
 .genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
@@ -302,23 +272,14 @@ details.group summary::-webkit-details-marker { display:none; }
         <div class="editor">
             <form id="sku-form" autocomplete="off" onsubmit="return false;">
                 <input type="hidden" name="id" id="f_id" value="">
-                <!-- The coin's own GreySheet weight (troy oz) rides along hidden:
-                     no visible box (removed on request), but the packaging
-                     formula needs it AFTER the operator picks Certification.
-                     data-name so the autofill wipe clears it between coins. -->
+                <!-- hidden GreySheet coin weight (troy oz): packaging recomputes from it after the Certification pick -->
                 <input type="hidden" name="weight" id="f_weight" value="" data-name="weight">
                 <?php
-                // Collapsible sections keep the big form uncluttered. Required
-                // fields (Sellbrite "mandatory for all") come from the schema;
-                // most auto-fill, so requiring them just flags what a listing needs.
-                // search_terms is starred because it is only VISIBLE for the
-                // markets where it is required (All / Amazon).
+                // collapsible sections; required = the Sellbrite mandatory list + qty/cost/search terms
                 $required = array_merge(Schema::requiredNames(), ['quantity', 'cost', 'search_terms']);
                 $required = array_values(array_unique($required));
                 $sections = [
-                    // Fields appear in the example workbook's column order; the
-                    // non-sheet extras (diameter/weight, inventory cost/qty) close
-                    // the section.
+                    // fields in the example workbook's column order
                     'Coin details' => ['open' => true, 'fields' => [
                         'sku','category_name','brand','country_of_manufacture',
                         'price','original_retail','creation_date','condition',
@@ -360,8 +321,7 @@ details.group summary::-webkit-details-marker { display:none; }
                        . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
                     echo '<summary>' . sbl_e($title) . '</summary>';
                     if (!empty($sec['ai'])) {
-                        // Gemini fills ONLY the empty Description / Extended
-                        // Description / Feature 4 - never anything typed.
+                        // Gemini fills ONLY the empty listing boxes - never typed text
                         echo '<div class="genai-row"><button type="button" class="mini" id="genai-btn" '
                            . 'onclick="sblListingGenerate()" title="Fills only the empty Description, '
                            . 'Extended Description and Feature 4 - never overwrites typed text">'
@@ -370,27 +330,21 @@ details.group summary::-webkit-details-marker { display:none; }
                     }
                     echo '<div class="field-grid">';
                     $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
-                    // Computed fields keep updating live even though they are
-                    // required (Product Name, Description, the derived copy...).
+                    // computed fields keep updating live even though required
                     $autoAlways = ['name','description','extended_description',
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',
                                    'search_terms','creation_date','exact_image',
                                    'country_of_manufacture','brand',
                                    'package_weight','package_height','package_length','package_width'];
-                    // Operator-owned picks: still autofill, but no AUTO badge
-                    // (original_retail has no autofill source at all).
+                    // operator-owned picks: autofill suggests, no badge
                     $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
-                    // Fully manual: no badge AND no formula refresh. Condition and
-                    // Certification start blank; staff pick them themselves (GreySheet
-                    // describes the catalog issue, not the slab in hand). Cert Number
-                    // only unlocks once a grading service is picked.
+                    // fully manual: no badge, no formula refresh; Cert Number unlocks with Certification
                     $manualAlways = ['title_suffix', 'certification', 'certification_number', 'condition'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
                         $col['required'] = in_array($n, $required, true);
-                        // Product images are manual (operator pastes real photo URLs);
-                        // other sections are auto unless required-and-operator-owned.
+                        // image URLs are manual; other sections auto unless operator-owned
                         $col['auto'] = !empty($sec['images']) || in_array($n, $manualAlways, true) ? false
                             : (!$manual && (!$col['required'] || in_array($n, $autoAlways, true)));
                         $col['nobadge'] = in_array($n, $noBadge, true);
@@ -423,11 +377,9 @@ details.group summary::-webkit-details-marker { display:none; }
     </div>
 </div>
 <script>
-/* Grade pools: the Grade menu offers coin vs paper-money grades, certified
-   vs raw, based on the SKU's category and Certification. */
+// grade menu pools: coin grades vs paper-money grades
 var SBL_GRADE_POOLS = <?= json_encode(Schema::gradePools()) ?>;
-/* Coin Type pools by drill-down tree: U.S. Coins / U.S. Currency /
-   World Coins / World Currency each get their own valid values. */
+// coin type pools by drill-down tree
 var SBL_COINTYPE_POOLS = <?= json_encode(Schema::coinTypePools()) ?>;
 </script>
 <?php
