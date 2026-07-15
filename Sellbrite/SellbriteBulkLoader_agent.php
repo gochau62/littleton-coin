@@ -20,7 +20,7 @@
  *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
  *   - Populate it with the seed crawl (SellbriteBulkLoader_seed.php)
- * 
+ *
  *   - Picking a coin calls the API (GetCollectibleRequest + GetPricingRequest)
  *     and auto-fills the form; Gemini maps the data into the right fields.
  *
@@ -41,7 +41,7 @@ if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2
 if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
 if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
 if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'advanced'); }
-if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); } 
+if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    200); }
 
 // gemini 2.5 flash model current usage for free testing
@@ -56,18 +56,16 @@ if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
  * geminiJson is the Gemini caller (JSON-mode, model fallback).
  * ========================================================================= */
 
-
 // helpful for when trying to find greysheet error messages in debug log
 function gsLog($msg)
 {
     // prefix every entry so Sellbrite lines are easy to spot in the shared log
     $line = 'Greysheet ' . $msg;
-    // Use LCCOnline logger 
+    // Use LCCOnline logger
     if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec($line); }
     // otherwise use PHP error log
     else { error_log($line); }
 }
-
 
 // connection setup for GreySheet: adds the keys, enforces the timeout, records the call.
 function gsApiGet($path, array $params = [], &$meta = [])
@@ -134,7 +132,6 @@ function gsApiGet($path, array $params = [], &$meta = [])
     return $data;
 }
 
-
 // take greysheet json response and read it to get the actual data.
 function gsData($resp): array
 {
@@ -142,15 +139,13 @@ function gsData($resp): array
         ? array_values(array_filter($resp['Data'], 'is_array')) : [];
 }
 
-
 // if no gemini key configured skip
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
-
 
 // asks for a JSON answer, retries on the backup model when busy.
 function geminiJson($system, $user, &$meta = [])
 {
-    // if not key set return error 
+    // if not key set return error
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
     if (!geminiConfigured()) { $meta['error'] = 'GEMINI_API_KEY not set'; return null; }
 
@@ -203,7 +198,6 @@ function geminiJson($system, $user, &$meta = [])
     return $data;
 }
 if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
-
 
 
 /* =========================================================================
@@ -297,7 +291,7 @@ function gsMemNodeChildren(int $parentId): array
 }
 
 /* =========================================================================
- * dropdown menus read memory path 
+ * dropdown menus read memory path
  * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins
  * ========================================================================= */
 function gsMemSearch(string $q, int $limit = 40): array
@@ -404,7 +398,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
          . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')";
     $params = [$nodePath, gsLikeEsc($nodePath) . ' > %'];
     $year = trim($year);
-    
+
     // year filter, must match the year inside the name hide others
     if ($year !== '') {
         $sql .= " AND (coin_date = ? OR UPPER(name) LIKE ?)";
@@ -427,7 +421,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
 }
 
 
-// years for a typed category: memory first; 
+// years for a typed category: memory first;
 function gsYearsFor(string $category, bool $liveLookup = true): array
 {
     $ck = gsNorm($category);
@@ -487,7 +481,7 @@ function gsPriceNum($v): string
 
 
 /* =========================================================================
- * field normalizers (composition, category date-strip,"90% silver; 10% copper" 
+ * field normalizers (composition, category date-strip,"90% silver; 10% copper"
  * becomes the one metal word ("Silver"), mint location, dropdown snapping)
  * ========================================================================= */
 function sbl_norm_composition(string $c): string
@@ -508,7 +502,6 @@ function sbl_norm_composition(string $c): string
     return trim($c);
 }
 
-
 // strip "(2022-2025)" style date ranges off a series name
 function sbl_norm_category(string $gs): string
 {
@@ -520,7 +513,6 @@ function sbl_norm_category(string $gs): string
     $clean = trim(preg_replace("/\\s+/", " ", $clean), " -\t");
     return $clean !== "" ? $clean : trim($gs);
 }
-
 
 // Mint mark letter to city ("D" -> "Denver, Colorado").
 function sbl_mint_location(string $mm): string
@@ -640,7 +632,6 @@ function gsMapToProduct(array $c): array
         $row['mint_location'] = sbl_mint_location($mm);
     }
 
-
     // World coins list the spoken face value ("5 Euros") - the short form's
     // leading S/G/P is a metal prefix ("S€5" = silver €5), not the value.
     // U.S. coins keep the house short form ("1C", "50C", "$1").
@@ -649,9 +640,8 @@ function gsMapToProduct(array $c): array
     if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
 
-
     // Designation abbreviation; color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH.
-    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM"). 
+    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM").
     // GreySheet "Desg" is the grade TYPE (MS/PR/SP)
     if ($g('Other') !== '')             { $row['designation_abbrivation'] = $g('Other'); }
     if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
@@ -668,11 +658,11 @@ function gsMapToProduct(array $c): array
 
     $strike    = $g('StrikeType');
     // MS / PR / PF / SP / SMS - the grade type
-    $gradeType = strtoupper($g('Desg')); 
+    $gradeType = strtoupper($g('Desg'));
     $isProof   = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false
               || in_array($gradeType, ['PR', 'PF'], true);
     if ($strike !== '') { $row['strike_type'] = $strike; }
-    
+
     // Mint State / Proof / Specimen are all uncirculated; circulated coins have
     // a circulated Desg or none, so leave those for the grade/operator.
     if ($isProof || in_array($gradeType, ['MS', 'PR', 'PF', 'SP', 'SMS'], true)) {
@@ -696,13 +686,13 @@ function gsMapToProduct(array $c): array
         foreach ($gsPathNodes as $node) {
             if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
         }
-        
+
         // World trees name the country as the path's second node even when the CountryName attribute is blank: "World Coins > Austria > ...".
         if (($row['country_of_manufacture'] ?? '') === '' && $isWorld && count($gsPathNodes) > 1) {
             $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($gsPathNodes[1]['Name'] ?? '')));
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
-        // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat"). 
+        // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat").
         if (($row['coin_type'] ?? '') === '') {
             $poolKey = ($isWorld ? 'world' : 'us') . '_' . ($isPaper ? 'currency' : 'coins');
             $hay = strtolower(($row['category_name'] ?? '') . ' ' . $gsPathText);
@@ -740,7 +730,7 @@ function gsMapToProduct(array $c): array
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
     // Brand is left to the AI: FeaturedImageAttribution is a photo credit (often a grading service), not the brand.
-    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone 
+    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone
     if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $gsRootName)) {
         $row['country_of_manufacture'] = 'United States';
     }
@@ -769,7 +759,6 @@ function gs_coin_facts(array $c): array
     return $out;
 }
 
-
 // one field's allowed options from the "Valid Values" sheet
 function sbl_field_options(string $name): array
 {
@@ -778,7 +767,6 @@ function sbl_field_options(string $name): array
     if (!$opts) { $opts = sbl_field_guide()[$name]['opts'] ?? []; }
     return array_values(array_filter($opts, static fn($o) => !preg_match('/^\s*(-{2,}|\*{3})/', (string) $o)));
 }
-
 
 // turn the field guide into the prompt's TARGET FIELDS text
 function sbl_field_spec(): string
@@ -807,7 +795,6 @@ function sbl_field_spec(): string
     return $spec = implode("\n", $lines);
 }
 
-
 // Tidies the AI's answer (drops invented fields, trims strings).
 function sbl_clean_ai_row($data): array
 {
@@ -819,7 +806,6 @@ function sbl_clean_ai_row($data): array
     }
     return $row;
 }
-
 
 // Snaps every AI value onto the exact valid options.
 function sbl_snap_row(array $row): array
@@ -834,13 +820,12 @@ function sbl_snap_row(array $row): array
     return $row;
 }
 
-
-// The full autofill writer: facts first 
+// The full autofill writer: facts first
 function gsAiMap(array $coin): array
 {
     $base = gsMapToProduct($coin);
     if (!geminiConfigured()) { return sbl_snap_row($base); }
-    
+
     // The writing brief - the numbered RULES are the whole contract with the model.
     $sys = "You are the listing writer for Littleton Coin Company's Sellbrite coin listings. From the "
          . "GreySheet coin facts (name, dates, mint, composition, designer, mintage, and especially "
@@ -898,7 +883,7 @@ function gsAiMap(array $coin): array
         $want = preg_split('/[^a-z0-9]+/', strtolower($aiV), -1, PREG_SPLIT_NO_EMPTY);
         if (!array_diff($want, $have)) { $row[$vf] = $aiV; }
     }
-    // GeneralNotes stays the Expanded Description; 
+    // GeneralNotes stays the Expanded Description;
     // the obverse + reverse design text becomes the COLLECTOR'S NOTE
     $gsClean = static function ($s): string {
         $s = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $s)));
@@ -916,7 +901,6 @@ function gsAiMap(array $coin): array
     }
     return sbl_snap_row($row);
 }
-
 
 // The "Generate Product details with AI" button: writes ONLY the empty Listing Content boxes from what's on the form.
 function gsListingFill(array $post): array
@@ -983,7 +967,6 @@ function gsSearch(string $q): array
     return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
 }
 
-
 // last step of any import: run the computed fields, then the validator
 function gs_finalize(array $row, $source, string $via, array $calls = []): array
 {
@@ -993,7 +976,6 @@ function gs_finalize(array $row, $source, string $via, array $calls = []): array
             'messages' => $check['messages'], 'valid' => $check['valid'], 'source' => $source,
             'error' => '', 'via' => $via, 'calls' => $calls];
 }
-
 
 // the Autofill: fetch the coin + its price, map the facts, write the copy, finalize
 function gsImport(array $params): array
@@ -1010,6 +992,7 @@ function gsImport(array $params): array
     $calls[] = ['call' => 'GetCollectibleRequest?GsId=' . $gsId, 'ms' => (int) ($mCol['ms'] ?? 0),
                 'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)') : 'nothing returned'];
     if (!$coin) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
+
     // picked from stores the full path ("World Coins > Austria > ...").
     if (empty($coin['CatalogPath'])) {
         $memPath = gsMemPath($gsId);
@@ -1037,19 +1020,22 @@ function gsImport(array $params): array
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
+
     // Pricing names the grade it priced (GradeLabel): autofill Grade with it,
     if (($coin['GradeLabel'] ?? '') !== '' && ($row['grade'] ?? '') === '') {
         $row['grade'] = preg_replace('/^([A-Za-z]{1,4})\s*-?\s*(\d)/', '$1 $2', trim((string) $coin['GradeLabel']));
     }
+
     if (!$row) { return array_merge($base, ['error' => 'Could not map the GreySheet data to any field.', 'calls' => $calls]); }
     $out = gs_finalize($row, $coin, geminiConfigured() ? 'greysheet+ai' : 'greysheet-map', $calls);
     $out['raw'] = ['collectible' => $rawCoin, 'pricing' => $price, 'facts_sent_to_ai' => gs_coin_facts($rawCoin)];
+
     // Display-only reference image from GreySheet; NOT written to product_image_*.
     $out['preview_image'] = (string) ($rawCoin['FeaturedImageUrl'] ?? '');
     return $out;
 }
 
-// PLAIN: Find-and-import in one go, for coins described rather than picked.
+// Find-and-import in one go, for coins described rather than picked.
 function gsGenerate(array $params): array
 {
     $base = ['ok' => false, 'found' => false, 'row' => [], 'statuses' => [], 'messages' => [],
