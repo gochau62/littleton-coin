@@ -234,14 +234,17 @@ if ($check === 'agent') {
     echo "Whole chain loaded. Running the FULL FLOW through the agent:\n\n";
     @ob_flush(); @flush();
 
+    // The live tree-walk finder (gsResolve) was removed 07/13/2026 - the screen
+    // always imports by a picked GsId, so this check now resolves through the
+    // MEMORY table the way the real dropdowns do.
     $attrs = ['category_name' => trim((string) ($_POST['cat'] ?? 'Draped Bust Half Cent')),
               'year' => trim((string) ($_POST['year'] ?? '1804')),
               'mint_mark' => trim((string) ($_POST['mm'] ?? '')),
               'grade' => trim((string) ($_POST['grade'] ?? ''))];
-    $trace = [];
-    $gsId = gsResolve($attrs, $trace);
-    echo 'resolve "' . implode(' ', array_filter($attrs)) . '"  ->  '
-       . ($gsId > 0 ? "GsId {$gsId}" : 'NOT FOUND') . '   via   ' . implode('  >  ', $trace) . "\n\n";
+    $hits = gsMemSearch(trim($attrs['year'] . ' ' . $attrs['category_name']), 5);
+    $gsId = (int) ($hits[0]['gs_id'] ?? 0);
+    echo 'memory search "' . implode(' ', array_filter($attrs)) . '"  ->  '
+       . ($gsId > 0 ? "GsId {$gsId} ({$hits[0]['label']})" : 'NOT FOUND (is that tree seeded?)') . "\n\n";
     if ($gsId > 0) {
         $imp = gsImport(['gs_id' => $gsId, 'grade' => $attrs['grade']]);
         echo 'import: ' . ($imp['found'] ? 'OK via ' . $imp['via'] : 'FAILED ' . $imp['error']) . "\n\n";

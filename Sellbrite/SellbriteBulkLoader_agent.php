@@ -20,6 +20,11 @@
 <!--  *             collector's note rules, plain-      *  -->
 <!--  *             English comment pass                *  -->
 <!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  * Date      - 07/13/2026                          *  -->
+<!--  * Purpose   - Removed unused live tree-walk       *  -->
+<!--  *             coin finder (fallback path)         *  -->
+<!--  *                                                 *  -->
 <!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 /*
@@ -27,17 +32,14 @@
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
  *     Searching memory costs 0 API calls.  Populate it with the seed crawl
  *     (SellbriteBulkLoader_seed.php) or just let lookups teach it over time.
- *   - Unknown coin: navigates the GreySheet node tree live (string-match the
- *     obvious folders, Gemini picks the ambiguous ones), finds the coin, and
- *     LEARNS: every folder visited and every coin in the leaf is written to
- *     memory, so next time it's in the dropdown instantly.
+ *   - Coin NOT in memory: it will not appear in the dropdowns; crawl that
+ *     tree with SellbriteBulkLoader_seed.php (additive). The old live
+ *     tree-walk finder was removed 07/13/2026 - the screen never used it.
  *   - Picking a coin calls the API (GetCollectibleRequest + GetPricingRequest)
  *     and auto-fills the form; Gemini maps the data into the right fields.
  *   - Coin not on GreySheet at all: offer to draft the listing with Gemini.
  *
  * ENDPOINTS (CDN Public API v2 - there is no text-search endpoint):
- *   GetNodeChildrenRequest?NodeId=                child folders
- *   GetCollectibleByNodeRequest?NodeId=&ApiLevel= coins in a leaf
  *   GetCollectibleRequest?GsId=&ApiLevel=         one coin, full detail
  *   GetPricingRequest?Gsid=&Grade=&ApiLevel=      prices by grade
  */
@@ -55,7 +57,7 @@ if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2
 if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
 if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
 if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'advanced'); }
-if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }   // default TREE only - see gsRoots()
+if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }   // the U.S. Coins tree (kept for the seeder)
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    20); }
 
 // Key comes from the secrets file above, or the GEMINI_API_KEY env var, else blank.
@@ -270,13 +272,13 @@ function gsMemUpsert(string $kind, int $refId, string $name, string $path,
         );
     }
 }
-// PLAIN: "Remember this folder" - only runs during seeding or the rare live tree-walks.
+// PLAIN: "Remember this folder" - only the seed crawler writes these now.
 function gsMemLearnNode(int $id, string $name, string $path, int $parent = 0,
                         int $coinCount = 0, string $done = 'N'): void
 {
     gsMemUpsert('N', $id, $name, $path, '', '', $parent, $coinCount, $done);
 }
-// PLAIN: "Remember these coins" - same rare paths as above.
+// PLAIN: "Remember these coins" - only the seed crawler writes these now.
 function gsMemLearnCoins(array $coins, string $path, int $parentNodeId = 0): void
 {
     foreach ($coins as $c) {
@@ -436,184 +438,15 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
     }
     return $out;
 }
+
 /* =========================================================================
- * SECTION 4 - LIVE GreySheet navigation + endpoints
- * Used when a coin is NOT in memory: walk the node tree (Gemini breaks
- * ties), learn everything visited, then fetch the collectible/pricing.
+ * SECTION 4 - GreySheet endpoints (single-coin fetches, memory-only years)
+ * The live tree-walk coin finder that used to live here was removed
+ * 07/13/2026 - the screen always imports by a picked GsId; unseeded trees
+ * are added with SellbriteBulkLoader_seed.php.
  * ========================================================================= */
-// PLAIN: Live GreySheet: list one folder's subfolders (fallback path only).
-function gsChildren(int $nodeId): array
-{
-    // One live API call: a folder's subfolders, each with its folder/coin counts.
-    $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => $nodeId], $m);
-    $out  = [];
-    foreach (gsData($resp) as $c) {
-        $out[] = ['id' => (int) ($c['Id'] ?? 0), 'name' => (string) ($c['Name'] ?? ''),
-                  'nodes' => (int) ($c['NodeChildrenCountLive'] ?? 0),
-                  'coins' => (int) ($c['CollectibleChildrenCountLive'] ?? 0)];
-    }
-    return $out;
-}
-// PLAIN: Picks the obviously-matching subfolder; Gemini breaks the ties.
-function gsNavPick(array $children, string $target, string $context)
-{
-    // Substring match in BOTH directions, so the "Morgan Dollar" folder matches a "Morgan Dollars 1878-1921" target and vice versa.
-    $t = gsNorm($target);
-    $hits = [];
-    foreach ($children as $c) {
-        $n = gsNorm($c['name']);
-        if ($n !== '' && (strpos($t, $n) !== false || strpos($n, $t) !== false)) { $hits[] = $c; }
-    }
-    // Exactly one obvious match - take it, no AI needed.
-    if (count($hits) === 1) { return $hits[0]; }
-
-    // Ambiguous (none or several matched): let Gemini pick from "id = name" lines.
-    if (geminiConfigured()) {
-        $list = [];
-        foreach ($children as $c) { $list[] = $c['id'] . ' = ' . $c['name']; }
-        $sys = 'You navigate a coin catalog tree. Given a target coin and a list of folders ("id = name"), '
-             . 'pick the ONE folder that leads to that coin. Use the grade to tell proof from business '
-             . 'strike. Return ONLY JSON {"id": <id>}.';
-        $out = geminiJson($sys, "TARGET COIN: $context\n\nFOLDERS:\n" . implode("\n", $list), $m);
-        $id  = (int) ($out['id'] ?? 0);
-        foreach ($children as $c) { if ($c['id'] === $id) { return $c; } }
-    }
-    // AI unavailable or unhelpful: first rough match, or give up.
-    return $hits[0] ?? null;
-}
-// PLAIN: Picks the exact coin from a leaf folder's list.
-function gsPickCoin(array $coins, array $attrs): int
-{
-    $year = trim((string) ($attrs['year'] ?? ''));
-    $mm   = trim((string) ($attrs['mint_mark'] ?? ''));
-
-    // Narrow by year, then by mint mark - each filter only sticks if it leaves at least one candidate.
-    $cands = $coins;
-    if ($year !== '') {
-        $byDate = array_values(array_filter($cands, static fn($c) =>
-            (string) ($c['CoinDate'] ?? '') === $year || strpos((string) ($c['Name'] ?? ''), $year) !== false));
-        if ($byDate) { $cands = $byDate; }
-    }
-    if ($mm !== '' && strcasecmp($mm, 'No Mint Mark') !== 0) {
-        $byMm = array_values(array_filter($cands, static fn($c) => strcasecmp((string) ($c['MintMark'] ?? ''), $mm) === 0));
-        if ($byMm) { $cands = $byMm; }
-    }
-    // Down to one candidate - done.
-    if (count($cands) === 1) { return (int) ($cands[0]['Gsid'] ?? 0); }
-
-    // Still several (varieties, colors, proof vs business): Gemini decides, capped at 120 candidates.
-    if (count($cands) > 1 && geminiConfigured()) {
-        $list = [];
-        foreach ($cands as $c) { $list[] = (int) ($c['Gsid'] ?? 0) . ' = ' . (string) ($c['Name'] ?? ''); }
-        $desc = trim(implode(' ', array_filter([$attrs['year'] ?? '', $attrs['mint_mark'] ?? '',
-                     $attrs['category_name'] ?? '', $attrs['grade'] ?? '', $attrs['strike_type'] ?? ''])));
-        $sys  = 'Pick the ONE catalog coin best matching the target (grade colour BN/RB/RD, proof vs '
-              . 'business, variety). Return ONLY JSON {"id": <GsId>}.';
-        $out  = geminiJson($sys, "TARGET: $desc\n\nCOINS:\n" . implode("\n", array_slice($list, 0, 120)), $m);
-        $id   = (int) ($out['id'] ?? 0);
-        foreach ($cands as $c) { if ((int) ($c['Gsid'] ?? 0) === $id) { return $id; } }
-    }
-    // Last resort: the first candidate.
-    return (int) ($cands[0]['Gsid'] ?? 0);
-}
-
-// PLAIN: Live GreySheet root folders.
-/* The catalog has NO single root node. Four trees sit side by side at the top:
- *   1 = U.S. Coins    2 = U.S. Currency    6 = World Coins    12 = World Currency
- * Every node under them has either child nodes OR collectibles, never both.
- * GS_ROOT_NODE is only the default tree; gsPickRoot() chooses per item. */
-function gsRoots(): array
-{
-    return [1 => 'U.S. Coins', 2 => 'U.S. Currency', 6 => 'World Coins', 12 => 'World Currency'];
-}
-// PLAIN: Picks which top-level tree a described coin belongs to.
-function gsPickRoot(array $attrs, string $desc): array
-{
-    $roots   = gsRoots();
-    $country = strtolower(trim((string) ($attrs['country_of_manufacture'] ?? '')));
-    $text    = strtolower($desc . ' ' . (string) ($attrs['paper_money_type'] ?? ''));
-    // Paper money if any note-ish field or word is present...
-    $paper   = trim((string) ($attrs['paper_money_type'] ?? '')) !== ''
-            || trim((string) ($attrs['paper_money_grade_designation'] ?? '')) !== ''
-            || preg_match('/\b(note|banknote|currency|paper money)\b/', $text);
-    // ...world if the country isn't the U.S., or the text says world/foreign...
-    $world   = ($country !== '' && !in_array($country, ['united states', 'united states of america', 'usa', 'us'], true))
-            || preg_match('/\b(world|foreign)\b/', $text);
-    // ...and those two answers pick one of the four tree ids.
-    $id = $world ? ($paper ? 12 : 6) : ($paper ? 2 : (int) GS_ROOT_NODE);
-    return ['id' => $id, 'name' => $roots[$id] ?? ('(root ' . $id . ')')];
-}
-
-// PLAIN: Walks the live tree down to the coins, learning every folder it visits.
-function gsResolveLeaf(array $attrs, array &$trace = []): array
-{
-    $none = ['coins' => [], 'path' => ''];
-    $category = trim((string) ($attrs['category_name'] ?? ''));
-    // One human-readable line describing the target (used for matching and shown to Gemini).
-    $desc = trim(implode(' ', array_filter([$attrs['year'] ?? '', $attrs['mint_mark'] ?? '', $category,
-                $attrs['denomination'] ?? '', $attrs['grade'] ?? '', $attrs['strike_type'] ?? ''])));
-    if ($category === '' && $desc === '') { return $none; }
-    $target = $category !== '' ? $category : $desc;
-
-    // Start at the most likely of the four trees.
-    $root   = gsPickRoot($attrs, $desc);
-    $nodeId = (int) $root['id'];
-    $path   = $root['name'];
-    $trace[] = 'root:' . $root['name'];
-    $tk = gsNorm($target);
-    // Shortcut: if the phone book already knows a matching folder, start the walk there instead of at the top of the tree.
-    foreach (gsMemNodes() as $n) {
-        $k = gsNorm((string) $n['name']);
-        if ($k !== '' && (strpos($tk, $k) !== false || strpos($k, $tk) !== false)) {
-            $nodeId = (int) $n['ref_id'];
-            $path   = (string) ($n['path'] ?? $path);
-            $trace[] = 'memory:' . $n['name'];
-            break;
-        }
-    }
-    // Walk down at most 8 levels - a hard stop so a wrong turn can never loop forever.
-    for ($depth = 0; $depth < 8; $depth++) {
-        $children = gsChildren($nodeId);
-        // No subfolders = we're at a leaf: fetch its coins, remember them, done.
-        if (!$children) {
-            $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $nodeId], $m);
-            $coins = gsData($resp);
-            if (!$coins) { return $none; }
-            gsMemLearnCoins($coins, $path, $nodeId);
-            gsMemMarkDone($nodeId);
-            return ['coins' => $coins, 'path' => $path];
-        }
-        // Choose which subfolder to walk into.
-        $pick = gsNavPick($children, $target, $desc);
-        if (!$pick) { return $none; }
-        $parent = $nodeId;
-        $path  .= ' > ' . $pick['name'];
-        $trace[] = $pick['id'] . ':' . $pick['name'];
-        // Remember the folder we just visited.
-        gsMemLearnNode($pick['id'], $pick['name'], $path, $parent, $pick['coins']);
-        // The picked folder holds coins directly: fetch them, remember them, return.
-        if ($pick['coins'] > 0) {
-            $resp  = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $pick['id']], $m);
-            $coins = gsData($resp);
-            gsMemLearnCoins($coins, $path, $pick['id']);
-            if ($coins) { gsMemMarkDone($pick['id']); }
-            return ['coins' => $coins, 'path' => $path];
-        }
-        // Otherwise descend one level and loop.
-        $nodeId = $pick['id'];
-    }
-    return $none;
-}
-
-// PLAIN: Find a coin by description: walk down, then pick it. Returns its GreySheet id.
-function gsResolve(array $attrs, array &$trace = []): int
-{
-    $leaf = gsResolveLeaf($attrs, $trace);
-    return $leaf['coins'] ? gsPickCoin($leaf['coins'], $attrs) : 0;
-}
-
-// PLAIN: Years for a typed category: phone book first; one live walk only if it knows nothing.
-function gsYearsFor(string $category, bool $liveLookup = true): array
+// PLAIN: Years for a typed category, from the phone book only.
+function gsYearsFor(string $category): array
 {
     $ck = gsNorm($category);
     if ($ck === '') { return []; }
@@ -625,13 +458,6 @@ function gsYearsFor(string $category, bool $liveLookup = true): array
                      . " WHERE kind = 'C' AND UPPER(COALESCE(path, '') CONCAT ' ' CONCAT name) LIKE ?", [$like]);
     foreach ($rows as $r) {
         if (preg_match('/\d{4}/', (string) ($r['coin_date'] ?? ''), $m)) { $years[$m[0]] = true; }
-    }
-    // Phone book knows nothing: ONE live tree walk - the rare path that spends API calls.
-    if (!$years && $liveLookup) {
-        $t = [];
-        foreach (gsResolveLeaf(['category_name' => $category], $t)['coins'] as $c) {
-            if (preg_match('/\d{4}/', (string) ($c['CoinDate'] ?? ''), $m)) { $years[$m[0]] = true; }
-        }
     }
     $out = array_keys($years);
     sort($out);
@@ -1183,15 +1009,10 @@ function gsImport(array $params): array
              'valid' => false, 'source' => null, 'error' => '', 'via' => '', 'calls' => []];
     $calls = [];
 
-    // Picked from the dropdown = we already have the id; described = go find it (the rare path).
+    // Autofill always arrives with the dropdown pick's id; without one there is
+    // nothing to import (the live tree-walk finder was removed - the UI never used it).
     $gsId = (int) ($params['gs_id'] ?? 0);
-    if ($gsId <= 0) {
-        $trace = [];
-        $gsId  = gsResolve($params, $trace);
-        if ($trace) { $calls[] = ['call' => 'Navigate GreySheet tree', 'got' => implode(' > ', $trace)]; }
-        if ($gsId <= 0) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
-        gsLog('resolved "' . ($params['category_name'] ?? '') . '" -> GsId ' . $gsId . ' via ' . implode(' > ', $trace));
-    }
+    if ($gsId <= 0) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
 
     $coin = gsCollectible($gsId, $mCol);
     $calls[] = ['call' => 'GetCollectibleRequest?GsId=' . $gsId, 'ms' => (int) ($mCol['ms'] ?? 0),
