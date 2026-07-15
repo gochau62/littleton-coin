@@ -1030,6 +1030,18 @@ function gsImport(array $params): array
     $calls[] = ['call' => 'GetCollectibleRequest?GsId=' . $gsId, 'ms' => (int) ($mCol['ms'] ?? 0),
                 'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)') : 'nothing returned'];
     if (!$coin) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
+    // The live response has no CatalogPath - but the MEMORY row this coin was
+    // picked from stores the full path ("World Coins > Austria > ..."). One
+    // free DB2 read rebuilds it: country node, series and path words included.
+    if (empty($coin['CatalogPath'])) {
+        $memPath = (string) (gsMemRows('SELECT path FROM ' . SBL_GSMEM_TABLE
+                 . " WHERE kind = 'C' AND ref_id = ?", [$gsId])[0]['path'] ?? '');
+        if ($memPath !== '') {
+            $coin['CatalogPath'] = array_map(static fn($n) => ['Name' => trim($n)],
+                                             array_filter(explode('>', $memPath), 'trim'));
+            $calls[] = ['call' => 'Memory path lookup (0 API calls)', 'got' => $memPath];
+        }
+    }
     $rawCoin = $coin;   // untouched collectible, for the readout box
 
     $price = gsPricing($gsId, $params['grade'] ?? null, $mPr);
