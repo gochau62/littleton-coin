@@ -825,7 +825,11 @@ function gs_coin_facts(array $c): array
         // Flatten the folder path to one "A > B > C" line.
         $out['CatalogPath'] = implode(' > ', array_map(static fn($n) => (string) ($n['Name'] ?? ''), $c['CatalogPath']));
     } elseif (!empty($c['ParentNodeName'])) {
-        // Live responses have no CatalogPath - give the AI the series name instead.
+        // Normally gsImport has already rebuilt CatalogPath from the memory row
+        // (gsMemPath) before we get here. This branch covers the two cases that
+        // arrive WITHOUT one: the raw panel's facts_sent_to_ai view (built from
+        // the untouched response) and a coin missing from memory - the series
+        // name is the best context we can give the AI then.
         $out['CatalogPath'] = trim((string) $c['ParentNodeName']);
     }
     return $out;
