@@ -1,32 +1,10 @@
 <?php
-/*
- * Sellbrite Bulk Loader - embedded reference data.
- *
- * THREE SECTIONS (all sourced from Des's SellbriteBulkNew.ods workbook):
- *   'values'  - Valid Values lists for operator-entered dropdowns.
- *               To add an option, add one quoted string to the right list.
- *   'schema'  - one row per Sellbrite column: label / required / auto /
- *               which 'values' or derived list feeds its dropdown.
- *               Machine names MUST match the Sellbrite export headers.
- *   'lookups' - package_weights: PACKAGING weights only (certification
- *               wrap/slab add-on, GSA holders).
- *
- * NOT stored here (GreySheet / the drill-down provides it per coin):
- *   - SKU of Parent Product: the series name, date range stripped
- *   - coin type (best-matched from the valid values), denomination,
- *     composition, fineness
- *   - coin weight (WeightOunces drives the package weight)
- *   - mint mark (MintMark field); mint location derives from the mark
- *   - country: the path names it (World Coins > Austria > ...); U.S. trees
- *     are United States; operators pick it for manual world SKUs
- *
- * To regenerate a block from a new ODS export, see the extraction snippets in
- * the session notes, or ask the agent to re-extract the tab.
- */
+// embedded reference data from Des's SellbriteBulkNew.ods workbook
+// 'values' = dropdown valid values, 'schema' = one row per Sellbrite column, 'lookups' = packaging weights only
+// everything per-coin (denomination, composition, weight, country...) comes from GreySheet / the path, never from here
 return [
     'values' => [
-    // Designation abbreviations (strike/color/detail designations - RD, DCAM,
-    // FB...). Full set from the Valid Values tab; shown as a searchable combo.
+    // designation abbreviations (RD, DCAM, FB...) from the Valid Values tab
     'designation_abbrivation' => [
         '5DP', '5FS', '5PL', '6DP', '6FS', '6PL', 'BM', 'BMCA', 'BN', 'BNC', 'BNM', 'BNP', 'BNU', 'C',
         'CA', 'CAM', 'CP', 'DC', 'DCAM', 'DCP', 'DFM', 'DM', 'DME', 'DMPL', 'DPL', 'EH', 'ER', 'FB', 'FBL',
@@ -47,9 +25,7 @@ return [
         'The Bureau of Engraving & Printing', 'The Crown Mint', 'The East India Company', 'The Perth Mint',
         'The Royal Mint', 'The Singapore Mint', 'Mixed Lot', 'Unbranded',
     ],
-    // Coin Type valid values, sectioned by "---" separators. The menu pools
-    // by the drill-down TREE (see Schema::coinTypePools): U.S. Coins vs U.S.
-    // Currency vs World Coins vs World Currency. Operator-picked, not auto.
+    // coin type valid values; "---" separators pool the menu by drill-down tree
     'coin_type' => [
         '--- US COINS ---', 'American Innovation', 'American Women', 'Barber', 'Braided Hair', 'Buffalo',
         'Capped Bust', 'Classic Head', 'Coronet Head', 'DC & US Territories', 'Draped Bust', 'Eisenhower',
@@ -188,8 +164,7 @@ return [
         'The images used for this listing are stock photos and are only a representation of the item you will receive.',
         'The images used for this listing are stock photos from the mint.',
     ],
-    // Grades: uncertified word grades first, then certified letter grades.
-    // "---" entries are visual separators, never selectable options.
+    // grades; "---" separators split the coin/paper and raw/certified pools
     'grade' => [
         'Ungraded', 'Various Grades', '--- UNCERTIED US COINS ---', 'Poor', 'Fair', 'Fair Details',
         'About Good', 'About Good Details', 'About Good / Good', 'Good', 'Good Details',
@@ -241,8 +216,7 @@ return [
     ],
     ],
 
-    // One row per Sellbrite column, in workbook order. 'auto' fields fill
-    // from GreySheet/formulas; 'dropdown' names the values/derived list.
+    // one row per Sellbrite column, workbook order; 'dropdown' names the values list
     'schema' => [
         ['name' => 'sku', 'label' => 'SKU', 'required' => true, 'auto' => false],
         ['name' => 'category_name', 'label' => 'SKU of Parent Product', 'dropdown' => 'store_category', 'required' => false, 'auto' => false],
@@ -337,11 +311,7 @@ return [
     ],
 
     'lookups' => [
-        // Store category -> catalog facts (VLOOKUP tab A:I). Keys double as
-        // the store-category vocabulary for GreySheet series matching - an
-        // empty [] row still declares a valid store category.
-        // PACKAGING weight tables (pounds): what the wrap/slab or GSA holder
-        // adds. The coin itself weighs what GreySheet says it weighs.
+        // packaging weight tables (pounds): certification wrap/slab add-on + GSA holders
         'package_weights' => [
             'certification' => [
                 'Uncertified' => 0.015, 'ANACS' => 0.1, 'CAC' => 0.08, 'ICG' => 0.07, 'NGC' => 0.1,

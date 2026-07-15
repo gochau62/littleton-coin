@@ -9,9 +9,9 @@
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
 <!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  * Date      - 07/13/2026                          *  -->
-<!--  * Purpose   - GreySheet + Gemini autofill agent   *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
 <!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
@@ -20,7 +20,7 @@
  *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
  *   - Populate it with the seed crawl (SellbriteBulkLoader_seed.php)
- *
+ * 
  *   - Picking a coin calls the API (GetCollectibleRequest + GetPricingRequest)
  *     and auto-fills the form; Gemini maps the data into the right fields.
  *
@@ -33,7 +33,7 @@
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';
 
-// Local, git-ignored secrets (the Gemini key) - each machine keeps its own copy.
+// local git-ignored secrets (the Gemini key) - each machine keeps its own copy
 if (is_file(__DIR__ . '/SellbriteBulkLoader_secrets.php')) { require_once __DIR__ . '/SellbriteBulkLoader_secrets.php'; }
 
 // Provide Greysheet API key, token, url, and level
@@ -41,12 +41,10 @@ if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2
 if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
 if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
 if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'advanced'); }
-if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }
+if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); } 
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    200); }
 
 // gemini 2.5 flash model current usage for free testing
-// (key comes from the secrets file above or the environment - GitHub secret
-//  scanning blocks pushes that contain a hardcoded Google key)
 if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
@@ -64,7 +62,7 @@ function gsLog($msg)
 {
     // prefix every entry so Sellbrite lines are easy to spot in the shared log
     $line = 'Greysheet ' . $msg;
-    // Use LCCOnline logger
+    // Use LCCOnline logger 
     if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec($line); }
     // otherwise use PHP error log
     else { error_log($line); }
@@ -152,7 +150,7 @@ function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 // asks for a JSON answer, retries on the backup model when busy.
 function geminiJson($system, $user, &$meta = [])
 {
-    // if not key set return error
+    // if not key set return error 
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
     if (!geminiConfigured()) { $meta['error'] = 'GEMINI_API_KEY not set'; return null; }
 
@@ -299,7 +297,7 @@ function gsMemNodeChildren(int $parentId): array
 }
 
 /* =========================================================================
- * dropdown menus read memory path
+ * dropdown menus read memory path 
  * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins
  * ========================================================================= */
 function gsMemSearch(string $q, int $limit = 40): array
@@ -406,7 +404,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
          . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')";
     $params = [$nodePath, gsLikeEsc($nodePath) . ' > %'];
     $year = trim($year);
-
+    
     // year filter, must match the year inside the name hide others
     if ($year !== '') {
         $sql .= " AND (coin_date = ? OR UPPER(name) LIKE ?)";
@@ -429,7 +427,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
 }
 
 
-// years for a typed category: memory first;
+// years for a typed category: memory first; 
 function gsYearsFor(string $category, bool $liveLookup = true): array
 {
     $ck = gsNorm($category);
@@ -489,7 +487,7 @@ function gsPriceNum($v): string
 
 
 /* =========================================================================
- * field normalizers (composition, category date-strip,"90% silver; 10% copper"
+ * field normalizers (composition, category date-strip,"90% silver; 10% copper" 
  * becomes the one metal word ("Silver"), mint location, dropdown snapping)
  * ========================================================================= */
 function sbl_norm_composition(string $c): string
@@ -653,7 +651,7 @@ function gsMapToProduct(array $c): array
 
 
     // Designation abbreviation; color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH.
-    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM").
+    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM"). 
     // GreySheet "Desg" is the grade TYPE (MS/PR/SP)
     if ($g('Other') !== '')             { $row['designation_abbrivation'] = $g('Other'); }
     if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
@@ -670,11 +668,11 @@ function gsMapToProduct(array $c): array
 
     $strike    = $g('StrikeType');
     // MS / PR / PF / SP / SMS - the grade type
-    $gradeType = strtoupper($g('Desg'));
+    $gradeType = strtoupper($g('Desg')); 
     $isProof   = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false
               || in_array($gradeType, ['PR', 'PF'], true);
     if ($strike !== '') { $row['strike_type'] = $strike; }
-
+    
     // Mint State / Proof / Specimen are all uncirculated; circulated coins have
     // a circulated Desg or none, so leave those for the grade/operator.
     if ($isProof || in_array($gradeType, ['MS', 'PR', 'PF', 'SP', 'SMS'], true)) {
@@ -698,13 +696,13 @@ function gsMapToProduct(array $c): array
         foreach ($gsPathNodes as $node) {
             if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
         }
-
+        
         // World trees name the country as the path's second node even when the CountryName attribute is blank: "World Coins > Austria > ...".
         if (($row['country_of_manufacture'] ?? '') === '' && $isWorld && count($gsPathNodes) > 1) {
             $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($gsPathNodes[1]['Name'] ?? '')));
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
-        // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat").
+        // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat"). 
         if (($row['coin_type'] ?? '') === '') {
             $poolKey = ($isWorld ? 'world' : 'us') . '_' . ($isPaper ? 'currency' : 'coins');
             $hay = strtolower(($row['category_name'] ?? '') . ' ' . $gsPathText);
@@ -743,7 +741,7 @@ function gsMapToProduct(array $c): array
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
     // Brand from GreySheet's image attribution when it carries one;
     if ($g('FeaturedImageAttribution') !== '') { $row['brand'] = $g('FeaturedImageAttribution'); }
-    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone
+    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone 
     if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $gsRootName)) {
         $row['country_of_manufacture'] = 'United States';
     }
@@ -765,7 +763,7 @@ function gs_coin_facts(array $c): array
     }
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $out['CatalogPath'] = implode(' > ', array_map(static fn($n) => (string) ($n['Name'] ?? ''), $c['CatalogPath']));
-    } elseif (!empty($c['ParentNodeName'])) {
+            } elseif (!empty($c['ParentNodeName'])) {
         // series name sent to the agent
         $out['CatalogPath'] = trim((string) $c['ParentNodeName']);
     }
@@ -838,12 +836,12 @@ function sbl_snap_row(array $row): array
 }
 
 
-// The full autofill writer: facts first
+// The full autofill writer: facts first 
 function gsAiMap(array $coin): array
 {
     $base = gsMapToProduct($coin);
     if (!geminiConfigured()) { return sbl_snap_row($base); }
-
+    
     // The writing brief - the numbered RULES are the whole contract with the model.
     $sys = "You are the listing writer for Littleton Coin Company's Sellbrite coin listings. From the "
          . "GreySheet coin facts (name, dates, mint, composition, designer, mintage, and especially "
@@ -886,7 +884,7 @@ function gsAiMap(array $coin): array
     foreach (['coin_variety_1', 'coin_variety_2'] as $vf) {
         if (array_key_exists($vf, $ai) && trim((string) $ai[$vf]) === '' && ($base[$vf] ?? '') !== '') { $row[$vf] = ''; }
     }
-    // GeneralNotes stays the Expanded Description;
+    // GeneralNotes stays the Expanded Description; 
     // the obverse + reverse design text becomes the COLLECTOR'S NOTE
     $gsClean = static function ($s): string {
         $s = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $s)));

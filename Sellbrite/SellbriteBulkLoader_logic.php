@@ -1,24 +1,22 @@
 <?php
-/*
- * SellbriteBulkLoader_logic.php - the RULES of the screen (no DB, no HTTP).
- *
- * MAP OF THIS FILE (4 classes, in order):
- *   Schema    - reads SellbriteBulkLoader_data.php; answers every "what
- *               fields/values/lookups exist?" question (columns, dropdown
- *               options, grade & coin-type pools, required names, market
- *               fields, form groups).
- *   Computer  - the spreadsheet formulas. Computer::apply($row) fills every
- *               derivable box: title, description, features 1-5, packaging
- *               (weight + dims), eBay condition fields, search terms...
- *               Runs on every keystroke (AJAX 'compute') and after autofill.
- *   Validator - Validator::check($row) -> statuses (ok/action/error) and
- *               messages per field; drives the red/yellow boxes and the
- *               Ready/Needs-attention pill.
- *   Exporter  - the Sellbrite spreadsheet writer: fixed column LAYOUT,
- *               per-market column trimming, xlsx (PhpSpreadsheet) and CSV.
- *
- * Constants below are Des's fixed listing copy (feature 3/5 text).
- */
+/*    ***************************************************  -->
+<!--  * Program Name - SellbriteBulkLoader_logic.php    *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  *             Littleton Coin Company              *  -->
+<!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260064                              *  -->
+<!--  ***************************************************   */
+
+
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }
@@ -48,7 +46,7 @@ final class Schema
     private static $values = null;
     private static $lookups = null;
 
-    // PLAIN: Opens the reference binder (_data.php) once and keeps it handy.
+    // Opens the reference binder (_data.php) once and keeps it handy.
     /** Load the consolidated reference data (schema/values/lookups) once. */
     private static function data(): array
     {
@@ -56,40 +54,35 @@ final class Schema
         return is_array(self::$data) ? self::$data : [];
     }
 
-    // PLAIN: Hands out the list of every form box / spreadsheet column.
+    // Hands out the list of every form box / spreadsheet column.
     public static function columns(): array
     {
         if (self::$schema === null) { self::$schema = self::data()['schema'] ?? []; }
         return self::$schema;
     }
-    // PLAIN: Same list, but looked up by a box's machine name.
+    // Same list, but looked up by a box's machine name.
     public static function byName(): array
     {
         $out = [];
         foreach (self::columns() as $c) { $out[$c['name']] = $c; }
         return $out;
     }
-    // PLAIN: Hands out the dropdowns' allowed-options lists.
+    // Hands out the dropdowns' allowed-options lists.
     public static function values(): array
     {
         if (self::$values === null) { self::$values = self::data()['values'] ?? []; }
         return self::$values;
     }
-    // PLAIN: Answers "what should THIS box's dropdown menu show?"
+    // "what should THIS box's dropdown menu show?"
     public static function optionsFor(array $col): array
     {
         if (empty($col['dropdown'])) { return []; }
         if ($col['dropdown'] === 'store_category') {
-            // SKU of Parent Product: the dropdown only offers the product lines
-            // that are NOT on GreySheet (watches, calendars, stamps, nativity,
-            // albums...). Coin AND currency categories are set automatically by
-            // the GreySheet pick, which appends its option on the fly.
+            // SKU of Parent Product: offers NOT on GreySheet (watches, calendars, stamps, nativity, albums...)
             return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
                     'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'];
         }
-        // Small fixed vocabularies for the GreySheet-autofilled fields (same
-        // lists the AI is constrained to). Unknown autofill values still
-        // land - the combo accepts anything typed.
+
         static $small = [
             // Sellbrite condition; collectible coins list as "used" (default).
             'condition' => ['new', 'used'],
@@ -120,16 +113,14 @@ final class Schema
         if (isset($small[$col['dropdown']])) { return $small[$col['dropdown']]; }
         return self::values()[$col['dropdown']] ?? [];
     }
-    // PLAIN: Hands out the packaging weight tables (slab add-ons, GSA holders).
+    // Hands out the packaging weight tables (slab add-ons, GSA holders).
     public static function lookups(): array
     {
         if (self::$lookups === null) { self::$lookups = self::data()['lookups'] ?? []; }
         return self::$lookups;
     }
-    // PLAIN: Splits the grade list at its --- dividers into the coin/paper x raw/certified menus.
-    /* The grade list split into its "---" sections, so the Grade menu only
-     * offers what fits the SKU: coin vs paper money, certified vs raw.
-     * (Ungraded/Various Grades lead both uncertified pools.) */
+
+    // Splits the grade list at its dividers
     public static function gradePools(): array
     {
         $pools = ['coin_uncertified' => [], 'coin_certified' => [],
@@ -141,18 +132,16 @@ final class Schema
         $cur = null; $lead = [];
         foreach (self::values()['grade'] ?? [] as $v) {
             if (isset($map[$v])) { $cur = $map[$v]; continue; }
-            if (strpos($v, '---') === 0) { $cur = null; continue; }   // unknown section
-            if ($cur === null) { $lead[] = $v; continue; }            // Ungraded / Various Grades
+            if (strpos($v, '---') === 0) { $cur = null; continue; } 
+            if ($cur === null) { $lead[] = $v; continue; }
             $pools[$cur][] = $v;
         }
         $pools['coin_uncertified']  = array_merge($lead, $pools['coin_uncertified']);
         $pools['paper_uncertified'] = array_merge($lead, $pools['paper_uncertified']);
         return $pools;
     }
-    // PLAIN: Splits the Coin Type list into the per-tree menus (US/World x Coins/Currency).
-    /* Coin Type valid values pooled by the drill-down TREE: U.S. Coins gets
-     * the US sections, U.S. Currency the paper-money sections, World Coins
-     * the bullion/ancients sections, World Currency the foreign notes. */
+
+    // Splits the Coin Type list into the per-tree menus (US/World x Coins/Currency).
     public static function coinTypePools(): array
     {
         $map = [
@@ -188,28 +177,16 @@ final class Schema
         }
         return $pools;
     }
-    // PLAIN: THE list of required boxes (the red stars). Add a name here to require a field everywhere.
-    /* Fields required for EVERY listing - the Sellbrite export's peach
-     * "Mandatory for all listings" group (plus Quantity/Cost from the inventory
-     * file). An empty required field flags the listing "needs attention" but
-     * still saves, so this can faithfully mirror the sheet. Original Retail and
-     * extra image slots are left off (the workbook itself makes them optional). */
+    // required boxes (the red stars). Add a name here to require a field everywhere.
     public static function requiredNames(): array
     {
-        // Coin details keeps ONLY SKU / SKU of Parent Product / Price / Cost /
-        // Quantity / Condition / Certification required; every other coin-details box is
-        // optional. Other sections (listing copy, packaging, images) keep theirs.
         return ['sku', 'category_name', 'price', 'condition', 'certification', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'quantity', 'cost'];
     }
-    // PLAIN: Which extra boxes each marketplace (Amazon/eBay...) needs.
-    /* Extra fields a marketplace needs, shown only when that market is chosen
-     * for the SKU (from the Sellbrite export's market groups). Only fields that
-     * already exist as columns are listed; the eBay-specific condition columns
-     * (ebay_coin_condition_type, ebay_graded_coin_*) need adding to SBLPRODUCT
-     * first, so they are intentionally not here yet. */
+
+    // Which extra boxes each marketplace (Amazon/eBay...) needs.
     public static function marketFields(): array
     {
         return [
@@ -222,7 +199,7 @@ final class Schema
             'walmart' => ['fields' => [], 'required' => []],
         ];
     }
-    // PLAIN: How the boxes are grouped into the form's collapsible sections.
+    // How the boxes are grouped into the form's collapsible sections.
     public static function groups(): array
     {
         return [
@@ -259,23 +236,19 @@ final class Schema
  * ========================================================================= */
 final class Computer
 {
-    // PLAIN: The calculator: takes everything typed in the form and fills in whatever can be derived. Runs after every keystroke.
     /** Return a copy of $row with all auto/derived columns (re)computed. */
     public static function apply(array $row): array
     {
-        // Shorthand used all through this function: $g('year') = the trimmed text of that box ('' when empty).
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         $sku = $g('sku'); $category = $g('category_name');
         $lookups = Schema::lookups();
         $meta = $lookups['category_meta'][$category] ?? [];
-        $copy = [];   // no per-category facts stored anymore
+        $copy = [];
 
-        // Product image URLs are NOT auto-generated (the SKU-based guesses were
-        // wrong) - the operator pastes the real uploaded photo URLs.
+        // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        // Search Terms are Amazon-specific: only auto-build them when the SKU
-        // can go to Amazon (market blank / all / amazon).
+        // Search Terms are Amazon-specific: only auto-build when amazon
         $mkt = strtolower($g('marketplace'));
         if ($mkt === '' || $mkt === 'all' || $mkt === 'amazon') {
             $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
@@ -291,23 +264,15 @@ final class Computer
                 $row['search_terms'] = implode(' ', $words);
             }
         }
-        // GreySheet provides denomination/composition/fineness by the time the
-        // coin is picked; country comes from the drill-down/catalog path (no
-        // blanket US default). Coin Type is OPERATOR-PICKED from the tree's
-        // valid values - never auto-written.
 
+        // GreySheet provides denomination/composition/fineness by the time the coin is picked; 
         $grade = $g('grade');
         if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
             $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
         }
 
-        // Package weight = the coin's own weight FROM GREYSHEET (troy oz ->
-        // pounds) plus the certification wrap/slab add-on; a GSA holder's
-        // table weight replaces both (holder includes the coin). It fills
-        // right at autofill using the Uncertified wrap as the default, then
-        // UPDATES itself when the operator picks/changes Certification. A
-        // hand-typed weight (Sets, coins GreySheet has no weight for) never
-        // matches a formula value and is left alone.
+        // Package weight = the coin's own weight FROM GREYSHEET
+        // auto adjusted for certification wrap and slabs from GSA
         $weight = $g('package_weight');
         $pw = $lookups['package_weights'] ?? [];
         if ($g('single_coin_or_set') !== 'Set') {
@@ -321,8 +286,6 @@ final class Computer
                 $certAdds = $pw['certification'] ?? [];
                 $add = !$isGsa ? ($certAdds[$g('certification')] ?? $certAdds['Uncertified'] ?? 0) : 0;
                 $new = (string) round($base + $add, 2);
-                // Ours to manage when empty OR still holding a value this same
-                // formula produced earlier (any certification's add-on).
                 $ours = $weight === '';
                 if (!$ours && !$isGsa) {
                     foreach ($certAdds as $a) {
@@ -345,17 +308,12 @@ final class Computer
 
         $row['name'] = self::buildTitle($row);
         // The description REBUILDS while it still has the standard house shape
-        // ("A genuine ..."), so editing the coin (year, grade, mint...) keeps
-        // the copy - and the DETAILS bullet below - in sync. A hand-written
-        // description that abandons the house shape is never touched, and any
-        // FLAVOR sentences added after the formulaic base (privy-mark notes,
-        // history) are carried over onto the rebuilt base.
+
         $curDesc = trim((string) ($row['description'] ?? ''));
         if ($curDesc === '' || preg_match('/^A genuine\b/i', $curDesc)) {
             $built = self::buildDescription($row, $copy);
             if ($built !== '' && $curDesc !== '') {
-                // Only the first sentence is formulaic - keep everything after
-                // it (the AI's "Contains ..." line, privy notes, flavor text).
+                // Only the first sentence is formulaic
                 $keep = [];
                 foreach (array_slice(preg_split('/(?<=\.)\s+/', $curDesc), 1) as $s) {
                     if (trim($s) !== '') { $keep[] = trim($s); }
@@ -365,23 +323,17 @@ final class Computer
             $row['description'] = $built;
         }
 
-        // Amazon bullet points, PCC layout (from the real exports):
-        //   1 DETAILS  2 CONDITION  3 IMAGES  4 COLLECTOR'S NOTE  5 ABOUT PCC
-        // The description reads "A genuine <specs> Coin, in <condition> Condition",
-        // which we split into the DETAILS and CONDITION bullets.
+        // 1 DETAILS  2 CONDITION  3 IMAGES  4 COLLECTOR'S NOTE  5 ABOUT PCC.
         $desc = trim((string) ($row['description'] ?? ''));
         if ($desc !== '') {
-            // DETAILS = the identity part of sentence 1 (before the brand /
-            // condition / certification clause).
-            // First sentence only ("(?<=\.)" means: split at a space that follows a period).
+            // DETAILS = the identity part of sentence 1
+            
             $first = preg_split('/(?<=\.)\s/', $desc, 2)[0];
             $core  = preg_replace('/^A genuine\s+/i', '', $first);
-            // Cut at the first ", in ..." / ", graded and certified ..." clause: the left half is the coin itself (DETAILS), the right is condition wording.
             $bits  = preg_split('/,\s*(?:in|graded and certified|from|with)\s+/i', $core, 2);
             $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .,');
         }
-        // CONDITION bullet derives from grade/circulated directly, so it fills
-        // even when the description carries no condition clause yet.
+        // CONDITION bullet derives from grade/circulated directly
         $condBits = $g('grade') !== '' && strcasecmp($g('grade'), 'Ungraded') !== 0
                   ? $g('grade') : $g('circulated_or_uncirculated');
         if ($condBits !== '') {
@@ -389,8 +341,6 @@ final class Computer
             $row['feature_2'] = 'CONDITION: ' . $condBits;
         }
         // Sellbrite Condition (new/used/reconditioned): collectible coins list
-        // as "used" (Des's export rows do) unless the operator overrides.
-
         // eBay condition fields, derived from certification + grade:
         //   certified/slabbed -> Graded (grader + letter/numerical grade)
         //   raw               -> Ungraded (circulated/uncirculated condition)
@@ -401,7 +351,6 @@ final class Computer
         if ($graded) {
             if ($g('ebay_graded_coin_professional_grader') === '') { $row['ebay_graded_coin_professional_grader'] = $cert; }
             if ($g('ebay_graded_coin_letter_grade') === '' && $grade !== '') { $row['ebay_graded_coin_letter_grade'] = $grade; }
-            // Pull the first 1-2 digit number out of the grade ("MS 65" -> 65).
             if ($g('ebay_graded_coin_numerical_grade') === '' && preg_match('/\d{1,2}/', $grade, $gm)) {
                 $row['ebay_graded_coin_numerical_grade'] = $gm[0];
             }
@@ -415,17 +364,20 @@ final class Computer
         // feature_4 = the agent's category COLLECTOR'S NOTE; make sure it carries the label.
         $note = trim((string) ($row['feature_4'] ?? ''));
         if ($note !== '' && stripos($note, "COLLECTOR'S NOTE") !== 0) { $row['feature_4'] = "COLLECTOR'S NOTE: " . $note; }
-        $row['feature_5'] = SBL_ABOUT_SELLER;   // already begins "ABOUT PROFILE COINS & COLLECTIBLES:"
+        // already begins "ABOUT PROFILE COINS & COLLECTIBLES:"
+        $row['feature_5'] = SBL_ABOUT_SELLER; 
         return $row;
     }
-    // PLAIN: Tiny helper - use the table's answer, or the fallback when there is none.
+
+    // tiny helper - uses the tables answers
     private static function lookupValue(string $value, string $fallback): string
     {
         $value = trim($value);
         if ($value === '' || str_starts_with($value, '***')) { return $fallback; }
         return $value;
     }
-    // PLAIN: Glues the product title together: year, mint mark, series, varieties, denomination, grade, certification + "Coin Collectible".
+
+    // builts product title; year, mint mark, series, varieties, denomination, grade, certification + "Coin Collectible".
     private static function buildTitle(array $row): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
@@ -445,21 +397,15 @@ final class Computer
         $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
     }
-    // PLAIN: Writes the one house sentence ("A genuine ..., in X Condition." / "..., graded and certified X by Y.").
-    /* Simple deterministic fallback using the RAW field values, in the house
-     * one-sentence shape. Gemini writes the polished sentence during autofill
-     * (its guide carries a full-criteria example); this fills gaps and keeps
-     * year/grade edits in sync. Sentences after the first are preserved. */
+    // Writes the one house sentence ("A genuine ..., in X Condition." / "..., graded and certified X by Y.").
     private static function buildDescription(array $row, array $copy): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('category_name') === '') { return ''; }
-        // Coin Type deliberately NOT used here: editing it must not rewrite
-        // the description / DETAILS bullet (the category names the series).
         $specs = trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
-            $g('coin_variety_1'),   // "Anna May Wong" - carries into the DETAILS bullet
+            $g('coin_variety_1'),
             $g('coin_variety_2'),
             $g('category_name'),
             $g('denomination'),
@@ -482,14 +428,12 @@ final class Computer
  * ========================================================================= */
 final class Validator
 {
-    // PLAIN: The proofreader: every box gets a color - red must fix, yellow look at this, green fine.
+    // The proofreader: every box gets a color - red must fix, yellow look at this, green fine.
     public static function check(array $row): array
     {
         $statuses = []; $messages = [];
-        // Same shorthand as the calculator: $g('year') = the trimmed text of that box.
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
-        // Required = schema flag OR the Sellbrite "mandatory for all" set OR the
-        // chosen marketplace's required fields.
+        // Required = schema flag OR the Sellbrite "mandatory for all" set OR the chosen marketplace's required fields.
         $required = array_flip(Schema::requiredNames());
         $market   = strtolower(trim((string) ($row['marketplace'] ?? '')));
         // Market-required fields are coin-specific; paper money is exempt.
@@ -498,16 +442,13 @@ final class Validator
         if (!$isPaper) {
             foreach (Schema::marketFields()[$market]['required'] ?? [] as $mf) { $required[$mf] = true; }
         }
-        // Search Terms are Amazon-only, but not coin-only: required whenever the
-        // SKU can go to Amazon ('all' / blank / amazon), even for paper money.
+        // Search Terms are Amazon-only
         if ($market === '' || $market === 'all' || $market === 'amazon') {
             $required['search_terms'] = true;
         }
-        // Coin details requires only SKU / SKU of Parent / Cost / Quantity -
-        // the coin block itself is optional (autofill supplies it anyway).
+        // Coin details requires only SKU / SKU of Parent / Cost / Quantity - coin block itself is optional
         foreach (Schema::columns() as $col) {
             $name = $col['name']; $val = $g($name);
-            // Values starting "***" are the agent's own "check this" notes - surface them as the yellow message.
             if ($val !== '' && str_starts_with($val, '***')) {
                 $statuses[$name] = 'action'; $messages[$name] = trim($val, '* '); continue;
             }
@@ -520,8 +461,7 @@ final class Validator
         if ($year !== '' && (!ctype_digit($year) || strlen($year) !== 4)) {
             $statuses['year'] = 'action'; $messages['year'] = 'Year should be 4 digits';
         }
-        // Cost and Quantity are operator-required; Price only has to be a
-        // number when entered (autofill suggests it).
+        // Cost and Quantity are operator-required; price must be numeric
         $cost = $g('cost');
         if ($cost === '')           { $statuses['cost'] = 'error'; $messages['cost'] = 'Required field'; }
         elseif (!is_numeric($cost)) { $statuses['cost'] = 'error'; $messages['cost'] = 'Must be a number'; }
@@ -534,8 +474,7 @@ final class Validator
         $qty = $g('quantity');
         if ($qty === '')            { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Required field'; }
         elseif (!ctype_digit($qty)) { $statuses['quantity'] = 'error'; $messages['quantity'] = 'Whole number only'; }
-        // Certification Number opens once a grading service is picked - nudge
-        // (yellow) until the slab's number is typed in.
+        // Certification Number opens once a grading service is picked; yellow warning to fill
         $vCert = $g('certification');
         if ($vCert !== '' && strcasecmp($vCert, 'Uncertified') !== 0 && strcasecmp($vCert, 'U.S. Mint') !== 0
             && $g('certification_number') === '') {
@@ -553,12 +492,7 @@ final class Validator
  * ========================================================================= */
 final class Exporter
 {
-    /* One product CSV, tailored per marketplace. Column annotations in Des's
-     * Sellbrite export: the five features / search terms / style are Amazon-
-     * specific; modified-item fields are eBay-specific. 'all' keeps every
-     * column (the house master export). */
-    // Per the sheet's row-1 annotations: Search Terms and Style are Amazon-
-    // specific; the eBay set is the modified pair plus the condition fields.
+
     // A market-filtered export drops the OTHER markets' columns entirely.
     private const AMAZON_ONLY = ['search_terms', 'style'];
     private const EBAY_ONLY   = ['modified_item', 'modification_description',
@@ -566,12 +500,10 @@ final class Exporter
                                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
                                  'z_ebay_ungraded_coin_condition'];
 
-    // PLAIN: The marketplaces the export dropdown offers.
+    // The marketplaces the export dropdown offers.
     public static function markets(): array { return ['all', 'amazon', 'ebay', 'walmart']; }
 
-    // PLAIN: Which columns survive a market's export (eBay drops the Amazon-only ones, and vice versa).
-    /* Which LAYOUT column positions a market's file keeps ('all' keeps every
-     * column, header-for-header with Des's workbook). */
+    // Which columns survive a market's export (eBay drops the Amazon-only ones, and vice versa).
     private static function keepIndexes(string $market): array
     {
         $drop = [];
@@ -585,13 +517,10 @@ final class Exporter
         return $keep;
     }
 
-    /* Internal working fields with no Sellbrite header (diameter/weight are
-     * ours until Des adds them in Sellbrite) - kept out of the upload file. */
+    // Internal working fields with no Sellbrite header
     private const INTERNAL_ONLY = ['diameter', 'weight'];
 
-    /* The EXACT Sellbrite product_data layout (Des's file): 88 machine names in
-     * order. Deprecated columns (style, modified_item, ...) still export as
-     * empty columns so the file matches header-for-header. */
+    // exact Sellbrite product_data excel spreadsheet layout
     private const LAYOUT = [
         'sku','parent_sku','name','description','red_book_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5',
@@ -653,8 +582,7 @@ final class Exporter
         87 => 'Nativity Product Category Only',
     ];
 
-    // PLAIN: The header background colors, copied from Des's workbook.
-    /* Column fills exactly as in Des's workbook (0-based column => ARGB). */
+    // The header background colors
     public static function headerFills(): array
     {
         $f = [];
@@ -673,17 +601,11 @@ final class Exporter
         return $f;
     }
 
-    // PLAIN: Builds the real Excel download: 3 header rows, every cell as text, columns auto-sized.
-    /* Colour-coded XLSX matching Des's product_data workbook; a specific
-     * market keeps only its own columns (Amazon drops the eBay set and vice
-     * versa). Returns null when PhpSpreadsheet isn't available (caller falls
-     * back to CSV). */
+    // Builds the real Excel download: 3 header rows, every cell as text, columns auto-sized.
     public static function xlsx(array $rows, string $market = 'all')
     {
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) { return null; }
-        // "A5"-style addresses: works on every PhpSpreadsheet version (the
-        // [col,row] array form only exists from 1.23 up).
-        // Turns column number + row number into an Excel address ("A5", "BK12") - works on every PhpSpreadsheet version.
+        // "A5"-style addresses: works on every PhpSpreadsheet version (the [col,row] array form only exists from 1.23 up).
         $cell = static fn($i, $r) =>
             \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r;
         $keep  = self::keepIndexes($market);
@@ -721,7 +643,7 @@ final class Exporter
                 // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
                 if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
                 if ($v !== '') {
-                    // "Explicitly TEXT" so Excel never mangles values like the SKU "255R.50" into numbers or dates.
+                     // "Explicitly TEXT" so Excel never mangles values like the SKU "255R.50" into numbers or dates.
                     $ws->setCellValueExplicit($cell($i, $r), $v,
                         \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                     // Multi-line text: the longest line drives the width.
@@ -732,13 +654,13 @@ final class Exporter
         }
         foreach ($widths as $i => $w) {
             $ws->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1))
-               // Width = longest content + padding, never narrower than 10 or wider than 60 characters.
+                // Width = longest content + padding, never narrower than 10 or wider than 60 characters.
                ->setWidth(min(max($w + 2, 10), 60));
         }
         return $ss;
     }
 
-    // PLAIN: The plain-text fallback when the Excel library is not installed.
+    // The plain-text fallback when the Excel library is not installed.
     public static function csv(array $rows, string $market = 'all'): string
     {
         $keep = self::keepIndexes($market);

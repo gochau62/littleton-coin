@@ -1,25 +1,6 @@
 <?php
-/*
- * DB2 for i data-access layer for the Sellbrite Bulk Loader.
- *
- * Backs the AJAX contract in SellbriteBulkLoader_ajax.php:
- *     sblGetAll($q)  list / search    (grid)
- *     sblFind($id)   one row          (edit form)
- *     sblSave($row)  insert or update (returns id)
- *     sblDelete($id) remove
- *
- * Design notes:
- *  - Inline parameterized SQL (chosen for an 85-column table). The column list
- *    is read from Schema::columns() so it always matches the data definition.
- *  - DB2 for i returns column names UPPER-cased; every fetched row is run through
- *    array_change_key_case(... CASE_LOWER) so the PHP layer keeps its lowercase
- *    machine names (sku, category_name, ...).
- *  - The screen allows saving in-progress rows, so blanks and "*** HINT ***"
- *    placeholder text are coerced to NULL (and bad numbers/dates to NULL) before
- *    they reach typed columns.
- *  - No die() on DB errors: failures are logged and the function returns
- *    false / [] so the AJAX endpoint can still answer with JSON.
- */
+// DB2 data-access layer for the SBLPRODUCT table (list / find / save / delete)
+// blanks and "***" hints coerce to NULL; DB errors log and return false/[] so AJAX still answers
 
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema (column list)
 
@@ -28,11 +9,7 @@ if (!defined('SBL_TABLE')) {
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
 
-/* =========================================================================
- * SECTION 1 - connection + error/commit helpers
- * ========================================================================= */
-// PLAIN: Opens the connection to the database (once per request).
-/** Open (once) and reuse a DB2 connection from the session credentials. */
+// open one DB2 connection from the session credentials and reuse it
 function sbl_conn()
 {
     static $conn = null;
@@ -44,8 +21,7 @@ function sbl_conn()
     return $conn;
 }
 
-// PLAIN: Reads the database's error message so failures say why.
-/** Log a DB error through the LCCOnline logger when available; always returns false. */
+// log a DB error through the LCCOnline logger; always returns false
 function sbl_db_err($where)
 {
     $msg = 'SellbriteBulkLoader_model ' . $where . ': '
@@ -54,26 +30,14 @@ function sbl_db_err($where)
     return false;
 }
 
-// PLAIN: Finalizes a write.
-/**
- * Commit the current unit of work. Required if the connection is under manual
- * commitment control (common on IBM i) - without it, a "successful" INSERT /
- * UPDATE / DELETE can execute cleanly yet never persist, and looks identical
- * to a no-op from the AJAX layer. Harmless no-op when autocommit is already on.
- */
+// commit the unit of work - without it a clean INSERT/UPDATE can silently never persist
 function sbl_commit($conn)
 {
     if (!function_exists('db2_commit')) { return true; }
     return (bool) db2_commit($conn);
 }
 
-/* =========================================================================
- * SECTION 2 - value coercion + live column discovery
- * sbl_writable_columns() intersects Schema::columns() with the columns
- * that ACTUALLY exist on SBLPRODUCT, so pending ALTERs never break saves.
- * ========================================================================= */
-// PLAIN: Cleans a typed date into the format the database wants.
-/** Normalize a user date (MM/DD/YY, MM/DD/YYYY, YYYY-MM-DD) to ISO, or '' if unusable. */
+// normalize a user date (MM/DD/YY, YYYY-MM-DD...) to ISO, '' if unusable
 function sbl_norm_date($v)
 {
     $v = trim((string) $v);
@@ -82,8 +46,7 @@ function sbl_norm_date($v)
     return $ts === false ? '' : date('Y-m-d', $ts);
 }
 
-// PLAIN: Cleans one value before saving (numbers to numbers, blanks to NULL).
-/** Coerce one value to what its DB2 column expects (NULL for blanks/placeholders/bad input). */
+// coerce one value to what its DB2 column expects (NULL for blanks/hints/bad input)
 function sbl_coerce($name, $val)
 {
     static $ints = ['quantity', 'set_count', 'advent_calendar_number_of_items'];
@@ -113,8 +76,7 @@ function sbl_coerce($name, $val)
     return $v === '' ? null : $v;                     // other text: '' -> NULL
 }
 
-// PLAIN: The form boxes the screen knows about (from the reference binder).
-/** The product column names, in schema order. */
+// product column names in schema order
 function sbl_columns()
 {
     static $cols = null;
@@ -122,8 +84,7 @@ function sbl_columns()
     return $cols;
 }
 
-// PLAIN: Asks the database "which columns do you ACTUALLY have?"
-/** The columns that ACTUALLY exist on the DB2 table (lowercased), cached. */
+// columns that ACTUALLY exist on the DB2 table (lowercased, cached)
 function sbl_table_columns()
 {
     static $set = null;
@@ -142,13 +103,7 @@ function sbl_table_columns()
     return $set;
 }
 
-// PLAIN: The overlap of "boxes the form knows" and "columns the table has" - why a new box added before its ALTER never crashes saves.
-/**
- * Schema columns to write, intersected with what the table really has. This
- * keeps a newly-added schema column (before its ALTER TABLE runs) from breaking
- * EVERY insert/update - the new field is just skipped until the table catches
- * up. Falls back to all columns if the catalog lookup returns nothing.
- */
+// schema columns intersected with the real table - a new field is skipped until its ALTER runs
 function sbl_writable_columns()
 {
     $cols  = sbl_columns();
@@ -158,11 +113,7 @@ function sbl_writable_columns()
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
 }
 
-/* =========================================================================
- * SECTION 3 - reads (grid list, single row, full export set)
- * ========================================================================= */
-// PLAIN: The shared "read rows" helper (also lower-cases DB2's upper-case column names).
-/** Run a prepared SELECT with params and return all rows as lowercase-keyed assoc arrays. */
+// run a prepared SELECT, return rows as lowercase-keyed arrays
 function sbl_select($sql, array $params = [])
 {
     $conn = sbl_conn();
@@ -181,8 +132,7 @@ function sbl_select($sql, array $params = [])
 /*  Public API (called by SellbriteBulkLoader_ajax.php / _ctl.php)     */
 /* ------------------------------------------------------------------ */
 
-// PLAIN: The home-screen grid: newest first, optionally filtered by the search text.
-/** List rows for the grid, optionally filtered by a search string. */
+// list rows for the grid, optional search filter
 function sblGetAll($q = '')
 {
     $q = trim((string) $q);
@@ -201,13 +151,7 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
-// PLAIN: Fetches a saved row from the same category (currently unused).
-/**
- * The most recently saved listing in a category - the tool's "learned" house
- * copy for that category. Autofill reuses its category-level fields (Expanded
- * Description / category feature) and mirrors its style, so every coin in a
- * category comes out consistent and each saved edit becomes the new template.
- */
+// most recent saved listing in a category (currently unused)
 function sblCategoryExample($category)
 {
     $category = trim((string) $category);
@@ -220,15 +164,13 @@ function sblCategoryExample($category)
     return $rows[0] ?? [];
 }
 
-// PLAIN: Every column of every row - what the export reads.
-/** Every product row IN FULL (all columns) for the export. */
+// every row, all columns, for the export
 function sblGetAllFull()
 {
     return sbl_select('SELECT * FROM ' . SBL_TABLE . ' ORDER BY updated_at DESC');
 }
 
-// PLAIN: One row by id, for the edit form.
-/** Fetch a single row (full record) for the edit form, or false if not found. */
+// one full row for the edit form, false if not found
 function sblFind($id)
 {
     $id = (int) $id;
@@ -237,11 +179,7 @@ function sblFind($id)
     return $rows[0] ?? false;
 }
 
-/* =========================================================================
- * SECTION 4 - writes (insert / update / save / delete)
- * ========================================================================= */
-// PLAIN: Files a brand-new row.
-/** Insert a new product row; returns the new id, or false on error. */
+// insert a new row; returns the new id or false
 function sblInsert(array $row)
 {
     $conn = sbl_conn();
@@ -261,8 +199,7 @@ function sblInsert(array $row)
     return $id;
 }
 
-// PLAIN: Rewrites an existing row.
-/** Update an existing product row by id; returns true on success. */
+// update a row by id; true on success
 function sblUpdate($id, array $row)
 {
     $conn = sbl_conn();
@@ -280,8 +217,7 @@ function sblUpdate($id, array $row)
     return true;
 }
 
-// PLAIN: Saves a row: insert if new, update if it already has an id.
-/** Insert or update depending on whether the row carries an id. Returns the id (or false). */
+// insert or update depending on id; returns the id or false
 function sblSave(array $row)
 {
     $id = (int) ($row['id'] ?? 0);
@@ -289,8 +225,7 @@ function sblSave(array $row)
     return sblInsert($row);
 }
 
-// PLAIN: Deletes every SKU row.
-/** Delete EVERY product row (home-menu "Delete All"); returns true on success. */
+// delete EVERY row (home Delete All)
 function sblDeleteAll()
 {
     $conn = sbl_conn();
@@ -302,8 +237,7 @@ function sblDeleteAll()
     return true;
 }
 
-// PLAIN: Deletes one SKU row.
-/** Delete a product row by id; returns true on success. */
+// delete one row by id
 function sblDelete($id)
 {
     $conn = sbl_conn();
