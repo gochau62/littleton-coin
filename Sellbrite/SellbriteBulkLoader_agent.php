@@ -746,15 +746,34 @@ function gsMapToProduct(array $c): array
             if (preg_match('/(silver|gold|platinum|palladium) eagle/', $hay)) { $best = 'American Eagle'; }
             elseif (strpos($hay, 'gold buffalo') !== false) { $best = 'American Buffalo'; }
             else {
-                // Exact words only. Near-miss names ("Australia" path vs the
-                // "Australian Kookaburra" option) are left EMPTY here - Gemini
-                // gets the tree's option list and resolves those (gsAiMap).
-                foreach (Schema::coinTypePools()[$poolKey] ?? [] as $opt) {
+                $pool = Schema::coinTypePools()[$poolKey] ?? [];
+                // First pass: every word of the option appears in the path.
+                foreach ($pool as $opt) {
                     $all = true;
                     foreach (preg_split('/\s+/', strtolower($opt)) as $tk) {
                         if ($tk !== '' && strpos($hay, $tk) === false) { $all = false; break; }
                     }
                     if ($all && strlen($opt) > strlen($best)) { $best = $opt; }
+                }
+                // Second pass: a word that exists in ONLY ONE option is
+                // unambiguous, so finding it in the path is enough
+                // ("kookaburra" -> "Australian Kookaburra" even though the
+                // path says "Australia", not "Australian"). Shared words
+                // ("silver", "gold", "eagle") stay ambiguous and are left
+                // for Gemini, which gets the tree's option list (gsAiMap).
+                if ($best === '') {
+                    $freq = [];
+                    foreach ($pool as $opt) {
+                        foreach (array_unique(preg_split('/\s+/', strtolower($opt))) as $tk) {
+                            if (strlen($tk) >= 4) { $freq[$tk] = ($freq[$tk] ?? 0) + 1; }
+                        }
+                    }
+                    foreach ($pool as $opt) {
+                        foreach (preg_split('/\s+/', strtolower($opt)) as $tk) {
+                            if (($freq[$tk] ?? 0) === 1 && strpos($hay, $tk) !== false
+                                && strlen($opt) > strlen($best)) { $best = $opt; break; }
+                        }
+                    }
                 }
             }
             if ($best !== '') { $row['coin_type'] = $best; }
