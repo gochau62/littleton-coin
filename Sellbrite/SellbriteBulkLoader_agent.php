@@ -472,6 +472,13 @@ function gsCollectible(int $gsId, &$meta = []): array
     $resp = gsApiGet('GetCollectibleRequest', ['GsId' => $gsId], $meta);
     return gsData($resp)[0] ?? [];
 }
+// the coin's full catalog path from its own memory row ("World Coins > Australia > ...")
+function gsMemPath(int $gsId): string
+{
+    return (string) (gsMemRows('SELECT path FROM ' . SBL_GSMEM_TABLE
+                  . " WHERE kind = 'C' AND ref_id = ?", [$gsId])[0]['path'] ?? '');
+}
+
 // PLAIN: Fetches one coin's price row (often empty for world coins - GreySheet pricing is US-centric).
 function gsPricing(int $gsId, $grade = null, &$meta = []): array
 {
@@ -1044,12 +1051,11 @@ function gsImport(array $params): array
     // picked from stores the full path ("World Coins > Austria > ..."). One
     // free DB2 read rebuilds it: country node, series and path words included.
     if (empty($coin['CatalogPath'])) {
-        $memPath = (string) (gsMemRows('SELECT path FROM ' . SBL_GSMEM_TABLE
-                 . " WHERE kind = 'C' AND ref_id = ?", [$gsId])[0]['path'] ?? '');
+        $memPath = gsMemPath($gsId);
         if ($memPath !== '') {
             $coin['CatalogPath'] = array_map(static fn($n) => ['Name' => trim($n)],
                                              array_filter(explode('>', $memPath), 'trim'));
-            $calls[] = ['call' => 'Memory path lookup (0 API calls)', 'got' => $memPath];
+            $calls[] = ['call' => 'gsMemPath?GsId=' . $gsId, 'got' => $memPath];
         }
     }
     $rawCoin = $coin;   // untouched collectible, for the readout box
