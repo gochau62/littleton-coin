@@ -560,13 +560,13 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
-        'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that matches the series/path - names may differ slightly (path "Australia > \$2 Kookaburra" -> option "Australian Kookaburra"); copy the option EXACTLY; leave EMPTY if none fits'],
+        'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that names this series - wording may differ from the path (country vs demonym: path "Australia > \$1 Kookaburra" -> option "Australian Kookaburra"; singular vs plural); copy the option EXACTLY; leave EMPTY only when no option describes the coin'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
         'denomination'   => ['src' => 'DenominationShort (US) / DenominationLong (world)', 'desc' => 'face value, e.g. 1C, 50C, $1 for US; "5 Euros" spoken form for world coins'],
-        'coin_variety_1' => ['src' => 'Variety', 'desc' => 'keep ONLY if it adds information that is not already inside category_name - return "" (empty) when it merely repeats the series wording ("Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver"). Judge by MEANING, not spelling'],
-        'coin_variety_2' => ['src' => 'Variety2', 'desc' => 'same rule: return "" when it repeats category_name in different words ("1oz Silver" = "1 Ounce Silver")'],
+        'coin_variety_1' => ['src' => 'Variety', 'desc' => 'REWRITE so it keeps ONLY what category_name does not already say, judged by MEANING not spelling - "Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver" adds nothing, return ""; never add words that were not in the original'],
+        'coin_variety_2' => ['src' => 'Variety2', 'desc' => 'same rule: keep only the new part - "1oz Silver, 35th Anniversary" next to "\$1 Kookaburra, 1 Ounce Silver" -> "35th Anniversary" ("1oz Silver" = "1 Ounce Silver")'],
         'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
         'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'autofilled from the pricing call\'s GradeLabel; the operator can override'],
         'strike_type'    => ['src' => 'StrikeType', 'opts' => $strike],
@@ -589,7 +589,7 @@ function sbl_field_guide(): array
         'title_suffix'   => ['desc' => 'operator catch-all appended to the title (grade details, error details, packaging, slab-label text) - leave BLANK; "Coin Collectible" is added to the title automatically'],
         'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
-        'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
+        'brand'          => ['desc' => 'the company that ISSUED the coin: "U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems), "Perth Mint" and similar for world mints. FeaturedImageAttribution in the facts is only the PHOTO credit - a grading service (PCGS/NGC/CAC/ANACS/ICG) or auction house there is NEVER the brand; leave blank when unsure'],
         'description'    => ['desc' => 'A natural sentence built from the ACTUAL field values, house shape: '
             . '"A genuine {year} {mint mark} {variety} {series/type} {metal} {denomination IN WORDS - Quarter, Half Dollar, Cent Penny} '
             . '{strike if special} Coin[, from {brand} when not U.S. Mint]'
@@ -739,8 +739,7 @@ function gsMapToProduct(array $c): array
     // Features 1/2/3/5 are derived by Computer
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
-    // Brand from GreySheet's image attribution when it carries one;
-    if ($g('FeaturedImageAttribution') !== '') { $row['brand'] = $g('FeaturedImageAttribution'); }
+    // Brand is left to the AI: FeaturedImageAttribution is a photo credit (often a grading service), not the brand.
     // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone 
     if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $gsRootName)) {
         $row['country_of_manufacture'] = 'United States';
@@ -754,7 +753,7 @@ function gs_coin_facts(array $c): array
 {
     $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
              'Desg','Other','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
-             'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
+             'Designer','Edge','Mintage','Rarity','CoinShape','FeaturedImageAttribution','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
              'GeneralNotes','ObverseDescription','ReverseDescription','ObverseLettering','ReverseLettering',
              'PriceLow','PriceHigh'];
     $out = [];
@@ -864,12 +863,20 @@ function gsAiMap(array $coin): array
          . "appeal, key changes over the years). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
          . "5. Do NOT fill feature_1, feature_2, feature_3 or feature_5 - the system derives them from the "
          . "description, condition, image line and company blurb.\n"
-         . "6. DOUBLE-CHECK for duplicate wording: coin_variety_1 / coin_variety_2 must be returned as \"\" "
-         . "(empty string) when they only repeat what category_name already says, even in different words "
-         . "(\"Kookaburra\" or \"1oz Silver\" add nothing to \"\$1 Kookaburra, 1 Ounce Silver\"). The title and "
-         . "description are built from these fields - duplicates there read as errors to buyers.\n"
+         . "6. DE-DUPLICATE the varieties - ALWAYS return coin_variety_1 and coin_variety_2. REWRITE each so it "
+         . "keeps ONLY what category_name does not already say, judged by MEANING not spelling "
+         . "(\"1oz Silver, 35th Anniversary\" next to \"\$1 Kookaburra, 1 Ounce Silver\" -> \"35th Anniversary\"; "
+         . "\"Kookaburra\" alone adds nothing -> \"\"). Never add words that were not in the original variety, and "
+         . "use the CLEANED varieties in the description and search terms. The title is built from these fields - "
+         . "duplicated wording there reads as an error to buyers.\n"
+         . "7. coin_type: pick from the COIN TYPE OPTIONS list sent after the facts. The option's wording often "
+         . "differs from the path (country vs demonym: \"Australia > \$1 Kookaburra\" -> \"Australian Kookaburra\"; "
+         . "singular vs plural) - still pick it when it clearly names this series. Copy it EXACTLY; leave it empty "
+         . "ONLY when no option describes the coin.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
+    // Pool root: path root name, else the reply's RootNode_Id (live replies carry no CatalogPath).
     $ctRoot = strtolower((string) ($coin['CatalogPath'][0]['Name'] ?? ''));
+    if ($ctRoot === '') { $ctRoot = [1 => 'u.s. coins', 2 => 'u.s. currency', 6 => 'world coins', 12 => 'world currency'][(int) ($coin['RootNode_Id'] ?? 0)] ?? ''; }
     $ctKey  = (strpos($ctRoot, 'world') !== false ? 'world' : 'us') . '_'
             . (strpos($ctRoot, 'currency') !== false ? 'currency' : 'coins');
     $ctOpts = Schema::coinTypePools()[$ctKey] ?? [];
@@ -881,8 +888,15 @@ function gsAiMap(array $coin): array
     $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
+    // Varieties are the one field the AI may REWRITE: blank a pure echo, shorten a mixed one.
+    // The guard only accepts words already in the original, so the AI can remove but never invent.
     foreach (['coin_variety_1', 'coin_variety_2'] as $vf) {
-        if (array_key_exists($vf, $ai) && trim((string) $ai[$vf]) === '' && ($base[$vf] ?? '') !== '') { $row[$vf] = ''; }
+        if (!array_key_exists($vf, $ai) || ($base[$vf] ?? '') === '') { continue; }
+        $aiV = trim((string) $ai[$vf]);
+        if ($aiV === '') { $row[$vf] = ''; continue; }
+        $have = preg_split('/[^a-z0-9]+/', strtolower($base[$vf]), -1, PREG_SPLIT_NO_EMPTY);
+        $want = preg_split('/[^a-z0-9]+/', strtolower($aiV), -1, PREG_SPLIT_NO_EMPTY);
+        if (!array_diff($want, $have)) { $row[$vf] = $aiV; }
     }
     // GeneralNotes stays the Expanded Description; 
     // the obverse + reverse design text becomes the COLLECTOR'S NOTE
