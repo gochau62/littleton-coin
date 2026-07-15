@@ -739,10 +739,20 @@ function gsMapToProduct(array $c): array
             if (preg_match('/(silver|gold|platinum|palladium) eagle/', $hay)) { $best = 'American Eagle'; }
             elseif (strpos($hay, 'gold buffalo') !== false) { $best = 'American Buffalo'; }
             else {
+                // The options use DEMONYMS ("Australian Kookaburra") while the
+                // path names the COUNTRY ("... > Australia > ..."), so a word
+                // like "australian" can never appear literally - translate it.
+                $demonym = ['australian' => 'australia', 'austrian' => 'austria',
+                            'canadian' => 'canada', 'chinese' => 'china',
+                            'mexican' => 'mexico', 'african' => 'africa',
+                            'american' => 'america', 'uk' => 'kingdom'];
                 foreach (Schema::coinTypePools()[$poolKey] ?? [] as $opt) {
                     $all = true;
                     foreach (preg_split('/\s+/', strtolower($opt)) as $tk) {
-                        if ($tk !== '' && strpos($hay, $tk) === false) { $all = false; break; }
+                        if ($tk === '') { continue; }
+                        if (strpos($hay, $tk) !== false) { continue; }
+                        if (isset($demonym[$tk]) && strpos($hay, $demonym[$tk]) !== false) { continue; }
+                        $all = false; break;
                     }
                     if ($all && strlen($opt) > strlen($best)) { $best = $opt; }
                 }
