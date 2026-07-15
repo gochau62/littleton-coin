@@ -591,8 +591,8 @@ function sbl_field_guide(): array
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
         'denomination'   => ['src' => 'DenominationShort (US) / DenominationLong (world)', 'desc' => 'face value, e.g. 1C, 50C, $1 for US; "5 Euros" spoken form for world coins'],
-        'coin_variety_1' => ['src' => 'Variety'],
-        'coin_variety_2' => ['src' => 'Variety2'],
+        'coin_variety_1' => ['src' => 'Variety', 'desc' => 'keep ONLY if it adds information that is not already inside category_name - return "" (empty) when it merely repeats the series wording ("Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver"). Judge by MEANING, not spelling'],
+        'coin_variety_2' => ['src' => 'Variety2', 'desc' => 'same rule: return "" when it repeats category_name in different words ("1oz Silver" = "1 Ounce Silver")'],
         'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
         'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'autofilled from the pricing call\'s GradeLabel; the operator can override'],
         'strike_type'    => ['src' => 'StrikeType', 'opts' => $strike],
@@ -925,6 +925,10 @@ function gsAiMap(array $coin): array
          . "appeal, key changes over the years). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
          . "5. Do NOT fill feature_1, feature_2, feature_3 or feature_5 - the system derives them from the "
          . "description, condition, image line and company blurb.\n"
+         . "6. DOUBLE-CHECK for duplicate wording: coin_variety_1 / coin_variety_2 must be returned as \"\" "
+         . "(empty string) when they only repeat what category_name already says, even in different words "
+         . "(\"Kookaburra\" or \"1oz Silver\" add nothing to \"\$1 Kookaburra, 1 Ounce Silver\"). The title and "
+         . "description are built from these fields - duplicates there read as errors to buyers.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     // What to fill (the field spec) + what is true (the curated facts packet).
     // The tree's Coin Type menu (same pool rule as the mapper): Gemini sees the
@@ -943,6 +947,13 @@ function gsAiMap(array $coin): array
     // Deterministic base wins; the AI only fills the gaps it left (e.g. coin_type).
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
+    // One exception: the AI may BLANK a variety that merely repeats the series
+    // name ("1oz Silver" vs "$1 Kookaburra, 1 Ounce Silver"). The title and
+    // description are rebuilt from these fields on every keystroke, so cleaning
+    // the SOURCE keeps them duplicate-free forever - no text post-processing.
+    foreach (['coin_variety_1', 'coin_variety_2'] as $vf) {
+        if (array_key_exists($vf, $ai) && trim((string) $ai[$vf]) === '' && ($base[$vf] ?? '') !== '') { $row[$vf] = ''; }
+    }
 
     // AI-failed fallbacks (e.g. 429): split the two GreySheet texts so the two
     // boxes never end up as copies of each other. GeneralNotes (the program /

@@ -425,34 +425,6 @@ final class Computer
         if ($value === '' || str_starts_with($value, '***')) { return $fallback; }
         return $value;
     }
-    // PLAIN: Drops title/description pieces that just repeat another piece.
-    /* GreySheet often repeats itself: series "$1 Kookaburra, 1 Ounce Silver",
-     * Variety "Kookaburra", Variety2 "1oz Silver". Comparing normalized text
-     * ("1oz"/"1 Ounce" -> "1 oz", punctuation dropped), any piece whose words
-     * are already inside a LONGER piece is skipped - so the title reads
-     * "1990 $1 Kookaburra, 1 Ounce Silver Five dollars", not the echo chamber. */
-    private static function dedupeParts(array $parts): array
-    {
-        $norm = static function (string $s): string {
-            $s = strtolower($s);
-            $s = str_replace(['ounces', 'ounce'], 'oz', $s);
-            $s = preg_replace('/(\d)\s*oz\b/', '$1 oz', $s);          // "1oz" -> "1 oz"
-            return trim(preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9$ ]/', ' ', $s)));
-        };
-        $parts = array_values(array_filter($parts, static fn($p) => $p !== ''));
-        $norms = array_map($norm, $parts);
-        $keep  = [];
-        foreach ($parts as $i => $p) {
-            $dup = false;
-            foreach ($norms as $j => $nj) {
-                if ($j === $i || $norms[$i] === '' || strpos($nj, $norms[$i]) === false) { continue; }
-                // skip $i when a longer piece already contains it (first one wins a tie)
-                if (strlen($nj) > strlen($norms[$i]) || ($nj === $norms[$i] && $j < $i)) { $dup = true; break; }
-            }
-            if (!$dup) { $keep[] = $p; }
-        }
-        return $keep;
-    }
     // PLAIN: Glues the product title together: year, mint mark, series, varieties, denomination, grade, certification + "Coin Collectible".
     private static function buildTitle(array $row): string
     {
@@ -470,9 +442,7 @@ final class Computer
             $g('title_suffix'),   // operator catch-all: grade/error/packaging/slab details
             'Coin Collectible',   // constant title tail (ODS hardcodes this, not title_suffix)
         ];
-        // The grade/cert/suffix tail never duplicates the coin pieces - dedupe
-        // only guards the year/series/variety/denomination echoes.
-        $parts = self::dedupeParts($parts);
+        $parts = array_filter($parts, static fn($p) => $p !== '');
         return trim(preg_replace('/\s+/', ' ', implode(' ', $parts)));
     }
     // PLAIN: Writes the one house sentence ("A genuine ..., in X Condition." / "..., graded and certified X by Y.").
@@ -486,7 +456,7 @@ final class Computer
         if ($g('category_name') === '') { return ''; }
         // Coin Type deliberately NOT used here: editing it must not rewrite
         // the description / DETAILS bullet (the category names the series).
-        $specs = trim(preg_replace('/\s+/', ' ', implode(' ', self::dedupeParts([
+        $specs = trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
             $g('coin_variety_1'),   // "Anna May Wong" - carries into the DETAILS bullet
