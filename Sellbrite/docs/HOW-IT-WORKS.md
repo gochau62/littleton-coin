@@ -111,7 +111,9 @@ Pressing **Autofill** (`sblGsAutofill`):
    - `DenominationShort` for U.S. (`25c`), `DenominationLong` for world (`5 Euros`) —
      the short form carries a metal prefix (`S€5`) that would leak into copy.
    - Composition/fineness/diameter/weight; `WeightOunces` (troy oz) is the packaging driver.
-   - `CoinShape` → Bullion Shape; `FeaturedImageAttribution` → Brand (left alone when empty).
+   - `CoinShape` → Bullion Shape. Brand is NOT mapped here — `FeaturedImageAttribution` is a
+     photo credit (often a grading service like "CAC Grading"); it goes into the AI facts and
+     Gemini decides whether it names the issuing mint.
    - Country from `CatalogPath` country name → world 2nd node → United States only when
      the root is literally a U.S. tree.
    - **Coin Type best-match**: pool picked by tree (see §6), then eagle-family specials
@@ -119,7 +121,10 @@ Pressing **Autofill** (`sblGsAutofill`):
      longest option whose words all appear in the category/path.
    - Precious metal content per coin and total (`WeightOunces × Fineness`).
 4. `gsAiMap` — Gemini writes the listing copy on top (see §8). Deterministic values win;
-   the AI only fills gaps.
+   the AI only fills gaps — with ONE exception: `coin_variety_1/2` may be REWRITTEN by the
+   AI to strip wording the category already carries ("1oz Silver, 35th Anniversary" →
+   "35th Anniversary"). A guard accepts the rewrite only when every word already existed
+   in the original variety, so the AI can remove duplicates but never invent.
 5. `gs_finalize` — `Computer::apply` (formulas, §7) then `Validator::check`.
 6. Back in the browser, `sblFillFromRow` writes the row into the form (never overwriting
    a non-empty country), rebuilds the Year dropdown from the series' real years, applies
