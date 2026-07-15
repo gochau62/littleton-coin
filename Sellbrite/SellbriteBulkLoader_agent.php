@@ -641,14 +641,25 @@ function gsMapToProduct(array $c): array
 {
     // Shorthand: $g('CoinDate') = that GreySheet field as trimmed text ('' when absent).
     $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
+    // LIVE GetCollectibleRequest responses do NOT carry the CatalogPath array
+    // (only the GetCollectibleByNode doc shows one) - they carry RootNode_Id
+    // and ParentNodeName instead. Build ONE path context from whichever is
+    // present so category / country / coin-type never silently skip:
+    //   $gsRootName   "u.s. coins" / "world currency" / ...
+    //   $gsSeriesName the series folder ("$5 Draped Bust Gold (1795-1807)")
+    //   $gsPathText   all the path words, for the coin-type matcher
+    $gsPathNodes = (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) ? $c['CatalogPath'] : [];
+    $gsRootNames = [1 => 'u.s. coins', 2 => 'u.s. currency', 6 => 'world coins', 12 => 'world currency'];
+    $gsRootName  = strtolower(trim((string) ($gsPathNodes[0]['Name'] ?? ($gsRootNames[(int) ($c['RootNode_Id'] ?? 0)] ?? ''))));
+    $gsLast      = $gsPathNodes ? end($gsPathNodes) : null;
+    $gsSeriesName = trim((string) (is_array($gsLast) ? ($gsLast['Name'] ?? '') : ($c['ParentNodeName'] ?? '')));
+    $gsPathText  = $gsPathNodes
+        ? implode(' ', array_map(static fn($n) => is_array($n) ? (string) ($n['Name'] ?? '') : '', $gsPathNodes))
+        : trim($gsRootName . ' ' . $gsSeriesName);
     // Paper money (U.S./World Currency trees): the coin-only fields (mint mark
     // and location) are never stamped onto a note.
-    $isPaper = false; $isWorld = false;
-    if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
-        $rootName = strtolower((string) (($c['CatalogPath'][0]['Name'] ?? '')));
-        $isPaper  = strpos($rootName, 'currency') !== false;
-        $isWorld  = strpos($rootName, 'world') !== false;
-    }
+    $isPaper = strpos($gsRootName, 'currency') !== false;
+    $isWorld = strpos($gsRootName, 'world') !== false;
     $row = [];
     // "2022-D" -> year 2022 (the first 4-digit number in the coin date).
     if (preg_match('/\d{4}/', $g('CoinDate'), $m)) { $row['year'] = $m[0]; }
@@ -700,19 +711,19 @@ function gsMapToProduct(array $c): array
         $row['precious_metal_content'] = rtrim(rtrim(number_format((float) $c['WeightOunces'], 4, '.', ''), '0'), '.') . ' oz';
     }
 
-    if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
-        $last = end($c['CatalogPath']);
-        if (is_array($last) && !empty($last['Name'])) {
+    if ($gsSeriesName !== '' || $gsPathNodes) {
+        if ($gsSeriesName !== '') {
             // SKU of Parent Product = the series name, date range stripped.
-            $row['category_name'] = sbl_norm_category(trim((string) $last['Name']));
+            $row['category_name'] = sbl_norm_category($gsSeriesName);
         }
-        foreach ($c['CatalogPath'] as $node) {
+        // Country: only the full CatalogPath (when present) can name it directly.
+        foreach ($gsPathNodes as $node) {
             if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
         }
         // World trees name the country as the path's second node even when the
         // CountryName attribute is blank: "World Coins > Austria > ...".
-        if (($row['country_of_manufacture'] ?? '') === '' && $isWorld && count($c['CatalogPath']) > 1) {
-            $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($c['CatalogPath'][1]['Name'] ?? '')));
+        if (($row['country_of_manufacture'] ?? '') === '' && $isWorld && count($gsPathNodes) > 1) {
+            $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($gsPathNodes[1]['Name'] ?? '')));
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
         // Coin Type: TRY to autofill by best-matching the tree's valid values
@@ -722,8 +733,7 @@ function gsMapToProduct(array $c): array
         // leaves the dropdown to the operator.
         if (($row['coin_type'] ?? '') === '') {
             $poolKey = ($isWorld ? 'world' : 'us') . '_' . ($isPaper ? 'currency' : 'coins');
-            $hay = strtolower(($row['category_name'] ?? '') . ' '
-                 . implode(' ', array_map(static fn($n) => is_array($n) ? (string) ($n['Name'] ?? '') : '', $c['CatalogPath'])));
+            $hay = strtolower(($row['category_name'] ?? '') . ' ' . $gsPathText);
             $best = '';
             // GreySheet says "Silver Eagles"; the valid value is "American Eagle".
             if (preg_match('/(silver|gold|platinum|palladium) eagle/', $hay)) { $best = 'American Eagle'; }
@@ -762,8 +772,7 @@ function gsMapToProduct(array $c): array
     // United States ONLY when the path root is explicitly a U.S. tree; any
     // other/unknown root leaves the country alone (the drill-down tree set
     // it on the form, and the fill never overwrites a non-empty country).
-    $rootName2 = strtolower((string) ($c['CatalogPath'][0]['Name'] ?? ''));
-    if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $rootName2)) {
+    if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $gsRootName)) {
         $row['country_of_manufacture'] = 'United States';
     }
     return array_filter($row, static fn($v) => $v !== '' && $v !== null);
@@ -786,6 +795,9 @@ function gs_coin_facts(array $c): array
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         // Flatten the folder path to one "A > B > C" line.
         $out['CatalogPath'] = implode(' > ', array_map(static fn($n) => (string) ($n['Name'] ?? ''), $c['CatalogPath']));
+    } elseif (!empty($c['ParentNodeName'])) {
+        // Live responses have no CatalogPath - give the AI the series name instead.
+        $out['CatalogPath'] = trim((string) $c['ParentNodeName']);
     }
     return $out;
 }
