@@ -1041,6 +1041,8 @@ function gsImport(array $params): array
     // Gemini writes the category-level copy fresh from the GreySheet notes
     $row = gsAiMap($coin);
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
+    // strip commas etc. from whatever landed in price/cost (the AI echoes "5,000.00" from the facts)
+    foreach (['price', 'cost'] as $pf) { if (($row[$pf] ?? '') !== '') { $row[$pf] = gsPriceNum($row[$pf]); } }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
 
