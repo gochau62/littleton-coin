@@ -1,7 +1,23 @@
 <?php
+/*    ***************************************************  -->
+<!--  * Program Name - SellbriteBulkLoader_model.php    *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  *             Littleton Coin Company              *  -->
+<!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260064                              *  -->
+<!--  ***************************************************   */
+
 // DB2 data-access layer for the SBLPRODUCT table (list / find / save / delete)
 // blanks and "***" hints coerce to NULL; DB errors log and return false/[] so AJAX still answers
-
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema (column list)
 
 if (!defined('SBL_TABLE')) {
@@ -72,8 +88,8 @@ function sbl_coerce($name, $val)
         $d = sbl_norm_date($v);
         return $d === '' ? null : $d;
     }
-    if ($name === 'sku') { return (string) $v; }     // NOT NULL — let the DB enforce
-    return $v === '' ? null : $v;                     // other text: '' -> NULL
+    if ($name === 'sku') { return (string) $v; }
+    return $v === '' ? null : $v;
 }
 
 // product column names in schema order

@@ -5,6 +5,15 @@
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 ?>
 
@@ -49,7 +58,8 @@ function dspBulkLoader(&$screenData)
         $h .= '<span class="field-msg"></span></div>';
         return $h;
     };
-    ?>
+?>
+
 <style>
 /* ----- green work area + components (shell header/footer come from LCC) ----- */
 #stdPage { background:#CCFFCC; padding:18px 26px 28px; font-family:Arial,Helvetica,sans-serif; color:#222; }
@@ -61,6 +71,8 @@ function dspBulkLoader(&$screenData)
 .gs-cascade { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .gs-cascade input:disabled, .gs-cascade select:disabled,
 .gs-bar input:disabled, .gs-bar select:disabled { opacity:.5; }
+
+
 /* GreySheet drill-down bar on the SKU form: one aligned row, steps in order. */
 .gs-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#fff;
           border:1px solid #a9e2a9; border-radius:12px; padding:10px 14px; margin-bottom:16px;
@@ -69,6 +81,8 @@ function dspBulkLoader(&$screenData)
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
 .gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
 .gs-bar .gs-year { flex:0 0 110px; width:110px; min-width:0; }
+
+
 /* labelled pills group the toolbar controls (Search / Export) */
 .tool-group { display:inline-flex; align-items:center; gap:8px; padding:5px 5px 5px 14px;
               border:2px solid #b9c8be; border-radius:50px; background:#fff; }
@@ -89,6 +103,8 @@ function dspBulkLoader(&$screenData)
 .mkt-pick .gs-dd { max-width:120px; }
 .ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; background:#fff; }
 .ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
+
+
 /* compact capped combo menus so 279 grades don't swallow the screen */
 .ui-autocomplete.sbl-combo { max-height:230px; font-size:12.5px; line-height:1.35; }
 .ui-autocomplete.sbl-combo .ui-menu-item-wrapper { padding:4px 9px; white-space:normal; }
@@ -109,6 +125,8 @@ function dspBulkLoader(&$screenData)
 .btn-ghost:hover { color:#007bff; border-color:#007bff; }
 .btn-green { background:#2e8b57; } .btn-green:hover { background:#1e6e43; }
 .btn-grey { background:#777; } .btn-grey:hover { background:#555; }
+
+
 /* table */
 .table-card { background:#fff; border:1px solid #b4b4b4; border-radius:8px; overflow:hidden; }
 table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
@@ -120,6 +138,8 @@ table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:
 .mini { font-size:12px; color:#555; padding:4px 12px; border-radius:50px; border:1px solid #b4b4b4; background:#fff; cursor:pointer; font-weight:700; }
 .mini:hover{ color:#007bff; border-color:#007bff; } .mini.danger:hover{ color:#fff; background:#cd0a0a; border-color:#cd0a0a; }
 .empty { text-align:center; padding:40px; color:#5f6b62; }
+
+
 /* form */
 .editor { display:grid; grid-template-columns:1fr 300px; gap:20px; align-items:start; margin-top:6px; }
 .form-col { display:flex; flex-direction:column; gap:14px; }
@@ -133,20 +153,32 @@ details.group[open] summary::before { transform:rotate(90deg); }
 details.group summary::-webkit-details-marker { display:none; }
 .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-top:10px; }
 .field { display:flex; flex-direction:column; gap:4px; }
+
+
 /* Small label text so even the longest names stay on one line. */
 .field label { font-size:6px; color:#5f6b62; font-weight:700; display:flex; gap:6px; align-items:center; }
 .field .req { color:#cd0a0a; }
 .field input,.field select,.field textarea { background:#f8f8f8; border:1px solid #b4b4b4; border-radius:4px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
+
+
 /* background-color only - the shorthand would erase the has-menu caret */
 .field input:focus,.field select:focus,.field textarea:focus { outline:none; border-color:#007bff; background-color:#fff; box-shadow:0 0 0 3px rgba(0,123,255,.15); }
+
+
 /* Locked boxes (e.g. Cert Number before a grading service is picked). */
 .field input:disabled, .field input.is-locked { opacity:.5; cursor:not-allowed; pointer-events:none; }
+
+
 /* cert number hides for raw coins; !important beats the inline display toggles */
 .field.cert-locked { display:none !important; }
+
+
 /* Valid-values combo boxes show a caret so users know a menu opens on click. */
 .field input.has-menu { padding-right:30px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6b62'/%3E%3C/svg%3E");
     background-repeat:no-repeat; background-position:right 11px center; }
+
+
 /* auto inputs stay grey - only the blue AUTO badge marks them */
 .badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .field-msg { font-size:11px; min-height:13px; color:#5f6b62; }
@@ -376,6 +408,8 @@ details.group summary::-webkit-details-marker { display:none; }
         </div>
     </div>
 </div>
+
+
 <script>
 // grade menu pools: coin grades vs paper-money grades
 var SBL_GRADE_POOLS = <?= json_encode(Schema::gradePools()) ?>;
