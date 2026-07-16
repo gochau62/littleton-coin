@@ -748,11 +748,9 @@ function gs_coin_facts(array $c): array
     $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
              'Desg','Other','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
              'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
-             'FriedbergNumber','BnBNumber','PickNumber','HaxbyNumber','Krause','NoteColor','NoteDimension',
-             'Watermark','Printer','NoteSecurityThread','NotePaperType','BnbSignatureName1','BnbSignatureName2',
-             'BnbSignatureName3','ObsoleteStateName','ObsoleteCityName','ObsoleteBankName','IssueYear','Variant',
-             'KeyComment1','KeyComment2','KeyComment3','ArtComment1','ArtComment2','ArtComment3',
-             'ObverseDesigner','ReverseDesigner','GeneralCoinLettering','IsRedbook',
+             'FriedbergNumber','BnBNumber','PickNumber','NoteColor','NoteDimension','Watermark','Printer',
+             'NotePaperType','BnbSignatureName1','BnbSignatureName2',
+             'ObsoleteStateName','ObsoleteCityName','ObsoleteBankName',
              'GeneralNotes','ObverseDescription','ReverseDescription','ObverseLettering','ReverseLettering',
              'PriceLow','PriceHigh'];
     $out = [];
@@ -872,9 +870,8 @@ function gsAiMap(array $coin): array
          . "8. Paper money: the note facts (FriedbergNumber, Printer, BnbSignatureName1/2 - the Treasury "
          . "signature pair, Watermark, NotePaperType, NoteDimension in mm, PickNumber) are real catalog data - "
          . "work them into the description and extended_description. For U.S. notes coin_variety_2 may carry "
-         . "the Friedberg number (\"FR2307\") when it is otherwise empty. IsRedbook true = listed in the Red Book "
-         . "(good collector's-note material). PcgsNumber / Ngc / NgcId / Krause are CATALOG numbers, NEVER a "
-         . "certification - do not treat them as grading.\n"
+         . "the Friedberg number (\"FR2307\") when it is otherwise empty. PcgsNumber / Ngc / NgcId are CATALOG "
+         . "numbers, NEVER a certification - do not treat them as grading.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     // Pool root: path root name, else the reply's RootNode_Id (live replies carry no CatalogPath).
     $ctRoot = strtolower((string) ($coin['CatalogPath'][0]['Name'] ?? ''));
