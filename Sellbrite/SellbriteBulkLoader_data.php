@@ -356,7 +356,12 @@ return [
             'certification' => [
                 'Uncertified' => 0.015, 'ANACS' => 0.1, 'CAC' => 0.08, 'ICG' => 0.07, 'NGC' => 0.1,
                 'NGC & CAC' => 0.1, 'PCGS' => 0.08, 'PCGS & CAC' => 0.08, 'U.S. Mint' => 0.015,
+                'PCGS Currency' => 0.065, 'PCGS Banknote Grading' => 0.065, 'PMG' => 0.065,
+                'Legacy Currency Grading' => 0.065,
             ],
+
+            // paper money base (sleeved note): raw note = 0.035 + 0.015 wrap = 0.05 lb, certified = 0.1 lb (Des's example)
+            'paper_base' => 0.035,
             
             'gsa' => [
                 'GSA (Box & Insert)' => 0.36, 'GSA (Box & Insert) Obverse Rainbow Toned' => 0.36,
