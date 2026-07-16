@@ -153,7 +153,7 @@ function geminiJson($system, $user, &$meta = [])
     $body = json_encode([
         'systemInstruction' => ['parts' => [['text' => (string) $system]]],
         'contents'          => [['role' => 'user', 'parts' => [['text' => (string) $user]]]],
-        'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 2048],
+        'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 8192],
     ], JSON_UNESCAPED_SLASHES);
 
     $ch = curl_init($url);
@@ -185,6 +185,8 @@ function geminiJson($system, $user, &$meta = [])
     // return token usage data, search through json response for generated description
     $meta['tokens'] = (int) ($resp['usageMetadata']['totalTokenCount'] ?? 0);
     // model response answer sits inside $text
+    $fin = (string) ($resp['candidates'][0]['finishReason'] ?? '');
+    if ($fin !== '' && $fin !== 'STOP') { gsLog('gemini finishReason=' . $fin . ' (answer truncated - raise maxOutputTokens?)'); }
     $text = $resp['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
     // the answer is JSON, we then parse it
@@ -909,8 +911,10 @@ function gsAiMap(array $coin): array
         if ($src !== '') { $row['extended_description'] = mb_substr($src, 0, 1900); }
     }
     if (trim((string) ($row['feature_4'] ?? '')) === '') {
-        $src = $gsDesign !== '' ? $gsDesign : trim((string) ($row['extended_description'] ?? ''));
-        if ($src !== '') { $row['feature_4'] = mb_substr($src, 0, 1400); }
+        // never reuse the extended description - a duplicate reads worse than an empty box
+        if ($gsDesign !== '' && $gsDesign !== trim((string) ($row['extended_description'] ?? ''))) {
+            $row['feature_4'] = mb_substr($gsDesign, 0, 1400);
+        }
     }
     return sbl_snap_row($row);
 }
@@ -952,12 +956,18 @@ function gsListingFill(array $post): array
              . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level. "
              . "Write it in YOUR OWN words: it must not repeat or lightly rephrase any sentence from the "
              . "extended_description - pick a different angle (series history, design lineage, collecting "
-             . "appeal). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
+             . "appeal). If the facts give nothing beyond what extended_description already says, return "
+             . "feature_4 as \"\" - never copy or lightly rephrase it. Do NOT add the \"COLLECTOR'S NOTE:\" "
+             . "label - the system adds it.\n"
              . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.";
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
+        // drop a collector's note that merely copies the extended description
+        $norm = static fn($s) => preg_replace('/\s+/', ' ', strtolower(trim((string) $s)));
+        if (isset($ai['feature_4']) && ($norm($ai['feature_4']) === $norm($post['extended_description'] ?? '')
+            || $norm($ai['feature_4']) === $norm($ai['extended_description'] ?? ''))) { $ai['feature_4'] = ''; }
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
         }
