@@ -248,6 +248,11 @@ final class Computer
         // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
+        // money boxes: strip thousands commas ("6,250.00" -> "6250.00") so validation and DB2 see numbers
+        foreach (['price', 'cost', 'original_retail'] as $pf) {
+            if (strpos($g($pf), ',') !== false) { $row[$pf] = str_replace(',', '', $g($pf)); }
+        }
+
         // Search Terms are Amazon-specific: only auto-build when amazon
         $mkt = strtolower($g('marketplace'));
         if ($mkt === '' || $mkt === 'all' || $mkt === 'amazon') {
