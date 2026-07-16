@@ -572,7 +572,8 @@ function sbl_field_guide(): array
                                           'Emergency Issue','Errors','Hawaii Overprint Note','Hologram','Military Currency',
                                           'North Africa Note','Notgeld','Polymer Notes','Replacement Notes','Specimens',
                                           'Uncut Sheets','Wartime Occupation']],
-        'paper_money_grade_designation' => ['desc' => 'paper money ONLY, e.g. EPQ, PPQ, Star; blank for coins'],
+        'paper_money_grade_designation' => ['desc' => 'the slab qualifier: EPQ/PPQ (original paper) or Apparent/Net (problem note) - certified notes only; leave EMPTY, the operator reads it off the holder'],
+        'paper_money_series_designation' => ['src' => 'CoinDate letter suffix', 'desc' => 'U.S. notes ONLY: the series letter after the year ("1934A" -> "A"); empty when the date has no letter; blank for coins'],
         'country_of_manufacture' => ['src' => 'CatalogPath CountryName', 'desc' => 'full country name', 'const' => 'United States'],
         'certification'  => ['opts' => $cert, 'desc' => 'OPERATOR-PICKED from the valid values (grading service, or Uncertified) - leave EMPTY; do not guess'],
         'title_suffix'   => ['desc' => 'operator catch-all appended to the title (grade details, error details, packaging, slab-label text) - leave BLANK; "Coin Collectible" is added to the title automatically'],
@@ -627,6 +628,11 @@ function gsMapToProduct(array $c): array
         $mm = $g('MintMark');
         $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
         $row['mint_location'] = sbl_mint_location($mm);
+    }
+    if ($isPaper) {
+        // Des's sheet: notes are Composition "Paper"; the letter after the year is the Series Designation ("1934A" -> "A")
+        $row['composition'] = 'Paper';
+        if (preg_match('/^\s*\d{4}\s*-?\s*([A-Za-z])\b/', $g('CoinDate'), $m)) { $row['paper_money_series_designation'] = strtoupper($m[1]); }
     }
 
     // World coins list the spoken face value ("5 Euros") - the short form's
@@ -865,7 +871,8 @@ function gsAiMap(array $coin): array
          . "ONLY when no option describes the coin.\n"
          . "8. Paper money: the note facts (FriedbergNumber, Printer, BnbSignatureName1/2 - the Treasury "
          . "signature pair, Watermark, NotePaperType, NoteDimension in mm, PickNumber) are real catalog data - "
-         . "work them into the description and extended_description. IsRedbook true = listed in the Red Book "
+         . "work them into the description and extended_description. For U.S. notes coin_variety_2 may carry "
+         . "the Friedberg number (\"FR2307\") when it is otherwise empty. IsRedbook true = listed in the Red Book "
          . "(good collector's-note material). PcgsNumber / Ngc / NgcId / Krause are CATALOG numbers, NEVER a "
          . "certification - do not treat them as grading.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";

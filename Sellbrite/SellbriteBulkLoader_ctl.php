@@ -370,15 +370,11 @@
      // category-specific boxes: only show the fields that apply to the picked tree/series
     var SBL_CAT_FIELDS = {
         paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
-        // the coin block hides for Currency trees; coin_type is NOT here (shows for every tree)
-        coin:    ['denomination','year','mint_mark','mint_location',
-                  'coin_variety_1','coin_variety_2','grade','designation_abbrivation',
-                  'circulated_or_uncirculated','strike_type','certification','certification_number',
-                  'composition','fineness','precious_metal_content','single_coin_or_set',
-                  'total_precious_metal_content','diameter','weight',
-                  'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
-                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
-                  'z_ebay_ungraded_coin_condition'],
+        // truly coin-only boxes hide for Currency trees - Des's example notes fill year, denomination,
+        // varieties, grade, certification, composition and the eBay fields, so those show everywhere
+        coin:    ['mint_mark','mint_location','designation_abbrivation','strike_type',
+                  'fineness','precious_metal_content','total_precious_metal_content',
+                  'diameter','weight'],
         bullion: ['bullion_shape'],
         cob:     ['coin_design'],
         set:     ['set_count'],

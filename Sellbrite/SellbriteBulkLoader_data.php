@@ -251,6 +251,9 @@ return [
             'Military Currency', 'North Africa Note', 'Notgeld', 'Polymer Notes', 'Replacement Notes',
             'Specimens', 'Uncut Sheets', 'Wartime Occupation',
         ],
+
+        // Paper Money Grade Designation (Valid Values tab): EPQ/PPQ = original paper, Apparent/Net = problem notes.
+        'paper_money_grade_designation' => ['EPQ', 'PPQ', 'Apparent', 'Net'],
     ],
 
     // one row per Sellbrite column, workbook order; 'dropdown' names the values list
