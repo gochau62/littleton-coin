@@ -742,11 +742,18 @@ function gs_coin_facts(array $c): array
     $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
              'Desg','Other','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
              'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
+             'FriedbergNumber','BnBNumber','PickNumber','HaxbyNumber','Krause','NoteColor','NoteDimension',
+             'Watermark','Printer','NoteSecurityThread','NotePaperType','BnbSignatureName1','BnbSignatureName2',
+             'BnbSignatureName3','ObsoleteStateName','ObsoleteCityName','ObsoleteBankName','IssueYear','Variant',
+             'KeyComment1','KeyComment2','KeyComment3','ArtComment1','ArtComment2','ArtComment3',
+             'ObverseDesigner','ReverseDesigner','GeneralCoinLettering','IsRedbook',
              'GeneralNotes','ObverseDescription','ReverseDescription','ObverseLettering','ReverseLettering',
              'PriceLow','PriceHigh'];
     $out = [];
     foreach ($keys as $k) {
-        if (isset($c[$k]) && $c[$k] !== '' && $c[$k] !== null && $c[$k] !== 0 && $c[$k] !== '0') { $out[$k] = $c[$k]; }
+        // trim strings - GreySheet ships stray \r ("Morgenthau\r"); blanks/zeros stay out of the prompt
+        $v = isset($c[$k]) && is_string($c[$k]) ? trim($c[$k]) : ($c[$k] ?? null);
+        if ($v !== '' && $v !== null && $v !== 0 && $v !== '0') { $out[$k] = $v; }
     }
     if (!empty($c['CatalogPath']) && is_array($c['CatalogPath'])) {
         $out['CatalogPath'] = implode(' > ', array_map(static fn($n) => (string) ($n['Name'] ?? ''), $c['CatalogPath']));
@@ -856,6 +863,11 @@ function gsAiMap(array $coin): array
          . "differs from the path (country vs demonym: \"Australia > \$1 Kookaburra\" -> \"Australian Kookaburra\"; "
          . "singular vs plural) - still pick it when it clearly names this series. Copy it EXACTLY; leave it empty "
          . "ONLY when no option describes the coin.\n"
+         . "8. Paper money: the note facts (FriedbergNumber, Printer, BnbSignatureName1/2 - the Treasury "
+         . "signature pair, Watermark, NotePaperType, NoteDimension in mm, PickNumber) are real catalog data - "
+         . "work them into the description and extended_description. IsRedbook true = listed in the Red Book "
+         . "(good collector's-note material). PcgsNumber / Ngc / NgcId / Krause are CATALOG numbers, NEVER a "
+         . "certification - do not treat them as grading.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     // Pool root: path root name, else the reply's RootNode_Id (live replies carry no CatalogPath).
     $ctRoot = strtolower((string) ($coin['CatalogPath'][0]['Name'] ?? ''));
