@@ -20,7 +20,7 @@
  *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
  *     coin this screen has ever seen on GreySheet - name, GsId, node path.
  *   - Populate it with the seed crawl (SellbriteBulkLoader_seed.php)
- *
+ * 
  *   - Picking a coin calls the API (GetCollectibleRequest + GetPricingRequest)
  *     and auto-fills the form; Gemini maps the data into the right fields.
  *
@@ -33,19 +33,16 @@
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';
 
-// local git-ignored secrets (the Gemini key) - each machine keeps its own copy
-if (is_file(__DIR__ . '/SellbriteBulkLoader_secrets.php')) { require_once __DIR__ . '/SellbriteBulkLoader_secrets.php'; }
-
 // Provide Greysheet API key, token, url, and level
 if (!defined('GS_BASE_URL'))   { define('GS_BASE_URL',   'https://cpgpublicapiv2.greysheet.com/api'); }
-if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  'B71FE10C-3B96-41B4-9A9E-A307DBE29B82'); }
-if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    '7056764F-B695-4543-994D-6471B64E083A'); }
+if (!defined('GS_API_TOKEN'))  { define('GS_API_TOKEN',  ''); }
+if (!defined('GS_API_KEY'))    { define('GS_API_KEY',    ''); }
 if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'advanced'); }
-if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); }
+if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); } 
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    200); }
 
 // gemini 2.5 flash model current usage for free testing
-if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: ''); }
+if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
@@ -61,7 +58,7 @@ function gsLog($msg)
 {
     // prefix every entry so Sellbrite lines are easy to spot in the shared log
     $line = 'Greysheet ' . $msg;
-    // Use LCCOnline logger
+    // Use LCCOnline logger 
     if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec($line); }
     // otherwise use PHP error log
     else { error_log($line); }
@@ -145,7 +142,7 @@ function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 // asks for a JSON answer, retries on the backup model when busy.
 function geminiJson($system, $user, &$meta = [])
 {
-    // if not key set return error
+    // if not key set return error 
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
     if (!geminiConfigured()) { $meta['error'] = 'GEMINI_API_KEY not set'; return null; }
 
@@ -291,7 +288,7 @@ function gsMemNodeChildren(int $parentId): array
 }
 
 /* =========================================================================
- * dropdown menus read memory path
+ * dropdown menus read memory path 
  * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins
  * ========================================================================= */
 function gsMemSearch(string $q, int $limit = 40): array
@@ -398,7 +395,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
          . " WHERE kind = 'C' AND (path = ? OR path LIKE ? ESCAPE '\\')";
     $params = [$nodePath, gsLikeEsc($nodePath) . ' > %'];
     $year = trim($year);
-
+    
     // year filter, must match the year inside the name hide others
     if ($year !== '') {
         $sql .= " AND (coin_date = ? OR UPPER(name) LIKE ?)";
@@ -421,7 +418,7 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
 }
 
 
-// years for a typed category: memory first;
+// years for a typed category: memory first; 
 function gsYearsFor(string $category, bool $liveLookup = true): array
 {
     $ck = gsNorm($category);
@@ -481,7 +478,7 @@ function gsPriceNum($v): string
 
 
 /* =========================================================================
- * field normalizers (composition, category date-strip,"90% silver; 10% copper"
+ * field normalizers (composition, category date-strip,"90% silver; 10% copper" 
  * becomes the one metal word ("Silver"), mint location, dropdown snapping)
  * ========================================================================= */
 function sbl_norm_composition(string $c): string
@@ -552,12 +549,12 @@ function sbl_field_guide(): array
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
         'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
-        'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that names this series - wording may differ from the path (country vs demonym: path "Australia > \$1 Kookaburra" -> option "Australian Kookaburra"; singular vs plural); copy the option EXACTLY; leave EMPTY only when no option describes the coin'],
+        'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that matches the series/path - names may differ slightly (path "Australia > \$2 Kookaburra" -> option "Australian Kookaburra"); copy the option EXACTLY; leave EMPTY if none fits'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
         'denomination'   => ['src' => 'DenominationShort (US) / DenominationLong (world)', 'desc' => 'face value, e.g. 1C, 50C, $1 for US; "5 Euros" spoken form for world coins'],
-        'coin_variety_1' => ['src' => 'Variety', 'desc' => 'REWRITE so it keeps ONLY what category_name does not already say, judged by MEANING not spelling - "Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver" adds nothing, return ""; never add words that were not in the original'],
+         'coin_variety_1' => ['src' => 'Variety', 'desc' => 'REWRITE so it keeps ONLY what category_name does not already say, judged by MEANING not spelling - "Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver" adds nothing, return ""; never add words that were not in the original'],
         'coin_variety_2' => ['src' => 'Variety2', 'desc' => 'same rule: keep only the new part - "1oz Silver, 35th Anniversary" next to "\$1 Kookaburra, 1 Ounce Silver" -> "35th Anniversary" ("1oz Silver" = "1 Ounce Silver")'],
         'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
         'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'autofilled from the pricing call\'s GradeLabel; the operator can override'],
@@ -575,13 +572,14 @@ function sbl_field_guide(): array
                                           'Emergency Issue','Errors','Hawaii Overprint Note','Hologram','Military Currency',
                                           'North Africa Note','Notgeld','Polymer Notes','Replacement Notes','Specimens',
                                           'Uncut Sheets','Wartime Occupation']],
-        'paper_money_grade_designation' => ['desc' => 'paper money ONLY, e.g. EPQ, PPQ, Star; blank for coins'],
+        'paper_money_grade_designation' => ['desc' => 'the slab qualifier: EPQ/PPQ (original paper) or Apparent/Net (problem note) - certified notes only; leave EMPTY, the operator reads it off the holder'],
+        'paper_money_series_designation' => ['src' => 'CoinDate letter suffix', 'desc' => 'U.S. notes ONLY: the series letter after the year ("1934A" -> "A"); empty when the date has no letter; blank for coins'],
         'country_of_manufacture' => ['src' => 'CatalogPath CountryName', 'desc' => 'full country name', 'const' => 'United States'],
         'certification'  => ['opts' => $cert, 'desc' => 'OPERATOR-PICKED from the valid values (grading service, or Uncertified) - leave EMPTY; do not guess'],
         'title_suffix'   => ['desc' => 'operator catch-all appended to the title (grade details, error details, packaging, slab-label text) - leave BLANK; "Coin Collectible" is added to the title automatically'],
         'precious_metal_content' => ['src' => 'WeightOunces', 'desc' => 'per-coin metal, e.g. "1 oz","0.859 oz"; blank for base metal'],
         'total_precious_metal_content' => ['src' => 'WeightOunces x Fineness', 'desc' => 'troy oz of pure precious metal, blank for base-metal coins'],
-        'brand'          => ['desc' => 'the company that ISSUED the coin: "U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems), "Perth Mint" and similar for world mints. FeaturedImageAttribution in the facts is only the PHOTO credit - a grading service (PCGS/NGC/CAC/ANACS/ICG) or auction house there is NEVER the brand; leave blank when unsure'],
+        'brand'          => ['desc' => '"U.S. Mint" for modern U.S. Mint issues (proof/mint sets, bullion, modern commems); otherwise leave blank'],
         'description'    => ['desc' => 'A natural sentence built from the ACTUAL field values, house shape: '
             . '"A genuine {year} {mint mark} {variety} {series/type} {metal} {denomination IN WORDS - Quarter, Half Dollar, Cent Penny} '
             . '{strike if special} Coin[, from {brand} when not U.S. Mint]'
@@ -631,6 +629,11 @@ function gsMapToProduct(array $c): array
         $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
         $row['mint_location'] = sbl_mint_location($mm);
     }
+    if ($isPaper) {
+        // Des's sheet: notes are Composition "Paper"; the letter after the year is the Series Designation ("1934A" -> "A")
+        $row['composition'] = 'Paper';
+        if (preg_match('/^\s*\d{4}\s*-?\s*([A-Za-z])\b/', $g('CoinDate'), $m)) { $row['paper_money_series_designation'] = strtoupper($m[1]); }
+    }
 
     // World coins list the spoken face value ("5 Euros") - the short form's
     // leading S/G/P is a metal prefix ("S€5" = silver €5), not the value.
@@ -641,7 +644,7 @@ function gsMapToProduct(array $c): array
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
 
     // Designation abbreviation; color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH.
-    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM").
+    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM"). 
     // GreySheet "Desg" is the grade TYPE (MS/PR/SP)
     if ($g('Other') !== '')             { $row['designation_abbrivation'] = $g('Other'); }
     if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
@@ -658,11 +661,11 @@ function gsMapToProduct(array $c): array
 
     $strike    = $g('StrikeType');
     // MS / PR / PF / SP / SMS - the grade type
-    $gradeType = strtoupper($g('Desg'));
+    $gradeType = strtoupper($g('Desg')); 
     $isProof   = stripos($strike, 'proof') !== false || stripos($g('Name'), 'proof') !== false
               || in_array($gradeType, ['PR', 'PF'], true);
     if ($strike !== '') { $row['strike_type'] = $strike; }
-
+    
     // Mint State / Proof / Specimen are all uncirculated; circulated coins have
     // a circulated Desg or none, so leave those for the grade/operator.
     if ($isProof || in_array($gradeType, ['MS', 'PR', 'PF', 'SP', 'SMS'], true)) {
@@ -686,13 +689,13 @@ function gsMapToProduct(array $c): array
         foreach ($gsPathNodes as $node) {
             if (!empty($node['CountryName'])) { $row['country_of_manufacture'] = trim((string) $node['CountryName']); break; }
         }
-
+        
         // World trees name the country as the path's second node even when the CountryName attribute is blank: "World Coins > Austria > ...".
         if (($row['country_of_manufacture'] ?? '') === '' && $isWorld && count($gsPathNodes) > 1) {
             $n = trim(preg_replace('/\s*\([^)]*\)\s*$/', '', (string) ($gsPathNodes[1]['Name'] ?? '')));
             if ($n !== '') { $row['country_of_manufacture'] = $n; }
         }
-        // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat").
+        // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat"). 
         if (($row['coin_type'] ?? '') === '') {
             $poolKey = ($isWorld ? 'world' : 'us') . '_' . ($isPaper ? 'currency' : 'coins');
             $hay = strtolower(($row['category_name'] ?? '') . ' ' . $gsPathText);
@@ -729,8 +732,9 @@ function gsMapToProduct(array $c): array
     // Features 1/2/3/5 are derived by Computer
     // title_suffix is left blank for the operator's grade/error/packaging notes.)
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
-    // Brand is left to the AI: FeaturedImageAttribution is a photo credit (often a grading service), not the brand.
-    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone
+    // Brand from GreySheet's image attribution when it carries one;
+    if ($g('FeaturedImageAttribution') !== '') { $row['brand'] = $g('FeaturedImageAttribution'); }
+    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone 
     if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $gsRootName)) {
         $row['country_of_manufacture'] = 'United States';
     }
@@ -743,7 +747,7 @@ function gs_coin_facts(array $c): array
 {
     $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
              'Desg','Other','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
-             'Designer','Edge','Mintage','Rarity','CoinShape','FeaturedImageAttribution','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
+             'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
              'FriedbergNumber','BnBNumber','PickNumber','HaxbyNumber','Krause','NoteColor','NoteDimension',
              'Watermark','Printer','NoteSecurityThread','NotePaperType','BnbSignatureName1','BnbSignatureName2',
              'BnbSignatureName3','ObsoleteStateName','ObsoleteCityName','ObsoleteBankName','IssueYear','Variant',
@@ -827,12 +831,12 @@ function sbl_snap_row(array $row): array
     return $row;
 }
 
-// The full autofill writer: facts first
+// The full autofill writer: facts first 
 function gsAiMap(array $coin): array
 {
     $base = gsMapToProduct($coin);
     if (!geminiConfigured()) { return sbl_snap_row($base); }
-
+    
     // The writing brief - the numbered RULES are the whole contract with the model.
     $sys = "You are the listing writer for Littleton Coin Company's Sellbrite coin listings. From the "
          . "GreySheet coin facts (name, dates, mint, composition, designer, mintage, and especially "
@@ -867,7 +871,8 @@ function gsAiMap(array $coin): array
          . "ONLY when no option describes the coin.\n"
          . "8. Paper money: the note facts (FriedbergNumber, Printer, BnbSignatureName1/2 - the Treasury "
          . "signature pair, Watermark, NotePaperType, NoteDimension in mm, PickNumber) are real catalog data - "
-         . "work them into the description and extended_description. IsRedbook true = listed in the Red Book "
+         . "work them into the description and extended_description. For U.S. notes coin_variety_2 may carry "
+         . "the Friedberg number (\"FR2307\") when it is otherwise empty. IsRedbook true = listed in the Red Book "
          . "(good collector's-note material). PcgsNumber / Ngc / NgcId / Krause are CATALOG numbers, NEVER a "
          . "certification - do not treat them as grading.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
@@ -885,7 +890,6 @@ function gsAiMap(array $coin): array
     $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
-    // Varieties are the one field the AI may REWRITE: blank a pure echo, shorten a mixed one.
     // The guard only accepts words already in the original, so the AI can remove but never invent.
     foreach (['coin_variety_1', 'coin_variety_2'] as $vf) {
         if (!array_key_exists($vf, $ai) || ($base[$vf] ?? '') === '') { continue; }
@@ -895,7 +899,7 @@ function gsAiMap(array $coin): array
         $want = preg_split('/[^a-z0-9]+/', strtolower($aiV), -1, PREG_SPLIT_NO_EMPTY);
         if (!array_diff($want, $have)) { $row[$vf] = $aiV; }
     }
-    // GeneralNotes stays the Expanded Description;
+    // GeneralNotes stays the Expanded Description; 
     // the obverse + reverse design text becomes the COLLECTOR'S NOTE
     $gsClean = static function ($s): string {
         $s = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $s)));

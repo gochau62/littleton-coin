@@ -5,6 +5,15 @@
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 ?>
 
@@ -36,8 +45,8 @@
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
     var SBL_LABELS = {};
-    var sblPreviewImg = '';    // GreySheet reference image for the preview pane (display only)
-    var sblAutofilled = false; // once true, AUTO badges track actual values
+    var sblPreviewImg = '';
+    var sblAutofilled = false;
 
     // after autofill only boxes that actually got a value keep the AUTO look
     function sblSyncAutoBadges(){
@@ -52,6 +61,7 @@
             if (badge) badge.style.display = has ? '' : 'none';
         });
     }
+    
     // restore the AUTO look on all auto-eligible fields (blank form)
     function sblResetAutoBadges(){
         $('#sku-form [data-name]').each(function(){
@@ -69,15 +79,18 @@
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
     }
+
     function sblBackToList(){ sblShow('list'); }
+    
     // export only the picked market's SKUs and columns
     function sblExport(){
         var m = $('#export-market').val() || 'all';
         window.location = 'SellbriteBulkLoader_ajax.php?action=export&market=' + encodeURIComponent(m);
     }
+
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
-    // Gemini writes ONLY the empty description / extended description / feature 4
+     // Gemini writes ONLY the empty description / extended description / feature 4
     function sblListingGenerate(){
         var need = ['description','extended_description','feature_4'].filter(function(n){
             var el = document.getElementById('f_' + n);
@@ -124,7 +137,7 @@
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
-        sblCertNumGate(false);             // blank certification -> Cert Number locked
+        sblCertNumGate(false);
     }
     function sblNew(){
         sblClearForm();
@@ -134,22 +147,26 @@
         sblShow('form');
         sblRecompute();
     }
+    
     // show only the chosen market's specific fields ("All" shows every one)
     var SBL_MARKET_FIELDS = {
-        amazon: ['search_terms'],                      // Search Terms are Amazon-specific
+        amazon: ['search_terms'],
         ebay:   ['ebay_coin_condition_type',
                  'ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
                  'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'],
         walmart: []
     };
+
     var SBL_ALL_MARKET_FIELDS = [
         'search_terms',
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
+    
     // eBay grading fields are coin-only; search terms are Amazon-wide
     var SBL_COIN_ONLY_MARKET_FIELDS = [
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
+
     function sblMarketApply(){
         var m = $('#f_marketplace').val() || '';
         var cat = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
@@ -161,8 +178,9 @@
             if (!el) return; var field = el.closest('.field'); if (!field) return;
             field.style.display = (show.indexOf(n) >= 0) ? '' : 'none';
         });
-        sblRecompute();   // re-validate for the chosen market
+        sblRecompute();
     }
+    
     // delete every SKU (home menu)
     function sblDeleteAll(){
         swal({ title:'Delete ALL SKUs?', text:'This permanently removes every record and cannot be undone.',
@@ -199,6 +217,7 @@
     function sblFormSerialize(){
         return $('#sku-form').serialize() + '&marketplace=' + encodeURIComponent($('#f_marketplace').val() || '');
     }
+
     function sblSave(){
         var data = sblFormSerialize() + '&action=save';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
@@ -206,8 +225,10 @@
                 swal('Not saved', (res && res.message) || 'The database rejected the save (no DB connection?).', 'error');
                 return;
             }
-            sblUpsertListRow(res.row);       // update the inventory row in place (AJAX, no reload)
-            sblBackToList();                 // back to the main inventory page
+            // update the inventory row in place
+            sblUpsertListRow(res.row);
+            // back to the main loader sheet page
+            sblBackToList();
             if (res.returnClass === 'warning'){
                 swal({ title:'Saved with warnings',
                        text:'Still empty: ' + (res.missing || []).slice(0, 12).join(', ')
@@ -231,6 +252,7 @@
             }, 'json');
         });
     }
+    
     // insert or update one grid row without reloading
     function sblUpsertListRow(row){
         if (!row || !row.id) return;
@@ -255,24 +277,29 @@
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    
     // cert number only exists once a grading service is picked (server sends the yellow nudge)
     function sblCertNumGate(clearIt){
         var box = $('#f_certification_number'); if (!box.length) return;
         var cert = String($('#f_certification').val() || '').trim().toLowerCase();
         var certified = cert !== '' && cert !== 'uncertified' && cert !== 'u.s. mint';
         box.closest('.field').toggleClass('cert-locked', !certified);
+
         // readonly not disabled - serialize() drops disabled inputs
         box.prop('readOnly', !certified);
+
         // wipe only when the operator switches back to raw
         if (!certified && clearIt && box.val()) box.val('');
     }
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
+
             // Country is set ONCE by the tree - autofill never overwrites it.
             if (k === 'country_of_manufacture' && el && String(el.value || '').trim() !== '') return;
             if (el && v !== null && v !== '') {
-                // selects: add missing options so unmatched names still land
+
+                 // selects: add missing options so unmatched names still land
                 if (el.tagName === 'SELECT' && !el.querySelector('option[value="' + CSS.escape(String(v)) + '"]')){
                     var o = document.createElement('option'); o.value = o.textContent = v; el.appendChild(o);
                 }
@@ -291,6 +318,7 @@
     function sblYearApply(years, keep){
         var cur = (keep !== undefined && keep !== null && keep !== '') ? keep : $('#f_year').val();
         if (!years || !years.length){
+
             // No data for this series: fall back to free typing.
             if ($('#f_year').is('select')){
                 $('#f_year').replaceWith('<input type="text" id="f_year" name="year" value="' + sblEsc(cur) + '" data-name="year">');
@@ -311,7 +339,7 @@
         }, 'json');
     }
     jQuery(document).ready(function(){
-        // delegated: survives the input<->select swap
+        // Delegated: survives the input<->select swap and fires on category picks.
         $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); sblFieldVisibility(); });
         $('#sku-form').on('change', '#f_single_coin_or_set', sblFieldVisibility);
         sblFieldVisibility();
@@ -339,18 +367,14 @@
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
         'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
 
-    // category-specific boxes: only show the fields that apply to the picked tree/series
+     // category-specific boxes: only show the fields that apply to the picked tree/series
     var SBL_CAT_FIELDS = {
         paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
-        // the coin block hides for Currency trees; coin_type is NOT here (shows for every tree)
-        coin:    ['denomination','year','mint_mark','mint_location',
-                  'coin_variety_1','coin_variety_2','grade','designation_abbrivation',
-                  'circulated_or_uncirculated','strike_type','certification','certification_number',
-                  'composition','fineness','precious_metal_content','single_coin_or_set',
-                  'total_precious_metal_content','diameter','weight',
-                  'ebay_coin_condition_type','ebay_graded_coin_letter_grade',
-                  'ebay_graded_coin_numerical_grade','ebay_graded_coin_professional_grader',
-                  'z_ebay_ungraded_coin_condition'],
+        // truly coin-only boxes hide for Currency trees - Des's example notes fill year, denomination,
+        // varieties, grade, certification, composition and the eBay fields, so those show everywhere
+        coin:    ['mint_mark','mint_location','designation_abbrivation','strike_type',
+                  'fineness','precious_metal_content','total_precious_metal_content',
+                  'diameter','weight'],
         bullion: ['bullion_shape'],
         cob:     ['coin_design'],
         set:     ['set_count'],
@@ -441,13 +465,15 @@
             sblRootPath = $(this).val();
             $('#gs-series').val('').data('sblPicked', 0).prop('disabled', !sblRootPath);
             sblResetBelowSeries();
-            // country set ONCE from the tree; world trees get it from the series pick
+
+           // country set ONCE from the tree; world trees get it from the series pick
             if (sblRootPath) $('#f_country_of_manufacture').val(/world/i.test(sblRootPath) ? '' : 'United States');
             sblFieldVisibility();   // Currency trees swap in the paper-money boxes right away
             sblMarketApply();       // and drop the coin-only market fields
             if (sblRootPath) $('#gs-series').focus();
         });
     }
+
     // level 2: series under the tree, searchable, 0 API calls
     function sblSeriesAutocomplete(){
         $('#gs-series').autocomplete({
@@ -455,6 +481,7 @@
             source: function(req, resp){
                 if (!sblRootPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php', { action:'gsSeries', root:sblRootPath, q:req.term }, function(res){
+
                     // swallow late answers so the menu doesn't reopen after a pick
                     if ($('#gs-series').data('sblPicked')){ resp([]); return; }
                     resp($.map(res.matches || [], function(c){
@@ -465,6 +492,7 @@
             select: function(e, ui){
                 sblCurPath = ui.item.path || '';
                 $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
+                
                 // strip date ranges from the series name right at pick time
                 var cat = sblCleanCategory(ui.item.value);
                 var cel = document.getElementById('f_category_name');
@@ -472,7 +500,8 @@
                     var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
                 }
                 $('#f_category_name').val(cat).trigger('change');
-                // country from the memory path: world = 2nd node, U.S. = United States
+                
+                 // country from the memory path: world = 2nd node, U.S. = United States
                 var seg = (sblCurPath || '').split(' > ');
                 var country = '';
                 if (/^world/i.test(seg[0] || '')) country = (seg[1] || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
@@ -494,6 +523,7 @@
         // Typing or clicking back in means the user wants the list again.
         $('#gs-series').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
+
     // year combo for the chosen series, searchable
     var sblYearList = [];
     function sblLoadYears(){
@@ -502,11 +532,13 @@
             sblYearList = $.map(res.years || [], function(y){ return String(y); });
         }, 'json');
     }
+
     function sblYearPicked(y){
         sblCurYear = y;
         $('#gs-coin').val('').data('sblPicked', 0);
         sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
     }
+
     function sblYearAutocomplete(){
         $('#gs-year').autocomplete({
             minLength: 0, delay: 0,
@@ -531,7 +563,8 @@
             sblYearPicked(this.value.trim());
         });
     }
-    // level 4: coins under the series, trimmed labels, 0 API calls
+    /* Level 4 - coins under the series (optionally one year). Labels are trimmed
+       to just the distinguishing part. Opens on focus. 0 API calls. */
     function sblCoinAutocomplete(){
         $('#gs-coin').autocomplete({
             minLength: 0, delay: 200,
@@ -539,7 +572,8 @@
                 if (!sblCurPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php',
                     { action:'gsCoins', path:sblCurPath, year:sblCurYear, q:req.term }, function(res){
-                    // swallow late answers so the menu doesn't reopen after a pick
+                    // Late answer after the user already picked - swallow it
+                    // so the menu doesn't pop back open.
                     if ($('#gs-coin').data('sblPicked')){ resp([]); return; }
                     var items = $.map(res.matches || [], function(c){
                         return { label: c.label, value: c.label, gs_id: c.gs_id };
@@ -562,7 +596,10 @@
         });
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
-    // valid-value fields share the compact jQuery UI menu; typing anything is still allowed
+    /* The valid-value form fields (Grade, Brand, Designation...) use the same
+       compact jQuery UI menu as Series/Coin instead of the browser's native
+       datalist popup (which can't be styled and renders huge). The operator
+       can still type any value manually - the list is only suggestions. */
     function sblFieldCombos(){
         $('#sku-form input[list]').each(function(){
             var inp = $(this), dl = document.getElementById(inp.attr('list'));
@@ -574,20 +611,25 @@
                 source: function(req, resp){
                     var t = (req.term || '').toLowerCase();
                     var pool = opts;
-                    // coin type pool follows the tree; no tree picked = full list
+                    // Coin Type pools by the drill-down tree: U.S. Coins vs
+                    // U.S. Currency vs World Coins vs World Currency. No tree
+                    // picked (manual SKU) = the full list.
                     if (inp.attr('name') === 'coin_type' && typeof SBL_COINTYPE_POOLS !== 'undefined' && sblRootPath){
                         var world = /world/i.test(sblRootPath);
                         var curr  = /currency/i.test(sblRootPath);
                         var tp = SBL_COINTYPE_POOLS[(world ? 'world' : 'us') + '_' + (curr ? 'currency' : 'coins')];
                         if (tp && tp.length) pool = tp;
                     }
-                    // country pool: U.S. trees lock to United States, world trees list the rest
+                    // Country pools by the tree: U.S. trees are United States;
+                    // World trees offer the world countries (the DB2 path
+                    // usually fills it before the menu is even needed).
                     if (inp.attr('name') === 'country_of_manufacture' && sblRootPath){
                         pool = /world/i.test(sblRootPath)
                             ? $.grep(opts, function(v){ return v !== 'United States'; })
                             : ['United States'];
                     }
-                    // grade pool: paper vs coin (certified + raw merged)
+                    // Grade offers only what fits: paper grades for paper money,
+                    // coin grades for everything else (certified + raw merged).
                     if (inp.attr('name') === 'grade' && typeof SBL_GRADE_POOLS !== 'undefined'){
                         var cat = (($('#f_category_name').val() || '') + ' ' + ($('#f_paper_money_type').val() || '')
                                    + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
@@ -638,10 +680,12 @@
             sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
     }
+
     // full GreySheet response for the raw panel
     function sblRenderRaw(raw){
         $('#gs-raw').text(raw ? JSON.stringify(raw, null, 2) : 'No data returned.');
     }
+    
     // the API calls Autofill made + the running session total
     function sblRenderCalls(calls, total){
         if (total !== undefined && total !== null){
@@ -654,6 +698,7 @@
                     + '</div><div class="got">&rarr; ' + sblEsc(c.got) + '</div></li>');
         });
     }
+
     function sblGsHandle(res, hint){
         if (res.returnClass === 'notfound'){
             swal({ title:"GreySheet doesn't have this coin",
@@ -669,6 +714,7 @@
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
     }
+
     function sblGsGenerate(hint){
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
             if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
@@ -701,6 +747,7 @@
             if (sblAutofilled) sblSyncAutoBadges();
         }, 'json');
     }
+
     function sblPreview(f){
         $('#pv-title').text(f.name || 'Product title appears here');
         $('#pv-desc').text(f.description || '');
@@ -710,6 +757,7 @@
         var img = document.getElementById('pv-img');
         if (img && sblPreviewImg && img.getAttribute('src') !== sblPreviewImg){ img.classList.remove('broken'); img.src = sblPreviewImg; }
     }
+
     function sblValidity(res){
         var pill = $('#valid-pill');
         pill.removeClass('ok err').addClass(res.valid ? 'ok' : 'err').text(res.valid ? 'Ready' : 'Needs attention');
