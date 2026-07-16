@@ -282,6 +282,12 @@ final class Computer
             if ($base === null && !$isGsa && is_numeric($g('weight'))) {
                 $base = (float) $g('weight') * 0.0685714;   // troy oz -> lb
             }
+            // paper money has no metal weight - a sleeved note gets the flat base, holders add on like slabs
+            if ($base === null && !$isGsa
+                && (strcasecmp($g('composition'), 'Paper') === 0 || $g('paper_money_type') !== ''
+                    || preg_match('/currency|paper money|banknote|\bnote\b/i', $g('category_name')))) {
+                $base = (float) ($pw['paper_base'] ?? 0.035);
+            }
             if ($base !== null) {
                 $certAdds = $pw['certification'] ?? [];
                 $add = !$isGsa ? ($certAdds[$g('certification')] ?? $certAdds['Uncertified'] ?? 0) : 0;
