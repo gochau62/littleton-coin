@@ -120,6 +120,7 @@ CREATE TABLE LSCDEVLIBP.SBLPRODUCT (
    advent_calendar_item_length     FOR COLUMN ADVITMLEN  DECIMAL(7, 2)   DEFAULT NULL,
    advent_calendar_item_width      FOR COLUMN ADVITMWID  DECIMAL(7, 2)   DEFAULT NULL,
    advent_calendar_item_weight     FOR COLUMN ADVITMWGT  DECIMAL(7, 3)   DEFAULT NULL,
+   created_by FOR COLUMN CREATEBY  VARCHAR(10) CCSID 1208    DEFAULT NULL,
    created_at FOR COLUMN CREATTS  TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
    updated_at FOR COLUMN UPDATETS TIMESTAMP NOT NULL
              GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
@@ -224,6 +225,7 @@ LABEL ON LSCDEVLIBP.SBLPRODUCT (
    advent_calendar_item_length     TEXT IS 'Advent Calendar Item Length',
    advent_calendar_item_width      TEXT IS 'Advent Calendar Item Width',
    advent_calendar_item_weight     TEXT IS 'Advent Calendar Item Weight',
+   created_by TEXT IS 'Row Owner (signed-on user profile)',
    created_at TEXT IS 'Created Timestamp',
    updated_at TEXT IS 'Updated Timestamp');
 
