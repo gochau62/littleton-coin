@@ -1,7 +1,23 @@
 <?php
+/*    ***************************************************  -->
+<!--  * Program Name - SellbriteBulkLoader_model.php    *  -->
+<!--  *                                                 *  -->
+<!--  * Author    - G CHAU                              *  -->
+<!--  *             Littleton Coin Company              *  -->
+<!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260064                              *  -->
+<!--  ***************************************************   */
+
 // DB2 data-access layer for the SBLPRODUCT table (list / find / save / delete)
 // blanks and "***" hints coerce to NULL; DB errors log and return false/[] so AJAX still answers
-
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema (column list)
 
 if (!defined('SBL_TABLE')) {
@@ -72,8 +88,20 @@ function sbl_coerce($name, $val)
         $d = sbl_norm_date($v);
         return $d === '' ? null : $d;
     }
-    if ($name === 'sku') { return (string) $v; }     // NOT NULL — let the DB enforce
-    return $v === '' ? null : $v;                     // other text: '' -> NULL
+    if ($name === 'sku') { return (string) $v; }
+    return $v === '' ? null : $v;
+}
+
+// the signed-on user owns the rows they create; '' (dev, no session) sees everything
+function sbl_current_user()
+{
+    return strtoupper(trim((string) ($_SESSION['username'] ?? '')));
+}
+
+// true once the created_by ALTER has run and a user is signed on
+function sbl_own_filter()
+{
+    return sbl_current_user() !== '' && isset(sbl_table_columns()['created_by']);
 }
 
 // product column names in schema order
@@ -108,6 +136,7 @@ function sbl_writable_columns()
 {
     $cols  = sbl_columns();
     $cols[] = 'marketplace';   // per-SKU market; not a Sellbrite header, so not in the schema
+    $cols[] = 'created_by';    // row owner (signed-on user); not a Sellbrite header
     $tcols = sbl_table_columns();
     if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
@@ -141,12 +170,15 @@ function sblGetAll($q = '')
     $sql = 'SELECT id, sku, ' . $mk . ', category_name, name, grade, price, quantity, '
          . "VARCHAR_FORMAT(updated_at, 'YYYY-MM-DD HH24:MI') AS updated_at "
          . 'FROM ' . SBL_TABLE;
-    $params = [];
+    $where = []; $params = [];
+    // each user sees only their own SKUs; rows from before the ALTER have no owner and stay visible to all
+    if (sbl_own_filter()) { $where[] = '(created_by = ? OR created_by IS NULL)'; $params[] = sbl_current_user(); }
     if ($q !== '') {
         $like = '%' . strtoupper($q) . '%';
-        $sql .= ' WHERE UPPER(sku) LIKE ? OR UPPER(category_name) LIKE ? OR UPPER(name) LIKE ?';
-        $params = [$like, $like, $like];
+        $where[] = '(UPPER(sku) LIKE ? OR UPPER(category_name) LIKE ? OR UPPER(name) LIKE ?)';
+        array_push($params, $like, $like, $like);
     }
+    if ($where) { $sql .= ' WHERE ' . implode(' AND ', $where); }
     $sql .= ' ORDER BY updated_at DESC';
     return sbl_select($sql, $params);
 }
@@ -167,7 +199,10 @@ function sblCategoryExample($category)
 // every row, all columns, for the export
 function sblGetAllFull()
 {
-    return sbl_select('SELECT * FROM ' . SBL_TABLE . ' ORDER BY updated_at DESC');
+    $sql = 'SELECT * FROM ' . SBL_TABLE; $params = [];
+    // the export also only carries the signed-on user's rows
+    if (sbl_own_filter()) { $sql .= ' WHERE created_by = ? OR created_by IS NULL'; $params[] = sbl_current_user(); }
+    return sbl_select($sql . ' ORDER BY updated_at DESC', $params);
 }
 
 // one full row for the edit form, false if not found
@@ -175,7 +210,10 @@ function sblFind($id)
 {
     $id = (int) $id;
     if ($id <= 0) { return false; }
-    $rows = sbl_select('SELECT * FROM ' . SBL_TABLE . ' WHERE id = ?', [$id]);
+    $sql = 'SELECT * FROM ' . SBL_TABLE . ' WHERE id = ?'; $params = [$id];
+    // you can only open your own rows (or unowned pre-ALTER rows)
+    if (sbl_own_filter()) { $sql .= ' AND (created_by = ? OR created_by IS NULL)'; $params[] = sbl_current_user(); }
+    $rows = sbl_select($sql, $params);
     return $rows[0] ?? false;
 }
 
@@ -187,6 +225,7 @@ function sblInsert(array $row)
     $cols = sbl_writable_columns();
     // Delimited uppercase identifiers: safe for reserved-ish names (condition, year).
     $qcols = array_map(static fn($c) => '"' . strtoupper($c) . '"', $cols);
+    $row['created_by'] = sbl_current_user();   // new rows belong to whoever is signed on
     $sql  = 'INSERT INTO ' . SBL_TABLE . ' (' . implode(', ', $qcols) . ') VALUES ('
           . implode(', ', array_fill(0, count($cols), '?')) . ')';
     $stmt = db2_prepare($conn, $sql);
@@ -205,13 +244,16 @@ function sblUpdate($id, array $row)
     $conn = sbl_conn();
     if (!$conn) { return false; }
     $cols = sbl_writable_columns();
+    $row['created_by'] = sbl_current_user();   // saving claims unowned pre-ALTER rows
     $set  = implode(', ', array_map(static fn($c) => '"' . strtoupper($c) . '" = ?', $cols));
     $sql  = 'UPDATE ' . SBL_TABLE . ' SET ' . $set . ' WHERE id = ?';
+    if (sbl_own_filter()) { $sql .= " AND (created_by = ? OR created_by IS NULL)"; }
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return (bool) sbl_db_err('update prepare'); }
     $vals = [];
     foreach ($cols as $c) { $vals[] = sbl_coerce($c, $row[$c] ?? null); }
     $vals[] = (int) $id;
+    if (sbl_own_filter()) { $vals[] = sbl_current_user(); }
     if (!db2_execute($stmt, $vals)) { return (bool) sbl_db_err('update execute'); }
     if (!sbl_commit($conn)) { return (bool) sbl_db_err('update commit'); }
     return true;
@@ -230,9 +272,12 @@ function sblDeleteAll()
 {
     $conn = sbl_conn();
     if (!$conn) { return false; }
-    $stmt = db2_prepare($conn, 'DELETE FROM ' . SBL_TABLE);
+    // Delete All only removes the signed-on user's OWN rows
+    $sql = 'DELETE FROM ' . SBL_TABLE; $params = [];
+    if (sbl_own_filter()) { $sql .= ' WHERE created_by = ?'; $params[] = sbl_current_user(); }
+    $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return (bool) sbl_db_err('deleteAll prepare'); }
-    if (!db2_execute($stmt)) { return (bool) sbl_db_err('deleteAll execute'); }
+    if (!db2_execute($stmt, $params)) { return (bool) sbl_db_err('deleteAll execute'); }
     if (!sbl_commit($conn)) { return (bool) sbl_db_err('deleteAll commit'); }
     return true;
 }
@@ -244,9 +289,11 @@ function sblDelete($id)
     if (!$conn) { return false; }
     $id = (int) $id;
     if ($id <= 0) { return false; }
-    $stmt = db2_prepare($conn, 'DELETE FROM ' . SBL_TABLE . ' WHERE id = ?');
+    $sql = 'DELETE FROM ' . SBL_TABLE . ' WHERE id = ?'; $params = [$id];
+    if (sbl_own_filter()) { $sql .= ' AND (created_by = ? OR created_by IS NULL)'; $params[] = sbl_current_user(); }
+    $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return (bool) sbl_db_err('delete prepare'); }
-    if (!db2_execute($stmt, [$id])) { return (bool) sbl_db_err('delete execute'); }
+    if (!db2_execute($stmt, $params)) { return (bool) sbl_db_err('delete execute'); }
     if (!sbl_commit($conn)) { return (bool) sbl_db_err('delete commit'); }
     return true;
 }
