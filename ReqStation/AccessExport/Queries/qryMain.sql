@@ -1,0 +1,2 @@
+-- Query: qryMain
+SELECT ReqMaterial.req_name,ReqMaterial.req_date,ReqMaterialDetails.req_num,ReqMaterialDetails.item_num,ReqMaterialDetails.description,ReqMaterialDetails.loc,ReqMaterialDetails.quantity,ReqMaterial.dataentry_badge,ReqMaterialDetails.returned,ReqMaterial.authorized,ReqMaterial.authorized_by,ReqMaterialDetails.date_returned FROM [ReqMaterial],[ReqMaterialDetails] WHERE (((ReqMaterialDetails.returned)=0)) ORDER BY ReqMaterial.req_date

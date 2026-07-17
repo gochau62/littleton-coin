@@ -1,5 +1,14 @@
 # Req Station — Access Handover Instructions
 
+> **Status 2026-07-17:** `Requisitions.mdb` was uploaded and machine-extracted
+> into `AccessExport/` (schema, data, queries, full VBA, object inventory,
+> form/report strings) — Steps 1's goal is mostly satisfied without running
+> anything in Access. See `FINDINGS.md`. Still outstanding: the mysqldump of
+> `lcc` (Step 2 — now known to hold ALL live requisition data), the PHP source
+> of the existing app on lcc1, and optionally SaveAsText layouts/screenshots
+> for the reports. Do **not** commit the raw `.mdb` files — they embed
+> plaintext passwords (see FINDINGS.md).
+
 How to get the Microsoft Access requisition program ("Req Station") into this
 repo so the Db2-for-i / PHP migration can start. The Access `.accdb` file alone
 is a binary blob — forms, VBA, and queries are not readable from it directly, so

@@ -1,0 +1,152 @@
+jV"kl*
+8+&`
+ &r7
+Letter
+DINU"
+SMTJ
+InputBin
+RESDLL
+UniresDLL
+Locale
+English_United_States
+hpPrinterProtocol
+pcl3gui
+hpImagingDll
+hpfime51.dll
+Orientation
+PORTRAIT
+ColorMode
+24bpp
+HPGrayScale
+hpSupportsREST
+HPTextThreshold
+HPGraphicThreshold
+HPPreserveLayout
+Duplex
+NONE
+HPDuplexMargin
+Halftone
+HT_PATSIZE_DEFAULT
+HPMechOffset
+hpDPIInfo
+HPOverspray
+90x90x60x95
+Resolution
+600x600dpi
+HPPrintQuality
+0_600x600
+HPRlt
+HPBorderless
+HPPagesToPrint
+4_AllPages
+HPTextInBlack
+0_disable
+PaperSize
+LETTER
+MediaType
+HPPrintHeadHeight
+hpSpeedMech
+LPPH
+Tue Sep 27 07:19:59:530 2016
+PQ_05
+DiZzS>
+tgPM
+8"aH
+,k:eF
+8"`4
+5s6 
+8"`(#a
+8"at
+`H!ah
+8"`l
+`H!a
+ (sI
+`H!b
+4rMC
+ReqMaterial
+employee tbl
+rush
+FName
+LName
+dataentry_badge
+EmpID#
+rptRequestDetail
+ReqMaterialDetails
+returned
+quantity
+cost
+retail
+req_num
+req_date
+area_code
+area_type
+req_name
+authorized_by
+extcost
+extretail
+comments
+subReport
+SELECT ReqMaterial.*, IIf([rush]=0,"No","Yes") AS rsh, [employee tbl].FName, [employee tbl].LName FROM ReqMaterial INNER JOIN [employee tbl] ON ReqMaterial.dataentry_badge=[employee tbl].[EmpID#]; 
+Arial
+HP Officejet Pro 8500 A910
+[Event Procedure]
+PageHeaderSection
+Label0
+Requisition #:
+Label2
+Date:
+Label3
+Rush:
+Label4
+Area Code:
+Label5
+Area Type:
+Label15
+Requisitioner:
+Text16
+=[FName] & " " & [LName]
+Label17
+DataEntry:
+Label19
+Authorized By:
+Label1
+Sku #:
+Label48
+Loc:
+Label49
+Coin Date:
+Label50
+Description:
+Label51
+Qty:
+Label6
+Cost:
+Label7
+Retail:
+Label8
+Add  Cost$:
+Label10
+Sku To:
+Label52
+Ext Cost:
+Label53
+Ext Retail:
+Detail
+Report.rptRequestDetail
+PageFooterSection
+Label21
+Comments:
+Text13
+=subReport.Report!rExtR
+$#,##0.00;($#,##0.00)
+Label14
+Total Retail:
+Text33
+=subReport.Report!rExtC
+Label34
+Total Cost:
+Text40
+=subReport.Report!rQty
+Standard
+Label41
+Total Qty:

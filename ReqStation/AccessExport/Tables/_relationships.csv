@@ -1,0 +1,3 @@
+szRelationship,grbit,ccolumn,icolumn,szObject,szColumn,szReferencedObject,szReferencedColumn
+"Area TableRequested Material Table",0,1,0,"Requested Material Table","Area Code","Area Table","Area Code"
+"Inventory Data Entry TableRequested Material Table",0,1,0,"Requested Material Table","Inv DE Number","Inventory Data Entry Table","Inv DE Number"

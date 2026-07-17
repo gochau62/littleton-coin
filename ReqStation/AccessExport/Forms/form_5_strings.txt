@@ -1,0 +1,24 @@
+T\oC
+>9&#
+3KIa
+5U`<
+l=Ll4
+Requested Material Table
+Requested Number
+Item #
+Quantity
+Arial
+MS Sans Serif
+FormHeader
+Detail
+Requested (Primary Key)
+Requested_Number
+Requested Number_Label
+Requested_Number_Label
+Item # Requested
+Item__
+Item #_Label
+Item___Label
+Amount Requested
+Quantity_Label
+FormFooter

@@ -1,0 +1,163 @@
+j`'k@)
+Letter
+DINU"
+SMTJ
+InputBin
+RESDLL
+UniresDLL
+Locale
+English_United_States
+hpPrinterProtocol
+pcl3gui
+hpImagingDll
+hpfime51.dll
+Orientation
+PORTRAIT
+ColorMode
+24bpp
+HPGrayScale
+hpSupportsREST
+HPTextThreshold
+HPGraphicThreshold
+HPPreserveLayout
+Duplex
+NONE
+HPDuplexMargin
+Halftone
+HT_PATSIZE_DEFAULT
+HPMechOffset
+hpDPIInfo
+HPOverspray
+90x90x60x95
+Resolution
+600x600dpi
+HPPrintQuality
+0_600x600
+HPRlt
+HPBorderless
+HPPagesToPrint
+4_AllPages
+HPTextInBlack
+0_disable
+PaperSize
+LETTER
+MediaType
+HPPrintHeadHeight
+hpSpeedMech
+LPPH
+Thu Sep 29 14:35:43:58 2016
+PQ_05
+`$'at
+`X b
+``'b(
+wf+H
+(|u,
+alW'
+O:<d
+>8)haI
++9(i{
+}s[d
+hD^M
+g~N<
+Total Retail Query
+req_name
+req_date
+req_num
+item_num
+coin_date
+description
+quantity
+retail
+cost
+sku_to
+extcost
+extretail
+comments
+Quantity
+Requested Material Summary
+Arial
+HP Officejet Pro 8500 A910
+Times New Roman
+ReportHeader
+PageHeaderSection
+Name_Label
+Req. Date
+DetachedLabel
+Item #_Label
+Item #
+Item___Label
+Coin Date_Label
+Coin Date
+Coin_Date_Label
+Description_Label
+Description
+Quantity_Label
+Retail_Label
+Retail
+Label30
+Name
+Label33
+Sku To
+Label35
+Cost
+Label14
+Monthly Update:Requisitioned Product
+Label51
+Ext. Cost
+Label52
+Ext. Retail
+GroupHeader1
+Requistioner First and Last Name
+GroupHeader0
+Date
+Short Date
+Date of Request
+99/99/0000;0;_
+Detail
+Item # Requested
+Item__
+Date of Coin
+Coin_Date
+Description of Material
+Amount Requested
+$#,##0.00;($#,##0.00)
+GroupFooter0
+Label48
+Req. Comments:
+Text44
+=Sum([retail])
+Text45
+=Sum([Quantity])
+Label54
+Total Retail:
+Label55
+Total Cost:
+Label46
+ Req. Totals:
+Label56
+Total Qty:
+Text69
+=Sum([cost])
+GroupFooter2
+PageBreak42
+Label25
+Totals by Name:
+Text57
+Text58
+Label60
+Label61
+Label62
+Text70
+PageFooterSection
+Text15
+=Now()
+Long Date
+ReportFooter
+Label28
+Grand Totals:
+Text63
+Text64
+Label66
+Label67
+Label68
+Text71

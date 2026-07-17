@@ -1,5 +1,12 @@
 # Req Station Migration Plan
 
+> **Update 2026-07-17:** `Requisitions.mdb` has been received and extracted —
+> see `FINDINGS.md` and `AccessExport/`. Two findings supersede assumptions
+> below: the live requisition data lives in **MySQL** (`lcc` @ 192.168.1.126,
+> `ReqMaterial`/`ReqMaterialDetails` header-detail pair), and a **PHP web app
+> already exists** at `lcc1.littletoncoin.com:10088/requisitions/`. Phase 1 is
+> largely complete; read FINDINGS.md for how Phases 2, 5, and 7 shift.
+
 Migrate the "Req Station" Microsoft Access application (v1.0.3, deployed per-PC as Req Station #1..#n)
 to the shop-standard stack: **Db2 for i tables + SQL stored procedures + PHP web front end**, following
 the conventions already in this repo (Clario/ for DDL and .PROC style, PrintInvoices/ for the PHP

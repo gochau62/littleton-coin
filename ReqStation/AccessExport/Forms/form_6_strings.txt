@@ -1,0 +1,138 @@
+.U^c
+8+&`
+Letter
+DINU"
+SMTJ
+InputBin
+RESDLL
+UniresDLL
+Locale
+English_United_States
+hpPrinterProtocol
+pcl3gui
+hpImagingDll
+hpfime51.dll
+Orientation
+PORTRAIT
+ColorMode
+24bpp
+HPGrayScale
+hpSupportsREST
+HPTextThreshold
+HPGraphicThreshold
+HPPreserveLayout
+Duplex
+NONE
+HPDuplexMargin
+Halftone
+HT_PATSIZE_DEFAULT
+HPMechOffset
+hpDPIInfo
+HPOverspray
+90x90x60x95
+Resolution
+600x600dpi
+HPPrintQuality
+0_600x600
+HPRlt
+HPBorderless
+HPPagesToPrint
+4_AllPages
+HPTextInBlack
+0_disable
+PaperSize
+LETTER
+MediaType
+HPPrintHeadHeight
+hpSpeedMech
+LPPH
+Tue Sep 13 09:00:26:331 2016
+PQ_05
+xKFZ
+mt<%
+5U`H
+zd*'
+5U`f
+f?V!\
+5U`k
+5U`Z
+OR@N
+YDy7C
+2U`>
+2U`Y
+YqD*
+`W!a
+5]`)"b
+}w%_
+5W`)"a
+sm^.
+qryMain
+req_name
+req_date
+req_num
+item_num
+description
+quantity
+dataentry_badge
+employee tbl
+DeptID#
+EmpID#
+FName
+LName
+authorized_by
+returned
+date_returned
+[Event Procedure]
+Arial
+HP Officejet Pro 8500 A910
+Tahoma
+FormHeader
+Label0
+req_name:
+Label1
+req_date:
+Label2
+req_num:
+Label3
+item_num:
+Label5
+loc:
+Label6
+quantity:
+Label8
+Badge#:
+Command9
+Preview Report
+Command10
+Quit App
+Label16
+authorized by:
+Command20
+Run IE
+Label21
+Add Requests:
+cmdRefresh
+Refresh
+Find Next
+local_version
+1.0.3
+MainStation
+Command30
+Monthy Report
+Detail
+"";"";"";"";"";"";"";"";"";"";"4";"4"
+Combo11
+Table/Query
+SELECT [employee tbl].[EmpID#], [employee tbl].FName, [employee tbl].LName FROM [employee tbl] WHERE ((([employee tbl].[DeptID#])=36 Or ([employee tbl].[DeptID#])=30)); 
+864;2160;2880
+chkReturnItem
+Label23
+Return Item:
+Check24
+Label25
+Return All:
+FormFooter
+Label28
+Req Station #12
+lblappVer
+Version:1.0.0

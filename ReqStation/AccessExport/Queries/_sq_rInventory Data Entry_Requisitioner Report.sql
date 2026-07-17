@@ -1,0 +1,2 @@
+-- Query: ~sq_rInventory Data Entry/Requisitioner Report
+SELECT [Inventory Data Entry Table].[Inv DE Number],[Inventory Data Entry Table].[First Name],[Inventory Data Entry Table].[Last Name],[Requested Material Table].Name,[Requested Material Table].Quantity,[Requested Material Table].Retail,[Requested Material Table].[Item #] FROM [Inventory Data Entry Table],[Requisitioner Table],[Requested Material Table] 

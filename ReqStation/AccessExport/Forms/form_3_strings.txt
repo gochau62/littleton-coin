@@ -1,0 +1,27 @@
+>9&#
+5U`<
+Requisitioner Table
+Requested Material Table
+Name
+Item #
+Quantity
+Retail
+Inv DE Number
+SELECT [Requested Material Table].Name, [Requested Material Table].[Item #], [Requested Material Table].Quantity, [Requested Material Table].Retail, [Requisitioner Table].[Inv DE Number] FROM [Requisitioner Table] INNER JOIN [Requested Material Table] ON [Requisitioner Table].[Inv DE Number]=[Requested Material Table].[Inv DE Number]; 
+Requested Material Table Subform
+Arial
+MS Sans Serif
+FormHeader
+Detail
+Requistioner First and Last Name
+Name_Label
+Item # Requested
+Item__
+Item #_Label
+Item___Label
+Amount Requested
+Quantity_Label
+$#,##0.00;($#,##0.00)
+Retail Per Piece
+Retail_Label
+FormFooter

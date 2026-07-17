@@ -1,0 +1,51 @@
+jC&k
+F.dF
+5]`3
+#X5OgC
+5U`>
+@H7Z
+EO{H
+"rH_B
+K"{T
+_:<>!=M
+Ak6X^
+Switchboard Items
+Switchboard
+[Event Procedure]
+Arial
+Tahoma
+Detail
+VerticalShadowBox
+Label2
+Requistion Database
+Times New Roman
+Option1
+=HandleButtonClick(1)
+System
+OptionLabel1
+MS Sans Serif
+Option2
+=HandleButtonClick(2)
+OptionLabel2
+Option3
+=HandleButtonClick(3)
+OptionLabel3
+Option4
+=HandleButtonClick(4)
+OptionLabel4
+Option5
+=HandleButtonClick(5)
+OptionLabel5
+Option6
+=HandleButtonClick(6)
+OptionLabel6
+Option7
+=HandleButtonClick(7)
+OptionLabel7
+Option8
+=HandleButtonClick(8)
+OptionLabel8
+HorizontalHeaderBox
+Label1
+HorizontalDividingLine
+Picture

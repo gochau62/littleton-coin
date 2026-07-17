@@ -1,0 +1,71 @@
+cl*e
+jo'k
+duU{
+>9&#
+!=+IE
+1oLkB
+Letter
+DINU"
+IP_192.168.1.90
+UKsE
+uAdJ
+Zp=m@
+KNIL
+*#!Yu
+5]`x
+Inventory Data Entry Table
+Requested Material Subform
+Requisitioner Table
+Requested Material Table
+Name
+Item #
+Quantity
+Retail
+Inv DE Number
+First Name
+Last Name
+Phone Number
+Start Date
+Web Page
+Comment
+Picture
+Arial
+MS Sans Serif
+FormHeader
+Label18
+Inventory Data Entry Master Form
+Detail
+Inventory Data Entry Number (Primary Key)
+Inv_DE_Number
+Inv DE Number_Label
+Inv_DE_Number_Label
+Inventory Data Entry Clerk First Name
+First_Name
+First Name_Label
+First_Name_Label
+Inventory Data Entry Clerk Last Name
+Last_Name
+Last Name_Label
+Last_Name_Label
+!\(999") "000\-0000;0;_
+Phone_Number
+Phone Number_Label
+Phone_Number_Label
+99/99/0000;0;_
+Start_Date
+Start Date_Label
+Start_Date_Label
+Address of Data Entry Clerk's Web Page
+Web_Page
+Web Page_Label
+Web_Page_Label
+Comment Concerning Data Entry Clerk
+Comment_Label
+Picture of Data Entry Clerk
+Picture_Label
+Requested Material Table Subform
+Form.Requested Material Subform
+Requested_Material_Table_Subform
+Requested Material Table Subform_Label
+Requested_Material_Table_Subform_Label
+FormFooter

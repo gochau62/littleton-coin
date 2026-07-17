@@ -1,0 +1,22 @@
+;k$'
+Letter
+DINU"
+IP_192.168.1.34
+6U`<
+1U`-
+Arial
+Tahoma
+Detail
+MozillaBrowser0
+Root Entry
+OleObjectData
+AccessObjSiteData
+MozillaBrowser Class
+Mozilla.Browser.1
+cmdGo
+[Event Procedure]
+Find Next
+Text2
+"http://192.168.1.55/request.php"
+Label3
+Text2:
