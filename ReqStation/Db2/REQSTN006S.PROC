@@ -1,0 +1,49 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN006S                                    */
+/*                                                                   */
+/* Program Narrative - Mark / Unmark a Requisition Line Returned.    */
+/*                     Sets or clears the date returned, matching    */
+/*                     the Access chkReturnItem_AfterUpdate logic.   */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN006S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN006S (
+        IN INREQ#  DECIMAL(9, 0),
+        IN INLIN#  DECIMAL(3, 0),
+        IN INRTNF  CHAR(1)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        UPDATE RQSREQDT
+           SET RDRTNF = INRTNF,
+               RDRTDT = CASE WHEN INRTNF = 'Y'
+                             THEN DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP,
+                                      'YYYYMMDD'), 8, 0)
+                             ELSE 0
+                        END
+         WHERE RDREQ# = INREQ#
+           AND RDLIN# = INLIN#;
+    END;

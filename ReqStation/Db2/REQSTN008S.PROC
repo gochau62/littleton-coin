@@ -1,0 +1,42 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN008S                                    */
+/*                                                                   */
+/* Program Narrative - List Active Area Codes (combo)                */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN008S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN008S ()
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT ARCODE, ARDESC
+              FROM RQSAREAT
+             WHERE ARACTV = 'Y'
+             ORDER BY ARDESC;
+
+        OPEN C1;
+    END;

@@ -1,0 +1,44 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN005S                                    */
+/*                                                                   */
+/* Program Narrative - Authorize a Requisition                       */
+/*                     Replaces legacy getUpdate.php.                */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN005S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN005S (
+        IN INREQ#  DECIMAL(9, 0),
+        IN INAUTB  VARCHAR(50),
+        IN INCMNT  VARCHAR(254)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        UPDATE RQSREQHT
+           SET RHAUTF = 'Y',
+               RHAUTB = INAUTB,
+               RHCMNT = INCMNT
+         WHERE RHREQ# = INREQ#;
+    END;

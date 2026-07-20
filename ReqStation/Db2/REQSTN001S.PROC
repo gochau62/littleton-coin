@@ -1,0 +1,54 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN001S                                    */
+/*                                                                   */
+/* Program Narrative - Insert Requisition Header, returns the new    */
+/*                     requisition number via OUT parameter.         */
+/*                     Replaces the legacy PHP max(req_num)+1        */
+/*                     pattern (race condition) with the identity.   */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN001S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN001S (
+        IN  INNAME VARCHAR(50),
+        IN  INARCD CHAR(2),
+        IN  INARTY VARCHAR(20),
+        IN  INRUSH CHAR(1),
+        IN  INBDGE VARCHAR(10),
+        IN  INCMNT VARCHAR(254),
+        OUT OTREQ# DECIMAL(9, 0)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        INSERT INTO RQSREQHT
+            (RHNAME, RHRQDT, RHRQTM, RHARCD, RHARTY,
+             RHRUSH, RHAUTF, RHAUTB, RHBDGE, RHCMNT)
+        VALUES (INNAME,
+                DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
+                DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
+                INARCD, INARTY, INRUSH, 'N', '', INBDGE, INCMNT);
+
+        SET OTREQ# = IDENTITY_VAL_LOCAL();
+    END;

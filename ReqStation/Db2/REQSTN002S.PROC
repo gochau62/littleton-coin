@@ -1,0 +1,54 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN002S                                    */
+/*                                                                   */
+/* Program Narrative - Insert Requisition Detail Line                */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN002S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN002S (
+        IN INREQ#  DECIMAL(9, 0),
+        IN INLIN#  DECIMAL(3, 0),
+        IN INITEM  VARCHAR(16),
+        IN INLOC   VARCHAR(8),
+        IN INCNDT  VARCHAR(10),
+        IN INDESC  VARCHAR(50),
+        IN INQTY   DECIMAL(7, 0),
+        IN INCOST  DECIMAL(11, 2),
+        IN INRETL  DECIMAL(11, 2),
+        IN INACST  DECIMAL(11, 2),
+        IN INBDGE  VARCHAR(10),
+        IN INSKUT  VARCHAR(16)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        INSERT INTO RQSREQDT
+            (RDREQ#, RDLIN#, RDITEM, RDLOC, RDCNDT, RDDESC,
+             RDQTY, RDCOST, RDRETL, RDACST, RDBDGE, RDSKUT,
+             RDRTNF, RDRTDT)
+        VALUES (INREQ#, INLIN#, INITEM, INLOC, INCNDT, INDESC,
+                INQTY, INCOST, INRETL, INACST, INBDGE, INSKUT,
+                'N', 0);
+    END;

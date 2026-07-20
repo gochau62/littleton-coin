@@ -1,0 +1,52 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN004S                                    */
+/*                                                                   */
+/* Program Narrative - Get one Requisition (header + all lines)      */
+/*                     Replaces legacy getIdInfo.php query.          */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN004S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN004S (
+        IN INREQ# DECIMAL(9, 0)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT H.RHREQ#, H.RHNAME, H.RHRQDT, H.RHRQTM,
+                   H.RHARCD, H.RHARTY, H.RHRUSH, H.RHAUTF,
+                   H.RHAUTB, H.RHBDGE, H.RHCMNT,
+                   D.RDLIN#, D.RDITEM, D.RDLOC, D.RDCNDT, D.RDDESC,
+                   D.RDQTY, D.RDCOST, D.RDRETL, D.RDACST,
+                   D.RDSKUT, D.RDRTNF, D.RDRTDT
+              FROM RQSREQHT H
+              LEFT JOIN RQSREQDT D
+                ON D.RDREQ# = H.RHREQ#
+             WHERE H.RHREQ# = INREQ#
+             ORDER BY D.RDLIN#;
+
+        OPEN C1;
+    END;
