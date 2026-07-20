@@ -42,20 +42,12 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | Requisitions_dsp.php | Display function dspRequisitions(): grid + modals, styling and page JS inline | `Web/Requisitions_dsp.php` |
 | Requisitions_model.php | Model (rqs* functions, CALL REQSTNnnnS only) | `Web/Requisitions_model.php` |
 | Requisitions_ajax.php | Ajax dispatcher (JSON) | `Web/Requisitions_ajax.php` |
-| ReqAppTarget.php | ONE-LINE config: absolute URL of the new app — the only edit at go-live | `Web/ReqAppTarget.php` |
-| request.php | Legacy URL shim → ?id=N opens that req, else entry form (bookmarks + Access stations) | `Web/request.php` |
-| getEntry.php | Legacy URL shim → entry form | `Web/getEntry.php` |
-| getInsert.php | Legacy URL shim → entry form | `Web/getInsert.php` |
-| getIdInfo.php | Legacy URL shim → req view / grid | `Web/getIdInfo.php` |
-| getUpdate.php | Legacy URL shim → req view / grid | `Web/getUpdate.php` |
-
-The five shims are `*IFS` **updates** to the existing production files in
-`/www/.../requisitions/` on the 10088 instance — deploy them (plus
-ReqAppTarget.php alongside) at cutover, not before: they replace the live
-legacy app in place. Every saved workfloor/inventory-handler bookmark and
-every Access station's Add Requests button then lands in the new app
-automatically; `RQUtils/` becomes unused once they're in. Where they
-point is one line in `ReqAppTarget.php`.
+No legacy-URL shims: at cutover the old `/requisitions/` folder on the
+10088 instance is simply retired, and the workfloor PCs and inventory
+handlers get a shortcut to the new URL instead (IT can push it to the
+desktops). The app supports direct links for those shortcuts:
+`Requisitions_ctl.php?action=add` opens the entry form straight away,
+`?id=N` opens a specific requisition.
 
 ### Legacy originals
 
@@ -87,10 +79,8 @@ history if a behavior question ever comes up.
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 18 Db2 objects and 10 IFS files above (level 10, same as
-   Sellbrite). The 4 Requisitions_* files are new; the 5 shims +
-   ReqAppTarget.php are updates/additions to the legacy
-   `/requisitions/` folder, deployed at cutover. Status flows 01-Assigned → Created → promotion like any RFP.
+2. Assign the 18 Db2 objects and 4 IFS files above (level 10, same as
+   Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
 
@@ -133,7 +123,10 @@ history if a behavior question ever comes up.
    authority level number for `chkAutUsr`.
 3. Web-profile authority to LSCDEVLIBP (the dev log already shows
    SQLCODE -551 against it for Sellbrite) — GRTOBJAUT before testing procs.
-4. At go-live: set the production URL in ReqAppTarget.php (one line).
+4. At go-live: retire the old `/requisitions/` folder on the 10088
+   instance and push the new-URL shortcut (with `?action=add` for the
+   entry-form one) to the workfloor and inventory-handler desktops —
+   the old saved links stop working by design.
 
 Reports are done: Monthly Report button = "Monthly Update: Requisitioned
 Product" (REQSTN011S, grouped by requisitioner with Ext. Cost/Ext. Retail

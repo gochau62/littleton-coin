@@ -474,10 +474,9 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
-    // deep links - the legacy request.php shims redirect here, so the
-    // production/inventory controllers' saved bookmarks keep working:
-    //   ?id=N        (was request.php?id=N)  -> open that requisition
-    //   ?action=add  (was request.php)       -> open the entry form
+    // deep links, for shortcuts and shared links:
+    //   ?id=N        -> open that requisition's view
+    //   ?action=add  -> open the entry form directly
     var qs = new URLSearchParams(window.location.search);
     if (qs.get('id')) {
         openViewModal(parseInt(qs.get('id'), 10));
