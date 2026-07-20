@@ -141,6 +141,7 @@ function dspRequisitions($user) {
 .rq-grid tbody tr:nth-child(even) { background: #f7faf8; }
 #tblGrid tbody tr { cursor: pointer; }
 #tblGrid tbody tr:hover { background: var(--rq-accent); }
+.rq-grid tbody tr.rq-selected { background: #dff0e5; }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
@@ -290,7 +291,7 @@ function dspRequisitions($user) {
     <button type="button" class="rq-btn rq-btn-primary" id="btnAdd">+ Add Requisition</button>
     <button type="button" class="rq-btn" id="btnRefresh">&#8635; Refresh</button>
     <button type="button" class="rq-btn" id="btnMonthly">Monthly Report</button>
-    <button type="button" class="rq-btn" id="btnOutstanding">Print Outstanding</button>
+    <button type="button" class="rq-btn" id="btnPreview">Preview Report</button>
     <label class="rq-auto">
       <input type="checkbox" id="chkAutoRefresh" checked> Auto-refresh
     </label>
@@ -443,6 +444,8 @@ function dspRequisitions($user) {
 var gridRows = [];
 var lookups = null;
 var autoTimer = null;
+var selectedReq = null;    // the requisition clicked in the grid (Access "current record")
+var lastReqRows = null;    // data behind the open view modal
 
 $(document).ready(function () {
     loadLookups();
@@ -462,7 +465,7 @@ $(document).ready(function () {
     // reports - Monthly Report button (Requested Material Summary) and the
     // per-requisition Print (rptRequest "Preview Report")
     $('#btnMonthly').on('click', openMonthlyReport);
-    $('#btnOutstanding').on('click', printOutstanding);
+    $('#btnPreview').on('click', previewReport);
     $('#btnRunReport').on('click', runMonthlyReport);
     $('#btnPrintReport').on('click', function () {
         printHtml($('#rptBody').html(), 'Monthly Update: Requisitioned Product');
@@ -474,9 +477,13 @@ $(document).ready(function () {
         $('#' + $(this).data('close')).prop('hidden', true);
     });
 
-    // open the view modal from a grid row
+    // clicking a row selects that requisition (like moving the Access record
+    // pointer) and opens its view
     $('#gridBody').on('click', 'tr[data-req]', function () {
-        openViewModal($(this).data('req'));
+        selectedReq = $(this).data('req');
+        $('#gridBody tr').removeClass('rq-selected');
+        $('#gridBody tr[data-req="' + selectedReq + '"]').addClass('rq-selected');
+        openViewModal(selectedReq);
     });
 
     // returned checkbox inside the view modal
@@ -671,6 +678,8 @@ function openViewModal(reqNum) {
             swal('Not found', 'Requisition ' + reqNum + ' was not found.', 'warning');
             return;
         }
+        lastReqRows = resp.rows;
+        selectedReq = reqNum;
         var h = resp.rows[0];
         $('#viewReqNum').text(h['RHREQ#']);
 
@@ -792,67 +801,60 @@ function renderMonthlyReport(rows, ym) {
         '</tr></thead><tbody>' + body + '</tbody></table></div>');
 }
 
-// "Total Outstanding Requisitions" - the Access report of the same name:
-// every open line grouped by requisitioner, Sum(Quantity)/Sum(Total Retail)
-// group footers, long-date print stamp
-function printOutstanding() {
-    if (!gridRows.length) {
-        swal('Nothing outstanding', 'There are no open requisition lines to print.', 'info');
-        return;
-    }
-    var rows = gridRows.slice().sort(function (a, b) {
-        return (a.RHNAME + a.RHRQDT).localeCompare(b.RHNAME + b.RHRQDT);
-    });
-    var name = null, sub = null;
-    var grand = { qty: 0, cost: 0, retl: 0 };
+// "Preview Report" - the Access rptRequest/rptRequestDetail preview for the
+// requisition selected in the grid: header info + lines with extended
+// cost/retail and a quantity total
+function reqPrintHtml(rows) {
+    var h = rows[0];
+    var auth = (h.RHAUTF === 'Y') ? esc(h.RHAUTB) : '!!!NOT AUTHORIZED!!!';
+    var head = '<h3>Requisition ' + esc(h['RHREQ#']) + '</h3>' +
+        '<div><b>Requestor:</b> ' + esc(h.RHNAME) + ' &nbsp; <b>Date:</b> ' + fmtDate(h.RHRQDT) +
+        ' &nbsp; <b>Area:</b> ' + esc(h.RHARCD) + ' - ' + esc(h.RHARTY) +
+        ' &nbsp; <b>Rush:</b> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') +
+        ' &nbsp; <b>Authorized by:</b> ' + auth + '</div>' +
+        (h.RHCMNT ? '<div><b>Comments:</b> ' + esc(h.RHCMNT) + '</div>' : '') + '<br>';
 
-    function subtotalRow() {
-        if (name === null) { return ''; }
-        return '<tr class="rpt-subtotal"><td colspan="4">Summary for ' + esc(name) + '</td>' +
-               '<td class="rq-num">' + sub.qty + '</td><td></td>' +
-               '<td class="rq-num">' + money(sub.cost) + '</td>' +
-               '<td class="rq-num">' + money(sub.retl) + '</td></tr>';
-    }
-
+    var qty = 0, extc = 0, extr = 0;
     var body = '';
     $.each(rows, function (i, r) {
-        if (r.RHNAME !== name) {
-            body += subtotalRow();
-            name = r.RHNAME;
-            sub = { qty: 0, cost: 0, retl: 0 };
-            body += '<tr class="rpt-group"><td colspan="8">' + esc(name) + '</td></tr>';
-        }
-        var qty = parseFloat(r.RDQTY) || 0;
-        var extc = qty * (parseFloat(r.RDCOST) || 0);
-        var extr = qty * (parseFloat(r.RDRETL) || 0);
-        sub.qty += qty; sub.cost += extc; sub.retl += extr;
-        grand.qty += qty; grand.cost += extc; grand.retl += extr;
-        body += '<tr>' +
-            '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td>' + esc(r.RDITEM) + '</td>' +
-            '<td>' + esc(r.RDCNDT) + '</td>' +
-            '<td>' + esc(r.RDDESC) + '</td>' +
-            '<td class="rq-num">' + qty + '</td>' +
-            '<td>' + esc(r.RHARTY) + '</td>' +
-            '<td class="rq-num">' + money(extc) + '</td>' +
-            '<td class="rq-num">' + money(extr) + '</td>' +
-            '</tr>';
+        if (r['RDLIN#'] == null) { return; }
+        var q = parseFloat(r.RDQTY) || 0;
+        var ec = q * (parseFloat(r.RDCOST) || 0);
+        var er = q * (parseFloat(r.RDRETL) || 0);
+        qty += q; extc += ec; extr += er;
+        body += '<tr><td>' + esc(r['RDLIN#']) + '</td><td>' + esc(r.RDITEM) + '</td>' +
+            '<td>' + esc(r.RDLOC) + '</td><td>' + esc(r.RDCNDT) + '</td>' +
+            '<td>' + esc(r.RDDESC) + '</td><td class="rq-num">' + q + '</td>' +
+            '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
+            '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
+            '<td class="rq-num">' + money(ec) + '</td>' +
+            '<td class="rq-num">' + money(er) + '</td>' +
+            '<td>' + esc(r.RDSKUT) + '</td>' +
+            '<td>' + (r.RDRTNF === 'Y' ? fmtDate(r.RDRTDT) : '') + '</td></tr>';
     });
-    body += subtotalRow();
-    body += '<tr class="rpt-grand"><td colspan="4">Grand total</td>' +
-            '<td class="rq-num">' + grand.qty + '</td><td></td>' +
-            '<td class="rq-num">' + money(grand.cost) + '</td>' +
-            '<td class="rq-num">' + money(grand.retl) + '</td></tr>';
+    body += '<tr class="rpt-grand"><td colspan="5">Total</td><td class="rq-num">' + qty + '</td>' +
+        '<td></td><td></td><td class="rq-num">' + money(extc) + '</td>' +
+        '<td class="rq-num">' + money(extr) + '</td><td></td><td></td></tr>';
 
-    printHtml('<h3>Total Outstanding Requisitions</h3>' +
-        '<div>Printed ' + new Date().toLocaleDateString('en-US',
-            { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</div><br>' +
-        '<table><thead><tr>' +
-        '<th>Date of Request</th><th>Item # Requested</th><th>Date of Coin</th>' +
-        '<th>Description of Material</th><th class="rq-num">Amount Requested</th>' +
-        '<th>Area Type</th><th class="rq-num">Total Cost</th><th class="rq-num">Total Retail</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table>',
-        'Total Outstanding Requisitions');
+    return head + '<table><thead><tr><th>Line</th><th>Item #</th><th>Location</th>' +
+        '<th>Coin Date</th><th>Description</th><th class="rq-num">Qty</th>' +
+        '<th class="rq-num">Cost</th><th class="rq-num">Retail</th>' +
+        '<th class="rq-num">Ext. Cost</th><th class="rq-num">Ext. Retail</th>' +
+        '<th>SKU To</th><th>Returned</th></tr></thead><tbody>' + body + '</tbody></table>';
+}
+
+function previewReport() {
+    if (!selectedReq) {
+        swal('Pick a requisition', 'Click a row in the grid first, then Preview Report.', 'info');
+        return;
+    }
+    postAjax({ action: 'get', reqNum: selectedReq }, function (resp) {
+        if (!resp.rows.length) {
+            swal('Not found', 'Requisition ' + selectedReq + ' was not found.', 'warning');
+            return;
+        }
+        printHtml(reqPrintHtml(resp.rows), 'Requisition ' + selectedReq);
+    });
 }
 
 // open a clean window with just the report and print it - the web version
@@ -875,13 +877,8 @@ function printHtml(innerHtml, title) {
 }
 
 function printRequisition() {
-    var html = '<h3>Requisition ' + esc($('#viewReqNum').text()) + '</h3>' +
-        '<div>' + $('#viewHead').html() + '</div><br>' +
-        '<table><thead><tr><th>Line</th><th>Item #</th><th>Location</th><th>Item Date</th>' +
-        '<th>Description</th><th class="rq-num">Qty</th><th class="rq-num">Cost $</th>' +
-        '<th class="rq-num">Retail $</th><th>SKU To</th><th>Returned</th></tr></thead><tbody>' +
-        $('#viewLineBody').html() + '</tbody></table>';
-    printHtml(html, 'Requisition ' + $('#viewReqNum').text());
+    if (!lastReqRows || !lastReqRows.length) { return; }
+    printHtml(reqPrintHtml(lastReqRows), 'Requisition ' + $('#viewReqNum').text());
 }
 
 function authorizeCurrent() {

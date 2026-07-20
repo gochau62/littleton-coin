@@ -38,8 +38,8 @@ CREATE OR REPLACE PROCEDURE REQSTN003S ()
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT H.RHREQ#, H.RHNAME, H.RHRQDT, H.RHRQTM,
                    H.RHARCD, H.RHARTY, H.RHRUSH, H.RHAUTF, H.RHAUTB,
-                   D.RDLIN#, D.RDITEM, D.RDCNDT, D.RDDESC, D.RDLOC,
-                   D.RDQTY, D.RDCOST, D.RDRETL, D.RDRTNF, D.RDRTDT
+                   D.RDLIN#, D.RDITEM, D.RDDESC, D.RDLOC,
+                   D.RDQTY, D.RDRTNF, D.RDRTDT
               FROM RQSREQHT H
               JOIN RQSREQDT D
                 ON D.RDREQ# = H.RHREQ#
