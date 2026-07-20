@@ -35,8 +35,10 @@ function dspRequisitions($user) {
 :root {
   /* LCC house palette - same greens as SellbriteBulkLoader */
   --rq-green-dk: #1C4532;   /* headings, header bar */
-  --rq-green:    #2e8b57;   /* primary buttons (house .btn-green) */
-  --rq-green-hv: #1e6e43;   /* button hover, accents */
+  --rq-green:    #2e8b57;   /* .btn-green actions (Authorize) */
+  --rq-green-hv: #1e6e43;   /* green hover, accents */
+  --rq-blue:     #007bff;   /* primary buttons (Sellbrite default .btn) */
+  --rq-blue-hv:  #0056b3;   /* primary hover */
   --rq-accent:   #eaf6ee;   /* light green fills */
   --rq-bg:       #f8f8f8;
   --rq-line:     #dfe6e1;
@@ -97,13 +99,19 @@ function dspRequisitions($user) {
   font-weight: 700;
   cursor: pointer;
 }
-.rq-btn:hover { border-color: var(--rq-green-hv); color: var(--rq-green-hv); }
+.rq-btn:hover { border-color: var(--rq-blue); color: var(--rq-blue); }   /* Sellbrite .btn-ghost hover */
 .rq-btn-primary {
+  background: var(--rq-blue);
+  border-color: var(--rq-blue);
+  color: #fff;
+}
+.rq-btn-primary:hover { background: var(--rq-blue-hv); border-color: var(--rq-blue-hv); color: #fff; }
+.rq-btn-green {
   background: var(--rq-green);
   border-color: var(--rq-green);
   color: #fff;
 }
-.rq-btn-primary:hover { background: var(--rq-green-hv); border-color: var(--rq-green-hv); color: #fff; }
+.rq-btn-green:hover { background: var(--rq-green-hv); border-color: var(--rq-green-hv); color: #fff; }
 .rq-btn-ghost { border-style: dashed; color: var(--rq-muted); margin: .5rem 0; }
 
 /* ---------- card + grid ---------- */
@@ -400,7 +408,7 @@ function dspRequisitions($user) {
           <label class="rq-comments">Comments
             <input type="text" id="authComments" maxlength="500">
           </label>
-          <button type="button" class="rq-btn rq-btn-primary" id="btnAuthorize">Authorize</button>
+          <button type="button" class="rq-btn rq-btn-green" id="btnAuthorize">Authorize</button>
         </div>
       </div>
     </div>
