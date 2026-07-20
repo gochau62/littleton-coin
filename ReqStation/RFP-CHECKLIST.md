@@ -37,10 +37,10 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 
 | Object | Description | Source |
 |---|---|---|
-| ReqStn_ctl.php | Controller (session sign-on, LCCONLINE check) | `Web/ReqStn_ctl.php` |
-| ReqStn_dsp.php | Display (grid + modals; styling and page JS inline, Sellbrite-style) | `Web/ReqStn_dsp.php` |
-| ReqStn_model.php | Model (CALL REQSTNnnnS only, bound params) | `Web/ReqStn_model.php` |
-| ReqStn_ajax.php | Ajax dispatcher (JSON) | `Web/ReqStn_ajax.php` |
+| Requisitions_ctl.php | Controller (session sign-on, LCCONLINE check) | `Web/Requisitions_ctl.php` |
+| Requisitions_dsp.php | Display function dspRequisitions(): grid + modals, styling and page JS inline | `Web/Requisitions_dsp.php` |
+| Requisitions_model.php | Model (rqs* functions, CALL REQSTNnnnS only) | `Web/Requisitions_model.php` |
+| Requisitions_ajax.php | Ajax dispatcher (JSON) | `Web/Requisitions_ajax.php` |
 
 ### Existing IFS files superseded (retire on cutover, do not delete during parallel run)
 

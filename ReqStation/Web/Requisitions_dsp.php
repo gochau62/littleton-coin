@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - ReqStn_dsp.php                   *  -->
+<!--  * Program Name - Requisitions_dsp.php                   *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - Requisition Station display.        *  -->
 <!--  *   Main grid (replaces Access frmMain), add-     *  -->
@@ -16,7 +16,17 @@
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 07/20/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
+
+function dspRequisitions($user) {
 ?>
 
 <style>
@@ -439,7 +449,7 @@ function startAutoRefresh() {
 }
 
 function postAjax(data, onOk) {
-    $.post('ReqStn_ajax.php', data, function (resp) {
+    $.post('Requisitions_ajax.php', data, function (resp) {
         if (resp && resp.ok) { onOk(resp); }
         else {
             swal('Error', (resp && resp.msg) ? resp.msg : 'Request failed.', 'error');
@@ -652,3 +662,5 @@ function authorizeCurrent() {
     });
 }
 </script>
+
+<?php } ?>

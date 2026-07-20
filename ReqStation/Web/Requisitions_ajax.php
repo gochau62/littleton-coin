@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - ReqStn_ajax.php                  *  -->
+<!--  * Program Name - Requisitions_ajax.php                  *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - Requisition Station ajax handler.   *  -->
 <!--  *   Maps action names to model calls and returns  *  -->
@@ -11,12 +11,20 @@
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 07/20/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 
 session_name(SESSION_NAME);
 session_start();
 
-include("ReqStn_model.php");
+include("Requisitions_model.php");
 
 $user = $_SESSION['username'];
 $password = $_SESSION['password'];
@@ -32,24 +40,24 @@ switch ($action) {
     // main grid rows (open requisitions)
     case 'list':
         echo json_encode(array("ok" => true,
-                               "rows" => getOpenRequisitions($conn)));
+                               "rows" => rqsGetOpen($conn)));
         break;
 
     // one requisition, header + lines
     case 'get':
         $reqNum = intval($_POST['reqNum']);
         echo json_encode(array("ok" => true,
-                               "rows" => getRequisition($conn, $reqNum)));
+                               "rows" => rqsGet($conn, $reqNum)));
         break;
 
     // dropdown data for the add-request form
     case 'lookups':
         echo json_encode(array(
             "ok"        => true,
-            "names"     => getLookupList($conn, "REQSTN007S"),
-            "areaCodes" => getLookupList($conn, "REQSTN008S"),
-            "areaTypes" => getLookupList($conn, "REQSTN009S"),
-            "authBy"    => getLookupList($conn, "REQSTN010S")));
+            "names"     => rqsLookup($conn, "REQSTN007S"),
+            "areaCodes" => rqsLookup($conn, "REQSTN008S"),
+            "areaTypes" => rqsLookup($conn, "REQSTN009S"),
+            "authBy"    => rqsLookup($conn, "REQSTN010S")));
         break;
 
     // insert a requisition: header fields + JSON array of lines
@@ -62,7 +70,7 @@ switch ($action) {
         }
 
         $badge = substr($payload['reqName'], 0, 10);
-        $reqNum = insertRequisitionHeader($conn,
+        $reqNum = rqsInsertHeader($conn,
                       $payload['reqName'],
                       $payload['areaCode'],
                       $payload['areaType'],
@@ -74,7 +82,7 @@ switch ($action) {
         foreach ($payload['lines'] as $line) {
             if (trim($line['item']) == '') { continue; }
             $lineNum++;
-            insertRequisitionLine($conn, $reqNum, $lineNum,
+            rqsInsertLine($conn, $reqNum, $lineNum,
                 $line['item'], $line['loc'], $line['coinDate'],
                 $line['desc'],
                 floatval($line['qty']),
@@ -92,7 +100,7 @@ switch ($action) {
     // authorize a requisition
     case 'authorize':
         $reqNum = intval($_POST['reqNum']);
-        authorizeRequisition($conn, $reqNum,
+        rqsAuthorize($conn, $reqNum,
                              $_POST['authBy'], $_POST['comments']);
         echo json_encode(array("ok" => true));
         break;
@@ -102,7 +110,7 @@ switch ($action) {
         $reqNum = intval($_POST['reqNum']);
         $lineNum = intval($_POST['lineNum']);
         $flag = ($_POST['flag'] == 'Y' ? 'Y' : 'N');
-        setLineReturned($conn, $reqNum, $lineNum, $flag);
+        rqsSetReturned($conn, $reqNum, $lineNum, $flag);
         echo json_encode(array("ok" => true));
         break;
 

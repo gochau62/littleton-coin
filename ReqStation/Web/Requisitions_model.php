@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - ReqStn_model.php                 *  -->
+<!--  * Program Name - Requisitions_model.php                 *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - Requisition Station model. All      *  -->
 <!--  *   database access goes through the REQSTNnnnS   *  -->
@@ -12,17 +12,25 @@
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 07/20/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 
 
 // PROGRAM NAME: REQSTN003S
 // - List open requisitions for the main grid (returned = 'N')
-function getOpenRequisitions($conn) {
+function rqsGetOpen($conn) {
     $result = array();
     $sql = "CALL REQSTN003S()";
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("getOpenRequisitions prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsGetOpen prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     if (db2_execute($stmt)) {
@@ -30,7 +38,7 @@ function getOpenRequisitions($conn) {
             $result[] = $row;
         }
     } else {
-        die("getOpenRequisitions execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsGetOpen execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 
@@ -39,12 +47,12 @@ function getOpenRequisitions($conn) {
 
 // PROGRAM NAME: REQSTN004S
 // - Get one requisition: header + all detail lines
-function getRequisition($conn, $reqNum) {
+function rqsGet($conn, $reqNum) {
     $result = array();
     $sql = "CALL REQSTN004S(?)";
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("getRequisition prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsGet prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
@@ -54,7 +62,7 @@ function getRequisition($conn, $reqNum) {
             $result[] = $row;
         }
     } else {
-        die("getRequisition execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsGet execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 
@@ -63,13 +71,13 @@ function getRequisition($conn, $reqNum) {
 
 // PROGRAM NAME: REQSTN001S
 // - Insert requisition header, returns the new requisition number
-function insertRequisitionHeader($conn, $reqName, $areaCode, $areaType,
+function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
                                  $rush, $badge, $comments) {
     $sql = "CALL REQSTN001S(?, ?, ?, ?, ?, ?, ?)";
     $newReq = 0;
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("insertRequisitionHeader prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsInsertHeader prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     db2_bind_param($stmt, 1, "reqName", DB2_PARAM_IN);
@@ -81,7 +89,7 @@ function insertRequisitionHeader($conn, $reqName, $areaCode, $areaType,
     db2_bind_param($stmt, 7, "newReq", DB2_PARAM_OUT);
 
     if (!db2_execute($stmt)) {
-        die("insertRequisitionHeader execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsInsertHeader execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 
@@ -90,12 +98,12 @@ function insertRequisitionHeader($conn, $reqName, $areaCode, $areaType,
 
 // PROGRAM NAME: REQSTN002S
 // - Insert one requisition detail line
-function insertRequisitionLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
+function rqsInsertLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
                                $desc, $qty, $cost, $retail, $addCost, $badge, $skuTo) {
     $sql = "CALL REQSTN002S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("insertRequisitionLine prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsInsertLine prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
@@ -112,7 +120,7 @@ function insertRequisitionLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
     db2_bind_param($stmt, 12, "skuTo", DB2_PARAM_IN);
 
     if (!$result = db2_execute($stmt)) {
-        die("insertRequisitionLine execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsInsertLine execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 
@@ -121,11 +129,11 @@ function insertRequisitionLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
 
 // PROGRAM NAME: REQSTN005S
 // - Authorize a requisition
-function authorizeRequisition($conn, $reqNum, $authBy, $comments) {
+function rqsAuthorize($conn, $reqNum, $authBy, $comments) {
     $sql = "CALL REQSTN005S(?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("authorizeRequisition prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsAuthorize prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
@@ -133,7 +141,7 @@ function authorizeRequisition($conn, $reqNum, $authBy, $comments) {
     db2_bind_param($stmt, 3, "comments", DB2_PARAM_IN);
 
     if (!$result = db2_execute($stmt)) {
-        die("authorizeRequisition execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsAuthorize execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 
@@ -142,11 +150,11 @@ function authorizeRequisition($conn, $reqNum, $authBy, $comments) {
 
 // PROGRAM NAME: REQSTN006S
 // - Mark or unmark a requisition line returned
-function setLineReturned($conn, $reqNum, $lineNum, $flag) {
+function rqsSetReturned($conn, $reqNum, $lineNum, $flag) {
     $sql = "CALL REQSTN006S(?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("setLineReturned prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsSetReturned prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
@@ -154,7 +162,7 @@ function setLineReturned($conn, $reqNum, $lineNum, $flag) {
     db2_bind_param($stmt, 3, "flag", DB2_PARAM_IN);
 
     if (!$result = db2_execute($stmt)) {
-        die("setLineReturned execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsSetReturned execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 
@@ -163,17 +171,17 @@ function setLineReturned($conn, $reqNum, $lineNum, $flag) {
 
 // PROGRAM NAMES: REQSTN007S / 008S / 009S / 010S
 // - Combo lookups: requisitioner names, area codes, area types, authorizers
-function getLookupList($conn, $proc) {
+function rqsLookup($conn, $proc) {
     $allowed = array("REQSTN007S", "REQSTN008S", "REQSTN009S", "REQSTN010S");
     if (!in_array($proc, $allowed)) {
-        die("getLookupList error: procedure not allowed");
+        die("rqsLookup error: procedure not allowed");
     }
 
     $result = array();
     $sql = "CALL " . $proc . "()";
 
     $stmt = db2_prepare($conn, $sql)
-    or die ("getLookupList prepare error: " . db2_stmt_error() . "<br/>" .
+    or die ("rqsLookup prepare error: " . db2_stmt_error() . "<br/>" .
         "Error Msg: " . db2_stmt_errormsg() . "<br/>");
 
     if (db2_execute($stmt)) {
@@ -181,7 +189,7 @@ function getLookupList($conn, $proc) {
             $result[] = $row;
         }
     } else {
-        die("getLookupList execute error: " . db2_stmt_error() . "<br/>" .
+        die("rqsLookup execute error: " . db2_stmt_error() . "<br/>" .
             "Error Msg: " . db2_stmt_errormsg() . "<br/>");
     }
 

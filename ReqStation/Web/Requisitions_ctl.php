@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - ReqStn_ctl.php                   *  -->
+<!--  * Program Name - Requisitions_ctl.php                   *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - Requisition Station controller.     *  -->
 <!--  *   Web replacement for the Access frmMain grid   *  -->
@@ -13,6 +13,14 @@
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 07/20/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 
 session_name(SESSION_NAME);
@@ -30,7 +38,8 @@ if (chkAutUsr($conn, $user, "LCCONLINE", 50)) {
     include("StartBlockHead.php");
     include("StartBlockBody.php");
 
-    include("ReqStn_dsp.php");
+    include("Requisitions_dsp.php");
+    dspRequisitions($user);
 
 } else {
     showNotAuthorized();
