@@ -1,13 +1,13 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - Requisitions_ctl.php                   *  -->
+<!--  * Program Name - Requisitions_ctl.php             *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - Requisition Station controller.     *  -->
 <!--  *   Web replacement for the Access frmMain grid   *  -->
 <!--  *   and the legacy request.php entry page.        *  -->
-<!--  *   Follows the InvPrt / AIS controller pattern:  *  -->
-<!--  *   session sign-on, authority check, then the    *  -->
-<!--  *   display include.                               *  -->
+<!--  *   Bootstraps exactly like SellbriteBulkLoader:  *  -->
+<!--  *   StartBlockScriptA/B, guarded authority check, *  -->
+<!--  *   then the display function.                    *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -22,37 +22,51 @@
 <!--  *                                                 *  -->
 <!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
+?>
 
-session_name(SESSION_NAME);
-session_start();
+<?php
+    // retrieves and sets password and username
+    if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
+    $user     = $_SESSION['username'] ?? '';
+    $password = $_SESSION['password'] ?? '';
+?>
 
-$user = $_SESSION['username'];
-$password = $_SESSION['password'];
+<!-- includes css and javascript libraries (local copies, same as the other LCC tools) -->
+<script type='text/javascript' src='jQuery/jquery.js'></script>
+<script type='text/javascript' src='swal/sweetalert-dev.js'></script>
+<script type='text/javascript' src='swal/sweetalert.min.js'></script>
+<link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
 
-$conn = getDB2PConn();
+    document.title = "Requisition Station";
 
-// LCCONLINE authority check - same gate the other web apps use.
-// Confirm the required authority level number with IT before promotion.
-if (chkAutUsr($conn, $user, "LCCONLINE", 50)) {
+    /* ---- message helpers (LCC convention) ---- */
+    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+</script>
 
-    include("StartBlockHead.php");
-    // local library copies, same as the other LCC tools (SellbriteBulkLoader_ctl).
-    // If this app deploys in a subfolder (e.g. /requisitions/), point these at
-    // ../jQuery/ and ../swal/ or wherever the shared copies live on that instance.
-    print '
-    <script type="text/javascript" src="jQuery/jquery.js"></script>
-    <script type="text/javascript" src="swal/sweetalert-dev.js"></script>
-    <script type="text/javascript" src="swal/sweetalert.min.js"></script>
-    <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
-    <script type="text/javascript">document.title = "Requisition Station";</script>';
-    include("StartBlockBody.php");
+<div id="errorMsg" style="display:none; padding:1rem; color:#b02a37; font-weight:bold;"></div>
 
-    include("Requisitions_dsp.php");
-    dspRequisitions($user);
+<?php
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-} else {
-    showNotAuthorized();
+//***--- Check users authority (10 is the minimum to use LCCOnline) ---***
+$authorized = "yes";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    $authConn   = getDB2PConn($user, $password);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
 }
 
-include("EndBlock.php");
+if ($authorized != "yes") {
+    echo '<script>showNotAuthorized();</script>';
+} else {
+
+    include "Requisitions_dsp.php";
+    dspRequisitions($user);
+?>
+<!--  End Content Here -->
+<?php
+} // end authority check
+
+if (file_exists('EndBlock.php')) { include "EndBlock.php"; }
 ?>

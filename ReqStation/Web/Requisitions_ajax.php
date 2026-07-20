@@ -21,19 +21,33 @@
 <!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 
-session_name(SESSION_NAME);
-session_start();
+// AJAX endpoint - buffer from byte 0 so stray include output can't corrupt the JSON
+ob_start();
+foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
+    if (file_exists($f)) { require_once $f; }
+}
 
-include("Requisitions_model.php");
+if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
-$user = $_SESSION['username'];
-$password = $_SESSION['password'];
+$user     = $_SESSION['username'] ?? '';
+$password = $_SESSION['password'] ?? '';
 
-$conn = getDB2PConn();
+require_once __DIR__ . '/Requisitions_model.php';
 
+$conn = null;
+if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
+
+while (ob_get_level() > 0) { ob_end_clean(); }
 header('Content-Type: application/json');
 
-$action = isset($_POST['action']) ? $_POST['action'] : '';
+if (!$conn) {
+    echo json_encode(array("ok" => false,
+                           "msg" => "No database connection - sign in to LCC Online first."));
+    exit;
+}
+
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
 
