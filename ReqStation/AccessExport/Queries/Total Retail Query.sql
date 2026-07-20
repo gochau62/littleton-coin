@@ -1,2 +1,0 @@
--- Query: Total Retail Query
-SELECT ReqMaterial.req_num,ReqMaterial.req_name,ReqMaterial.req_date,ReqMaterialDetails.item_num,ReqMaterialDetails.coin_date,ReqMaterialDetails.description,ReqMaterialDetails.quantity,([quantity]*[retail]),ReqMaterial.area_type,ReqMaterialDetails.cost,([quantity]*[cost]),ReqMaterialDetails.returned,ReqMaterialDetails.date_returned,ReqMaterialDetails.retail,ReqMaterial.comments,[quantity]*[cost],[quantity]*[retail],ReqMaterialDetails.sku_to FROM [ReqMaterial],[ReqMaterialDetails] WHERE (((ReqMaterialDetails.returned)=0)) 

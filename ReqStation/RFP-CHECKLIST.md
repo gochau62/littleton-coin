@@ -46,24 +46,26 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 ### Existing IFS files superseded (retire on cutover, do not delete during parallel run)
 
 `request.php`, `getEntry.php`, `getIdInfo.php`, `getInsert.php`,
-`getUpdate.php`, `RQUtils/*` — reference copies in `LegacyPHP/`.
+`getUpdate.php`, `RQUtils/*` — reference copies preserved in this
+branch's git history (along with the full Access extraction: VBA,
+queries, schemas, and data CSVs).
 
 ## 2. Build sequence in dev
 
 1. `RUNSQLSTM` each `.TABLE` member into `LSCDEVLIBP` (order: RQSREQHT,
    RQSREQDT, then the lookups, then RQSREQHV).
 2. `RUNSQLSTM` the ten `.PROC` members.
-3. Load the lookup tables: area codes/types and requisitioner names exist in
-   `AccessExport/Data/*.csv`; the authoritative copies come from the MySQL
-   `ReqMaterial_*` objects once the dump arrives.
+3. Load the lookup tables from the MySQL `ReqMaterial_*` objects once the
+   dump arrives (the old Access copies sit in git history for cross-checks).
 4. Load history from the MySQL dump: `ReqMaterial` → RQSREQHT (dates →
    DECIMAL(8,0) yyyymmdd, `rush`/`authorized` → Y/N), `ReqMaterialDetails` →
    RQSREQDT (assign RDLIN# 1..n per req_num in insert order). One-off PHP
    loader per the ImportOrderFile pattern.
 5. Restart the identity after the load:
    `ALTER TABLE RQSREQHT ALTER COLUMN RHREQ# RESTART WITH <MAX(RHREQ#)+1>`.
-6. Validate against MIGRATION-PLAN Phase 3: row counts, SUM(qty),
-   count-by-month, returned counts — MySQL vs Db2.
+6. Validate MySQL vs Db2 before cutover: row counts per table, SUM(qty),
+   count-by-month of req_date, returned-line counts — same query both
+   sides, results recorded with the RFP.
 7. Copy the `Web/` files to `/www/seidendev/htdocs/requisitions/`, wire the
    standard includes (`StartBlockHead.php`, `getDB2PConn`, `chkAutUsr` —
    confirm the LCCONLINE authority level number), and test end-to-end.
@@ -87,7 +89,17 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
    decide during data load whether to backfill real badges.
 6. `authorized` flag is `Y`/`N` CHAR(1) instead of MySQL `1`/`0`.
 
-## 5. Still open before promotion to prod
+## 5. Security actions from the legacy audit (do these regardless)
+
+1. **Rotate the AS400 `PICKAUTO` password** — it is hard-coded in plain text
+   in the VBA of every deployed Requisitions.mdb station copy (dead code,
+   but it ships everywhere).
+2. **Rotate the MySQL `lcc` user's password** — embedded in the `.mdb`
+   linked-table connect string.
+3. **Never commit the raw `.mdb` files to git** — they contain both
+   credentials.
+
+## 6. Still open before promotion to prod
 
 1. **mysqldump of `lcc`** — needed for the history load and to confirm
    column widths/types guessed from the legacy PHP (marked in the DDL).
