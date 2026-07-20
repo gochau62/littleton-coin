@@ -36,6 +36,15 @@ $conn = getDB2PConn();
 if (chkAutUsr($conn, $user, "LCCONLINE", 50)) {
 
     include("StartBlockHead.php");
+    // local library copies, same as the other LCC tools (SellbriteBulkLoader_ctl).
+    // If this app deploys in a subfolder (e.g. /requisitions/), point these at
+    // ../jQuery/ and ../swal/ or wherever the shared copies live on that instance.
+    print '
+    <script type="text/javascript" src="jQuery/jquery.js"></script>
+    <script type="text/javascript" src="swal/sweetalert-dev.js"></script>
+    <script type="text/javascript" src="swal/sweetalert.min.js"></script>
+    <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript">document.title = "Requisition Station";</script>';
     include("StartBlockBody.php");
 
     include("Requisitions_dsp.php");
