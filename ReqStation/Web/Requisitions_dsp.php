@@ -253,6 +253,13 @@ function dspRequisitions($user) {
 .rq-authrow label { display: flex; flex-direction: column; gap: .25rem;
                     font-size: .82rem; color: var(--rq-muted); }
 .rq-authrow .rq-comments { flex: 1; margin-top: 0; }
+
+/* ---------- monthly report ---------- */
+.rpt-title { margin: 0 0 .75rem 0; color: var(--rq-navy); }
+.rpt-table .rpt-group td { font-weight: 700; background: #eef1f6; }
+.rpt-table .rpt-subtotal td, .rpt-table .rpt-grand td { font-weight: 700; background: #fafbfd; }
+#rptMonth { padding: .35rem .5rem; border: 1px solid var(--rq-line); border-radius: 6px; }
+.rq-modal-head .rq-btn { margin-right: .4rem; }
 </style>
 
 <div class="rq-app">
@@ -268,6 +275,7 @@ function dspRequisitions($user) {
   <div class="rq-toolbar">
     <button type="button" class="rq-btn rq-btn-primary" id="btnAdd">+ Add Requisition</button>
     <button type="button" class="rq-btn" id="btnRefresh">&#8635; Refresh</button>
+    <button type="button" class="rq-btn" id="btnMonthly">Monthly Report</button>
     <label class="rq-auto">
       <input type="checkbox" id="chkAutoRefresh" checked> Auto-refresh
     </label>
@@ -356,7 +364,10 @@ function dspRequisitions($user) {
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
         <h2>Requisition <span id="viewReqNum"></span></h2>
-        <button type="button" class="rq-x" data-close="mdlView">&times;</button>
+        <div>
+          <button type="button" class="rq-btn" id="btnPrintReq">&#128424; Print</button>
+          <button type="button" class="rq-x" data-close="mdlView">&times;</button>
+        </div>
       </div>
 
       <div class="rq-modal-body">
@@ -389,6 +400,24 @@ function dspRequisitions($user) {
     </div>
   </div>
 
+  <!-- === Monthly Report modal (replaces "Requested Material Summary") === -->
+  <div class="rq-overlay" id="mdlReport" hidden>
+    <div class="rq-modal rq-modal-wide">
+      <div class="rq-modal-head">
+        <h2>Monthly Update: Requisitioned Product</h2>
+        <div>
+          <input type="month" id="rptMonth">
+          <button type="button" class="rq-btn" id="btnRunReport">Run</button>
+          <button type="button" class="rq-btn rq-btn-primary" id="btnPrintReport">&#128424; Print</button>
+          <button type="button" class="rq-x" data-close="mdlReport">&times;</button>
+        </div>
+      </div>
+      <div class="rq-modal-body" id="rptBody">
+        <div class="rq-empty">Pick a month and press Run.</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -414,6 +443,15 @@ $(document).ready(function () {
     $('#btnAddLine').on('click', addLineRow);
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnAuthorize').on('click', authorizeCurrent);
+
+    // reports - Monthly Report button (Requested Material Summary) and the
+    // per-requisition Print (rptRequest "Preview Report")
+    $('#btnMonthly').on('click', openMonthlyReport);
+    $('#btnRunReport').on('click', runMonthlyReport);
+    $('#btnPrintReport').on('click', function () {
+        printHtml($('#rptBody').html(), 'Monthly Update: Requisitioned Product');
+    });
+    $('#btnPrintReq').on('click', printRequisition);
 
     // close buttons for both modals
     $('[data-close]').on('click', function () {
@@ -657,6 +695,115 @@ function openViewModal(reqNum) {
         $('#authRow').toggle(h.RHAUTF !== 'Y');
         $('#mdlView').data('req', h['RHREQ#']).prop('hidden', false);
     });
+}
+
+/* ---------------------- reports ---------------------- */
+
+function money(n) {
+    n = parseFloat(n) || 0;
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function openMonthlyReport() {
+    var d = new Date();
+    var m = d.getMonth() + 1;
+    $('#rptMonth').val(d.getFullYear() + '-' + (m < 10 ? '0' + m : m));
+    $('#rptBody').html('<div class="rq-empty">Pick a month and press Run.</div>');
+    $('#mdlReport').prop('hidden', false);
+}
+
+function runMonthlyReport() {
+    var ym = $('#rptMonth').val();                       // "2026-07"
+    if (!ym) { swal('Pick a month', '', 'warning'); return; }
+    postAjax({ action: 'monthly', yyyymm: parseInt(ym.replace('-', ''), 10) },
+             function (resp) { renderMonthlyReport(resp.rows, ym); });
+}
+
+function renderMonthlyReport(rows, ym) {
+    if (!rows.length) {
+        $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(ym) + '.</div>');
+        return;
+    }
+    var name = null, sub = null;
+    var grand = { qty: 0, extc: 0, extr: 0, lines: 0 };
+
+    function subtotalRow() {
+        if (name === null) { return ''; }
+        return '<tr class="rpt-subtotal"><td colspan="4">Summary for ' + esc(name) +
+               ' (' + sub.lines + ' detail record' + (sub.lines === 1 ? '' : 's') + ')</td>' +
+               '<td class="rq-num">' + sub.qty + '</td><td></td><td></td>' +
+               '<td class="rq-num">' + money(sub.extc) + '</td>' +
+               '<td class="rq-num">' + money(sub.extr) + '</td><td></td></tr>';
+    }
+
+    var body = '';
+    $.each(rows, function (i, r) {
+        if (r.RHNAME !== name) {
+            body += subtotalRow();
+            name = r.RHNAME;
+            sub = { qty: 0, extc: 0, extr: 0, lines: 0 };
+            body += '<tr class="rpt-group"><td colspan="10">' + esc(name) + '</td></tr>';
+        }
+        var qty = parseFloat(r.RDQTY) || 0;
+        var extc = parseFloat(r.RDEXTC) || 0;
+        var extr = parseFloat(r.RDEXTR) || 0;
+        sub.qty += qty; sub.extc += extc; sub.extr += extr; sub.lines++;
+        grand.qty += qty; grand.extc += extc; grand.extr += extr; grand.lines++;
+        body += '<tr>' +
+            '<td>' + fmtDate(r.RHRQDT) + '</td>' +
+            '<td>' + esc(r.RDITEM) + '</td>' +
+            '<td>' + esc(r.RDCNDT) + '</td>' +
+            '<td>' + esc(r.RDDESC) + '</td>' +
+            '<td class="rq-num">' + qty + '</td>' +
+            '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
+            '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
+            '<td class="rq-num">' + money(extc) + '</td>' +
+            '<td class="rq-num">' + money(extr) + '</td>' +
+            '<td>' + esc(r.RDSKUT) + '</td>' +
+            '</tr>';
+    });
+    body += subtotalRow();
+    body += '<tr class="rpt-grand"><td colspan="4">Grand total (' + grand.lines + ' detail records)</td>' +
+            '<td class="rq-num">' + grand.qty + '</td><td></td><td></td>' +
+            '<td class="rq-num">' + money(grand.extc) + '</td>' +
+            '<td class="rq-num">' + money(grand.extr) + '</td><td></td></tr>';
+
+    $('#rptBody').html(
+        '<h3 class="rpt-title">Monthly Update: Requisitioned Product &mdash; ' + esc(ym) + '</h3>' +
+        '<div class="rq-tablewrap"><table class="rq-grid rpt-table"><thead><tr>' +
+        '<th>Req. Date</th><th>Item #</th><th>Coin Date</th><th>Description</th>' +
+        '<th class="rq-num">Qty</th><th class="rq-num">Cost</th><th class="rq-num">Retail</th>' +
+        '<th class="rq-num">Ext. Cost</th><th class="rq-num">Ext. Retail</th><th>SKU To</th>' +
+        '</tr></thead><tbody>' + body + '</tbody></table></div>');
+}
+
+// open a clean window with just the report and print it - the web version
+// of Access's separate report preview window
+function printHtml(innerHtml, title) {
+    var w = window.open('', '_blank');
+    w.document.write('<html><head><title>' + title + '</title><style>' +
+        'body{font-family:Arial,sans-serif;font-size:11px;margin:24px;}' +
+        'h3{margin:0 0 12px 0;}table{width:100%;border-collapse:collapse;}' +
+        'th,td{border-bottom:1px solid #999;padding:3px 6px;text-align:left;}' +
+        '.rq-num{text-align:right;}' +
+        '.rpt-group td{font-weight:bold;border-bottom:2px solid #333;padding-top:10px;}' +
+        '.rpt-subtotal td,.rpt-grand td{font-weight:bold;}' +
+        '.rpt-grand td{border-top:2px solid #333;}' +
+        '.rq-pill{font-weight:bold;}' +
+        '</style></head><body>' + innerHtml + '</body></html>');
+    w.document.close();
+    w.focus();
+    w.print();
+}
+
+function printRequisition() {
+    var html = '<h3>Requisition ' + esc($('#viewReqNum').text()) + '</h3>' +
+        '<div>' + $('#viewHead').html() + '</div><br>' +
+        '<table><thead><tr><th>Line</th><th>Item #</th><th>Location</th><th>Item Date</th>' +
+        '<th>Description</th><th class="rq-num">Qty</th><th class="rq-num">Cost $</th>' +
+        '<th class="rq-num">Retail $</th><th>SKU To</th><th>Returned</th></tr></thead><tbody>' +
+        $('#viewLineBody').html() + '</tbody></table>';
+    printHtml(html, 'Requisition ' + $('#viewReqNum').text());
 }
 
 function authorizeCurrent() {

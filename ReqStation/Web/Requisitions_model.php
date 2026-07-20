@@ -169,6 +169,30 @@ function rqsSetReturned($conn, $reqNum, $lineNum, $flag) {
     return $result;
 }
 
+// PROGRAM NAME: REQSTN011S
+// - Monthly Requisitioned Product summary (yyyymm in, lines w/extended $)
+function rqsMonthly($conn, $yyyymm) {
+    $result = array();
+    $sql = "CALL REQSTN011S(?)";
+
+    $stmt = db2_prepare($conn, $sql)
+    or die ("rqsMonthly prepare error: " . db2_stmt_error() . "<br/>" .
+        "Error Msg: " . db2_stmt_errormsg() . "<br/>");
+
+    db2_bind_param($stmt, 1, "yyyymm", DB2_PARAM_IN);
+
+    if (db2_execute($stmt)) {
+        while ($row = db2_fetch_assoc($stmt)) {
+            $result[] = $row;
+        }
+    } else {
+        die("rqsMonthly execute error: " . db2_stmt_error() . "<br/>" .
+            "Error Msg: " . db2_stmt_errormsg() . "<br/>");
+    }
+
+    return $result;
+}
+
 // PROGRAM NAMES: REQSTN007S / 008S / 009S / 010S
 // - Combo lookups: requisitioner names, area codes, area types, authorizers
 function rqsLookup($conn, $proc) {

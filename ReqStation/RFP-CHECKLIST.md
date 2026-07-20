@@ -32,6 +32,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | REQSTN008S | List area codes | `Db2/REQSTN008S.PROC` |
 | REQSTN009S | List area types | `Db2/REQSTN009S.PROC` |
 | REQSTN010S | List authorizers | `Db2/REQSTN010S.PROC` |
+| REQSTN011S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN011S.PROC` |
 
 ### IFS — `*IFS` (MD attribute `PHPSRC`), dev path `/www/seidendev/htdocs/requisitions/`
 
@@ -41,16 +42,20 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | Requisitions_dsp.php | Display function dspRequisitions(): grid + modals, styling and page JS inline | `Web/Requisitions_dsp.php` |
 | Requisitions_model.php | Model (rqs* functions, CALL REQSTNnnnS only) | `Web/Requisitions_model.php` |
 | Requisitions_ajax.php | Ajax dispatcher (JSON) | `Web/Requisitions_ajax.php` |
+| ReqAppTarget.php | ONE-LINE config: absolute URL of the new app — the only edit at go-live | `Web/ReqAppTarget.php` |
 | request.php | Legacy URL shim → ?id=N opens that req, else entry form (bookmarks + Access stations) | `Web/request.php` |
 | getEntry.php | Legacy URL shim → entry form | `Web/getEntry.php` |
 | getInsert.php | Legacy URL shim → entry form | `Web/getInsert.php` |
 | getIdInfo.php | Legacy URL shim → req view / grid | `Web/getIdInfo.php` |
 | getUpdate.php | Legacy URL shim → req view / grid | `Web/getUpdate.php` |
 
-The five shims are `*IFS` **updates** to the existing production files —
-deploy them at cutover (not before: they replace the live legacy app in
-place). Old bookmarks then land in the new app automatically; `RQUtils/`
-becomes unused once they're in.
+The five shims are `*IFS` **updates** to the existing production files in
+`/www/.../requisitions/` on the 10088 instance — deploy them (plus
+ReqAppTarget.php alongside) at cutover, not before: they replace the live
+legacy app in place. Every saved workfloor/inventory-handler bookmark and
+every Access station's Add Requests button then lands in the new app
+automatically; `RQUtils/` becomes unused once they're in. Where they
+point is one line in `ReqAppTarget.php`.
 
 ### Legacy originals
 
@@ -82,9 +87,10 @@ history if a behavior question ever comes up.
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 17 Db2 objects and 9 IFS files above (level 10, same as
-   Sellbrite). The 4 Requisitions_* files are new; the 5 shims are
-   updates to existing IFS objects, deployed at cutover. Status flows 01-Assigned → Created → promotion like any RFP.
+2. Assign the 18 Db2 objects and 10 IFS files above (level 10, same as
+   Sellbrite). The 4 Requisitions_* files are new; the 5 shims +
+   ReqAppTarget.php are updates/additions to the legacy
+   `/requisitions/` folder, deployed at cutover. Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
 
@@ -123,7 +129,13 @@ history if a behavior question ever comes up.
 
 1. The `activity`/`station`/`applications` logging: dies with the .mdb, or
    gets a Db2 equivalent (decide before cutover).
-2. Monthly report page (Access "Requested Material Summary") — next RFP
-   increment; the RQSREQHV view is already in place for it or for PHP Query.
-3. Exact MD attributes for views/procs per shop standard, and the LCCONLINE
+2. Exact MD attributes for views/procs per shop standard, and the LCCONLINE
    authority level number for `chkAutUsr`.
+3. Web-profile authority to LSCDEVLIBP (the dev log already shows
+   SQLCODE -551 against it for Sellbrite) — GRTOBJAUT before testing procs.
+4. At go-live: set the production URL in ReqAppTarget.php (one line).
+
+Reports are done: Monthly Report button = "Monthly Update: Requisitioned
+Product" (REQSTN011S, grouped by requisitioner with Ext. Cost/Ext. Retail
+subtotals, printable); the Print button in the requisition view = the old
+rptRequest "Preview Report".

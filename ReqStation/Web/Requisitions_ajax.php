@@ -111,6 +111,13 @@ switch ($action) {
                                "lines" => $lineNum));
         break;
 
+    // monthly report rows (yyyymm)
+    case 'monthly':
+        $yyyymm = intval($_POST['yyyymm']);
+        echo json_encode(array("ok" => true,
+                               "rows" => rqsMonthly($conn, $yyyymm)));
+        break;
+
     // authorize a requisition
     case 'authorize':
         $reqNum = intval($_POST['reqNum']);
