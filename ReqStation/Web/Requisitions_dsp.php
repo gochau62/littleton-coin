@@ -290,6 +290,7 @@ function dspRequisitions($user) {
     <button type="button" class="rq-btn rq-btn-primary" id="btnAdd">+ Add Requisition</button>
     <button type="button" class="rq-btn" id="btnRefresh">&#8635; Refresh</button>
     <button type="button" class="rq-btn" id="btnMonthly">Monthly Report</button>
+    <button type="button" class="rq-btn" id="btnOutstanding">Print Outstanding</button>
     <label class="rq-auto">
       <input type="checkbox" id="chkAutoRefresh" checked> Auto-refresh
     </label>
@@ -461,6 +462,7 @@ $(document).ready(function () {
     // reports - Monthly Report button (Requested Material Summary) and the
     // per-requisition Print (rptRequest "Preview Report")
     $('#btnMonthly').on('click', openMonthlyReport);
+    $('#btnOutstanding').on('click', printOutstanding);
     $('#btnRunReport').on('click', runMonthlyReport);
     $('#btnPrintReport').on('click', function () {
         printHtml($('#rptBody').html(), 'Monthly Update: Requisitioned Product');
@@ -788,6 +790,69 @@ function renderMonthlyReport(rows, ym) {
         '<th class="rq-num">Qty</th><th class="rq-num">Cost</th><th class="rq-num">Retail</th>' +
         '<th class="rq-num">Ext. Cost</th><th class="rq-num">Ext. Retail</th><th>SKU To</th>' +
         '</tr></thead><tbody>' + body + '</tbody></table></div>');
+}
+
+// "Total Outstanding Requisitions" - the Access report of the same name:
+// every open line grouped by requisitioner, Sum(Quantity)/Sum(Total Retail)
+// group footers, long-date print stamp
+function printOutstanding() {
+    if (!gridRows.length) {
+        swal('Nothing outstanding', 'There are no open requisition lines to print.', 'info');
+        return;
+    }
+    var rows = gridRows.slice().sort(function (a, b) {
+        return (a.RHNAME + a.RHRQDT).localeCompare(b.RHNAME + b.RHRQDT);
+    });
+    var name = null, sub = null;
+    var grand = { qty: 0, cost: 0, retl: 0 };
+
+    function subtotalRow() {
+        if (name === null) { return ''; }
+        return '<tr class="rpt-subtotal"><td colspan="4">Summary for ' + esc(name) + '</td>' +
+               '<td class="rq-num">' + sub.qty + '</td><td></td>' +
+               '<td class="rq-num">' + money(sub.cost) + '</td>' +
+               '<td class="rq-num">' + money(sub.retl) + '</td></tr>';
+    }
+
+    var body = '';
+    $.each(rows, function (i, r) {
+        if (r.RHNAME !== name) {
+            body += subtotalRow();
+            name = r.RHNAME;
+            sub = { qty: 0, cost: 0, retl: 0 };
+            body += '<tr class="rpt-group"><td colspan="8">' + esc(name) + '</td></tr>';
+        }
+        var qty = parseFloat(r.RDQTY) || 0;
+        var extc = qty * (parseFloat(r.RDCOST) || 0);
+        var extr = qty * (parseFloat(r.RDRETL) || 0);
+        sub.qty += qty; sub.cost += extc; sub.retl += extr;
+        grand.qty += qty; grand.cost += extc; grand.retl += extr;
+        body += '<tr>' +
+            '<td>' + fmtDate(r.RHRQDT) + '</td>' +
+            '<td>' + esc(r.RDITEM) + '</td>' +
+            '<td>' + esc(r.RDCNDT) + '</td>' +
+            '<td>' + esc(r.RDDESC) + '</td>' +
+            '<td class="rq-num">' + qty + '</td>' +
+            '<td>' + esc(r.RHARTY) + '</td>' +
+            '<td class="rq-num">' + money(extc) + '</td>' +
+            '<td class="rq-num">' + money(extr) + '</td>' +
+            '</tr>';
+    });
+    body += subtotalRow();
+    body += '<tr class="rpt-grand"><td colspan="4">Grand total</td>' +
+            '<td class="rq-num">' + grand.qty + '</td><td></td>' +
+            '<td class="rq-num">' + money(grand.cost) + '</td>' +
+            '<td class="rq-num">' + money(grand.retl) + '</td></tr>';
+
+    printHtml('<h3>Total Outstanding Requisitions</h3>' +
+        '<div>Printed ' + new Date().toLocaleDateString('en-US',
+            { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</div><br>' +
+        '<table><thead><tr>' +
+        '<th>Date of Request</th><th>Item # Requested</th><th>Date of Coin</th>' +
+        '<th>Description of Material</th><th class="rq-num">Amount Requested</th>' +
+        '<th>Area Type</th><th class="rq-num">Total Cost</th><th class="rq-num">Total Retail</th>' +
+        '</tr></thead><tbody>' + body + '</tbody></table>',
+        'Total Outstanding Requisitions');
 }
 
 // open a clean window with just the report and print it - the web version
