@@ -41,13 +41,23 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | Requisitions_dsp.php | Display function dspRequisitions(): grid + modals, styling and page JS inline | `Web/Requisitions_dsp.php` |
 | Requisitions_model.php | Model (rqs* functions, CALL REQSTNnnnS only) | `Web/Requisitions_model.php` |
 | Requisitions_ajax.php | Ajax dispatcher (JSON) | `Web/Requisitions_ajax.php` |
+| request.php | Legacy URL shim → ?id=N opens that req, else entry form (bookmarks + Access stations) | `Web/request.php` |
+| getEntry.php | Legacy URL shim → entry form | `Web/getEntry.php` |
+| getInsert.php | Legacy URL shim → entry form | `Web/getInsert.php` |
+| getIdInfo.php | Legacy URL shim → req view / grid | `Web/getIdInfo.php` |
+| getUpdate.php | Legacy URL shim → req view / grid | `Web/getUpdate.php` |
 
-### Existing IFS files superseded (retire on cutover, do not delete during parallel run)
+The five shims are `*IFS` **updates** to the existing production files —
+deploy them at cutover (not before: they replace the live legacy app in
+place). Old bookmarks then land in the new app automatically; `RQUtils/`
+becomes unused once they're in.
 
-`request.php`, `getEntry.php`, `getIdInfo.php`, `getInsert.php`,
-`getUpdate.php`, `RQUtils/*` — reference copies preserved in this
-branch's git history (along with the full Access extraction: VBA,
-queries, schemas, and data CSVs).
+### Legacy originals
+
+The production `request.php`/`getEntry.php`/`getIdInfo.php`/
+`getInsert.php`/`getUpdate.php` sources (and the full Access extraction:
+VBA, queries, schemas, data CSVs) are preserved in this branch's git
+history if a behavior question ever comes up.
 
 ### Data (not RFP objects — one-time load inputs)
 
@@ -72,8 +82,9 @@ queries, schemas, and data CSVs).
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 17 Db2 objects and 4 IFS files above (level 10, same as
-   Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
+2. Assign the 17 Db2 objects and 9 IFS files above (level 10, same as
+   Sellbrite). The 4 Requisitions_* files are new; the 5 shims are
+   updates to existing IFS objects, deployed at cutover. Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
 

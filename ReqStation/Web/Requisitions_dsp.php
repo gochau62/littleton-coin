@@ -435,6 +435,17 @@ $(document).ready(function () {
             flag: cb.is(':checked') ? 'Y' : 'N'
         }, function () { loadGrid(); });
     });
+
+    // deep links - the legacy request.php shims redirect here, so the
+    // production/inventory controllers' saved bookmarks keep working:
+    //   ?id=N        (was request.php?id=N)  -> open that requisition
+    //   ?action=add  (was request.php)       -> open the entry form
+    var qs = new URLSearchParams(window.location.search);
+    if (qs.get('id')) {
+        openViewModal(parseInt(qs.get('id'), 10));
+    } else if (qs.get('action') === 'add') {
+        openAddModal();
+    }
 });
 
 function tickClock() {
