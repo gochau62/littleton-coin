@@ -28,8 +28,6 @@ $conn = getDB2PConn();
 if (chkAutUsr($conn, $user, "LCCONLINE", 50)) {
 
     include("StartBlockHead.php");
-    print '
-    <script type="text/javascript" src="ReqStn.js"></script>';
     include("StartBlockBody.php");
 
     include("ReqStn_dsp.php");

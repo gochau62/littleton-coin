@@ -38,10 +38,9 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | Object | Description | Source |
 |---|---|---|
 | ReqStn_ctl.php | Controller (session sign-on, LCCONLINE check) | `Web/ReqStn_ctl.php` |
-| ReqStn_dsp.php | Display (grid + modals; all styling inline) | `Web/ReqStn_dsp.php` |
+| ReqStn_dsp.php | Display (grid + modals; styling and page JS inline, Sellbrite-style) | `Web/ReqStn_dsp.php` |
 | ReqStn_model.php | Model (CALL REQSTNnnnS only, bound params) | `Web/ReqStn_model.php` |
 | ReqStn_ajax.php | Ajax dispatcher (JSON) | `Web/ReqStn_ajax.php` |
-| ReqStn.js | Front-end logic (grid, modals, auto-refresh) | `Web/ReqStn.js` |
 
 ### Existing IFS files superseded (retire on cutover, do not delete during parallel run)
 
@@ -73,7 +72,7 @@ queries, schemas, and data CSVs).
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 17 Db2 objects and 5 IFS files above (level 10, same as
+2. Assign the 17 Db2 objects and 4 IFS files above (level 10, same as
    Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
