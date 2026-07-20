@@ -26,9 +26,10 @@
 /*-------------------------------------------------------------------*/
 
 CREATE OR REPLACE PROCEDURE REQSTN005S (
-        IN INREQ#  DECIMAL(9, 0),
-        IN INAUTB  VARCHAR(50),
-        IN INCMNT  VARCHAR(500)
+        IN  INREQ#  DECIMAL(9, 0),
+        IN  INAUTB  VARCHAR(50),
+        IN  INCMNT  VARCHAR(500),
+        OUT OTDONE  DECIMAL(1, 0)
         )
 
         LANGUAGE SQL
@@ -36,9 +37,18 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
+        DECLARE V_CNT INTEGER DEFAULT 0;
+
+        -- Conditional so two stations can't silently overwrite each other:
+        -- only an unauthorized requisition can be authorized. OTDONE = 0
+        -- means someone else got there first.
         UPDATE RQSREQHT
            SET RHAUTF = 'Y',
                RHAUTB = INAUTB,
                RHCMNT = INCMNT
-         WHERE RHREQ# = INREQ#;
+         WHERE RHREQ# = INREQ#
+           AND RHAUTF = 'N';
+
+        GET DIAGNOSTICS V_CNT = ROW_COUNT;
+        SET OTDONE = V_CNT;
     END;

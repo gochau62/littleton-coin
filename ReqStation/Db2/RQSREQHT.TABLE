@@ -43,6 +43,9 @@ CREATE TABLE RQSREQHT(
 
 LABEL ON TABLE RQSREQHT IS 'Requisition Header File';
 
+-- Monthly report selects by request-date range.
+CREATE INDEX RQSREQHX1 ON RQSREQHT (RHRQDT);
+
 LABEL ON COLUMN RQSREQHT
 ( RHREQ#  TEXT IS 'Requisition Number',
   RHNAME  TEXT IS 'Requestor Name',

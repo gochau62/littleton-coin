@@ -26,7 +26,7 @@
 <!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 
-function dspRequisitions($user) {
+function dspRequisitions($user, $rqLookups = null) {
 ?>
 
 <style>
@@ -84,6 +84,9 @@ function dspRequisitions($user) {
 }
 .rq-count { color: var(--rq-muted); font-size: .85rem; margin-left: auto; }
 .rq-auto  { color: var(--rq-muted); font-size: .85rem; user-select: none; }
+.rq-updated { color: var(--rq-muted); font-size: .8rem; }
+.rq-updated.rq-stale { color: var(--rq-red); font-weight: 700; }
+.rq-lines input.rq-bad { border-color: var(--rq-red); background: #fff5f5; }
 
 /* ---------- buttons ---------- */
 .rq-btn {
@@ -299,6 +302,7 @@ function dspRequisitions($user) {
     <input type="search" id="txtFilter" class="rq-filter"
            placeholder="Filter by req #, name, item...">
     <span class="rq-count" id="lblCount"></span>
+    <span class="rq-updated" id="lblUpdated" title="Last successful refresh"></span>
   </div>
 
   <div class="rq-card">
@@ -442,7 +446,9 @@ function dspRequisitions($user) {
    display per the Sellbrite/WavePickSearch pattern: grid load and
    auto-refresh (replaces the Access Form_Timer), add-request modal
    with dynamic lines, authorize and return-item actions via ajax. */
+var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 var gridRows = [];
+var lastGridJson = '';
 var lookups = null;
 var autoTimer = null;
 var selectedReq = null;    // the requisition clicked in the grid (Access "current record")
@@ -499,6 +505,48 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
+    // ESC closes the topmost open window
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape') {
+            $('.rq-overlay').not('[hidden]').last().prop('hidden', true);
+        }
+    });
+
+    // refresh immediately when the tab becomes visible again
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) { loadGrid(true); }
+    });
+
+    // item autofill - the legacy dRec() behavior: entering an item number
+    // fills description/coin date/cost/retail from its most recent use
+    $('#lineBody').on('change', '.ln-item', function () {
+        var row = $(this).closest('tr');
+        var item = $(this).val().trim();
+        if (item === '') { return; }
+        postAjax({ action: 'itemlookup', item: item }, function (resp) {
+            if (!resp.row) { return; }
+            if (row.find('.ln-desc').val().trim() === '') { row.find('.ln-desc').val(resp.row.RDDESC); }
+            if (row.find('.ln-cndt').val().trim() === '') { row.find('.ln-cndt').val(resp.row.RDCNDT); }
+            if (!parseFloat(row.find('.ln-cost').val())) { row.find('.ln-cost').val(resp.row.RDCOST); }
+            if (!parseFloat(row.find('.ln-retail').val())) { row.find('.ln-retail').val(resp.row.RDRETL); }
+        }, true);
+        row.find('.ln-loc').trigger('focus');
+    });
+
+    // Enter hops to the next field like the legacy form's onEnterKey chain;
+    // Enter on the last field of the last row starts a new line
+    $('#lineBody').on('keydown', 'input', function (e) {
+        if (e.key !== 'Enter') { return; }
+        e.preventDefault();
+        var inputs = $('#lineBody input:visible');
+        var i = inputs.index(this);
+        if (i === inputs.length - 1) {
+            addLineRow();
+            inputs = $('#lineBody input:visible');
+        }
+        inputs.eq(i + 1).trigger('focus');
+    });
+
     // deep links, for shortcuts and shared links:
     //   ?id=N        -> open that requisition's view
     //   ?action=add  -> open the entry form directly
@@ -517,28 +565,43 @@ function tickClock() {
 function startAutoRefresh() {
     if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
     if ($('#chkAutoRefresh').is(':checked')) {
-        autoTimer = setInterval(loadGrid, 60000);   // Access used a form timer
+        autoTimer = setInterval(function () {      // Access used a form timer
+            if (!document.hidden) { loadGrid(true); }
+        }, 60000);
     }
 }
 
-function postAjax(data, onOk) {
+// silent=true: background work (auto-refresh, autofill) marks the freshness
+// indicator stale instead of popping error dialogs at a kiosk screen
+function postAjax(data, onOk, silent) {
     $.post('Requisitions_ajax.php', data, function (resp) {
         if (resp && resp.ok) { onOk(resp); }
+        else if (silent) { markStale(); }
         else {
             swal('Error', (resp && resp.msg) ? resp.msg : 'Request failed.', 'error');
         }
     }, 'json').fail(function () {
-        swal('Error', 'Server error - see the log.', 'error');
+        if (silent) { markStale(); }
+        else { swal('Error', 'Server error - see the log.', 'error'); }
     });
+}
+
+function markStale() {
+    $('#lblUpdated').addClass('rq-stale');
 }
 
 /* ------------------------- grid ------------------------- */
 
-function loadGrid() {
+function loadGrid(background) {
     postAjax({ action: 'list' }, function (resp) {
+        $('#lblUpdated').removeClass('rq-stale')
+            .text('Updated ' + new Date().toLocaleTimeString());
+        var j = JSON.stringify(resp.rows);
+        if (j === lastGridJson) { return; }     // nothing changed - skip the re-render
+        lastGridJson = j;
         gridRows = resp.rows;
         renderGrid();
-    });
+    }, background === true);
 }
 
 function fmtDate(dec) {
@@ -588,14 +651,17 @@ function renderGrid() {
 
 /* --------------------- add requisition ------------------- */
 
+function applyLookups(resp) {
+    lookups = resp;
+    fillSelect('#addName', resp.names, 'RQNAME', 'RQNAME');
+    fillSelect('#addAreaCode', resp.areaCodes, 'ARCODE', 'ARDESC');
+    fillSelect('#addAreaType', resp.areaTypes, 'ATTYPE', 'ATTYPE');
+    fillSelect('#authBy', resp.authBy, 'AUNAME', 'AUNAME');
+}
+
 function loadLookups() {
-    postAjax({ action: 'lookups' }, function (resp) {
-        lookups = resp;
-        fillSelect('#addName', resp.names, 'RQNAME', 'RQNAME');
-        fillSelect('#addAreaCode', resp.areaCodes, 'ARCODE', 'ARDESC');
-        fillSelect('#addAreaType', resp.areaTypes, 'ATTYPE', 'ATTYPE');
-        fillSelect('#authBy', resp.authBy, 'AUNAME', 'AUNAME');
-    });
+    if (RQ_PRELOAD) { applyLookups(RQ_PRELOAD); return; }   // came with the page
+    postAjax({ action: 'lookups' }, applyLookups);
 }
 
 function fillSelect(sel, rows, valCol, txtCol) {
@@ -634,9 +700,21 @@ function addLineRow() {
 
 function submitRequisition() {
     var lines = [];
+    var bad = 0;
+    $('#lineBody input').removeClass('rq-bad');
     $('#lineBody tr').each(function () {
         var t = $(this);
         if (t.find('.ln-item').val().trim() === '') { return; }
+
+        // catch typos here, not as a Db2 error after submit
+        var qtyIn = t.find('.ln-qty');
+        if (!(parseFloat(qtyIn.val()) > 0)) { qtyIn.addClass('rq-bad'); bad++; }
+        $.each(['.ln-cost', '.ln-retail', '.ln-acost'], function (j, cls) {
+            var f = t.find(cls);
+            var v = f.val().replace(/,/g, '').trim();
+            if (v !== '' && isNaN(parseFloat(v))) { f.addClass('rq-bad'); bad++; }
+        });
+
         lines.push({
             item: t.find('.ln-item').val().trim(),
             loc: t.find('.ln-loc').val().trim(),
@@ -650,6 +728,12 @@ function submitRequisition() {
         });
     });
 
+    if (bad > 0) {
+        swal('Check the highlighted fields',
+             'Quantity must be a number greater than zero, and the dollar fields must be numeric.',
+             'warning');
+        return;
+    }
     if (lines.length === 0) {
         swal('Nothing to submit', 'Enter at least one line with an item number.', 'warning');
         return;

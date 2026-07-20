@@ -16,6 +16,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | RQSARTYT | Requisition Area Type File | `Db2/RQSARTYT.TABLE` |
 | RQSRQSNT | Requisitioner Names File | `Db2/RQSRQSNT.TABLE` |
 | RQSAUTHT | Requisition Authorizers File | `Db2/RQSAUTHT.TABLE` |
+| RQSACTVT | Requisition Activity Log File | `Db2/RQSACTVT.TABLE` |
 | RQSREQHV | Requisition Header View w/Dates (attribute per shop view standard) | `Db2/RQSREQHV.VIEW` |
 
 ### Db2 for i — SQL procedures (attribute per shop standard, e.g. `SQLPROC`)
@@ -33,6 +34,9 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | REQSTN009S | List area types | `Db2/REQSTN009S.PROC` |
 | REQSTN010S | List authorizers | `Db2/REQSTN010S.PROC` |
 | REQSTN011S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN011S.PROC` |
+| REQSTN012S | Item lookup for entry autofill (legacy dRec) | `Db2/REQSTN012S.PROC` |
+| REQSTN013S | Delete requisition (backs out failed inserts) | `Db2/REQSTN013S.PROC` |
+| REQSTN014S | Write activity-log record | `Db2/REQSTN014S.PROC` |
 
 ### IFS — `*IFS` (MD attribute `PHPSRC`), dev path `/www/seidendev/htdocs/requisitions/`
 
@@ -79,7 +83,7 @@ history if a behavior question ever comes up.
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 18 Db2 objects and 4 IFS files above (level 10, same as
+2. Assign the 22 Db2 objects and 4 IFS files above (level 10, same as
    Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
@@ -117,8 +121,10 @@ history if a behavior question ever comes up.
 
 ## 7. Still open before promotion to prod
 
-1. The `activity`/`station`/`applications` logging: dies with the .mdb, or
-   gets a Db2 equivalent (decide before cutover).
+1. ~~The `activity` logging~~ — resolved: RQSACTVT + REQSTN014S log page
+   opens, inserts, authorizations and return flips by user profile. The
+   MySQL `station`/`applications` version-check machinery dies with the
+   .mdb (the web app has no per-PC installs to version).
 2. Exact MD attributes for views/procs per shop standard, and the LCCONLINE
    authority level number for `chkAutUsr`.
 3. Web-profile authority to LSCDEVLIBP (the dev log already shows

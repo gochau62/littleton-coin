@@ -1,10 +1,12 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - REQSTN006S                                    */
+/* Program Name      - REQSTN013S                                    */
 /*                                                                   */
-/* Program Narrative - Mark / Unmark a Requisition Line Returned.    */
-/*                     Sets or clears the date returned, matching    */
-/*                     the Access chkReturnItem_AfterUpdate logic.   */
+/* Program Narrative - Delete a requisition (detail then header).    */
+/*                     Used by the web insert to back out a partial  */
+/*                     requisition if a line insert fails, so a      */
+/*                     failed submit never leaves a half-saved       */
+/*                     requisition behind.                           */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -12,7 +14,7 @@
 /*                                                                   */
 /* Date Written      - 07/20/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(REQSTN006S)                            */
+/*                     SRCMBR(REQSTN013S)                            */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -26,10 +28,8 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN006S (
-        IN INREQ#  DECIMAL(9, 0),
-        IN INLIN#  DECIMAL(3, 0),
-        IN INRTNF  CHAR(1)
+CREATE OR REPLACE PROCEDURE REQSTN013S (
+        IN INREQ# DECIMAL(9, 0)
         )
 
         LANGUAGE SQL
@@ -37,17 +37,6 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        -- The flag guard makes the update idempotent: if another station
-        -- already set the same state, this quietly does nothing instead of
-        -- re-stamping the return date.
-        UPDATE RQSREQDT
-           SET RDRTNF = INRTNF,
-               RDRTDT = CASE WHEN INRTNF = 'Y'
-                             THEN DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP,
-                                      'YYYYMMDD'), 8, 0)
-                             ELSE 0
-                        END
-         WHERE RDREQ# = INREQ#
-           AND RDLIN# = INLIN#
-           AND RDRTNF <> INRTNF;
+        DELETE FROM RQSREQDT WHERE RDREQ# = INREQ#;
+        DELETE FROM RQSREQHT WHERE RHREQ# = INREQ#;
     END;

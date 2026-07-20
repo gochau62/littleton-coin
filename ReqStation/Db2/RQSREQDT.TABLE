@@ -48,6 +48,10 @@ CREATE TABLE RQSREQDT(
 
 LABEL ON TABLE RQSREQDT IS 'Requisition Detail File';
 
+-- The open-requisitions grid filters on the returned flag constantly
+-- (the MySQL table carried the same index, KEY `Returned`).
+CREATE INDEX RQSREQDX1 ON RQSREQDT (RDRTNF);
+
 LABEL ON COLUMN RQSREQDT
 ( RDREQ#  TEXT IS 'Requisition Number',
   RDLIN#  TEXT IS 'Line Number',

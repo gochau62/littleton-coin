@@ -61,8 +61,25 @@ if ($authorized != "yes") {
     echo '<script>showNotAuthorized();</script>';
 } else {
 
+    require_once __DIR__ . '/Requisitions_model.php';
+
+    // preload the dropdown lists with the page (saves an ajax round trip);
+    // the page falls back to the ajax lookups if anything fails here
+    $rqLookups = null;
+    if (isset($authConn) && $authConn) {
+        $names = rqsLookup($authConn, "REQSTN007S");
+        $codes = rqsLookup($authConn, "REQSTN008S");
+        $types = rqsLookup($authConn, "REQSTN009S");
+        $auth  = rqsLookup($authConn, "REQSTN010S");
+        if ($names !== false && $codes !== false && $types !== false && $auth !== false) {
+            $rqLookups = array("ok" => true, "names" => $names, "areaCodes" => $codes,
+                               "areaTypes" => $types, "authBy" => $auth);
+        }
+        rqsLogActivity($authConn, $user, 'OPEN', 0);
+    }
+
     include "Requisitions_dsp.php";
-    dspRequisitions($user);
+    dspRequisitions($user, $rqLookups);
 ?>
 <!--  End Content Here -->
 <?php

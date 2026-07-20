@@ -1,10 +1,13 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - REQSTN006S                                    */
+/* Program Name      - REQSTN012S                                    */
 /*                                                                   */
-/* Program Narrative - Mark / Unmark a Requisition Line Returned.    */
-/*                     Sets or clears the date returned, matching    */
-/*                     the Access chkReturnItem_AfterUpdate logic.   */
+/* Program Narrative - Item lookup for the entry form autofill       */
+/*                     (replaces the legacy dRec() behavior).        */
+/*                     Returns the most recent description, coin     */
+/*                     date, cost and retail used for the item in    */
+/*                     requisition history. Swap the FROM to the     */
+/*                     corporate item master when IT confirms it.    */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -12,7 +15,7 @@
 /*                                                                   */
 /* Date Written      - 07/20/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(REQSTN006S)                            */
+/*                     SRCMBR(REQSTN012S)                            */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -26,28 +29,22 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN006S (
-        IN INREQ#  DECIMAL(9, 0),
-        IN INLIN#  DECIMAL(3, 0),
-        IN INRTNF  CHAR(1)
+CREATE OR REPLACE PROCEDURE REQSTN012S (
+        IN INITEM VARCHAR(16)
         )
 
         LANGUAGE SQL
-        MODIFIES SQL DATA
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        -- The flag guard makes the update idempotent: if another station
-        -- already set the same state, this quietly does nothing instead of
-        -- re-stamping the return date.
-        UPDATE RQSREQDT
-           SET RDRTNF = INRTNF,
-               RDRTDT = CASE WHEN INRTNF = 'Y'
-                             THEN DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP,
-                                      'YYYYMMDD'), 8, 0)
-                             ELSE 0
-                        END
-         WHERE RDREQ# = INREQ#
-           AND RDLIN# = INLIN#
-           AND RDRTNF <> INRTNF;
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT RDDESC, RDCNDT, RDCOST, RDRETL
+              FROM RQSREQDT
+             WHERE RDITEM = INITEM
+             ORDER BY RDREQ# DESC, RDLIN# DESC
+             FETCH FIRST 1 ROW ONLY;
+
+        OPEN C1;
     END;

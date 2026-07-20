@@ -1,11 +1,13 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - Requisitions_ajax.php                  *  -->
+<!--  * Program Name - Requisitions_ajax.php            *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - Requisition Station ajax handler.   *  -->
 <!--  *   Maps action names to model calls and returns  *  -->
-<!--  *   JSON. Session is re-established the same way  *  -->
-<!--  *   InvPrt_Print_Invoices_ajax.php does it.       *  -->
+<!--  *   JSON. Every failure returns ok:false with the *  -->
+<!--  *   real Db2 message so support can act on what   *  -->
+<!--  *   the user reports. A failed insert backs out   *  -->
+<!--  *   the partial requisition (REQSTN013S).         *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -41,10 +43,14 @@ if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
 while (ob_get_level() > 0) { ob_end_clean(); }
 header('Content-Type: application/json');
 
+function rqsOut($arr) { echo json_encode($arr); exit; }
+function rqsOutFail($msg = '') {
+    rqsOut(array("ok" => false,
+                 "msg" => $msg !== '' ? $msg : ($GLOBALS['rqsErr'] ?: 'Request failed.')));
+}
+
 if (!$conn) {
-    echo json_encode(array("ok" => false,
-                           "msg" => "No database connection - sign in to LCC Online first."));
-    exit;
+    rqsOutFail("No database connection - sign in to LCC Online first.");
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
@@ -53,34 +59,40 @@ switch ($action) {
 
     // main grid rows (open requisitions)
     case 'list':
-        echo json_encode(array("ok" => true,
-                               "rows" => rqsGetOpen($conn)));
-        break;
+        $rows = rqsGetOpen($conn);
+        if ($rows === false) { rqsOutFail(); }
+        rqsOut(array("ok" => true, "rows" => $rows));
 
     // one requisition, header + lines
     case 'get':
-        $reqNum = intval($_POST['reqNum']);
-        echo json_encode(array("ok" => true,
-                               "rows" => rqsGet($conn, $reqNum)));
-        break;
+        $rows = rqsGet($conn, intval($_POST['reqNum']));
+        if ($rows === false) { rqsOutFail(); }
+        rqsOut(array("ok" => true, "rows" => $rows));
 
-    // dropdown data for the add-request form
+    // dropdown data for the add-request form (fallback when not preloaded)
     case 'lookups':
-        echo json_encode(array(
-            "ok"        => true,
-            "names"     => rqsLookup($conn, "REQSTN007S"),
-            "areaCodes" => rqsLookup($conn, "REQSTN008S"),
-            "areaTypes" => rqsLookup($conn, "REQSTN009S"),
-            "authBy"    => rqsLookup($conn, "REQSTN010S")));
-        break;
+        $names = rqsLookup($conn, "REQSTN007S");
+        $codes = rqsLookup($conn, "REQSTN008S");
+        $types = rqsLookup($conn, "REQSTN009S");
+        $auth  = rqsLookup($conn, "REQSTN010S");
+        if ($names === false || $codes === false || $types === false || $auth === false) {
+            rqsOutFail();
+        }
+        rqsOut(array("ok" => true, "names" => $names, "areaCodes" => $codes,
+                     "areaTypes" => $types, "authBy" => $auth));
 
-    // insert a requisition: header fields + JSON array of lines
+    // item autofill: most recent description/coin date/cost/retail
+    case 'itemlookup':
+        $rows = rqsItemLookup($conn, trim($_POST['item'] ?? ''));
+        if ($rows === false) { rqsOutFail(); }
+        rqsOut(array("ok" => true, "row" => $rows ? $rows[0] : null));
+
+    // insert a requisition: header fields + JSON array of lines.
+    // Any line failure backs the whole requisition out - never half-saved.
     case 'insert':
         $payload = json_decode($_POST['payload'], true);
         if (!$payload || empty($payload['lines'])) {
-            echo json_encode(array("ok" => false,
-                                   "msg" => "No requisition lines received."));
-            break;
+            rqsOutFail("No requisition lines received.");
         }
 
         $badge = substr($payload['reqName'], 0, 10);
@@ -91,12 +103,13 @@ switch ($action) {
                       ($payload['rush'] == 'Y' ? 'Y' : 'N'),
                       $badge,
                       $payload['comments']);
+        if ($reqNum === false) { rqsOutFail(); }
 
         $lineNum = 0;
         foreach ($payload['lines'] as $line) {
             if (trim($line['item']) == '') { continue; }
             $lineNum++;
-            rqsInsertLine($conn, $reqNum, $lineNum,
+            $ok = rqsInsertLine($conn, $reqNum, $lineNum,
                 $line['item'], $line['loc'], $line['coinDate'],
                 $line['desc'],
                 floatval($line['qty']),
@@ -104,38 +117,46 @@ switch ($action) {
                 floatval(str_replace(',', '', $line['retail'])),
                 floatval(str_replace(',', '', $line['addCost'])),
                 $badge, $line['skuTo']);
+            if (!$ok) {
+                $err = $GLOBALS['rqsErr'];
+                rqsDeleteRequisition($conn, $reqNum);
+                rqsOutFail("Line " . $lineNum . " failed (" . $err .
+                           ") - nothing was saved. Fix the line and submit again.");
+            }
         }
 
-        echo json_encode(array("ok" => true,
-                               "reqNum" => $reqNum,
-                               "lines" => $lineNum));
-        break;
+        rqsLogActivity($conn, $user, 'INSERT', $reqNum);
+        rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
+
+    // authorize a requisition (conditional - first authorizer wins)
+    case 'authorize':
+        $reqNum = intval($_POST['reqNum']);
+        $done = rqsAuthorize($conn, $reqNum, $_POST['authBy'], $_POST['comments']);
+        if ($done === false) { rqsOutFail(); }
+        if ($done === 0) {
+            $rows = rqsGet($conn, $reqNum);
+            $by = ($rows && count($rows)) ? $rows[0]['RHAUTB'] : 'another station';
+            rqsOutFail("Already authorized by " . $by . ".");
+        }
+        rqsLogActivity($conn, $user, 'AUTHORIZE', $reqNum);
+        rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)
     case 'monthly':
-        $yyyymm = intval($_POST['yyyymm']);
-        echo json_encode(array("ok" => true,
-                               "rows" => rqsMonthly($conn, $yyyymm)));
-        break;
-
-    // authorize a requisition
-    case 'authorize':
-        $reqNum = intval($_POST['reqNum']);
-        rqsAuthorize($conn, $reqNum,
-                             $_POST['authBy'], $_POST['comments']);
-        echo json_encode(array("ok" => true));
-        break;
+        $rows = rqsMonthly($conn, intval($_POST['yyyymm']));
+        if ($rows === false) { rqsOutFail(); }
+        rqsOut(array("ok" => true, "rows" => $rows));
 
     // mark / unmark a line returned
     case 'returned':
         $reqNum = intval($_POST['reqNum']);
         $lineNum = intval($_POST['lineNum']);
         $flag = ($_POST['flag'] == 'Y' ? 'Y' : 'N');
-        rqsSetReturned($conn, $reqNum, $lineNum, $flag);
-        echo json_encode(array("ok" => true));
-        break;
+        if (!rqsSetReturned($conn, $reqNum, $lineNum, $flag)) { rqsOutFail(); }
+        rqsLogActivity($conn, $user, $flag == 'Y' ? 'RETURN' : 'UNRETURN', $reqNum);
+        rqsOut(array("ok" => true));
 
     default:
-        echo json_encode(array("ok" => false, "msg" => "Unknown action."));
+        rqsOutFail("Unknown action.");
 }
 ?>
