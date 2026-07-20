@@ -23,9 +23,7 @@
 
 // AJAX endpoint - buffer from byte 0 so stray include output can't corrupt the JSON
 ob_start();
-// shared Utils live at the instance docroot; app may sit there or in /Requisitions/
-$lccRoot = file_exists('Utils/common_functions.php') ? '' : '../';
-foreach ([$lccRoot . 'Utils/common_functions.php', $lccRoot . 'Utils/default_values.php'] as $f) {
+foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
 

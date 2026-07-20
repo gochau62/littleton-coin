@@ -25,22 +25,17 @@
 ?>
 
 <?php
-    // shared LCC plumbing (StartBlockScriptA/B, jQuery/, swal/, Utils/) lives at
-    // the instance docroot; this app may sit there or in /Requisitions/ - the
-    // prefix works for both the PHP includes and the browser asset URLs.
-    $lccRoot = file_exists('StartBlockScriptA.php') ? '' : '../';
-
     // retrieves and sets password and username
-    if (file_exists($lccRoot . 'StartBlockScriptA.php')) { require_once $lccRoot . 'StartBlockScriptA.php'; }
+    if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
 ?>
 
 <!-- includes css and javascript libraries (local copies, same as the other LCC tools) -->
-<script type='text/javascript' src='<?php echo $lccRoot; ?>jQuery/jquery.js'></script>
-<script type='text/javascript' src='<?php echo $lccRoot; ?>swal/sweetalert-dev.js'></script>
-<script type='text/javascript' src='<?php echo $lccRoot; ?>swal/sweetalert.min.js'></script>
-<link href="<?php echo $lccRoot; ?>swal/sweetalert.css" rel="stylesheet" type="text/css" />
+<script type='text/javascript' src='jQuery/jquery.js'></script>
+<script type='text/javascript' src='swal/sweetalert-dev.js'></script>
+<script type='text/javascript' src='swal/sweetalert.min.js'></script>
+<link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Requisition Station";
@@ -53,7 +48,7 @@
 <div id="errorMsg" style="display:none; padding:1rem; color:#b02a37; font-weight:bold;"></div>
 
 <?php
-if (file_exists($lccRoot . 'StartBlockScriptB.php')) { require_once $lccRoot . 'StartBlockScriptB.php'; }
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
 //***--- Check users authority (10 is the minimum to use LCCOnline) ---***
 $authorized = "yes";
@@ -73,5 +68,5 @@ if ($authorized != "yes") {
 <?php
 } // end authority check
 
-if (file_exists($lccRoot . 'EndBlock.php')) { include $lccRoot . 'EndBlock.php'; }
+if (file_exists('EndBlock.php')) { include "EndBlock.php"; }
 ?>
