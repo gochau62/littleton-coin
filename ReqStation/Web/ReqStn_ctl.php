@@ -29,7 +29,6 @@ if (chkAutUsr($conn, $user, "LCCONLINE", 50)) {
 
     include("StartBlockHead.php");
     print '
-    <link rel="stylesheet" type="text/css" href="ReqStn.css" />
     <script type="text/javascript" src="ReqStn.js"></script>';
     include("StartBlockBody.php");
 
