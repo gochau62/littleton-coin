@@ -45,7 +45,7 @@
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
 
-<div id="errorMsg" style="display:none; padding:1rem; color:#b02a37; font-weight:bold;"></div>
+<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }

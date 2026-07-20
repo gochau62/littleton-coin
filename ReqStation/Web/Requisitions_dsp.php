@@ -33,15 +33,17 @@ function dspRequisitions($user) {
 /* Requisition Station styling - inline per shop preference:
    the display file owns everything visual. */
 :root {
-  --rq-navy:   #1c3557;
-  --rq-blue:   #2f6fb2;
-  --rq-bg:     #f4f6f9;
-  --rq-line:   #d9dee6;
-  --rq-text:   #22293a;
-  --rq-muted:  #6b7486;
-  --rq-green:  #1e7e34;
-  --rq-amber:  #b26a00;
-  --rq-red:    #b02a37;
+  /* LCC house palette - same greens as SellbriteBulkLoader */
+  --rq-green-dk: #1C4532;   /* headings, header bar */
+  --rq-green:    #2e8b57;   /* primary buttons (house .btn-green) */
+  --rq-green-hv: #1e6e43;   /* button hover, accents */
+  --rq-accent:   #eaf6ee;   /* light green fills */
+  --rq-bg:       #f8f8f8;
+  --rq-line:     #dfe6e1;
+  --rq-text:     #222;
+  --rq-muted:    #5f6b62;   /* the standard LCC label/text color */
+  --rq-amber:    #9a6a14;
+  --rq-red:      #c0392b;
 }
 
 .rq-app {
@@ -56,7 +58,7 @@ function dspRequisitions($user) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--rq-navy);
+  background: var(--rq-green-dk);
   color: #fff;
   padding: .6rem 1.25rem;
 }
@@ -83,21 +85,25 @@ function dspRequisitions($user) {
 
 /* ---------- buttons ---------- */
 .rq-btn {
-  padding: .45rem .9rem;
-  border: 1px solid var(--rq-line);
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: .45rem 1.1rem;
+  border: 1px solid #b4b4b4;
+  border-radius: 50px;               /* house pill buttons */
   background: #fff;
   color: var(--rq-text);
   font-size: .9rem;
+  font-weight: 700;
   cursor: pointer;
 }
-.rq-btn:hover { border-color: var(--rq-blue); color: var(--rq-blue); }
+.rq-btn:hover { border-color: var(--rq-green-hv); color: var(--rq-green-hv); }
 .rq-btn-primary {
-  background: var(--rq-blue);
-  border-color: var(--rq-blue);
+  background: var(--rq-green);
+  border-color: var(--rq-green);
   color: #fff;
 }
-.rq-btn-primary:hover { background: var(--rq-navy); color: #fff; }
+.rq-btn-primary:hover { background: var(--rq-green-hv); border-color: var(--rq-green-hv); color: #fff; }
 .rq-btn-ghost { border-style: dashed; color: var(--rq-muted); margin: .5rem 0; }
 
 /* ---------- card + grid ---------- */
@@ -113,8 +119,8 @@ function dspRequisitions($user) {
 .rq-grid thead th {
   position: sticky;
   top: 0;
-  background: #eef1f6;
-  color: var(--rq-navy);
+  background: var(--rq-accent);
+  color: var(--rq-green-dk);
   text-align: left;
   padding: .55rem .7rem;
   border-bottom: 2px solid var(--rq-line);
@@ -124,9 +130,9 @@ function dspRequisitions($user) {
   padding: .45rem .7rem;
   border-bottom: 1px solid var(--rq-line);
 }
-.rq-grid tbody tr:nth-child(even) { background: #fafbfd; }
+.rq-grid tbody tr:nth-child(even) { background: #f7faf8; }
 #tblGrid tbody tr { cursor: pointer; }
-#tblGrid tbody tr:hover { background: #e9f2fb; }
+#tblGrid tbody tr:hover { background: var(--rq-accent); }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
@@ -139,9 +145,9 @@ function dspRequisitions($user) {
   font-weight: 600;
   white-space: nowrap;
 }
-.rq-ok       { background: #e2f2e6; color: var(--rq-green); }
+.rq-ok       { background: var(--rq-accent); color: var(--rq-green-hv); }
 .rq-warn     { background: #fdf0dd; color: var(--rq-amber); }
-.rq-rushpill { background: #fbe3e6; color: var(--rq-red); }
+.rq-rushpill { background: #ffd1d1; color: var(--rq-red); }
 
 /* ---------- modals ---------- */
 .rq-overlay {
@@ -173,7 +179,7 @@ function dspRequisitions($user) {
   padding: .8rem 1.1rem;
   border-bottom: 1px solid var(--rq-line);
 }
-.rq-modal-head h2 { margin: 0; font-size: 1.05rem; color: var(--rq-navy); }
+.rq-modal-head h2 { margin: 0; font-size: 1.05rem; color: var(--rq-green-dk); }
 .rq-modal-body { padding: 1rem 1.1rem; overflow-y: auto; }
 .rq-modal-foot {
   display: flex;
@@ -227,9 +233,9 @@ function dspRequisitions($user) {
   font-size: .85rem;
 }
 .rq-lines input:focus {
-  border-color: var(--rq-blue);
+  border-color: var(--rq-green);
   outline: none;
-  background: #f4f9ff;
+  background: var(--rq-accent);
 }
 .rq-comments { margin-top: .9rem; }
 .rq-comments input { width: 100%; }
@@ -255,9 +261,9 @@ function dspRequisitions($user) {
 .rq-authrow .rq-comments { flex: 1; margin-top: 0; }
 
 /* ---------- monthly report ---------- */
-.rpt-title { margin: 0 0 .75rem 0; color: var(--rq-navy); }
-.rpt-table .rpt-group td { font-weight: 700; background: #eef1f6; }
-.rpt-table .rpt-subtotal td, .rpt-table .rpt-grand td { font-weight: 700; background: #fafbfd; }
+.rpt-title { margin: 0 0 .75rem 0; color: var(--rq-green-dk); }
+.rpt-table .rpt-group td { font-weight: 700; background: var(--rq-accent); }
+.rpt-table .rpt-subtotal td, .rpt-table .rpt-grand td { font-weight: 700; background: #f7faf8; }
 #rptMonth { padding: .35rem .5rem; border: 1px solid var(--rq-line); border-radius: 6px; }
 .rq-modal-head .rq-btn { margin-right: .4rem; }
 </style>
