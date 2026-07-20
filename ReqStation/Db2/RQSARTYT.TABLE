@@ -26,7 +26,7 @@
 /*-------------------------------------------------------------------*/
 
 CREATE TABLE RQSARTYT(
- ATTYPE  VARCHAR(20) CCSID 37 WITH DEFAULT NOT NULL,  -- Area Type
+ ATTYPE  VARCHAR(25) CCSID 37 WITH DEFAULT NOT NULL,  -- Area Type
  ATACTV  CHAR(1) CCSID 37 WITH DEFAULT 'Y' NOT NULL,  -- Active Flag Y/N
  PRIMARY KEY (ATTYPE))
  RCDFMT RQSARTYR;

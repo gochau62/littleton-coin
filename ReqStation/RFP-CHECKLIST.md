@@ -49,23 +49,23 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 branch's git history (along with the full Access extraction: VBA,
 queries, schemas, and data CSVs).
 
+### Data (not RFP objects — one-time load inputs)
+
+`Data/*.csv` — the full MySQL history, already transformed to Db2 format
+(see `Data/README.md` for load commands and validation totals).
+
 ## 2. Build sequence in dev
 
 1. `RUNSQLSTM` each `.TABLE` member into `LSCDEVLIBP` (order: RQSREQHT,
    RQSREQDT, then the lookups, then RQSREQHV).
 2. `RUNSQLSTM` the ten `.PROC` members.
-3. Load the lookup tables from the MySQL `ReqMaterial_*` objects once the
-   dump arrives (the old Access copies sit in git history for cross-checks).
-4. Load history from the MySQL dump: `ReqMaterial` → RQSREQHT (dates →
-   DECIMAL(8,0) yyyymmdd, `rush`/`authorized` → Y/N), `ReqMaterialDetails` →
-   RQSREQDT (assign RDLIN# 1..n per req_num in insert order). One-off PHP
-   loader per the ImportOrderFile pattern.
-5. Restart the identity after the load:
-   `ALTER TABLE RQSREQHT ALTER COLUMN RHREQ# RESTART WITH <MAX(RHREQ#)+1>`.
-6. Validate MySQL vs Db2 before cutover: row counts per table, SUM(qty),
-   count-by-month of req_date, returned-line counts — same query both
-   sides, results recorded with the RFP.
-7. Copy the `Web/` files to `/www/seidendev/htdocs/requisitions/`, wire the
+3. Load all six tables from `Data/*.csv` with CPYFRMIMPF — the CSVs are
+   already in Db2 format (transforms done), commands in `Data/README.md`.
+4. Restart the identity:
+   `ALTER TABLE RQSREQHT ALTER COLUMN RHREQ# RESTART WITH 17179`.
+5. Validate against the expected totals in `Data/README.md` (14,073 headers,
+   50,063 lines, 741 open, SUM(qty) 33,464,119); record results with the RFP.
+6. Copy the `Web/` files to `/www/seidendev/htdocs/requisitions/`, wire the
    standard includes (`StartBlockHead.php`, `getDB2PConn`, `chkAutUsr` —
    confirm the LCCONLINE authority level number), and test end-to-end.
 
@@ -98,14 +98,21 @@ queries, schemas, and data CSVs).
 3. **Never commit the raw `.mdb` files to git** — they contain both
    credentials.
 
-## 6. Still open before promotion to prod
+## 6. Resolved by the 07/20/2026 mysqldump
 
-1. **mysqldump of `lcc`** — needed for the history load and to confirm
-   column widths/types guessed from the legacy PHP (marked in the DDL).
-2. Whether `ReqMaterial_*` are views or tables (dump answers it).
-3. The `activity`/`station`/`applications` logging: dies with the .mdb, or
+1. Schema confirmed and DDL corrected to match production: area_type
+   VARCHAR(25), comments VARCHAR(500), loc VARCHAR(3), cost/retail
+   DECIMAL(13,4), identity restart 17179.
+2. `ReqMaterial_*` are all real tables (not views); their contents are in
+   `Data/*.csv`.
+3. `ReqMaterial_Returns` exists but is empty in production — intentionally
+   not migrated.
+
+## 7. Still open before promotion to prod
+
+1. The `activity`/`station`/`applications` logging: dies with the .mdb, or
    gets a Db2 equivalent (decide before cutover).
-4. Monthly report page (Access "Requested Material Summary") — next RFP
+2. Monthly report page (Access "Requested Material Summary") — next RFP
    increment; the RQSREQHV view is already in place for it or for PHP Query.
-5. Exact MD attributes for views/procs per shop standard, and the LCCONLINE
+3. Exact MD attributes for views/procs per shop standard, and the LCCONLINE
    authority level number for `chkAutUsr`.

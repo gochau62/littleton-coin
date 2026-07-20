@@ -330,7 +330,7 @@
         <button type="button" class="rq-btn rq-btn-ghost" id="btnAddLine">+ Add line</button>
 
         <label class="rq-comments">Comments
-          <input type="text" id="addComments" maxlength="254">
+          <input type="text" id="addComments" maxlength="500">
         </label>
       </div>
 
@@ -371,7 +371,7 @@
             <select id="authBy"></select>
           </label>
           <label class="rq-comments">Comments
-            <input type="text" id="authComments" maxlength="254">
+            <input type="text" id="authComments" maxlength="500">
           </label>
           <button type="button" class="rq-btn rq-btn-primary" id="btnAuthorize">Authorize</button>
         </div>
@@ -534,10 +534,10 @@ function openAddModal() {
 
 function addLineRow() {
     var row = '<tr>' +
-        '<td><input class="ln-item" size="12"></td>' +
-        '<td><input class="ln-loc" size="6"></td>' +
-        '<td><input class="ln-cndt" size="8"></td>' +
-        '<td><input class="ln-desc" size="40"></td>' +
+        '<td><input class="ln-item" size="12" maxlength="16"></td>' +
+        '<td><input class="ln-loc" size="6" maxlength="3"></td>' +
+        '<td><input class="ln-cndt" size="8" maxlength="10"></td>' +
+        '<td><input class="ln-desc" size="40" maxlength="50"></td>' +
         '<td><input class="ln-qty rq-num" size="5"></td>' +
         '<td><input class="ln-cost rq-num" size="7"></td>' +
         '<td><input class="ln-retail rq-num" size="7"></td>' +
