@@ -1,11 +1,14 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - RQSACTVT.TABLE                                */
+/* Program Name      - RQSCODEFLT.TABLE                                */
 /*                                                                   */
-/* Program Narrative - Create Requisition Activity Log File          */
-/*                     Web replacement for the Access app's MySQL    */
-/*                     "activity" logging: page opens, inserts,      */
-/*                     authorizations and return flips by user.      */
+/* Program Narrative - Create Requisition Code File. One generic     */
+/*                     code table replacing the four dropdown        */
+/*                     lookup files:                                 */
+/*                       CDTYPE 'AREACODE' - area codes (desc used)  */
+/*                       CDTYPE 'AREATYPE' - area types              */
+/*                       CDTYPE 'NAMES'    - requisitioner names     */
+/*                       CDTYPE 'AUTHBY'   - authorizers             */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -13,7 +16,7 @@
 /*                                                                   */
 /* Date Written      - 07/20/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(RQSACTVT) COMMIT(*NONE)                */
+/*                     SRCMBR(RQSCODEFLT) COMMIT(*NONE)                */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -27,15 +30,12 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSACTVT(
- ACSEQ#  DECIMAL(11, 0) GENERATED ALWAYS AS IDENTITY
-         (START WITH 1, INCREMENT BY 1) NOT NULL,      -- Sequence
- ACUSER  VARCHAR(10) CCSID 37 WITH DEFAULT NOT NULL,   -- User Profile
- ACDATE  DECIMAL(8, 0) WITH DEFAULT NOT NULL,          -- Date 20260720
- ACTIME  DECIMAL(6, 0) WITH DEFAULT NOT NULL,          -- Time HHMMSS
- ACACTN  VARCHAR(20) CCSID 37 WITH DEFAULT NOT NULL,   -- Action Code
- ACREQ#  DECIMAL(9, 0) WITH DEFAULT NOT NULL,          -- Requisition (0=n/a)
- PRIMARY KEY (ACSEQ#))
- RCDFMT RQSACTVR;
+CREATE TABLE RQSCODEFLT(
+ CDTYPE  VARCHAR(10) CCSID 37 WITH DEFAULT NOT NULL,  -- Code List Type
+ CDCODE  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Code Value
+ CDDESC  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Description
+ CDACTV  CHAR(1) CCSID 37 WITH DEFAULT 'Y' NOT NULL,  -- Active Flag Y/N
+ PRIMARY KEY (CDTYPE, CDCODE))
+ RCDFMT RQSCODEFLR;
 
-LABEL ON TABLE RQSACTVT IS 'Requisition Activity Log';
+LABEL ON TABLE RQSCODEFLT IS 'Requisition Code File';

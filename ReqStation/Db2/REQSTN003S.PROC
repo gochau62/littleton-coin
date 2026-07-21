@@ -42,8 +42,8 @@ CREATE OR REPLACE PROCEDURE REQSTN003S (
                    H.RHARCD, H.RHARTY, H.RHRUSH, H.RHAUTF, H.RHAUTB,
                    D.RDLIN#, D.RDITEM, D.RDCNDT, D.RDDESC, D.RDLOC,
                    D.RDQTY, D.RDCOST, D.RDRETL, D.RDRTNF, D.RDRTDT
-              FROM RQSREQHT H
-              JOIN RQSREQDT D
+              FROM RQSREQHDRT H
+              JOIN RQSREQDTLT D
                 ON D.RDREQ# = H.RHREQ#
              WHERE D.RDRTNF = 'N'
              ORDER BY H.RHRQDT, H.RHRQTM, H.RHREQ#, D.RDLIN#;
@@ -51,7 +51,7 @@ CREATE OR REPLACE PROCEDURE REQSTN003S (
         -- 'Y' on the page's first load records the station open,
         -- replacing the Access app's activity logging
         IF INLOGO = 'Y' THEN
-            INSERT INTO RQSACTVT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
+            INSERT INTO RQSACTLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
             VALUES (SUBSTR(USER, 1, 10),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),

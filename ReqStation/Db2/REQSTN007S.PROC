@@ -5,7 +5,7 @@
 /* Program Narrative - The one lookup procedure. INTYPE picks the    */
 /*                     list:                                         */
 /*                       AREACODE/AREATYPE/NAMES/AUTHBY - active     */
-/*                         rows of that type from RQSCODET           */
+/*                         rows of that type from RQSCODEFLT         */
 /*                       ITEM - most recent description, coin date,  */
 /*                         cost and retail for INKEY from history    */
 /*                         (entry-form autofill; swap to the         */
@@ -44,14 +44,14 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
     BEGIN
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT CDCODE, CDDESC
-              FROM RQSCODET
+              FROM RQSCODEFLT
              WHERE CDTYPE = INTYPE
                AND CDACTV = 'Y'
              ORDER BY CDDESC, CDCODE;
 
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT RDDESC, RDCNDT, RDCOST, RDRETL
-              FROM RQSREQDT
+              FROM RQSREQDTLT
              WHERE RDITEM = INKEY
              ORDER BY RDREQ# DESC, RDLIN# DESC
              FETCH FIRST 1 ROW ONLY;

@@ -657,7 +657,7 @@ function renderGrid() {
 
 function applyLookups(resp) {
     lookups = resp;
-    // all four lists come from the RQSCODET code file via REQSTN007S
+    // all four lists come from the RQSCODEFLT code file via REQSTN007S
     fillSelect('#addName', resp.names, 'CDCODE', 'CDCODE');
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');

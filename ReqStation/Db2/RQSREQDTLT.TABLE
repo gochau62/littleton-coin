@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - RQSREQDT.TABLE                                */
+/* Program Name      - RQSREQDTLT.TABLE                                */
 /*                                                                   */
 /* Program Narrative - Create Requisition Detail File                */
 /*                     Replaces MySQL lcc.ReqMaterialDetails.        */
@@ -14,7 +14,7 @@
 /*                                                                   */
 /* Date Written      - 07/20/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(RQSREQDT) COMMIT(*NONE)                */
+/*                     SRCMBR(RQSREQDTLT) COMMIT(*NONE)                */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -28,7 +28,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSREQDT(
+CREATE TABLE RQSREQDTLT(
  RDREQ#  DECIMAL(9, 0) WITH DEFAULT NOT NULL,         -- Requisition Number
  RDLIN#  DECIMAL(3, 0) WITH DEFAULT NOT NULL,         -- Line Number
  RDITEM  VARCHAR(16) CCSID 37 WITH DEFAULT NOT NULL,  -- Item Number
@@ -44,15 +44,15 @@ CREATE TABLE RQSREQDT(
  RDRTNF  CHAR(1) CCSID 37 WITH DEFAULT 'N' NOT NULL,  -- Returned Flag Y/N
  RDRTDT  DECIMAL(8, 0) WITH DEFAULT NOT NULL,         -- Date Returned 20260720
  PRIMARY KEY (RDREQ#, RDLIN#))
- RCDFMT RQSREQDR;
+ RCDFMT RQSREQDTLR;
 
-LABEL ON TABLE RQSREQDT IS 'Requisition Detail File';
+LABEL ON TABLE RQSREQDTLT IS 'Requisition Detail File';
 
 -- The open-requisitions grid filters on the returned flag constantly
 -- (the MySQL table carried the same index, KEY `Returned`).
-CREATE INDEX RQSREQDX1 ON RQSREQDT (RDRTNF);
+CREATE INDEX RQSREQDTLX ON RQSREQDTLT (RDRTNF);
 
-LABEL ON COLUMN RQSREQDT
+LABEL ON COLUMN RQSREQDTLT
 ( RDREQ#  TEXT IS 'Requisition Number',
   RDLIN#  TEXT IS 'Line Number',
   RDITEM  TEXT IS 'Item Number',
