@@ -1,9 +1,14 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - RQSAREAT.TABLE                                */
+/* Program Name      - RQSCODET.TABLE                                */
 /*                                                                   */
-/* Program Narrative - Create Requisition Area Code File             */
-/*                     Replaces MySQL lcc.ReqMaterial_AreaCode       */
+/* Program Narrative - Create Requisition Code File. One generic     */
+/*                     code table replacing the four dropdown        */
+/*                     lookup files:                                 */
+/*                       CDTYPE 'AREACODE' - area codes (desc used)  */
+/*                       CDTYPE 'AREATYPE' - area types              */
+/*                       CDTYPE 'NAMES'    - requisitioner names     */
+/*                       CDTYPE 'AUTHBY'   - authorizers             */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -11,7 +16,7 @@
 /*                                                                   */
 /* Date Written      - 07/20/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(RQSAREAT) COMMIT(*NONE)                */
+/*                     SRCMBR(RQSCODET) COMMIT(*NONE)                */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -25,11 +30,12 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSAREAT(
- ARCODE  CHAR(2) CCSID 37 WITH DEFAULT NOT NULL,      -- Area Code
- ARDESC  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Area Description
- ARACTV  CHAR(1) CCSID 37 WITH DEFAULT 'Y' NOT NULL,  -- Active Flag Y/N
- PRIMARY KEY (ARCODE))
- RCDFMT RQSAREAR;
+CREATE TABLE RQSCODET(
+ CDTYPE  VARCHAR(10) CCSID 37 WITH DEFAULT NOT NULL,  -- Code List Type
+ CDCODE  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Code Value
+ CDDESC  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Description
+ CDACTV  CHAR(1) CCSID 37 WITH DEFAULT 'Y' NOT NULL,  -- Active Flag Y/N
+ PRIMARY KEY (CDTYPE, CDCODE))
+ RCDFMT RQSCODER;
 
-LABEL ON TABLE RQSAREAT IS 'Requisition Area Code File';
+LABEL ON TABLE RQSCODET IS 'Requisition Code File';

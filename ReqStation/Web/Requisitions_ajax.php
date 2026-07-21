@@ -57,9 +57,9 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
 
-    // main grid rows (open requisitions)
+    // main grid rows (open requisitions); first=1 logs the station OPEN
     case 'list':
-        $rows = rqsGetOpen($conn);
+        $rows = rqsGetOpen($conn, intval($_POST['first'] ?? 0) ? 'Y' : 'N');
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
@@ -71,10 +71,10 @@ switch ($action) {
 
     // dropdown data for the add-request form (fallback when not preloaded)
     case 'lookups':
-        $names = rqsLookup($conn, "REQSTN007S");
-        $codes = rqsLookup($conn, "REQSTN008S");
-        $types = rqsLookup($conn, "REQSTN009S");
-        $auth  = rqsLookup($conn, "REQSTN010S");
+        $names = rqsLookup($conn, "NAMES");
+        $codes = rqsLookup($conn, "AREACODE");
+        $types = rqsLookup($conn, "AREATYPE");
+        $auth  = rqsLookup($conn, "AUTHBY");
         if ($names === false || $codes === false || $types === false || $auth === false) {
             rqsOutFail();
         }
@@ -125,7 +125,6 @@ switch ($action) {
             }
         }
 
-        rqsLogActivity($conn, $user, 'INSERT', $reqNum);
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
     // authorize a requisition (conditional - first authorizer wins)
@@ -138,7 +137,6 @@ switch ($action) {
             $by = ($rows && count($rows)) ? $rows[0]['RHAUTB'] : 'another station';
             rqsOutFail("Already authorized by " . $by . ".");
         }
-        rqsLogActivity($conn, $user, 'AUTHORIZE', $reqNum);
         rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)
@@ -153,7 +151,6 @@ switch ($action) {
         $lineNum = intval($_POST['lineNum']);
         $flag = ($_POST['flag'] == 'Y' ? 'Y' : 'N');
         if (!rqsSetReturned($conn, $reqNum, $lineNum, $flag)) { rqsOutFail(); }
-        rqsLogActivity($conn, $user, $flag == 'Y' ? 'RETURN' : 'UNRETURN', $reqNum);
         rqsOut(array("ok" => true));
 
     default:

@@ -37,6 +37,8 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
+        DECLARE V_CNT INTEGER DEFAULT 0;
+
         -- The flag guard makes the update idempotent: if another station
         -- already set the same state, this quietly does nothing instead of
         -- re-stamping the return date.
@@ -50,4 +52,14 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
          WHERE RDREQ# = INREQ#
            AND RDLIN# = INLIN#
            AND RDRTNF <> INRTNF;
+
+        GET DIAGNOSTICS V_CNT = ROW_COUNT;
+        IF V_CNT > 0 THEN
+            INSERT INTO RQSACTVT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
+            VALUES (SUBSTR(USER, 1, 10),
+                    DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
+                    DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
+                    CASE WHEN INRTNF = 'Y' THEN 'RETURN' ELSE 'UNRETURN' END,
+                    INREQ#);
+        END IF;
     END;

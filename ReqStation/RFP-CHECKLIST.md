@@ -12,31 +12,26 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 |---|---|---|
 | RQSREQHT | Requisition Header File | `Db2/RQSREQHT.TABLE` |
 | RQSREQDT | Requisition Detail File | `Db2/RQSREQDT.TABLE` |
-| RQSAREAT | Requisition Area Code File | `Db2/RQSAREAT.TABLE` |
-| RQSARTYT | Requisition Area Type File | `Db2/RQSARTYT.TABLE` |
-| RQSRQSNT | Requisitioner Names File | `Db2/RQSRQSNT.TABLE` |
-| RQSAUTHT | Requisition Authorizers File | `Db2/RQSAUTHT.TABLE` |
+| RQSCODET | Requisition Code File (all four dropdown lists by CDTYPE) | `Db2/RQSCODET.TABLE` |
 | RQSACTVT | Requisition Activity Log File | `Db2/RQSACTVT.TABLE` |
-| RQSREQHV | Requisition Header View w/Dates (attribute per shop view standard) | `Db2/RQSREQHV.VIEW` |
 
 ### Db2 for i — SQL procedures (attribute per shop standard, e.g. `SQLPROC`)
 
 | Object | Description | Source |
 |---|---|---|
-| REQSTN001S | Insert requisition header (OUT new req#) | `Db2/REQSTN001S.PROC` |
+| REQSTN001S | Insert requisition header (OUT new req#; logs INSERT) | `Db2/REQSTN001S.PROC` |
 | REQSTN002S | Insert requisition detail line | `Db2/REQSTN002S.PROC` |
-| REQSTN003S | List open requisitions (main grid) | `Db2/REQSTN003S.PROC` |
+| REQSTN003S | List open requisitions (main grid; logs OPEN on first load) | `Db2/REQSTN003S.PROC` |
 | REQSTN004S | Get one requisition (header + lines) | `Db2/REQSTN004S.PROC` |
-| REQSTN005S | Authorize requisition | `Db2/REQSTN005S.PROC` |
-| REQSTN006S | Mark/unmark line returned | `Db2/REQSTN006S.PROC` |
-| REQSTN007S | List requisitioner names | `Db2/REQSTN007S.PROC` |
-| REQSTN008S | List area codes | `Db2/REQSTN008S.PROC` |
-| REQSTN009S | List area types | `Db2/REQSTN009S.PROC` |
-| REQSTN010S | List authorizers | `Db2/REQSTN010S.PROC` |
-| REQSTN011S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN011S.PROC` |
-| REQSTN012S | Item lookup for entry autofill (legacy dRec) | `Db2/REQSTN012S.PROC` |
-| REQSTN013S | Delete requisition (backs out failed inserts) | `Db2/REQSTN013S.PROC` |
-| REQSTN014S | Write activity-log record | `Db2/REQSTN014S.PROC` |
+| REQSTN005S | Authorize requisition (conditional; logs AUTHORIZE) | `Db2/REQSTN005S.PROC` |
+| REQSTN006S | Mark/unmark line returned (idempotent; logs RETURN) | `Db2/REQSTN006S.PROC` |
+| REQSTN007S | The one lookup proc: 4 code lists + ITEM autofill | `Db2/REQSTN007S.PROC` |
+| REQSTN008S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN008S.PROC` |
+| REQSTN009S | Delete requisition (backs out failed inserts; logs DELETE) | `Db2/REQSTN009S.PROC` |
+
+Upgrade path once the IBM i version is confirmed 7.3+: a JSON_TABLE
+insert proc replaces 001S/002S/009S with one atomic call — 13 objects
+become 11.
 
 ### IFS — `*IFS` (MD attribute `PHPSRC`), dev path `/www/seidendev/htdocs/requisitions/`
 
@@ -68,8 +63,8 @@ history if a behavior question ever comes up.
 ## 2. Build sequence in dev
 
 1. `RUNSQLSTM` each `.TABLE` member into `LSCDEVLIBP` (order: RQSREQHT,
-   RQSREQDT, then the lookups, then RQSREQHV).
-2. `RUNSQLSTM` the ten `.PROC` members.
+   RQSREQDT, RQSCODET, RQSACTVT).
+2. `RUNSQLSTM` the nine `.PROC` members.
 3. Load all six tables from `Data/*.csv` with CPYFRMIMPF — the CSVs are
    already in Db2 format (transforms done), commands in `Data/README.md`.
 4. Restart the identity:
@@ -83,7 +78,7 @@ history if a behavior question ever comes up.
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 22 Db2 objects and 4 IFS files above (level 10, same as
+2. Assign the 13 Db2 objects and 4 IFS files above (level 10, same as
    Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
@@ -121,7 +116,8 @@ history if a behavior question ever comes up.
 
 ## 7. Still open before promotion to prod
 
-1. ~~The `activity` logging~~ — resolved: RQSACTVT + REQSTN014S log page
+1. ~~The `activity` logging~~ — resolved: RQSACTVT rows are written inside
+   the action procs themselves; they log page
    opens, inserts, authorizations and return flips by user profile. The
    MySQL `station`/`applications` version-check machinery dies with the
    .mdb (the web app has no per-PC installs to version).
@@ -135,6 +131,6 @@ history if a behavior question ever comes up.
    the old saved links stop working by design.
 
 Reports are done: Monthly Report button = "Monthly Update: Requisitioned
-Product" (REQSTN011S, grouped by requisitioner with Ext. Cost/Ext. Retail
+Product" (REQSTN008S, grouped by requisitioner with Ext. Cost/Ext. Retail
 subtotals, printable); the Print button in the requisition view = the old
 rptRequest "Preview Report".

@@ -592,8 +592,12 @@ function markStale() {
 
 /* ------------------------- grid ------------------------- */
 
+var rqFirstLoad = 1;   // the first list call logs the station OPEN
+
 function loadGrid(background) {
-    postAjax({ action: 'list' }, function (resp) {
+    var first = rqFirstLoad;
+    rqFirstLoad = 0;
+    postAjax({ action: 'list', first: first }, function (resp) {
         $('#lblUpdated').removeClass('rq-stale')
             .text('Updated ' + new Date().toLocaleTimeString());
         var j = JSON.stringify(resp.rows);
@@ -653,10 +657,11 @@ function renderGrid() {
 
 function applyLookups(resp) {
     lookups = resp;
-    fillSelect('#addName', resp.names, 'RQNAME', 'RQNAME');
-    fillSelect('#addAreaCode', resp.areaCodes, 'ARCODE', 'ARDESC');
-    fillSelect('#addAreaType', resp.areaTypes, 'ATTYPE', 'ATTYPE');
-    fillSelect('#authBy', resp.authBy, 'AUNAME', 'AUNAME');
+    // all four lists come from the RQSCODET code file via REQSTN007S
+    fillSelect('#addName', resp.names, 'CDCODE', 'CDCODE');
+    fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
+    fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
+    fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
 }
 
 function loadLookups() {

@@ -14,10 +14,7 @@ into the Db2 tables with `CPYFRMIMPF`, no staging tables needed:
 |---|---|---|
 | RQSREQHT.csv | 14,073 | RQSREQHT |
 | RQSREQDT.csv | 50,063 | RQSREQDT |
-| RQSAREAT.csv | 3 | RQSAREAT |
-| RQSARTYT.csv | 16 | RQSARTYT |
-| RQSRQSNT.csv | 65 | RQSRQSNT |
-| RQSAUTHT.csv | 6 | RQSAUTHT |
+| RQSCODET.csv | 90 | RQSCODET (all four dropdown lists: 3 AREACODE, 16 AREATYPE, 65 NAMES, 6 AUTHBY) |
 
 `ReqMaterial_Returns` was empty in production — no Db2 table, nothing to load.
 

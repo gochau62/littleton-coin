@@ -67,15 +67,14 @@ if ($authorized != "yes") {
     // the page falls back to the ajax lookups if anything fails here
     $rqLookups = null;
     if (isset($authConn) && $authConn) {
-        $names = rqsLookup($authConn, "REQSTN007S");
-        $codes = rqsLookup($authConn, "REQSTN008S");
-        $types = rqsLookup($authConn, "REQSTN009S");
-        $auth  = rqsLookup($authConn, "REQSTN010S");
+        $names = rqsLookup($authConn, "NAMES");
+        $codes = rqsLookup($authConn, "AREACODE");
+        $types = rqsLookup($authConn, "AREATYPE");
+        $auth  = rqsLookup($authConn, "AUTHBY");
         if ($names !== false && $codes !== false && $types !== false && $auth !== false) {
             $rqLookups = array("ok" => true, "names" => $names, "areaCodes" => $codes,
                                "areaTypes" => $types, "authBy" => $auth);
         }
-        rqsLogActivity($authConn, $user, 'OPEN', 0);
     }
 
     include "Requisitions_dsp.php";

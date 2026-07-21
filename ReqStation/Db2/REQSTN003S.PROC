@@ -27,10 +27,12 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN003S ()
+CREATE OR REPLACE PROCEDURE REQSTN003S (
+        IN INLOGO CHAR(1)
+        )
 
         LANGUAGE SQL
-        READS SQL DATA
+        MODIFIES SQL DATA
         DYNAMIC RESULT SETS 1
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
@@ -45,6 +47,16 @@ CREATE OR REPLACE PROCEDURE REQSTN003S ()
                 ON D.RDREQ# = H.RHREQ#
              WHERE D.RDRTNF = 'N'
              ORDER BY H.RHRQDT, H.RHRQTM, H.RHREQ#, D.RDLIN#;
+
+        -- 'Y' on the page's first load records the station open,
+        -- replacing the Access app's activity logging
+        IF INLOGO = 'Y' THEN
+            INSERT INTO RQSACTVT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
+            VALUES (SUBSTR(USER, 1, 10),
+                    DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
+                    DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
+                    'OPEN', 0);
+        END IF;
 
         OPEN C1;
     END;

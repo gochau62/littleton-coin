@@ -2,7 +2,14 @@
 /*                                                                   */
 /* Program Name      - REQSTN007S                                    */
 /*                                                                   */
-/* Program Narrative - List Active Requisitioner Names (combo)       */
+/* Program Narrative - The one lookup procedure. INTYPE picks the    */
+/*                     list:                                         */
+/*                       AREACODE/AREATYPE/NAMES/AUTHBY - active     */
+/*                         rows of that type from RQSCODET           */
+/*                       ITEM - most recent description, coin date,  */
+/*                         cost and retail for INKEY from history    */
+/*                         (entry-form autofill; swap to the         */
+/*                         corporate item master when confirmed)     */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -24,7 +31,10 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN007S ()
+CREATE OR REPLACE PROCEDURE REQSTN007S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(16)
+        )
 
         LANGUAGE SQL
         READS SQL DATA
@@ -33,10 +43,22 @@ CREATE OR REPLACE PROCEDURE REQSTN007S ()
 
     BEGIN
         DECLARE C1 CURSOR WITH RETURN FOR
-            SELECT RQNAME, RQBDGE
-              FROM RQSRQSNT
-             WHERE RQACTV = 'Y'
-             ORDER BY RQNAME;
+            SELECT CDCODE, CDDESC
+              FROM RQSCODET
+             WHERE CDTYPE = INTYPE
+               AND CDACTV = 'Y'
+             ORDER BY CDDESC, CDCODE;
 
-        OPEN C1;
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT RDDESC, RDCNDT, RDCOST, RDRETL
+              FROM RQSREQDT
+             WHERE RDITEM = INKEY
+             ORDER BY RDREQ# DESC, RDLIN# DESC
+             FETCH FIRST 1 ROW ONLY;
+
+        IF INTYPE = 'ITEM' THEN
+            OPEN C2;
+        ELSE
+            OPEN C1;
+        END IF;
     END;

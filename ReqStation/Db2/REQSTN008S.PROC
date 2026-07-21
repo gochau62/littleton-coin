@@ -2,7 +2,12 @@
 /*                                                                   */
 /* Program Name      - REQSTN008S                                    */
 /*                                                                   */
-/* Program Narrative - List Active Area Codes (combo)                */
+/* Program Narrative - Monthly Requisitioned Product summary.        */
+/*                     Feeds the web version of the Access report    */
+/*                     "Requested Material Summary" (Monthly Update: */
+/*                     Requisitioned Product) - all lines requested  */
+/*                     in the given month with extended cost/retail, */
+/*                     grouped by requisitioner on the page.         */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -24,7 +29,9 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN008S ()
+CREATE OR REPLACE PROCEDURE REQSTN008S (
+        IN INYYMM DECIMAL(6, 0)
+        )
 
         LANGUAGE SQL
         READS SQL DATA
@@ -33,10 +40,17 @@ CREATE OR REPLACE PROCEDURE REQSTN008S ()
 
     BEGIN
         DECLARE C1 CURSOR WITH RETURN FOR
-            SELECT ARCODE, ARDESC
-              FROM RQSAREAT
-             WHERE ARACTV = 'Y'
-             ORDER BY ARDESC;
+            SELECT H.RHNAME, H.RHRQDT, H.RHREQ#,
+                   D.RDLIN#, D.RDITEM, D.RDCNDT, D.RDDESC,
+                   D.RDQTY, D.RDCOST, D.RDRETL,
+                   D.RDQTY * D.RDCOST AS RDEXTC,
+                   D.RDQTY * D.RDRETL AS RDEXTR,
+                   D.RDSKUT
+              FROM RQSREQHT H
+              JOIN RQSREQDT D
+                ON D.RDREQ# = H.RHREQ#
+             WHERE INT(H.RHRQDT / 100) = INYYMM
+             ORDER BY H.RHNAME, H.RHRQDT, H.RHREQ#, D.RDLIN#;
 
         OPEN C1;
     END;

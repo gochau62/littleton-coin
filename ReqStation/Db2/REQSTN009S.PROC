@@ -2,7 +2,11 @@
 /*                                                                   */
 /* Program Name      - REQSTN009S                                    */
 /*                                                                   */
-/* Program Narrative - List Active Area Types (combo)                */
+/* Program Narrative - Delete a requisition (detail then header) and */
+/*                     log the removal. Used by the web insert to    */
+/*                     back out a partial requisition if a line      */
+/*                     insert fails, so a failed submit never leaves */
+/*                     a half-saved requisition behind.              */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -24,19 +28,21 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN009S ()
+CREATE OR REPLACE PROCEDURE REQSTN009S (
+        IN INREQ# DECIMAL(9, 0)
+        )
 
         LANGUAGE SQL
-        READS SQL DATA
-        DYNAMIC RESULT SETS 1
+        MODIFIES SQL DATA
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        DECLARE C1 CURSOR WITH RETURN FOR
-            SELECT ATTYPE
-              FROM RQSARTYT
-             WHERE ATACTV = 'Y'
-             ORDER BY ATTYPE;
+        DELETE FROM RQSREQDT WHERE RDREQ# = INREQ#;
+        DELETE FROM RQSREQHT WHERE RHREQ# = INREQ#;
 
-        OPEN C1;
+        INSERT INTO RQSACTVT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
+        VALUES (SUBSTR(USER, 1, 10),
+                DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
+                DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
+                'DELETE', INREQ#);
     END;

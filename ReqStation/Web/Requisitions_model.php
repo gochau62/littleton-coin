@@ -51,9 +51,10 @@ function rqsFetchAll($conn, $sql, $params = array()) {
     return $result;
 }
 
-// PROGRAM NAME: REQSTN003S - open requisitions for the main grid
-function rqsGetOpen($conn) {
-    return rqsFetchAll($conn, "CALL REQSTN003S()");
+// PROGRAM NAME: REQSTN003S - open requisitions for the main grid.
+// $logOpen 'Y' on the page's first load writes the OPEN activity record.
+function rqsGetOpen($conn, $logOpen = 'N') {
+    return rqsFetchAll($conn, "CALL REQSTN003S(?)", array($logOpen));
 }
 
 // PROGRAM NAME: REQSTN004S - one requisition, header + all lines
@@ -61,24 +62,24 @@ function rqsGet($conn, $reqNum) {
     return rqsFetchAll($conn, "CALL REQSTN004S(?)", array($reqNum));
 }
 
-// PROGRAM NAME: REQSTN011S - monthly report rows
+// PROGRAM NAME: REQSTN008S - monthly report rows
 function rqsMonthly($conn, $yyyymm) {
-    return rqsFetchAll($conn, "CALL REQSTN011S(?)", array($yyyymm));
+    return rqsFetchAll($conn, "CALL REQSTN008S(?)", array($yyyymm));
 }
 
-// PROGRAM NAME: REQSTN012S - item autofill (most recent use of the item)
-function rqsItemLookup($conn, $item) {
-    return rqsFetchAll($conn, "CALL REQSTN012S(?)", array($item));
-}
-
-// PROGRAM NAMES: REQSTN007S / 008S / 009S / 010S - combo lookups
-function rqsLookup($conn, $proc) {
-    $allowed = array("REQSTN007S", "REQSTN008S", "REQSTN009S", "REQSTN010S");
-    if (!in_array($proc, $allowed)) {
-        $GLOBALS['rqsErr'] = "rqsLookup: procedure not allowed";
+// PROGRAM NAME: REQSTN007S - the one lookup proc: code lists by type
+function rqsLookup($conn, $type) {
+    $allowed = array("NAMES", "AREACODE", "AREATYPE", "AUTHBY");
+    if (!in_array($type, $allowed)) {
+        $GLOBALS['rqsErr'] = "rqsLookup: list type not allowed";
         return false;
     }
-    return rqsFetchAll($conn, "CALL " . $proc . "()");
+    return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array($type, ""));
+}
+
+// PROGRAM NAME: REQSTN007S type ITEM - entry-form autofill
+function rqsItemLookup($conn, $item) {
+    return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEM", $item));
 }
 
 // PROGRAM NAME: REQSTN001S - insert header, returns new req# (false on error)
@@ -127,14 +128,14 @@ function rqsInsertLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
     return true;
 }
 
-// PROGRAM NAME: REQSTN013S - back out a partial requisition after a
+// PROGRAM NAME: REQSTN009S - back out a partial requisition after a
 // failed line insert, so a failed submit never leaves half a requisition
 function rqsDeleteRequisition($conn, $reqNum) {
-    $sql = "CALL REQSTN013S(?)";
+    $sql = "CALL REQSTN009S(?)";
     $stmt = db2_prepare($conn, $sql);
-    if (!$stmt) { return rqsFail("prepare REQSTN013S"); }
+    if (!$stmt) { return rqsFail("prepare REQSTN009S"); }
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
-    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN013S"); }
+    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN009S"); }
     return true;
 }
 
@@ -171,15 +172,7 @@ function rqsSetReturned($conn, $reqNum, $lineNum, $flag) {
     return true;
 }
 
-// PROGRAM NAME: REQSTN014S - activity log; never blocks the real action
-function rqsLogActivity($conn, $user, $action, $reqNum) {
-    $sql = "CALL REQSTN014S(?, ?, ?)";
-    $stmt = db2_prepare($conn, $sql);
-    if (!$stmt) { return rqsFail("prepare REQSTN014S"); }
-    db2_bind_param($stmt, 1, "user", DB2_PARAM_IN);
-    db2_bind_param($stmt, 2, "action", DB2_PARAM_IN);
-    db2_bind_param($stmt, 3, "reqNum", DB2_PARAM_IN);
-    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN014S"); }
-    return true;
-}
+// Activity logging lives inside the action procs themselves (INSERT in
+// 001S, OPEN in 003S, AUTHORIZE in 005S, RETURN/UNRETURN in 006S,
+// DELETE in 009S) - no separate logger to call or forget.
 ?>
