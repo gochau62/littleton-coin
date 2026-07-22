@@ -275,11 +275,11 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   overflow: hidden;
   background: #fff;
 }
-.rq-lines tbody tr:nth-child(even) td:not(:last-child) { background: #f2f7f3; }
+.rq-lines tbody tr:nth-child(even) td:not(:last-child) { background: #f5f6f6; }
+/* active cell: no fill, just a slim blue box hugging the inside edge */
 .rq-lines tbody td:focus-within {
   outline: 2px solid var(--rq-blue);
   outline-offset: -2px;
-  background: var(--rq-accent);
 }
 .rq-lines tbody td:last-child {                       /* the ✕ column */
   border: none;
