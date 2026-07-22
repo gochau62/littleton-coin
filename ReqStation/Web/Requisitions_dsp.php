@@ -227,6 +227,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   color: var(--rq-muted);
 }
 .rq-formrow select,
+.rq-formrow input[type=text],
 .rq-comments input,
 .rq-authrow select,
 .rq-authrow input {
@@ -241,7 +242,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
               font-size: .82rem; color: var(--rq-muted); }
 .rq-rushgrp label { display: inline-flex; flex-direction: row; gap: .3rem;
                     align-items: center; font-size: .9rem; color: var(--rq-text); }
-#addDate { background: #f0f2f1; color: var(--rq-muted); min-width: 240px; }
+#addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
 .rq-lines input {
   width: 100%;
