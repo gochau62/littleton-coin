@@ -126,9 +126,13 @@ history if a behavior question ever comes up.
 3. Web-profile authority to LSCDEVLIBP (the dev log already shows
    SQLCODE -551 against it for Sellbrite) — GRTOBJAUT before testing procs.
 4. At go-live: retire the old `/requisitions/` folder on the 10088
-   instance and push the new-URL shortcut (with `?action=add` for the
-   entry-form one) to the workfloor and inventory-handler desktops —
-   the old saved links stop working by design.
+   instance and push two shortcuts to the desktops:
+   - **Workfloor / inventory handlers**: `Requisitions_ctl.php?mode=entry`
+     — entry form only, nothing else visible; a fresh blank form after
+     each submit (their replacement for the favorited request.php).
+   - **IT / supervisors**: the plain URL — full station view (grid,
+     authorize, returns, reports).
+   The old saved links stop working by design.
 
 Reports are done: Monthly Report button = "Monthly Update: Requisitioned
 Product" (REQSTN008S, grouped by requisitioner with Ext. Cost/Ext. Retail

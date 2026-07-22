@@ -26,7 +26,7 @@
 <!--  * Project   -                                     *  -->
 <!--  ***************************************************   */
 
-function dspRequisitions($user, $rqLookups = null) {
+function dspRequisitions($user, $rqLookups = null, $mode = '') {
 ?>
 
 <style>
@@ -272,6 +272,14 @@ function dspRequisitions($user, $rqLookups = null) {
                     font-size: .82rem; color: var(--rq-muted); }
 .rq-authrow .rq-comments { flex: 1; margin-top: 0; }
 
+/* ---------- entry-only mode (workfloor shortcut ?mode=entry) ---------- */
+/* No grid, no reports - the entry form IS the page, and it can't be
+   dismissed, matching the old request.php the floor had favorited. */
+.rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
+.rq-entry #mdlAdd .rq-x,
+.rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
+.rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
+
 /* ---------- monthly report ---------- */
 .rpt-title { margin: 0 0 .75rem 0; color: var(--rq-green-dk); }
 .rpt-table .rpt-group td { font-weight: 700; background: var(--rq-accent); }
@@ -280,10 +288,10 @@ function dspRequisitions($user, $rqLookups = null) {
 .rq-modal-head .rq-btn { margin-right: .4rem; }
 </style>
 
-<div class="rq-app">
+<div class="rq-app<?php echo $mode === 'entry' ? ' rq-entry' : ''; ?>">
 
   <header class="rq-topbar">
-    <h1>Requisition Station</h1>
+    <h1><?php echo $mode === 'entry' ? 'Requisition Entry' : 'Requisition Station'; ?></h1>
     <div class="rq-topbar-right">
       <span id="rqUser"><?php echo htmlspecialchars($user); ?></span>
       <span id="rqClock"></span>
@@ -447,6 +455,7 @@ function dspRequisitions($user, $rqLookups = null) {
    auto-refresh (replaces the Access Form_Timer), add-request modal
    with dynamic lines, authorize and return-item actions via ajax. */
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
+var RQ_MODE = '<?php echo $mode; ?>';    // 'entry' = workfloor entry-only shortcut
 var gridRows = [];
 var lastGridJson = '';
 var lookups = null;
@@ -456,10 +465,15 @@ var lastReqRows = null;    // data behind the open view modal
 
 $(document).ready(function () {
     loadLookups();
-    loadGrid();
-    startAutoRefresh();
     tickClock();
     setInterval(tickClock, 1000);
+
+    if (RQ_MODE === 'entry') {
+        openAddModal();          // the entry form IS the page
+    } else {
+        loadGrid();
+        startAutoRefresh();
+    }
 
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
@@ -505,9 +519,10 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
-    // ESC closes the topmost open window
+    // ESC closes the topmost open window (except the entry-mode form,
+    // which is the whole page)
     $(document).on('keydown', function (e) {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && RQ_MODE !== 'entry') {
             $('.rq-overlay').not('[hidden]').last().prop('hidden', true);
         }
     });
@@ -550,11 +565,13 @@ $(document).ready(function () {
     // deep links, for shortcuts and shared links:
     //   ?id=N        -> open that requisition's view
     //   ?action=add  -> open the entry form directly
-    var qs = new URLSearchParams(window.location.search);
-    if (qs.get('id')) {
-        openViewModal(parseInt(qs.get('id'), 10));
-    } else if (qs.get('action') === 'add') {
-        openAddModal();
+    if (RQ_MODE !== 'entry') {
+        var qs = new URLSearchParams(window.location.search);
+        if (qs.get('id')) {
+            openViewModal(parseInt(qs.get('id'), 10));
+        } else if (qs.get('action') === 'add') {
+            openAddModal();
+        }
     }
 });
 
@@ -754,10 +771,14 @@ function submitRequisition() {
     };
 
     postAjax({ action: 'insert', payload: JSON.stringify(payload) }, function (resp) {
-        $('#mdlAdd').prop('hidden', true);
         swal('Requisition ' + resp.reqNum + ' created',
              resp.lines + ' line(s) inserted.', 'success');
-        loadGrid();
+        if (RQ_MODE === 'entry') {
+            openAddModal();          // fresh blank form for the next request
+        } else {
+            $('#mdlAdd').prop('hidden', true);
+            loadGrid();
+        }
     });
 }
 

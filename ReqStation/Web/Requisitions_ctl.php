@@ -77,8 +77,12 @@ if ($authorized != "yes") {
         }
     }
 
+    // mode=entry is the workfloor shortcut: entry form only, no grid.
+    // The plain URL is the full station view for IT/supervisors.
+    $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
+
     include "Requisitions_dsp.php";
-    dspRequisitions($user, $rqLookups);
+    dspRequisitions($user, $rqLookups, $rqMode);
 ?>
 <!--  End Content Here -->
 <?php
