@@ -596,7 +596,10 @@ $(document).ready(function () {
 });
 
 function tickClock() {
-    $('#rqClock').text(new Date().toLocaleString());
+    var now = new Date().toLocaleString();
+    $('#rqClock').text(now);
+    $('#addDate').val(now);    // the entry form's Date runs live, like the
+                               // legacy form's Clock.js
 }
 
 function startAutoRefresh() {
