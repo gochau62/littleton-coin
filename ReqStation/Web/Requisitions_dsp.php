@@ -499,7 +499,12 @@ $(document).ready(function () {
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
     $('#txtFilter').on('input', renderGrid);
-    $('#btnAdd').on('click', openAddModal);
+    // the entry sheet in a new tab - the same move Access's "Add Requests"
+    // button made when it opened request.php in a browser window; the grid
+    // stays open behind it and picks up the new req on its next refresh
+    $('#btnAdd').on('click', function () {
+        window.open('Requisitions_ctl.php?mode=entry', '_blank');
+    });
     $('#btnAddLine').on('click', addLineRow);
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnAuthorize').on('click', authorizeCurrent);
