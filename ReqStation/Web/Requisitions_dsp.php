@@ -291,7 +291,10 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 /* ---------- monthly report ---------- */
 .rpt-title { margin: 0 0 .75rem 0; color: var(--rq-green-dk); }
 .rpt-table .rpt-group td { font-weight: 700; background: var(--rq-accent); }
+.rpt-table .rpt-req td { font-weight: 600; color: var(--rq-muted); background: #fbfcfb; }
+.rpt-table .rpt-cmnt { font-style: italic; color: var(--rq-muted); }
 .rpt-table .rpt-subtotal td, .rpt-table .rpt-grand td { font-weight: 700; background: #f7faf8; }
+.rpt-stamp { margin-top: .75rem; color: var(--rq-muted); font-size: .85rem; }
 #rptMonth { padding: .35rem .5rem; border: 1px solid var(--rq-line); border-radius: 6px; }
 .rq-modal-head .rq-btn { margin-right: .4rem; }
 </style>
@@ -894,62 +897,86 @@ function runMonthlyReport() {
              function (resp) { renderMonthlyReport(resp.rows, ym); });
 }
 
+// Faithful to the printed Access report: grouped by Name, then by
+// requisition (date + req#) with the req's comments and "Req. Totals",
+// then "Totals by Name", long-date stamp at the end.
 function renderMonthlyReport(rows, ym) {
     if (!rows.length) {
         $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(ym) + '.</div>');
         return;
     }
-    var name = null, sub = null;
-    var grand = { qty: 0, extc: 0, extr: 0, lines: 0 };
+    var body = '';
+    var name = null, req = null;
+    var nT = null, rT = null, reqComments = '';
+    var grand = { qty: 0, cost: 0, retl: 0, reqs: 0 };
 
-    function subtotalRow() {
-        if (name === null) { return ''; }
-        return '<tr class="rpt-subtotal"><td colspan="4">Summary for ' + esc(name) +
-               ' (' + sub.lines + ' detail record' + (sub.lines === 1 ? '' : 's') + ')</td>' +
-               '<td class="rq-num">' + sub.qty + '</td><td></td><td></td>' +
-               '<td class="rq-num">' + money(sub.extc) + '</td>' +
-               '<td class="rq-num">' + money(sub.extr) + '</td><td></td></tr>';
+    function totalsLine(cls, label, t) {
+        return '<tr class="' + cls + '"><td colspan="9" style="text-align:right;">' + label +
+               ' &nbsp; Total Qty: ' + t.qty +
+               ' &nbsp;&nbsp; Total Retail: $' + money(t.retl) +
+               ' &nbsp;&nbsp; Total Cost: $' + money(t.cost) + '</td></tr>';
+    }
+    function closeReq() {
+        if (req === null) { return; }
+        if (reqComments) {
+            body += '<tr><td></td><td colspan="8" class="rpt-cmnt">Req. Comments: ' +
+                    esc(reqComments) + '</td></tr>';
+        }
+        body += totalsLine('rpt-subtotal', 'Req. Totals:', rT);
+        req = null;
+    }
+    function closeName() {
+        if (name === null) { return; }
+        closeReq();
+        body += totalsLine('rpt-subtotal', 'Totals by Name:', nT);
     }
 
-    var body = '';
     $.each(rows, function (i, r) {
         if (r.RHNAME !== name) {
-            body += subtotalRow();
+            closeName();
             name = r.RHNAME;
-            sub = { qty: 0, extc: 0, extr: 0, lines: 0 };
-            body += '<tr class="rpt-group"><td colspan="10">' + esc(name) + '</td></tr>';
+            nT = { qty: 0, cost: 0, retl: 0 };
+            body += '<tr class="rpt-group"><td colspan="9">' + esc(name) + '</td></tr>';
         }
-        var qty = parseFloat(r.RDQTY) || 0;
-        var extc = parseFloat(r.RDEXTC) || 0;
-        var extr = parseFloat(r.RDEXTR) || 0;
-        sub.qty += qty; sub.extc += extc; sub.extr += extr; sub.lines++;
-        grand.qty += qty; grand.extc += extc; grand.extr += extr; grand.lines++;
+        if (r['RHREQ#'] !== req) {
+            closeReq();
+            req = r['RHREQ#'];
+            rT = { qty: 0, cost: 0, retl: 0 };
+            reqComments = r.RHCMNT || '';
+            grand.reqs++;
+            body += '<tr class="rpt-req"><td colspan="9">' + fmtDate(r.RHRQDT) +
+                    ' &nbsp;&mdash;&nbsp; Req # ' + esc(req) + '</td></tr>';
+        }
+        var q = parseFloat(r.RDQTY) || 0;
+        var c = parseFloat(r.RDCOST) || 0, rt = parseFloat(r.RDRETL) || 0;
+        var ec = parseFloat(r.RDEXTC) || 0, er = parseFloat(r.RDEXTR) || 0;
+        rT.qty += q; rT.cost += ec; rT.retl += er;
+        nT.qty += q; nT.cost += ec; nT.retl += er;
+        grand.qty += q; grand.cost += ec; grand.retl += er;
         body += '<tr>' +
-            '<td>' + fmtDate(r.RHRQDT) + '</td>' +
             '<td>' + esc(r.RDITEM) + '</td>' +
             '<td>' + esc(r.RDCNDT) + '</td>' +
             '<td>' + esc(r.RDDESC) + '</td>' +
-            '<td class="rq-num">' + qty + '</td>' +
-            '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
-            '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
-            '<td class="rq-num">' + money(extc) + '</td>' +
-            '<td class="rq-num">' + money(extr) + '</td>' +
+            '<td class="rq-num">' + q + '</td>' +
+            '<td class="rq-num">$' + money(c) + '</td>' +
+            '<td class="rq-num">$' + money(ec) + '</td>' +
+            '<td class="rq-num">$' + money(rt) + '</td>' +
+            '<td class="rq-num">$' + money(er) + '</td>' +
             '<td>' + esc(r.RDSKUT) + '</td>' +
             '</tr>';
     });
-    body += subtotalRow();
-    body += '<tr class="rpt-grand"><td colspan="4">Grand total (' + grand.lines + ' detail records)</td>' +
-            '<td class="rq-num">' + grand.qty + '</td><td></td><td></td>' +
-            '<td class="rq-num">' + money(grand.extc) + '</td>' +
-            '<td class="rq-num">' + money(grand.extr) + '</td><td></td></tr>';
+    closeName();
+    body += totalsLine('rpt-grand', 'Grand Total (' + grand.reqs + ' requisitions):', grand);
 
     $('#rptBody').html(
         '<h3 class="rpt-title">Monthly Update: Requisitioned Product &mdash; ' + esc(ym) + '</h3>' +
         '<div class="rq-tablewrap"><table class="rq-grid rpt-table"><thead><tr>' +
-        '<th>Req. Date</th><th>Item #</th><th>Coin Date</th><th>Description</th>' +
-        '<th class="rq-num">Qty</th><th class="rq-num">Cost</th><th class="rq-num">Retail</th>' +
-        '<th class="rq-num">Ext. Cost</th><th class="rq-num">Ext. Retail</th><th>SKU To</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table></div>');
+        '<th>Item #</th><th>Coin Date</th><th>Description</th>' +
+        '<th class="rq-num">Qty</th><th class="rq-num">Cost</th><th class="rq-num">Ext. Cost</th>' +
+        '<th class="rq-num">Retail</th><th class="rq-num">Ext. Retail</th><th>Sku To</th>' +
+        '</tr></thead><tbody>' + body + '</tbody></table></div>' +
+        '<div class="rpt-stamp">' + new Date().toLocaleDateString('en-US',
+            { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</div>');
 }
 
 // "Total Outstanding Requisitions" - the Access report of the same name:
@@ -1015,18 +1042,34 @@ function printOutstanding() {
         'Total Outstanding Requisitions');
 }
 
-// "Preview Report" - the Access rptRequest/rptRequestDetail preview for the
-// requisition selected in the grid: header info + lines with extended
-// cost/retail and a quantity total
+// "1/20/2011 11:09:03 AM" from the decimal date + time pair, matching
+// the printed report's Date field
+function fmtDateTime(d8, t6) {
+    var s = String(d8);
+    if (s.length !== 8 || s === '00000000') { return ''; }
+    var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);   // pad hhmmss
+    var hh = parseInt(t.slice(0, 2), 10);
+    var ap = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12; if (hh === 0) { hh = 12; }
+    return parseInt(s.slice(4, 6), 10) + '/' + parseInt(s.slice(6, 8), 10) + '/' + s.slice(0, 4) +
+           ' ' + hh + ':' + t.slice(2, 4) + ':' + t.slice(4, 6) + ' ' + ap;
+}
+
+// "Preview Report" - faithful to the printed rptRequest: the four-row
+// header block, the Sku#..Sku To column set, stacked totals at bottom
+// right, Comments last
 function reqPrintHtml(rows) {
     var h = rows[0];
-    var auth = (h.RHAUTF === 'Y') ? esc(h.RHAUTB) : '!!!NOT AUTHORIZED!!!';
-    var head = '<h3>Requisition ' + esc(h['RHREQ#']) + '</h3>' +
-        '<div><b>Requestor:</b> ' + esc(h.RHNAME) + ' &nbsp; <b>Date:</b> ' + fmtDate(h.RHRQDT) +
-        ' &nbsp; <b>Area:</b> ' + esc(h.RHARCD) + ' - ' + esc(h.RHARTY) +
-        ' &nbsp; <b>Rush:</b> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') +
-        ' &nbsp; <b>Authorized by:</b> ' + auth + '</div>' +
-        (h.RHCMNT ? '<div><b>Comments:</b> ' + esc(h.RHCMNT) + '</div>' : '') + '<br>';
+    var head =
+        '<table class="rpt-hdr"><tr>' +
+        '<td><b>Requisition #:</b> ' + esc(h['RHREQ#']) + '</td>' +
+        '<td><b>Requisitioner:</b> ' + esc(h.RHNAME) + '</td></tr>' +
+        '<tr><td><b>Rush:</b> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
+        '<td><b>Date:</b> ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
+        '<tr><td><b>Authorized By:</b> ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
+        '<td><b>DataEntry:</b> ' + esc(h.RHBDGE) + '</td></tr>' +
+        '<tr><td><b>Area Code:</b> ' + esc(h.RHARCD) + '</td>' +
+        '<td><b>Area Type:</b> ' + esc(h.RHARTY) + '</td></tr></table><br>';
 
     var qty = 0, extc = 0, extr = 0;
     var body = '';
@@ -1036,25 +1079,27 @@ function reqPrintHtml(rows) {
         var ec = q * (parseFloat(r.RDCOST) || 0);
         var er = q * (parseFloat(r.RDRETL) || 0);
         qty += q; extc += ec; extr += er;
-        body += '<tr><td>' + esc(r['RDLIN#']) + '</td><td>' + esc(r.RDITEM) + '</td>' +
-            '<td>' + esc(r.RDLOC) + '</td><td>' + esc(r.RDCNDT) + '</td>' +
-            '<td>' + esc(r.RDDESC) + '</td><td class="rq-num">' + q + '</td>' +
+        body += '<tr><td>' + esc(r.RDITEM) + '</td><td>' + esc(r.RDLOC) + '</td>' +
+            '<td>' + esc(r.RDCNDT) + '</td><td>' + esc(r.RDDESC) + '</td>' +
+            '<td class="rq-num">' + q + '</td>' +
             '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
-            '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
             '<td class="rq-num">' + money(ec) + '</td>' +
+            '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
             '<td class="rq-num">' + money(er) + '</td>' +
-            '<td>' + esc(r.RDSKUT) + '</td>' +
-            '<td>' + (r.RDRTNF === 'Y' ? fmtDate(r.RDRTDT) : '') + '</td></tr>';
+            '<td class="rq-num">' + money(r.RDACST) + '</td>' +
+            '<td>' + esc(r.RDSKUT) + '</td></tr>';
     });
-    body += '<tr class="rpt-grand"><td colspan="5">Total</td><td class="rq-num">' + qty + '</td>' +
-        '<td></td><td></td><td class="rq-num">' + money(extc) + '</td>' +
-        '<td class="rq-num">' + money(extr) + '</td><td></td><td></td></tr>';
 
-    return head + '<table><thead><tr><th>Line</th><th>Item #</th><th>Location</th>' +
-        '<th>Coin Date</th><th>Description</th><th class="rq-num">Qty</th>' +
-        '<th class="rq-num">Cost</th><th class="rq-num">Retail</th>' +
-        '<th class="rq-num">Ext. Cost</th><th class="rq-num">Ext. Retail</th>' +
-        '<th>SKU To</th><th>Returned</th></tr></thead><tbody>' + body + '</tbody></table>';
+    return head +
+        '<table><thead><tr><th>Sku #</th><th>Loc</th><th>Coin Date</th><th>Description</th>' +
+        '<th class="rq-num">Qty</th><th class="rq-num">Cost</th><th class="rq-num">Ext Cost</th>' +
+        '<th class="rq-num">Retail</th><th class="rq-num">Ext Retail</th>' +
+        '<th class="rq-num">Add Cost$</th><th>Sku To</th></tr></thead><tbody>' +
+        body + '</tbody></table>' +
+        '<div class="rpt-totals">Total Qty: ' + qty + '<br>' +
+        'Total Retail: $' + money(extr) + '<br>' +
+        'Total Cost: $' + money(extc) + '</div>' +
+        (h.RHCMNT ? '<div><b>Comments:</b> ' + esc(h.RHCMNT) + '</div>' : '');
 }
 
 function previewReport() {
@@ -1081,8 +1126,13 @@ function printHtml(innerHtml, title) {
         'th,td{border-bottom:1px solid #999;padding:3px 6px;text-align:left;}' +
         '.rq-num{text-align:right;}' +
         '.rpt-group td{font-weight:bold;border-bottom:2px solid #333;padding-top:10px;}' +
+        '.rpt-req td{font-weight:bold;color:#444;}' +
+        '.rpt-cmnt{font-style:italic;color:#444;}' +
         '.rpt-subtotal td,.rpt-grand td{font-weight:bold;}' +
         '.rpt-grand td{border-top:2px solid #333;}' +
+        '.rpt-hdr td{border:none;padding:2px 30px 2px 0;}' +
+        '.rpt-totals{text-align:right;font-weight:bold;margin:12px 0;line-height:1.6;}' +
+        '.rpt-stamp{margin-top:12px;color:#555;}' +
         '.rq-pill{font-weight:bold;}' +
         '</style></head><body>' + innerHtml + '</body></html>');
     w.document.close();
