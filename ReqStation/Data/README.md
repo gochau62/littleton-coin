@@ -18,7 +18,18 @@ into the Db2 tables with `CPYFRMIMPF`, no staging tables needed:
 
 `ReqMaterial_Returns` was empty in production — no Db2 table, nothing to load.
 
-## Load steps
+## Easiest load: the seeder page
+
+Copy `Web/Requisitions_seed.php` next to the other Requisitions files,
+open it in the browser (signed in to LCC Online), and pick each CSV
+straight from your PC — no IFS copy, no CHGATR, no commands. It detects
+the target table from the filename, clears and loads it with batched
+commits, restarts the identity after the header load, and prints the
+validation counts. Load order: RQSREQHDRT → RQSREQDTLT → RQSCODEFLT.
+Dev tool only — do not assign it to the RFP. The CPYFRMIMPF route below
+does the same job from the command line.
+
+## Load steps (CPYFRMIMPF route)
 
 1. Copy the CSVs to the IFS (e.g. `/home/REQSTN/import/`) and tag them UTF-8:
 
