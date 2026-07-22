@@ -82,6 +82,11 @@ function rqsItemLookup($conn, $item) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEM", $item));
 }
 
+// PROGRAM NAME: REQSTN007S type ITEMSRCH - type-ahead item search
+function rqsItemSearch($conn, $prefix) {
+    return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEMSRCH", $prefix));
+}
+
 // PROGRAM NAME: REQSTN001S - insert header, returns new req# (false on error).
 // $authBy is the pre-selected authorizer from the entry form ('' = None),
 // same as the legacy form; the authorized flag itself stays 'N'.

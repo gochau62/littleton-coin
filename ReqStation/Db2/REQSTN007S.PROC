@@ -56,8 +56,23 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              ORDER BY RDREQ# DESC, RDLIN# DESC
              FETCH FIRST 1 ROW ONLY;
 
+        -- ITEMSRCH: type-ahead search - distinct items starting with INKEY,
+        -- each with its most recent description/coin date/cost/retail
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT RDITEM, RDDESC, RDCNDT, RDCOST, RDRETL
+              FROM (SELECT RDITEM, RDDESC, RDCNDT, RDCOST, RDRETL,
+                           ROW_NUMBER() OVER (PARTITION BY RDITEM
+                                              ORDER BY RDREQ# DESC, RDLIN# DESC) AS RN
+                      FROM RQSREQDTLT
+                     WHERE UPPER(RDITEM) LIKE UPPER(INKEY) || '%') T
+             WHERE RN = 1
+             ORDER BY RDITEM
+             FETCH FIRST 12 ROWS ONLY;
+
         IF INTYPE = 'ITEM' THEN
             OPEN C2;
+        ELSEIF INTYPE = 'ITEMSRCH' THEN
+            OPEN C3;
         ELSE
             OPEN C1;
         END IF;

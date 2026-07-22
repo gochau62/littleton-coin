@@ -87,6 +87,12 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "row" => $rows ? $rows[0] : null));
 
+    // type-ahead item search for the entry form's dropdown
+    case 'itemsearch':
+        $rows = rqsItemSearch($conn, trim($_POST['q'] ?? ''));
+        if ($rows === false) { rqsOutFail(); }
+        rqsOut(array("ok" => true, "rows" => $rows));
+
     // insert a requisition: header fields + JSON array of lines.
     // Any line failure backs the whole requisition out - never half-saved.
     case 'insert':

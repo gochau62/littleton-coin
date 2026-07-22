@@ -88,6 +88,22 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-updated.rq-stale { color: var(--rq-red); font-weight: 700; }
 .rq-lines input.rq-bad { border-color: var(--rq-red); background: #fff5f5; }
 
+/* ---------- item type-ahead dropdown ---------- */
+.rq-suggest {
+  position: fixed;
+  z-index: 200;
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+  max-height: 230px;
+  overflow-y: auto;
+  font-size: .85rem;
+}
+.rq-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
+.rq-suggest div b { color: var(--rq-blue); }
+.rq-suggest div.active, .rq-suggest div:hover { background: var(--rq-accent); }
+
 /* ---------- buttons ---------- */
 .rq-btn {
   display: inline-flex;
@@ -596,11 +612,49 @@ $(document).ready(function () {
         row.find('.ln-loc').trigger('focus');
     });
 
+    // live item search: type 2+ characters in Item# and pick from the list
+    var srchTimer = null;
+    $('#lineBody').on('input', '.ln-item', function () {
+        var inp = $(this);
+        clearTimeout(srchTimer);
+        var v = inp.val().trim();
+        if (v.length < 2) { hideSuggest(); return; }
+        srchTimer = setTimeout(function () {
+            postAjax({ action: 'itemsearch', q: v }, function (resp) {
+                showSuggest(inp, resp.rows);
+            }, true);
+        }, 250);
+    });
+    $('#lineBody').on('blur', '.ln-item', function () {
+        setTimeout(hideSuggest, 150);      // let a click on the list land first
+    });
+    $('#lineBody').on('keydown', '.ln-item', function (e) {
+        var box = $('#rqSuggest');
+        if (!box.length) { return; }
+        var items = box.children();
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var i = items.index(items.filter('.active'));
+            i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
+            items.removeClass('active').eq(i).addClass('active');
+        } else if (e.key === 'Escape') {
+            hideSuggest();
+            e.stopPropagation();
+        }
+    });
+
     // Enter hops to the next field like the legacy form's onEnterKey chain;
-    // Enter on the last field of the last row starts a new line
+    // Enter on the last field of the last row starts a new line. With the
+    // item dropdown open, Enter picks the highlighted item instead.
     $('#lineBody').on('keydown', 'input', function (e) {
         if (e.key !== 'Enter') { return; }
         e.preventDefault();
+        var box = $('#rqSuggest');
+        if (box.length && $(this).hasClass('ln-item')) {
+            var act = box.children('.active');
+            (act.length ? act : box.children().first()).trigger('mousedown');
+            return;
+        }
         var inputs = $('#lineBody input:visible');
         var i = inputs.index(this);
         if (i === inputs.length - 1) {
@@ -696,9 +750,15 @@ function renderGrid() {
         if (filter && hay.indexOf(filter) < 0) { return; }
         shown++;
 
-        var auth = (r.RHAUTF === 'Y')
-            ? '<span class="rq-pill rq-ok">' + esc(r.RHAUTB) + '</span>'
-            : '<span class="rq-pill rq-warn">None</span>';
+        // always show the stored text; green only for a real authorizer.
+        // (Legacy data has flag=Y rows whose name is still the None
+        // placeholder - the old Update set the flag unconditionally.)
+        var authName = r.RHAUTB || 'Authorization = None';
+        var isReal = r.RHAUTF === 'Y' &&
+                     authName !== 'Authorization = None' &&
+                     authName !== 'Authorization In Process';
+        var auth = '<span class="rq-pill ' + (isReal ? 'rq-ok' : 'rq-warn') + '">' +
+                   esc(authName) + '</span>';
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
@@ -915,6 +975,38 @@ function fmtDateTimeIso(d8, t6) {
     var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);
     return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) + ' ' +
            t.slice(0, 2) + ':' + t.slice(2, 4) + ':' + t.slice(4, 6);
+}
+
+/* ------------------ item search dropdown ------------------ */
+
+function hideSuggest() { $('#rqSuggest').remove(); }
+
+function showSuggest(inp, rows) {
+    hideSuggest();
+    if (!rows || !rows.length || !inp.is(':focus')) { return; }
+    var box = $('<div id="rqSuggest" class="rq-suggest"></div>');
+    $.each(rows, function (i, r) {
+        $('<div></div>')
+            .html('<b>' + esc(r.RDITEM) + '</b> &nbsp; ' + esc(r.RDDESC))
+            .data('row', r)
+            .appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        var r = $(this).data('row');
+        var row = inp.closest('tr');
+        inp.val(r.RDITEM);
+        row.find('.ln-desc').val(r.RDDESC);
+        row.find('.ln-cndt').val(r.RDCNDT);
+        row.find('.ln-cost').val(r.RDCOST);
+        row.find('.ln-retail').val(r.RDRETL);
+        hideSuggest();
+        row.find('.ln-loc').trigger('focus');
+    });
 }
 
 /* ---------------------- reports ---------------------- */
