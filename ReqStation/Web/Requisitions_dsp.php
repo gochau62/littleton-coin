@@ -86,7 +86,8 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-auto  { color: var(--rq-muted); font-size: .85rem; user-select: none; }
 .rq-updated { color: var(--rq-muted); font-size: .8rem; }
 .rq-updated.rq-stale { color: var(--rq-red); font-weight: 700; }
-.rq-lines input.rq-bad { border-color: var(--rq-red); background: #fff5f5; }
+.rq-lines input.rq-bad { background: #fff5f5; }
+.rq-lines td:has(input.rq-bad) { outline: 2px solid var(--rq-red); outline-offset: -2px; }
 
 /* ---------- item type-ahead dropdown ---------- */
 .rq-suggest {
@@ -264,24 +265,31 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                     align-items: center; font-size: .9rem; color: var(--rq-text); }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
-/* fixed layout so the headers and entry boxes share the same columns */
-.rq-lines { table-layout: fixed; }
-.rq-lines th, .rq-lines td { padding: .2rem .25rem; overflow: hidden; }
+/* spreadsheet-style sheet: the CELL is the box (one grid, no boxes in
+   boxes), the input inside is invisible, the focused cell lights up */
+.rq-lines { table-layout: fixed; border-collapse: collapse; }
+.rq-lines th { padding: .3rem .45rem; }
+.rq-lines tbody td {
+  border: 1px solid #c9d2cc;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+}
+.rq-lines tbody td:focus-within {
+  outline: 2px solid var(--rq-blue);
+  outline-offset: -2px;
+  background: var(--rq-accent);
+}
+.rq-lines tbody td:last-child { border: none; background: none; }   /* the ✕ column */
 .rq-lines input {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #b4b4b4;       /* visible boxes - you can see where to type */
-  border-radius: 4px;
-  background: #fff;
-  padding: .3rem .4rem;
+  border: none;
+  background: transparent;
+  padding: .32rem .45rem;
   font-size: .85rem;
 }
-.rq-lines input:hover { border-color: var(--rq-green-hv); }
-.rq-lines input:focus {
-  border-color: var(--rq-blue);
-  outline: none;
-  background: var(--rq-accent);
-}
+.rq-lines input:focus { outline: none; }
 .rq-comments { margin-top: .9rem; }
 .rq-comments input { width: 100%; }
 
