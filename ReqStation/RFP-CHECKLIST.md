@@ -10,10 +10,10 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 
 | Object | Description | Source (this repo) |
 |---|---|---|
-| REQSTNHDRT | Requisition Header File | `Db2/REQSTNHDRT.TABLE` |
-| REQSTNDTLT | Requisition Detail File | `Db2/REQSTNDTLT.TABLE` |
-| REQSTNCDET | Requisition Code File (all four dropdown lists by CDTYPE) | `Db2/REQSTNCDET.TABLE` |
-| REQSTNLOGT | Requisition Activity Log File | `Db2/REQSTNLOGT.TABLE` |
+| RQSREQHDRT | Requisition Header File | `Db2/RQSREQHDRT.TABLE` |
+| RQSREQDTLT | Requisition Detail File | `Db2/RQSREQDTLT.TABLE` |
+| RQSCODEFLT | Requisition Code File (all four dropdown lists by CDTYPE) | `Db2/RQSCODEFLT.TABLE` |
+| RQSACTLOGT | Requisition Activity Log File | `Db2/RQSACTLOGT.TABLE` |
 
 ### Db2 for i — SQL procedures (attribute per shop standard, e.g. `SQLPROC`)
 
@@ -62,13 +62,13 @@ history if a behavior question ever comes up.
 
 ## 2. Build sequence in dev
 
-1. `RUNSQLSTM` each `.TABLE` member into `LSCDEVLIBP` (order: REQSTNHDRT,
-   REQSTNDTLT, REQSTNCDET, REQSTNLOGT).
+1. `RUNSQLSTM` each `.TABLE` member into `LSCDEVLIBP` (order: RQSREQHDRT,
+   RQSREQDTLT, RQSCODEFLT, RQSACTLOGT).
 2. `RUNSQLSTM` the nine `.PROC` members.
 3. Load the three `Data/*.csv` files with CPYFRMIMPF — the CSVs are
    already in Db2 format (transforms done), commands in `Data/README.md`.
 4. Restart the identity:
-   `ALTER TABLE REQSTNHDRT ALTER COLUMN RHREQ# RESTART WITH 17179`.
+   `ALTER TABLE RQSREQHDRT ALTER COLUMN RHREQ# RESTART WITH 17179`.
 5. Validate against the expected totals in `Data/README.md` (14,073 headers,
    50,063 lines, 741 open, SUM(qty) 33,464,119); record results with the RFP.
 6. Copy the `Web/` files to `/www/seidendev/htdocs/requisitions/`, wire the
@@ -116,7 +116,7 @@ history if a behavior question ever comes up.
 
 ## 7. Still open before promotion to prod
 
-1. ~~The `activity` logging~~ — resolved: REQSTNLOGT rows are written inside
+1. ~~The `activity` logging~~ — resolved: RQSACTLOGT rows are written inside
    the action procs themselves; they log page
    opens, inserts, authorizations and return flips by user profile. The
    MySQL `station`/`applications` version-check machinery dies with the

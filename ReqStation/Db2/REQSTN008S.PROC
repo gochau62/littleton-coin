@@ -46,8 +46,8 @@ CREATE OR REPLACE PROCEDURE REQSTN008S (
                    D.RDQTY * D.RDCOST AS RDEXTC,
                    D.RDQTY * D.RDRETL AS RDEXTR,
                    D.RDSKUT
-              FROM REQSTNHDRT H
-              JOIN REQSTNDTLT D
+              FROM RQSREQHDRT H
+              JOIN RQSREQDTLT D
                 ON D.RDREQ# = H.RHREQ#
              WHERE INT(H.RHRQDT / 100) = INYYMM
              ORDER BY H.RHNAME, H.RHRQDT, H.RHREQ#, D.RDLIN#;
