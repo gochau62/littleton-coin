@@ -101,6 +101,7 @@ switch ($action) {
                       $payload['areaCode'],
                       $payload['areaType'],
                       ($payload['rush'] == 'Y' ? 'Y' : 'N'),
+                      $payload['authBy'] ?? '',
                       $badge,
                       $payload['comments']);
         if ($reqNum === false) { rqsOutFail(); }

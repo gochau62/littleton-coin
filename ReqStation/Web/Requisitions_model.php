@@ -82,10 +82,12 @@ function rqsItemLookup($conn, $item) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEM", $item));
 }
 
-// PROGRAM NAME: REQSTN001S - insert header, returns new req# (false on error)
+// PROGRAM NAME: REQSTN001S - insert header, returns new req# (false on error).
+// $authBy is the pre-selected authorizer from the entry form ('' = None),
+// same as the legacy form; the authorized flag itself stays 'N'.
 function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
-                         $rush, $badge, $comments) {
-    $sql = "CALL REQSTN001S(?, ?, ?, ?, ?, ?, ?)";
+                         $rush, $authBy, $badge, $comments) {
+    $sql = "CALL REQSTN001S(?, ?, ?, ?, ?, ?, ?, ?)";
     $newReq = 0;
 
     $stmt = db2_prepare($conn, $sql);
@@ -95,9 +97,10 @@ function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
     db2_bind_param($stmt, 2, "areaCode", DB2_PARAM_IN);
     db2_bind_param($stmt, 3, "areaType", DB2_PARAM_IN);
     db2_bind_param($stmt, 4, "rush", DB2_PARAM_IN);
-    db2_bind_param($stmt, 5, "badge", DB2_PARAM_IN);
-    db2_bind_param($stmt, 6, "comments", DB2_PARAM_IN);
-    db2_bind_param($stmt, 7, "newReq", DB2_PARAM_OUT);
+    db2_bind_param($stmt, 5, "authBy", DB2_PARAM_IN);
+    db2_bind_param($stmt, 6, "badge", DB2_PARAM_IN);
+    db2_bind_param($stmt, 7, "comments", DB2_PARAM_IN);
+    db2_bind_param($stmt, 8, "newReq", DB2_PARAM_OUT);
 
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN001S"); }
     return $newReq;

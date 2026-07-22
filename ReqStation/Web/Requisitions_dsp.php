@@ -237,6 +237,12 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   color: var(--rq-text);
 }
 .rq-rush { flex-direction: row !important; align-items: center; gap: .4rem; }
+.rq-rushgrp { display: flex; gap: .9rem; align-items: center;
+              font-size: .82rem; color: var(--rq-muted); }
+.rq-rushgrp label { display: inline-flex; flex-direction: row; gap: .3rem;
+                    align-items: center; font-size: .9rem; color: var(--rq-text); }
+#addDate { background: #f0f2f1; color: var(--rq-muted); }
+.rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
 .rq-lines input {
   width: 100%;
   border: 1px solid transparent;
@@ -279,6 +285,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-entry #mdlAdd .rq-x,
 .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
+.rq-entry .rq-modal-wide { max-width: 1280px; }   /* room for the full sheet */
 
 /* ---------- monthly report ---------- */
 .rpt-title { margin: 0 0 .75rem 0; color: var(--rq-green-dk); }
@@ -346,18 +353,30 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
       </div>
 
       <div class="rq-modal-body">
+        <!-- header fields laid out like the legacy getEntry.php form -->
         <div class="rq-formrow">
-          <label>Requestor
+          <label>Requestor:
             <select id="addName"></select>
           </label>
-          <label>Area Code
+          <label>Date:
+            <input type="text" id="addDate" readonly tabindex="-1">
+          </label>
+        </div>
+        <div class="rq-formrow">
+          <span class="rq-rushgrp">Rush:
+            <label><input type="radio" name="addRush" value="Y"> Yes</label>
+            <label><input type="radio" name="addRush" value="N" checked> No</label>
+          </span>
+        </div>
+        <div class="rq-formrow">
+          <label>Area Code:
             <select id="addAreaCode"></select>
           </label>
-          <label>Area Type
+          <label>Area Type:
             <select id="addAreaType"></select>
           </label>
-          <label class="rq-rush">Rush
-            <input type="checkbox" id="addRush">
+          <label>Authorized By:
+            <select id="addAuthBy"></select>
           </label>
         </div>
 
@@ -383,7 +402,8 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 
       <div class="rq-modal-foot">
         <button type="button" class="rq-btn" data-close="mdlAdd">Cancel</button>
-        <button type="button" class="rq-btn rq-btn-primary" id="btnSubmit">Submit Requisition</button>
+        <button type="button" class="rq-btn rq-btn-primary" id="btnSubmit"><?php
+            echo $mode === 'entry' ? 'Insert' : 'Submit Requisition'; ?></button>
       </div>
     </div>
   </div>
@@ -679,6 +699,9 @@ function applyLookups(resp) {
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
+    // entry form's pre-authorizer, defaulting like the legacy form
+    fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
+    $('#addAuthBy').prepend('<option value="">Authorization = None</option>').val('');
 }
 
 function loadLookups() {
@@ -696,9 +719,14 @@ function fillSelect(sel, rows, valCol, txtCol) {
 
 function openAddModal() {
     $('#lineBody').empty();
-    addLineRow(); addLineRow(); addLineRow();   // start with 3 blank lines
+    // entry mode presents the tall sheet like the legacy form; the
+    // station modal starts small - Enter on the last field grows both
+    var rows = (RQ_MODE === 'entry') ? 15 : 3;
+    for (var i = 0; i < rows; i++) { addLineRow(); }
     $('#addComments').val('');
-    $('#addRush').prop('checked', false);
+    $('input[name="addRush"][value="N"]').prop('checked', true);
+    $('#addAuthBy').val('');
+    $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
     $('#lineBody input:first').trigger('focus');
 }
@@ -765,7 +793,8 @@ function submitRequisition() {
         reqName: $('#addName').val(),
         areaCode: $('#addAreaCode').val(),
         areaType: $('#addAreaType').val(),
-        rush: $('#addRush').is(':checked') ? 'Y' : 'N',
+        rush: $('input[name="addRush"]:checked').val() === 'Y' ? 'Y' : 'N',
+        authBy: $('#addAuthBy').val() || '',
         comments: $('#addComments').val(),
         lines: lines
     };
