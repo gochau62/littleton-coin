@@ -30,7 +30,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSCODEFLT(
+CREATE OR REPLACE TABLE RQSCODEFLT(
  CDTYPE  VARCHAR(10) CCSID 37 WITH DEFAULT NOT NULL,  -- Code List Type
  CDCODE  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Code Value
  CDDESC  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Description

@@ -27,7 +27,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSACTLOGT(
+CREATE OR REPLACE TABLE RQSACTLOGT(
  ACSEQ#  DECIMAL(11, 0) GENERATED ALWAYS AS IDENTITY
          (START WITH 1, INCREMENT BY 1) NOT NULL,      -- Sequence
  ACUSER  VARCHAR(10) CCSID 37 WITH DEFAULT NOT NULL,   -- User Profile

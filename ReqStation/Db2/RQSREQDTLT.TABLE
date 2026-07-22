@@ -28,7 +28,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSREQDTLT(
+CREATE OR REPLACE TABLE RQSREQDTLT(
  RDREQ#  DECIMAL(9, 0) WITH DEFAULT NOT NULL,         -- Requisition Number
  RDLIN#  DECIMAL(3, 0) WITH DEFAULT NOT NULL,         -- Line Number
  RDITEM  VARCHAR(16) CCSID 37 WITH DEFAULT NOT NULL,  -- Item Number
