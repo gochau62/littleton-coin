@@ -275,12 +275,20 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   overflow: hidden;
   background: #fff;
 }
+.rq-lines tbody tr:nth-child(even) td:not(:last-child) { background: #f2f7f3; }
 .rq-lines tbody td:focus-within {
   outline: 2px solid var(--rq-blue);
   outline-offset: -2px;
   background: var(--rq-accent);
 }
-.rq-lines tbody td:last-child { border: none; background: none; }   /* the ✕ column */
+.rq-lines tbody td:last-child {                       /* the ✕ column */
+  border: none;
+  background: none;
+  text-align: center;
+  vertical-align: middle;
+}
+.rq-lines .rq-linedel { padding: 0; font-size: 1.05rem; line-height: 1; color: #b4b4b4; }
+.rq-lines .rq-linedel:hover { color: var(--rq-red); }
 .rq-lines input {
   width: 100%;
   box-sizing: border-box;
@@ -426,9 +434,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
               <col style="width:12%"><col style="width:8%"><col style="width:9%">
-              <col style="width:31%"><col style="width:6%"><col style="width:7%">
-              <col style="width:7%"><col style="width:7%"><col style="width:11%">
-              <col style="width:2%">
+              <col style="width:27%"><col style="width:6%"><col style="width:7%">
+              <col style="width:7%"><col style="width:9%"><col style="width:12%">
+              <col style="width:3%">
             </colgroup>
             <thead>
               <tr>
