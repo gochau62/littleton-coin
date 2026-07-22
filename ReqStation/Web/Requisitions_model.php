@@ -142,11 +142,10 @@ function rqsDeleteRequisition($conn, $reqNum) {
     return true;
 }
 
-// PROGRAM NAME: REQSTN005S - authorize; returns 1 done, 0 already
-// authorized by someone else, false on error
-function rqsAuthorize($conn, $reqNum, $authBy, $comments) {
-    $sql = "CALL REQSTN005S(?, ?, ?, ?)";
-    $done = 0;
+// PROGRAM NAME: REQSTN005S - update header: authorized-by + comments,
+// like legacy getUpdate.php (the authorized flag derives from the value)
+function rqsUpdateReq($conn, $reqNum, $authBy, $comments) {
+    $sql = "CALL REQSTN005S(?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return rqsFail("prepare REQSTN005S"); }
@@ -154,10 +153,9 @@ function rqsAuthorize($conn, $reqNum, $authBy, $comments) {
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
     db2_bind_param($stmt, 2, "authBy", DB2_PARAM_IN);
     db2_bind_param($stmt, 3, "comments", DB2_PARAM_IN);
-    db2_bind_param($stmt, 4, "done", DB2_PARAM_OUT);
 
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN005S"); }
-    return intval($done);
+    return true;
 }
 
 // PROGRAM NAME: REQSTN006S - mark/unmark a line returned (idempotent)

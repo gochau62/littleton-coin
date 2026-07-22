@@ -2,8 +2,11 @@
 /*                                                                   */
 /* Program Name      - REQSTN005S                                    */
 /*                                                                   */
-/* Program Narrative - Authorize a Requisition                       */
-/*                     Replaces legacy getUpdate.php.                */
+/* Program Narrative - Update a Requisition header: authorized-by    */
+/*                     and comments, like legacy getUpdate.php. The  */
+/*                     authorized flag is derived - 'Y' when a real  */
+/*                     person is named, 'N' for the "Authorization = */
+/*                     None" / "In Process" placeholder values.      */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -26,10 +29,9 @@
 /*-------------------------------------------------------------------*/
 
 CREATE OR REPLACE PROCEDURE REQSTN005S (
-        IN  INREQ#  DECIMAL(9, 0),
-        IN  INAUTB  VARCHAR(50),
-        IN  INCMNT  VARCHAR(500),
-        OUT OTDONE  DECIMAL(1, 0)
+        IN INREQ#  DECIMAL(9, 0),
+        IN INAUTB  VARCHAR(50),
+        IN INCMNT  VARCHAR(500)
         )
 
         LANGUAGE SQL
@@ -39,24 +41,22 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
     BEGIN
         DECLARE V_CNT INTEGER DEFAULT 0;
 
-        -- Conditional so two stations can't silently overwrite each other:
-        -- only an unauthorized requisition can be authorized. OTDONE = 0
-        -- means someone else got there first.
         UPDATE RQSREQHDRT
-           SET RHAUTF = 'Y',
-               RHAUTB = INAUTB,
-               RHCMNT = INCMNT
-         WHERE RHREQ# = INREQ#
-           AND RHAUTF = 'N';
+           SET RHAUTB = INAUTB,
+               RHCMNT = INCMNT,
+               RHAUTF = CASE WHEN INAUTB = ''
+                              OR  INAUTB = 'Authorization = None'
+                              OR  INAUTB = 'Authorization In Process'
+                             THEN 'N' ELSE 'Y'
+                        END
+         WHERE RHREQ# = INREQ#;
 
         GET DIAGNOSTICS V_CNT = ROW_COUNT;
-        SET OTDONE = V_CNT;
-
         IF V_CNT > 0 THEN
             INSERT INTO RQSACTLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
             VALUES (SUBSTR(USER, 1, 10),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
-                    'AUTHORIZE', INREQ#);
+                    'UPDATE', INREQ#);
         END IF;
     END;

@@ -128,15 +128,11 @@ switch ($action) {
 
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
-    // authorize a requisition (conditional - first authorizer wins)
-    case 'authorize':
+    // update a requisition header (authorized-by + comments, legacy Update)
+    case 'update':
         $reqNum = intval($_POST['reqNum']);
-        $done = rqsAuthorize($conn, $reqNum, $_POST['authBy'], $_POST['comments']);
-        if ($done === false) { rqsOutFail(); }
-        if ($done === 0) {
-            $rows = rqsGet($conn, $reqNum);
-            $by = ($rows && count($rows)) ? $rows[0]['RHAUTB'] : 'another station';
-            rqsOutFail("Already authorized by " . $by . ".");
+        if (!rqsUpdateReq($conn, $reqNum, $_POST['authBy'], $_POST['comments'])) {
+            rqsOutFail();
         }
         rqsOut(array("ok" => true));
 

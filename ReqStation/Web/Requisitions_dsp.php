@@ -145,6 +145,10 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 #tblGrid tbody tr { cursor: pointer; }
 #tblGrid tbody tr:hover { background: var(--rq-accent); }
 .rq-grid tbody tr.rq-selected { background: #dff0e5; }
+.rq-sel { width: 1.4rem; min-width: 1.4rem; color: var(--rq-green-dk); }
+tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
+.rq-reqlink { color: var(--rq-blue); font-weight: 600; cursor: pointer; }
+.rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
@@ -259,25 +263,28 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-comments { margin-top: .9rem; }
 .rq-comments input { width: 100%; }
 
-.rq-viewhead {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: .4rem .9rem;
-  font-size: .88rem;
-  margin-bottom: .9rem;
+/* ---------- legacy-style requisition view ---------- */
+.rq-lgcy { font-size: .9rem; }
+.rq-lgcyrow { margin: .3rem 0; display: flex; align-items: center; }
+.rq-lgcyrow label { min-width: 118px; color: var(--rq-text); }
+.rq-lgcyrow .rq-lgcyital, .rq-lgcyital { font-style: italic; font-weight: 700; }
+.rq-lgcyval, .rq-lgcyrow select, .rq-lgcyrow input {
+  display: inline-block;
+  min-width: 200px;
+  border: 1px solid #999;
+  border-radius: 3px;
+  background: #fff;
+  padding: .15rem .45rem;
+  font-size: .9rem;
+  color: var(--rq-text);
 }
-.rq-authrow {
-  display: flex;
-  align-items: flex-end;
-  gap: .9rem;
-  flex-wrap: wrap;
-  margin-top: 1rem;
-  padding-top: .9rem;
-  border-top: 1px dashed var(--rq-line);
-}
-.rq-authrow label { display: flex; flex-direction: column; gap: .25rem;
-                    font-size: .82rem; color: var(--rq-muted); }
-.rq-authrow .rq-comments { flex: 1; margin-top: 0; }
+.rq-lgcyval { background: #fafafa; }
+.rq-lgcytable { border-collapse: separate; border-spacing: 4px 5px; }
+.rq-lgcytable thead th { position: static; background: none; border: none;
+                         color: var(--rq-text); font-weight: 700; padding: .2rem .45rem; }
+.rq-lgcytable tbody td { border: 1px solid #999; border-radius: 3px;
+                         background: #fff; padding: .2rem .45rem; }
+.rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
 /* ---------- entry-only mode (workfloor shortcut ?mode=entry) ---------- */
 /* No grid, no reports - the entry form IS the page, and it can't be
@@ -329,6 +336,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
       <table class="rq-grid" id="tblGrid">
         <thead>
           <tr>
+            <th class="rq-sel"></th>
             <th>Req #</th>
             <th>Date</th>
             <th>Requestor</th>
@@ -342,7 +350,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
           </tr>
         </thead>
         <tbody id="gridBody">
-          <tr><td colspan="10" class="rq-empty">Loading...</td></tr>
+          <tr><td colspan="11" class="rq-empty">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -424,30 +432,37 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
       </div>
 
       <div class="rq-modal-body">
-        <div class="rq-viewhead" id="viewHead"></div>
+        <!-- header fields stacked like the legacy request.php?id= view -->
+        <div class="rq-lgcy">
+          <div class="rq-lgcyrow"><label>ID:</label><span class="rq-lgcyval" id="v_id"></span></div>
+          <div class="rq-lgcyrow"><label>Name:</label><span class="rq-lgcyval" id="v_name"></span></div>
+          <div class="rq-lgcyrow"><label>Area Code:</label><span class="rq-lgcyval" id="v_acode"></span></div>
+          <div class="rq-lgcyrow"><label>Area Type:</label><span class="rq-lgcyval" id="v_atype"></span></div>
+          <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
+          <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum"></span></div>
+          <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
+          <div class="rq-lgcyrow"><label>Authorized By:</label><select id="authBy"></select></div>
+          <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
+        </div>
+
+        <hr style="border:none;border-top:2px solid #333;margin:.9rem 0;">
+
+        <p style="margin:.25rem 0 .6rem 0;">
+          <button type="button" class="rq-btn" id="btnUpdate">Update</button>
+        </p>
 
         <div class="rq-tablewrap">
-          <table class="rq-grid" id="tblViewLines">
+          <table class="rq-grid rq-lgcytable" id="tblViewLines">
             <thead>
               <tr>
-                <th>Line</th><th>Item #</th><th>Location</th><th>Item Date</th>
-                <th>Description</th><th class="rq-num">Qty</th>
-                <th class="rq-num">Cost $</th><th class="rq-num">Retail $</th>
-                <th>SKU To</th><th>Returned</th>
+                <th>Item#:</th><th>Location:</th><th>Date:</th><th>Description:</th>
+                <th class="rq-num">Qty:</th><th class="rq-num">Cost:</th>
+                <th class="rq-num">Retail:</th><th class="rq-num">Add. Cost</th>
+                <th>SKU To:</th><th>Returned</th>
               </tr>
             </thead>
             <tbody id="viewLineBody"></tbody>
           </table>
-        </div>
-
-        <div class="rq-authrow" id="authRow">
-          <label>Authorized by
-            <select id="authBy"></select>
-          </label>
-          <label class="rq-comments">Comments
-            <input type="text" id="authComments" maxlength="500">
-          </label>
-          <button type="button" class="rq-btn rq-btn-green" id="btnAuthorize">Authorize</button>
         </div>
       </div>
     </div>
@@ -510,7 +525,7 @@ $(document).ready(function () {
     });
     $('#btnAddLine').on('click', addLineRow);
     $('#btnSubmit').on('click', submitRequisition);
-    $('#btnAuthorize').on('click', authorizeCurrent);
+    $('#btnUpdate').on('click', updateCurrent);
 
     // reports - Monthly Report button (Requested Material Summary) and the
     // per-requisition Print (rptRequest "Preview Report")
@@ -528,13 +543,17 @@ $(document).ready(function () {
         $('#' + $(this).data('close')).prop('hidden', true);
     });
 
-    // clicking a row selects that requisition (like moving the Access record
-    // pointer) and opens its view
+    // clicking a row SELECTS the requisition (the ▶ gutter shows it, like
+    // Access's record pointer) - it does not open it
     $('#gridBody').on('click', 'tr[data-req]', function () {
         selectedReq = $(this).data('req');
         $('#gridBody tr').removeClass('rq-selected');
         $('#gridBody tr[data-req="' + selectedReq + '"]').addClass('rq-selected');
-        openViewModal(selectedReq);
+    });
+
+    // clicking the blue req # opens that requisition
+    $('#gridBody').on('click', '.rq-reqlink', function () {
+        openViewModal($(this).closest('tr').data('req'));
     });
 
     // returned checkbox inside the view modal
@@ -684,7 +703,9 @@ function renderGrid() {
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
         html += '<tr data-req="' + esc(r['RHREQ#']) + '">' +
-            '<td>' + esc(r['RHREQ#']) + '</td>' +
+            '<td class="rq-sel"></td>' +
+            '<td><span class="rq-reqlink" title="Open requisition ' + esc(r['RHREQ#']) + '">' +
+                esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
             '<td>' + esc(r.RHNAME) + '</td>' +
             '<td>' + esc(r.RDITEM) + '</td>' +
@@ -698,7 +719,7 @@ function renderGrid() {
     });
 
     $('#gridBody').html(html ||
-        '<tr><td colspan="10" class="rq-empty">No open requisitions.</td></tr>');
+        '<tr><td colspan="11" class="rq-empty">No open requisitions.</td></tr>');
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
@@ -837,42 +858,63 @@ function openViewModal(reqNum) {
         var h = resp.rows[0];
         $('#viewReqNum').text(h['RHREQ#']);
 
-        var auth = (h.RHAUTF === 'Y')
-            ? '<span class="rq-pill rq-ok">' + esc(h.RHAUTB) + '</span>'
-            : '<span class="rq-pill rq-warn">NOT AUTHORIZED</span>';
+        // legacy-style header fields
+        $('#v_id').text(h['RHREQ#']);
+        $('#v_name').text(h.RHNAME);
+        $('#v_acode').text(h.RHARCD);
+        $('#v_atype').text(h.RHARTY);
+        $('#v_date').text(fmtDateTimeIso(h.RHRQDT, h.RHRQTM));
+        $('#v_denum').text(h.RHBDGE);
 
-        $('#viewHead').html(
-            '<div><b>Requestor:</b> ' + esc(h.RHNAME) + '</div>' +
-            '<div><b>Date:</b> ' + fmtDate(h.RHRQDT) + '</div>' +
-            '<div><b>Area:</b> ' + esc(h.RHARCD) + ' - ' + esc(h.RHARTY) + '</div>' +
-            '<div><b>Rush:</b> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</div>' +
-            '<div><b>Authorized:</b> ' + auth + '</div>' +
-            '<div><b>Comments:</b> ' + esc(h.RHCMNT) + '</div>');
+        var allReturned = true, anyLine = false;
+        $.each(resp.rows, function (i, r) {
+            if (r['RDLIN#'] == null) { return; }
+            anyLine = true;
+            if (r.RDRTNF !== 'Y') { allReturned = false; }
+        });
+        $('#v_returned').text(anyLine && allReturned ? 'Yes' : 'No');
+
+        // authorized-by: preselect the stored value, adding it if it is an
+        // old name no longer on the AUTHBY list
+        var sel = $('#authBy');
+        var val = h.RHAUTB || 'Authorization = None';
+        if (!sel.find('option').filter(function () { return this.value === val; }).length) {
+            sel.append('<option>' + esc(val) + '</option>');
+        }
+        sel.val(val);
+        $('#authComments').val(h.RHCMNT);
 
         var html = '';
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] == null) { return; }
             html += '<tr>' +
-                '<td>' + esc(r['RDLIN#']) + '</td>' +
                 '<td>' + esc(r.RDITEM) + '</td>' +
                 '<td>' + esc(r.RDLOC) + '</td>' +
                 '<td>' + esc(r.RDCNDT) + '</td>' +
                 '<td>' + esc(r.RDDESC) + '</td>' +
                 '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
-                '<td class="rq-num">' + esc(r.RDCOST) + '</td>' +
-                '<td class="rq-num">' + esc(r.RDRETL) + '</td>' +
+                '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
+                '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
+                '<td class="rq-num">' + money(r.RDACST) + '</td>' +
                 '<td>' + esc(r.RDSKUT) + '</td>' +
-                '<td><input type="checkbox" class="rq-returned"' +
+                '<td class="rq-nobox"><input type="checkbox" class="rq-returned"' +
                 ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
                 (r.RDRTNF === 'Y' ? ' checked' : '') + '></td>' +
                 '</tr>';
         });
         $('#viewLineBody').html(html);
 
-        $('#authComments').val(h.RHCMNT);
-        $('#authRow').toggle(h.RHAUTF !== 'Y');
         $('#mdlView').data('req', h['RHREQ#']).prop('hidden', false);
     });
+}
+
+// "2011-01-20 11:09:03" like the legacy view's Date field
+function fmtDateTimeIso(d8, t6) {
+    var s = String(d8);
+    if (s.length !== 8 || s === '00000000') { return ''; }
+    var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);
+    return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) + ' ' +
+           t.slice(0, 2) + ':' + t.slice(2, 4) + ':' + t.slice(4, 6);
 }
 
 /* ---------------------- reports ---------------------- */
@@ -1145,16 +1187,16 @@ function printRequisition() {
     printHtml(reqPrintHtml(lastReqRows), 'Requisition ' + $('#viewReqNum').text());
 }
 
-function authorizeCurrent() {
+function updateCurrent() {
     var reqNum = $('#mdlView').data('req');
     postAjax({
-        action: 'authorize',
+        action: 'update',
         reqNum: reqNum,
         authBy: $('#authBy').val(),
         comments: $('#authComments').val()
     }, function () {
         $('#mdlView').prop('hidden', true);
-        swal('Authorized', 'Requisition ' + reqNum + ' authorized.', 'success');
+        swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
         loadGrid();
     });
 }
