@@ -264,15 +264,21 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                     align-items: center; font-size: .9rem; color: var(--rq-text); }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
+/* fixed layout so the headers and entry boxes share the same columns */
+.rq-lines { table-layout: fixed; }
+.rq-lines th, .rq-lines td { padding: .2rem .25rem; overflow: hidden; }
 .rq-lines input {
   width: 100%;
-  border: 1px solid transparent;
+  box-sizing: border-box;
+  border: 1px solid #b4b4b4;       /* visible boxes - you can see where to type */
   border-radius: 4px;
-  padding: .25rem .35rem;
+  background: #fff;
+  padding: .3rem .4rem;
   font-size: .85rem;
 }
+.rq-lines input:hover { border-color: var(--rq-green-hv); }
 .rq-lines input:focus {
-  border-color: var(--rq-green);
+  border-color: var(--rq-blue);
   outline: none;
   background: var(--rq-accent);
 }
@@ -410,6 +416,12 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lines" id="tblLines">
+            <colgroup>
+              <col style="width:12%"><col style="width:8%"><col style="width:9%">
+              <col style="width:31%"><col style="width:6%"><col style="width:7%">
+              <col style="width:7%"><col style="width:7%"><col style="width:11%">
+              <col style="width:2%">
+            </colgroup>
             <thead>
               <tr>
                 <th>Item #</th><th>Location</th><th>Item Date</th>
