@@ -328,7 +328,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 /* No grid, no reports - the entry form IS the page, and it can't be
    dismissed, matching the old request.php the floor had favorited. */
 .rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
-.rq-entry #mdlAdd .rq-x,
+.rq-entry #mdlAdd .rq-modal-head .rq-x,
 .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
 .rq-entry .rq-modal-wide { max-width: 1280px; }   /* room for the full sheet */
