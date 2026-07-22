@@ -708,9 +708,10 @@ function applyLookups(resp) {
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
-    // entry form's pre-authorizer, defaulting like the legacy form
+    // entry form's pre-authorizer. "Authorization = None" is a REAL row in
+    // the AUTHBY list (13k+ historical reqs store that literal string), and
+    // it sorts first, so it is the natural default - nothing synthetic added.
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
-    $('#addAuthBy').prepend('<option value="">Authorization = None</option>').val('');
 }
 
 function loadLookups() {
@@ -734,7 +735,7 @@ function openAddModal() {
     for (var i = 0; i < rows; i++) { addLineRow(); }
     $('#addComments').val('');
     $('input[name="addRush"][value="N"]').prop('checked', true);
-    $('#addAuthBy').val('');
+    $('#addAuthBy').prop('selectedIndex', 0);   // "Authorization = None" sorts first
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
     $('#lineBody input:first').trigger('focus');
