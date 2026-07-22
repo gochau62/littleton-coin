@@ -42,8 +42,8 @@ CREATE OR REPLACE PROCEDURE REQSTN004S (
                    D.RDLIN#, D.RDITEM, D.RDLOC, D.RDCNDT, D.RDDESC,
                    D.RDQTY, D.RDCOST, D.RDRETL, D.RDACST,
                    D.RDSKUT, D.RDRTNF, D.RDRTDT
-              FROM RQSREQHDRT H
-              LEFT JOIN RQSREQDTLT D
+              FROM REQSTNHDRT H
+              LEFT JOIN REQSTNDTLT D
                 ON D.RDREQ# = H.RHREQ#
              WHERE H.RHREQ# = INREQ#
              ORDER BY D.RDLIN#;

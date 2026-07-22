@@ -42,7 +42,7 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
         -- The flag guard makes the update idempotent: if another station
         -- already set the same state, this quietly does nothing instead of
         -- re-stamping the return date.
-        UPDATE RQSREQDTLT
+        UPDATE REQSTNDTLT
            SET RDRTNF = INRTNF,
                RDRTDT = CASE WHEN INRTNF = 'Y'
                              THEN DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP,
@@ -55,7 +55,7 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
 
         GET DIAGNOSTICS V_CNT = ROW_COUNT;
         IF V_CNT > 0 THEN
-            INSERT INTO RQSACTLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
+            INSERT INTO REQSTNLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
             VALUES (SUBSTR(USER, 1, 10),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),

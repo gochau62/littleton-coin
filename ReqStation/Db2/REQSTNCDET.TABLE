@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - RQSCODEFLT.TABLE                                */
+/* Program Name      - REQSTNCDET.TABLE                                */
 /*                                                                   */
 /* Program Narrative - Create Requisition Code File. One generic     */
 /*                     code table replacing the four dropdown        */
@@ -16,7 +16,7 @@
 /*                                                                   */
 /* Date Written      - 07/20/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(RQSCODEFLT) COMMIT(*NONE)                */
+/*                     SRCMBR(REQSTNCDET) COMMIT(*NONE)                */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -30,12 +30,12 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE TABLE RQSCODEFLT(
+CREATE TABLE REQSTNCDET(
  CDTYPE  VARCHAR(10) CCSID 37 WITH DEFAULT NOT NULL,  -- Code List Type
  CDCODE  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Code Value
  CDDESC  VARCHAR(50) CCSID 37 WITH DEFAULT NOT NULL,  -- Description
  CDACTV  CHAR(1) CCSID 37 WITH DEFAULT 'Y' NOT NULL,  -- Active Flag Y/N
  PRIMARY KEY (CDTYPE, CDCODE))
- RCDFMT RQSCODEFLR;
+ RCDFMT REQSTNCDER;
 
-LABEL ON TABLE RQSCODEFLT IS 'Requisition Code File';
+LABEL ON TABLE REQSTNCDET IS 'Requisition Code File';

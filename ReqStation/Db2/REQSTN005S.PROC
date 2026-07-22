@@ -42,7 +42,7 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
         -- Conditional so two stations can't silently overwrite each other:
         -- only an unauthorized requisition can be authorized. OTDONE = 0
         -- means someone else got there first.
-        UPDATE RQSREQHDRT
+        UPDATE REQSTNHDRT
            SET RHAUTF = 'Y',
                RHAUTB = INAUTB,
                RHCMNT = INCMNT
@@ -53,7 +53,7 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
         SET OTDONE = V_CNT;
 
         IF V_CNT > 0 THEN
-            INSERT INTO RQSACTLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
+            INSERT INTO REQSTNLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
             VALUES (SUBSTR(USER, 1, 10),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
                     DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
