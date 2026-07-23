@@ -66,7 +66,7 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
                    COALESCE(H.RDCOST, 0) AS RDCOST,
                    COALESCE(H.RDRETL, 0) AS RDRETL
               FROM (VALUES 1) X (N)
-              LEFT JOIN ITMMSTP I
+              LEFT JOIN LSCPRDLIB/ITMMSTP I
                 ON I.IISKU# = INKEY
               LEFT JOIN LATERAL
                    (SELECT D.RDDESC, D.RDCNDT, D.RDCOST, D.RDRETL
@@ -89,7 +89,7 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
                             '') AS RDCNDT,
                    COALESCE(H.RDCOST, 0) AS RDCOST,
                    COALESCE(H.RDRETL, 0) AS RDRETL
-              FROM ITMMSTP I
+              FROM LSCPRDLIB/ITMMSTP I
               LEFT JOIN LATERAL
                    (SELECT D.RDCNDT, D.RDCOST, D.RDRETL
                       FROM RQSREQDTLT D
