@@ -12,7 +12,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 |---|---|---|
 | RQSREQHDRT | Requisition Header File | `Db2/RQSREQHDRT.TABLE` |
 | RQSREQDTLT | Requisition Detail File | `Db2/RQSREQDTLT.TABLE` |
-| RQSCODEFLT | Requisition Code File (all five dropdown lists by CDTYPE) | `Db2/RQSCODEFLT.TABLE` |
+| RQSCODEFLT | Requisition Code File (the four seeded dropdown lists by CDTYPE) | `Db2/RQSCODEFLT.TABLE` |
 
 ### Db2 for i — SQL procedures (attribute per shop standard, e.g. `SQLPROC`)
 
@@ -24,7 +24,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | REQSTN004S | Get one requisition (header + lines) | `Db2/REQSTN004S.PROC` |
 | REQSTN005S | Update requisition header (authorized-by, comments, badge; NULL = unchanged) | `Db2/REQSTN005S.PROC` |
 | REQSTN006S | Mark/unmark line returned (idempotent; caller-entered return date, 0 = today) | `Db2/REQSTN006S.PROC` |
-| REQSTN007S | The one lookup proc: 5 code lists (incl BADGE) + ITEM autofill/search via ITMMSTP | `Db2/REQSTN007S.PROC` |
+| REQSTN007S | The one lookup proc: 4 code lists + live BADGE list (LSCPRDLIB/XEMPLOYP) + ITEM autofill/search (LSCPRDLIB/ITMMSTP) | `Db2/REQSTN007S.PROC` |
 | REQSTN008S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN008S.PROC` |
 | REQSTN009S | Delete requisition (backs out failed inserts) | `Db2/REQSTN009S.PROC` |
 

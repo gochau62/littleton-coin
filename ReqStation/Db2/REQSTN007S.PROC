@@ -6,6 +6,9 @@
 /*                     list:                                         */
 /*                       AREACODE/AREATYPE/NAMES/AUTHBY - active     */
 /*                         rows of that type from RQSCODEFLT         */
+/*                       BADGE - live active-employee list (badge #  */
+/*                         + name) from the production employee      */
+/*                         file; always current, nothing to seed     */
 /*                       ITEM - entry-form autofill for INKEY:       */
 /*                         description and coin year from the        */
 /*                         ITMMSTP item master, last-used cost,      */
@@ -101,10 +104,21 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              ORDER BY I.IISKU#
              FETCH FIRST 12 ROWS ONLY;
 
+        -- BADGE: live active employees from the production employee
+        -- file - the badge dropdown is always current, nothing to seed
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
+                   TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
+              FROM LSCPRDLIB/XEMPLOYP E
+             WHERE E.LEESTAT = 'A'
+             ORDER BY 2, 1;
+
         IF INTYPE = 'ITEM' THEN
             OPEN C2;
         ELSEIF INTYPE = 'ITEMSRCH' THEN
             OPEN C3;
+        ELSEIF INTYPE = 'BADGE' THEN
+            OPEN C4;
         ELSE
             OPEN C1;
         END IF;

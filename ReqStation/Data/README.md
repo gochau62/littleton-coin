@@ -14,7 +14,7 @@ into the Db2 tables with `CPYFRMIMPF`, no staging tables needed:
 |---|---|---|
 | RQSREQHDRT.csv | 14,073 | RQSREQHDRT |
 | RQSREQDTLT.csv | 50,063 | RQSREQDTLT |
-| RQSCODEFLT.csv | 948 | RQSCODEFLT (all five dropdown lists: 3 AREACODE, 16 AREATYPE, 65 NAMES, 6 AUTHBY, 858 BADGE - all ACTIVE employees from the 07/23/2026 employee tbl export) |
+| RQSCODEFLT.csv | 90 | RQSCODEFLT (the four seeded dropdown lists: 3 AREACODE, 16 AREATYPE, 65 NAMES, 6 AUTHBY - the BADGE list is NOT seeded: it reads live from LSCPRDLIB/XEMPLOYP) |
 
 `ReqMaterial_Returns` was empty in production — no Db2 table, nothing to load.
 
