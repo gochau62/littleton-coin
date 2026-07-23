@@ -418,7 +418,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <col style="width:22px"><col style="width:58px"><col style="width:88px">
           <col>
           <col style="width:96px"><col style="width:40px"><col style="width:52px">
-          <col style="width:68px"><col style="width:168px"><col style="width:50px">
+          <col style="width:68px"><col style="width:160px"><col style="width:72px">
         </colgroup>
         <thead>
           <tr>
