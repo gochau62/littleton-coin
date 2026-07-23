@@ -144,23 +144,6 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
-/* fixed column widths so the grid never reflows as data loads; cells
-   stay one line and ellipsize (full text on hover via title). Below
-   820px the wrap scrolls sideways instead of crushing the columns. */
-#tblGrid { table-layout: fixed; min-width: 820px; font-size: .85rem; }
-#tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    padding: .4rem .5rem; }
-#tblGrid .rq-sel { vertical-align: middle; }
-/* two-line records: no divider inside a record, one after it */
-#tblGrid tbody tr.rq-r1 td { border-bottom: none; padding-bottom: .1rem; }
-#tblGrid tbody tr.rq-r1 td.rq-sel { border-bottom: 1px solid var(--rq-line); }
-#tblGrid tbody tr.rq-r2 td { padding-top: 0; }
-#tblGrid .rq-desc { color: var(--rq-muted); font-size: .82rem; }
-/* stripe / hover / select the whole record (both lines), not one row */
-#tblGrid tbody tr { background: #fff; }
-#tblGrid tbody tr.rq-alt { background: #f7faf8; }
-#tblGrid tbody tr.rq-hov { background: var(--rq-accent); }
-#tblGrid tbody tr.rq-selected { background: #dff0e5; }
 .rq-grid thead th {
   position: sticky;
   top: 0;
@@ -175,8 +158,9 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   padding: .45rem .7rem;
   border-bottom: 1px solid var(--rq-line);
 }
-.rq-grid:not(#tblGrid) tbody tr:nth-child(even) { background: #f7faf8; }
+.rq-grid tbody tr:nth-child(even) { background: #f7faf8; }
 #tblGrid tbody tr { cursor: pointer; }
+#tblGrid tbody tr:hover { background: var(--rq-accent); }
 .rq-grid tbody tr.rq-selected { background: #dff0e5; }
 .rq-sel { width: 1.4rem; min-width: 1.4rem; color: var(--rq-green-dk); }
 tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
@@ -184,9 +168,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 /* badge box: editable right in the grid (header-level - all lines of
    the req share it) */
-.rq-grid .rq-badge { width: 100%; box-sizing: border-box; padding: .2rem .4rem;
-                     font-size: .85rem; border: 1px solid var(--rq-line);
-                     border-radius: 4px; }
+.rq-grid .rq-badge { width: 5.5rem; padding: .2rem .4rem; font-size: .85rem;
+                     border: 1px solid var(--rq-line); border-radius: 4px; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
 .rq-num { text-align: right; }
@@ -408,16 +391,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
   <div class="rq-card">
     <div class="rq-tablewrap">
-      <!-- two-line records like Access frmMain: fields on line 1, the
-           description on its own line underneath - fits a normal window
-           without crushing any column -->
       <table class="rq-grid" id="tblGrid">
-        <colgroup>
-          <col style="width:3%"><col style="width:7%"><col style="width:11%">
-          <col style="width:14%"><col style="width:12%"><col style="width:5%">
-          <col style="width:6%"><col style="width:6%"><col style="width:10%">
-          <col style="width:26%">
-        </colgroup>
         <thead>
           <tr>
             <th class="rq-sel"></th>
@@ -425,15 +399,16 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             <th>Date</th>
             <th>Requestor</th>
             <th>Item #</th>
+            <th>Description</th>
             <th>Loc</th>
             <th class="rq-num">Qty</th>
             <th>Rush</th>
-            <th>Badge #</th>
             <th>Authorized</th>
+            <th>Badge #</th>
           </tr>
         </thead>
         <tbody id="gridBody">
-          <tr><td colspan="10" class="rq-empty">Loading...</td></tr>
+          <tr><td colspan="11" class="rq-empty">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -650,13 +625,6 @@ $(document).ready(function () {
         openViewModal($(this).closest('tr').data('req'));
     });
 
-    // hover highlights the whole record - both of its rows
-    $('#gridBody').on('mouseenter', 'tr[data-rec]', function () {
-        $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').addClass('rq-hov');
-    }).on('mouseleave', 'tr[data-rec]', function () {
-        $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
-    });
-
     // badge # box in the grid: type a new badge, Enter or click away
     // saves it (header-level - every line of that req shares it)
     $('#gridBody').on('change', '.rq-badge', function () {
@@ -863,35 +831,26 @@ function renderGrid() {
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
-        // two rows per record, like the Access form: fields, then the
-        // description on its own line. data-rec pairs the two rows for
-        // striping and hover; data-req still drives select/open.
-        var recAttr = ' data-req="' + esc(r['RHREQ#']) + '" data-rec="' + shown + '"' +
-                      ' class="' + (shown % 2 === 0 ? 'rq-alt ' : '');
-        html += '<tr' + recAttr + 'rq-r1">' +
-            '<td class="rq-sel" rowspan="2"></td>' +
+        html += '<tr data-req="' + esc(r['RHREQ#']) + '">' +
+            '<td class="rq-sel"></td>' +
             '<td><span class="rq-reqlink" title="Open requisition ' + esc(r['RHREQ#']) + '">' +
                 esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td title="' + attr(r.RHNAME) + '">' + esc(r.RHNAME) + '</td>' +
-            '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
+            '<td>' + esc(r.RHNAME) + '</td>' +
+            '<td>' + esc(r.RDITEM) + '</td>' +
+            '<td>' + esc(r.RDDESC) + '</td>' +
             '<td>' + esc(r.RDLOC) + '</td>' +
             '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
             '<td>' + rush + '</td>' +
+            '<td>' + auth + '</td>' +
             '<td><input class="rq-badge" maxlength="10" list="badgeList"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
             ' value="' + attr(r.RHBDGE) + '"></td>' +
-            '<td title="' + attr(authName) + '">' + auth + '</td>' +
-            '</tr>' +
-            '<tr' + recAttr + 'rq-r2">' +
-            '<td colspan="3"></td>' +
-            '<td colspan="6" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
-                esc(r.RDDESC) + '</td>' +
             '</tr>';
     });
 
     $('#gridBody').html(html ||
-        '<tr><td colspan="10" class="rq-empty">No open requisitions.</td></tr>');
+        '<tr><td colspan="11" class="rq-empty">No open requisitions.</td></tr>');
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
