@@ -1164,19 +1164,19 @@ function fmtDateTimeIso(d8, t6) {
 
 /* ------------------ badge dropdown ------------------ */
 
-// choices = the BADGE lookup (distinct badges from history, recent
-// first), plus any badges visible in the grid rows - so the dropdown
-// still works even if the lookup came back empty
+// choices = the BADGE list from the code file (badge + employee name,
+// like the Access employee-tbl combo), plus any badges visible in the
+// grid rows so the dropdown still works before the list is seeded
 function badgeChoices() {
     var seen = {}, out = [];
-    function add(b) {
-        b = String(b == null ? '' : b).trim();
-        if (b !== '' && !seen[b]) { seen[b] = 1; out.push(b); }
+    function add(c, n) {
+        c = String(c == null ? '' : c).trim();
+        if (c !== '' && !seen[c]) { seen[c] = 1; out.push({ c: c, n: n || '' }); }
     }
     if (lookups && lookups.badges) {
-        $.each(lookups.badges, function (i, r) { add(r.CDCODE); });
+        $.each(lookups.badges, function (i, r) { add(r.CDCODE, r.CDDESC); });
     }
-    $.each(gridRows, function (i, r) { add(r.RHBDGE); });
+    $.each(gridRows, function (i, r) { add(r.RHBDGE, ''); });
     return out;
 }
 
@@ -1189,12 +1189,17 @@ function showBadgeSuggest(inp, filterTyped) {
     var v = filterTyped ? inp.val().trim().toLowerCase() : '';
     var rows = [];
     $.each(badgeChoices(), function (i, b) {
-        if (v === '' || b.toLowerCase().indexOf(v) === 0) { rows.push(b); }
+        // match on badge number prefix or employee name
+        if (v === '' || b.c.toLowerCase().indexOf(v) === 0 ||
+            b.n.toLowerCase().indexOf(v) >= 0) { rows.push(b); }
     });
     if (!rows.length || !inp.is(':focus')) { return; }
     var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
-    $.each(rows.slice(0, 15), function (i, b) {
-        $('<div></div>').text(b).appendTo(box);
+    $.each(rows.slice(0, 25), function (i, b) {
+        $('<div></div>')
+            .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
+            .data('code', b.c)
+            .appendTo(box);
     });
     var rc = inp[0].getBoundingClientRect();
     box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
@@ -1202,7 +1207,7 @@ function showBadgeSuggest(inp, filterTyped) {
     // mousedown (not click) so the pick lands before the input's blur
     box.children().on('mousedown', function (e) {
         e.preventDefault();
-        inp.val($(this).text());
+        inp.val($(this).data('code'));
         hideBadgeSuggest();
         inp.trigger('change');            // saves via the change handler
     });
