@@ -1225,19 +1225,20 @@ function fmtDateTimeIso(d8, t6) {
 
 /* ------------------ badge dropdown ------------------ */
 
-// choices = the BADGE list from the code file (badge + employee name,
-// like the Access employee-tbl combo), plus any badges visible in the
-// grid rows so the dropdown still works before the list is seeded
+// choices = the BADGE list from the code file only (badge + employee
+// name, seeded from the employee tbl the Access combo drew from) -
+// never from badges merely used on past requisitions
 function badgeChoices() {
     var seen = {}, out = [];
-    function add(c, n) {
-        c = String(c == null ? '' : c).trim();
-        if (c !== '' && !seen[c]) { seen[c] = 1; out.push({ c: c, n: n || '' }); }
-    }
     if (lookups && lookups.badges) {
-        $.each(lookups.badges, function (i, r) { add(r.CDCODE, r.CDDESC); });
+        $.each(lookups.badges, function (i, r) {
+            var c = String(r.CDCODE == null ? '' : r.CDCODE).trim();
+            if (c !== '' && !seen[c]) {
+                seen[c] = 1;
+                out.push({ c: c, n: r.CDDESC || '' });
+            }
+        });
     }
-    $.each(gridRows, function (i, r) { add(r.RHBDGE, ''); });
     return out;
 }
 
