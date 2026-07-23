@@ -1468,10 +1468,15 @@ function printHtml(innerHtml, title) {
         '.rpt-totblk{text-align:center;margin:4px 0 14px;}' +
         '.rpt-totblk > .rpt-ital{margin-right:40px;vertical-align:top;}' +
         '.rpt-totvals{display:inline-block;text-align:left;}' +
-        '</style></head><body>' + innerHtml + '</body></html>');
+        '</style></head><body>' + innerHtml +
+        // the report window prints ITSELF and closes when the dialog is
+        // dismissed. If the station called w.print(), the station's own
+        // thread would sit blocked in the dialog and the whole app froze
+        // while the blank print window stayed open.
+        '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
+        'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
+        '</body></html>');
     w.document.close();
-    w.focus();
-    w.print();
 }
 
 function printRequisition() {
