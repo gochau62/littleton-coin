@@ -989,7 +989,7 @@ function renderGrid() {
             ' data-line="' + esc(r['RDLIN#']) + '"' +
             (pend !== null ? ' checked' : '') + '>' +
             '<label>Return Item:</label>' +
-            '<input type="text" class="rq-retdate" placeholder="mm/dd/yyyy" maxlength="10"' +
+            '<input type="text" class="rq-retdate" maxlength="10"' +
             (pend !== null ? ' value="' + attr(pend) + '"' : '') + '>' +
             '</td>' +
             '</tr>';
