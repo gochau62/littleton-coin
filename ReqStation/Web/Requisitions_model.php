@@ -163,10 +163,12 @@ function rqsDeleteRequisition($conn, $reqNum) {
     return true;
 }
 
-// PROGRAM NAME: REQSTN005S - update header: authorized-by + comments,
-// like legacy getUpdate.php (the authorized flag derives from the value)
-function rqsUpdateReq($conn, $reqNum, $authBy, $comments) {
-    $sql = "CALL REQSTN005S(?, ?, ?)";
+// PROGRAM NAME: REQSTN005S - update header: authorized-by, comments
+// and DataEntry badge. NULL leaves a column unchanged - the view
+// window sends authBy+comments, the grid's badge box sends badge only.
+// (The authorized flag derives from the authorized-by value.)
+function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
+    $sql = "CALL REQSTN005S(?, ?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return rqsFail("prepare REQSTN005S"); }
@@ -174,6 +176,7 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments) {
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
     db2_bind_param($stmt, 2, "authBy", DB2_PARAM_IN);
     db2_bind_param($stmt, 3, "comments", DB2_PARAM_IN);
+    db2_bind_param($stmt, 4, "badge", DB2_PARAM_IN);
 
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN005S"); }
     return true;

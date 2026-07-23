@@ -166,6 +166,12 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink { color: var(--rq-blue); font-weight: 600; cursor: pointer; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
+/* badge box: editable right in the grid (header-level - all lines of
+   the req share it) */
+.rq-grid .rq-badge { width: 5.5rem; padding: .2rem .4rem; font-size: .85rem;
+                     border: 1px solid var(--rq-line); border-radius: 4px; }
+.rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
+                           border-color: var(--rq-blue); }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
@@ -374,7 +380,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <input type="checkbox" id="chkAutoRefresh" checked> Auto-refresh
     </label>
     <input type="search" id="txtFilter" class="rq-filter"
-           placeholder="Filter by req #, name, item...">
+           placeholder="Filter by req #, name, item, badge...">
     <span class="rq-count" id="lblCount"></span>
     <span class="rq-updated" id="lblUpdated" title="Last successful refresh"></span>
   </div>
@@ -394,7 +400,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             <th class="rq-num">Qty</th>
             <th>Rush</th>
             <th>Authorized</th>
-            <th>Returned</th>
+            <th>Badge #</th>
           </tr>
         </thead>
         <tbody id="gridBody">
@@ -615,6 +621,20 @@ $(document).ready(function () {
         openViewModal($(this).closest('tr').data('req'));
     });
 
+    // badge # box in the grid: type a new badge, Enter or click away
+    // saves it (header-level - every line of that req shares it)
+    $('#gridBody').on('change', '.rq-badge', function () {
+        var inp = $(this);
+        postAjax({
+            action: 'update',
+            reqNum: inp.data('req'),
+            badge: inp.val().trim()
+        }, function () { loadGrid(true); });
+    });
+    $('#gridBody').on('keydown', '.rq-badge', function (e) {
+        if (e.key === 'Enter') { $(this).trigger('blur'); }
+    });
+
     // returned checkbox inside the view modal
     $('#viewLineBody').on('change', '.rq-returned', function () {
         var cb = $(this);
@@ -785,7 +805,8 @@ function renderGrid() {
     var shown = 0;
 
     $.each(gridRows, function (i, r) {
-        var hay = (r['RHREQ#'] + ' ' + r.RHNAME + ' ' + r.RDITEM + ' ' + r.RDDESC).toLowerCase();
+        var hay = (r['RHREQ#'] + ' ' + r.RHNAME + ' ' + r.RDITEM + ' ' +
+                   r.RDDESC + ' ' + (r.RHBDGE || '')).toLowerCase();
         if (filter && hay.indexOf(filter) < 0) { return; }
         shown++;
 
@@ -813,7 +834,9 @@ function renderGrid() {
             '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
             '<td>' + rush + '</td>' +
             '<td>' + auth + '</td>' +
-            '<td>' + (r.RDRTNF === 'Y' ? fmtDate(r.RDRTDT) : '') + '</td>' +
+            '<td><input class="rq-badge" maxlength="10"' +
+            ' data-req="' + esc(r['RHREQ#']) + '"' +
+            ' value="' + esc(r.RHBDGE).replace(/"/g, '&quot;') + '"></td>' +
             '</tr>';
     });
 

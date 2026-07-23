@@ -136,13 +136,19 @@ switch ($action) {
         rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines)');
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
-    // update a requisition header (authorized-by + comments, legacy Update)
+    // update a requisition header. The view window sends authBy+comments;
+    // the grid's badge box sends badge only - missing fields stay unchanged.
     case 'update':
         $reqNum = intval($_POST['reqNum']);
-        if (!rqsUpdateReq($conn, $reqNum, $_POST['authBy'], $_POST['comments'])) {
+        $badge  = isset($_POST['badge']) ? substr(trim($_POST['badge']), 0, 10) : null;
+        if (!rqsUpdateReq($conn, $reqNum,
+                          $_POST['authBy'] ?? null,
+                          $_POST['comments'] ?? null,
+                          $badge)) {
             rqsOutFail();
         }
-        rqsActLog($user, 'UPDATE', 'req ' . $reqNum);
+        rqsActLog($user, 'UPDATE', 'req ' . $reqNum .
+                  ($badge !== null ? ' badge ' . $badge : ''));
         rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)

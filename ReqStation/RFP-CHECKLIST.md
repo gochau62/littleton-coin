@@ -22,7 +22,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | REQSTN002S | Insert requisition detail line | `Db2/REQSTN002S.PROC` |
 | REQSTN003S | List open requisitions (main grid; no parameters) | `Db2/REQSTN003S.PROC` |
 | REQSTN004S | Get one requisition (header + lines) | `Db2/REQSTN004S.PROC` |
-| REQSTN005S | Update requisition header (authorized-by + comments) | `Db2/REQSTN005S.PROC` |
+| REQSTN005S | Update requisition header (authorized-by, comments, badge; NULL = unchanged) | `Db2/REQSTN005S.PROC` |
 | REQSTN006S | Mark/unmark line returned (idempotent) | `Db2/REQSTN006S.PROC` |
 | REQSTN007S | The one lookup proc: 4 code lists + ITEM autofill | `Db2/REQSTN007S.PROC` |
 | REQSTN008S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN008S.PROC` |
@@ -41,10 +41,12 @@ timestamp, user and station IP. The file is created on first write and
 is not an RFP object; the web profile needs write authority to the
 htdocs folder. If the earlier versions were already built in dev, clean
 up with:
-`DROP TABLE LSCDEVLIBP/RQSACTLOGT` and
-`DROP PROCEDURE LSCDEVLIBP/REQSTN003S(CHAR(1))` — the new 003S takes no
-parameter, and `OR REPLACE` does not replace across different parameter
-counts, so the old one-parameter version lingers until dropped.
+`DROP TABLE LSCDEVLIBP/RQSACTLOGT`,
+`DROP PROCEDURE LSCDEVLIBP/REQSTN003S(CHAR(1))`, and
+`DROP PROCEDURE LSCDEVLIBP/REQSTN005S(DECIMAL, VARCHAR, VARCHAR)` — the
+new 003S takes no parameter and 005S grew a fourth (badge), and
+`OR REPLACE` does not replace across different parameter counts, so the
+old versions linger until dropped.
 
 ### IFS — `*IFS` (MD attribute `PHPSRC`), dev path `/www/seidendev/htdocs/requisitions/`
 
@@ -106,6 +108,10 @@ history if a behavior question ever comes up.
 5. Badge is stored properly (10 chars) instead of `substr(name, 0, 4)`;
    decide during data load whether to backfill real badges.
 6. `authorized` flag is `Y`/`N` CHAR(1) instead of MySQL `1`/`0`.
+7. The DataEntry badge is editable inline from the station grid (the
+   grid's Badge # box calls REQSTN005S; it replaced the always-empty
+   Returned column, which only ever applied to lines the open-only grid
+   filters out anyway).
 
 ## 5. Security actions from the legacy audit (do these regardless)
 
