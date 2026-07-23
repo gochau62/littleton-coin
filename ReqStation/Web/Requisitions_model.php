@@ -26,6 +26,23 @@
 
 $GLOBALS['rqsErr'] = '';
 
+define('RQS_ACT_LOG', __DIR__ . '/requisition_activity.log');
+
+// append one line to the station's activity file - same pattern as
+// ClarioSFTP_pull.log. Covers what the old Access "activity" table did:
+// who opened the station, inserted, updated, returned, backed out.
+// Logging must never take the app down, so write failures are ignored.
+function rqsActLog($user, $action, $detail = '') {
+    @file_put_contents(
+        RQS_ACT_LOG,
+        date('Y-m-d H:i:s') . ' ' .
+        ($user !== '' ? $user : 'unknown') . ' ' .
+        ($_SERVER['REMOTE_ADDR'] ?? '-') . ' ' .
+        $action . ($detail !== '' ? ' ' . $detail : '') . PHP_EOL,
+        FILE_APPEND
+    );
+}
+
 // record the real Db2 error for the caller and the log, return false
 function rqsFail($where) {
     $GLOBALS['rqsErr'] = $where . ': ' . db2_stmt_error() . ' ' . db2_stmt_errormsg();

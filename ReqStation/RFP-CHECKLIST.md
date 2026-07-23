@@ -33,8 +33,14 @@ insert proc replaces 001S/002S/009S with one atomic call — 12 objects
 become 10.
 
 Dropped 07/23/2026: the RQSACTLOGT activity log and the logging INSERTs
-in procs 001/003/005/006/009 — nothing read it. If the earlier versions
-were already built in dev, clean up with:
+in procs 001/003/005/006/009 — nothing read it. Activity is instead
+logged app-side to `requisition_activity.log` next to the PHP (same
+`@file_put_contents` append pattern as `ClarioSFTP_pull.log`): one line
+per station OPEN, INSERT, UPDATE, RETURN/UNRETURN and BACKOUT, with
+timestamp, user and station IP. The file is created on first write and
+is not an RFP object; the web profile needs write authority to the
+htdocs folder. If the earlier versions were already built in dev, clean
+up with:
 `DROP TABLE LSCDEVLIBP/RQSACTLOGT` and
 `DROP PROCEDURE LSCDEVLIBP/REQSTN003S(CHAR(1))` — the new 003S takes no
 parameter, and `OR REPLACE` does not replace across different parameter

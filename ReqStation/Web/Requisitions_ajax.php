@@ -127,11 +127,13 @@ switch ($action) {
             if (!$ok) {
                 $err = $GLOBALS['rqsErr'];
                 rqsDeleteRequisition($conn, $reqNum);
+                rqsActLog($user, 'BACKOUT', 'req ' . $reqNum . ' - line ' . $lineNum . ' failed');
                 rqsOutFail("Line " . $lineNum . " failed (" . $err .
                            ") - nothing was saved. Fix the line and submit again.");
             }
         }
 
+        rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines)');
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
     // update a requisition header (authorized-by + comments, legacy Update)
@@ -140,6 +142,7 @@ switch ($action) {
         if (!rqsUpdateReq($conn, $reqNum, $_POST['authBy'], $_POST['comments'])) {
             rqsOutFail();
         }
+        rqsActLog($user, 'UPDATE', 'req ' . $reqNum);
         rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)
@@ -154,6 +157,8 @@ switch ($action) {
         $lineNum = intval($_POST['lineNum']);
         $flag = ($_POST['flag'] == 'Y' ? 'Y' : 'N');
         if (!rqsSetReturned($conn, $reqNum, $lineNum, $flag)) { rqsOutFail(); }
+        rqsActLog($user, $flag == 'Y' ? 'RETURN' : 'UNRETURN',
+                  'req ' . $reqNum . ' line ' . $lineNum);
         rqsOut(array("ok" => true));
 
     default:

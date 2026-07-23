@@ -81,6 +81,8 @@ if ($authorized != "yes") {
     // The plain URL is the full station view for IT/supervisors.
     $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
+    rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
+
     include "Requisitions_dsp.php";
     dspRequisitions($user, $rqLookups, $rqMode);
 ?>
