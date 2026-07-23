@@ -344,7 +344,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rpt-mu thead th { color: #00008b; font-weight: 700; }
 .rpt-mu .rq-num { text-align: right; }
 .rpt-mutitle { font-family: Georgia, "Times New Roman", serif; font-style: italic;
-               color: #00008b; margin: 0 0 .8rem 0; }
+               color: #00008b; margin: 0 0 .8rem 0; font-size: 1.35rem; }
 .rpt-ital { font-family: Georgia, "Times New Roman", serif; font-style: italic;
             font-weight: 700; color: #00008b; }
 .rpt-mu .rpt-name td { font-weight: 700; padding-top: 10px; }
@@ -1347,7 +1347,7 @@ function printHtml(innerHtml, title) {
         '.rpt-mu thead th{color:#00008b;}' +
         '.rpt-mu .rpt-name td{font-weight:bold;padding-top:10px;}' +
         '.rpt-mutitle{font-family:Georgia,"Times New Roman",serif;font-style:italic;' +
-            'color:#00008b;margin:0 0 10px 0;}' +
+            'color:#00008b;margin:0 0 10px 0;font-size:20px;}' +
         '.rpt-ital{font-family:Georgia,"Times New Roman",serif;font-style:italic;' +
             'font-weight:bold;color:#00008b;}' +
         '.rpt-totblk{text-align:center;margin:4px 0 14px;}' +
