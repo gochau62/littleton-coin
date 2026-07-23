@@ -14,7 +14,7 @@ into the Db2 tables with `CPYFRMIMPF`, no staging tables needed:
 |---|---|---|
 | RQSREQHDRT.csv | 14,073 | RQSREQHDRT |
 | RQSREQDTLT.csv | 50,063 | RQSREQDTLT |
-| RQSCODEFLT.csv | 105 | RQSCODEFLT (all five dropdown lists: 3 AREACODE, 16 AREATYPE, 65 NAMES, 6 AUTHBY, 15 BADGE - employee tbl DeptID# 30/36 ONLY (badge # = employee #); partial list, complete from the full employee tbl query) |
+| RQSCODEFLT.csv | 143 | RQSCODEFLT (all five dropdown lists: 3 AREACODE, 16 AREATYPE, 65 NAMES, 6 AUTHBY, 53 BADGE - the complete employee tbl DeptID# 30/36 roster (badge # = employee #), from the 07/23/2026 export) |
 
 `ReqMaterial_Returns` was empty in production — no Db2 table, nothing to load.
 
