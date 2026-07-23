@@ -168,7 +168,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 /* badge box: editable right in the grid (header-level - all lines of
    the req share it) */
-.rq-grid .rq-badge { width: 5.5rem; padding: .2rem .4rem; font-size: .85rem;
+.rq-grid .rq-badge { width: 4rem; padding: .2rem .4rem; font-size: .85rem;
                      border: 1px solid var(--rq-line); border-radius: 4px; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
@@ -398,9 +398,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             <th>Description</th>
             <th>Loc</th>
             <th class="rq-num">Qty</th>
-            <th>Rush</th>
-            <th>Authorized</th>
             <th>Badge #</th>
+            <th>Authorized</th>
+            <th>Rush</th>
           </tr>
         </thead>
         <tbody id="gridBody">
@@ -867,11 +867,11 @@ function renderGrid() {
             '<td>' + esc(r.RDDESC) + '</td>' +
             '<td>' + esc(r.RDLOC) + '</td>' +
             '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
-            '<td>' + rush + '</td>' +
-            '<td>' + auth + '</td>' +
             '<td><input class="rq-badge" maxlength="10"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
             ' value="' + attr(r.RHBDGE) + '"></td>' +
+            '<td>' + auth + '</td>' +
+            '<td>' + rush + '</td>' +
             '</tr>';
     });
 
