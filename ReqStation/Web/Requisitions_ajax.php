@@ -2,7 +2,7 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_ajax.php            *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Station ajax handler.   *  -->
+<!--  * Narrative - Requisition Material ajax handler.   *  -->
 <!--  *   Maps action names to model calls and returns  *  -->
 <!--  *   JSON. Every failure returns ok:false with the *  -->
 <!--  *   real Db2 message so support can act on what   *  -->

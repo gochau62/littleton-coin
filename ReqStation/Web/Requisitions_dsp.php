@@ -2,7 +2,7 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_dsp.php                   *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Station display.        *  -->
+<!--  * Narrative - Requisition Material display.        *  -->
 <!--  *   Main grid (replaces Access frmMain), add-     *  -->
 <!--  *   request modal (replaces legacy getEntry.php)  *  -->
 <!--  *   and view/authorize modal (replaces            *  -->
@@ -30,7 +30,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 ?>
 
 <style>
-/* Requisition Station styling - inline per shop preference:
+/* Requisition Material styling - inline per shop preference:
    the display file owns everything visual. */
 :root {
   /* LCC house palette - same greens as SellbriteBulkLoader */
@@ -385,7 +385,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 <div class="rq-app<?php echo $mode === 'entry' ? ' rq-entry' : ''; ?>">
 
   <header class="rq-topbar">
-    <h1><?php echo $mode === 'entry' ? 'Requisition Entry' : 'Requisition Station'; ?></h1>
+    <h1><?php echo $mode === 'entry' ? 'Requisition Entry' : 'Requisition Material'; ?></h1>
     <div class="rq-topbar-right">
       <span id="rqUser"><?php echo htmlspecialchars($user); ?></span>
       <span id="rqClock"></span>
@@ -583,7 +583,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 </div>
 
 <script>
-/* Requisition Station front-end logic - inline at the bottom of the
+/* Requisition Material front-end logic - inline at the bottom of the
    display per the Sellbrite/WavePickSearch pattern: grid load and
    auto-refresh (replaces the Access Form_Timer), add-request modal
    with dynamic lines, authorize and return-item actions via ajax. */

@@ -2,7 +2,7 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_ctl.php             *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Station controller.     *  -->
+<!--  * Narrative - Requisition Material controller.     *  -->
 <!--  *   Web replacement for the Access frmMain grid   *  -->
 <!--  *   and the legacy request.php entry page.        *  -->
 <!--  *   Bootstraps exactly like SellbriteBulkLoader:  *  -->
@@ -38,7 +38,7 @@
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
-    document.title = "Requisition Station";
+    document.title = "Requisition Material";
 
     /* ---- message helpers (LCC convention) ---- */
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }

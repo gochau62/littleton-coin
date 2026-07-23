@@ -2,7 +2,7 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_model.php           *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Station model. All      *  -->
+<!--  * Narrative - Requisition Material model. All      *  -->
 <!--  *   database access goes through the REQSTNnnnS   *  -->
 <!--  *   stored procedures - no inline SQL, no string  *  -->
 <!--  *   concatenation. Failures never die() mid-JSON: *  -->

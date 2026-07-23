@@ -1,8 +1,8 @@
-# Requisition Station - User Guide
+# Requisition Material - User Guide
 
 Updated 7/23/2026
 
-The Requisition Station replaces the Access "Req Station" database and the
+Requisition Material replaces the Access "Req Station" database and the
 old request.php pages. Inventory handlers enter requisitions for material
 pulled from the vault; the station screen is where those requisitions get
 tracked, updated and marked returned. Everything runs in the browser -

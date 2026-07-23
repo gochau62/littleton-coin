@@ -1,10 +1,10 @@
-# Requisition Station - Technical Reference
+# Requisition Material - Technical Reference
 
 Updated 7/23/2026
 
 ## 1. Architecture
 
-The Requisition Station is a web screen on the IBM i, built on the
+Requisition Material is a web screen on the IBM i, built on the
 LCCOnline framework like the other LCC tools (same pattern as the
 Sellbrite Bulk Loader). The entry point is `Requisitions_ctl.php`. It
 runs the framework session scripts (StartBlockScriptA/B), checks
