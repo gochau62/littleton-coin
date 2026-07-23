@@ -24,7 +24,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | REQSTN004S | Get one requisition (header + lines) | `Db2/REQSTN004S.PROC` |
 | REQSTN005S | Update requisition header (authorized-by, comments, badge; NULL = unchanged) | `Db2/REQSTN005S.PROC` |
 | REQSTN006S | Mark/unmark line returned (idempotent) | `Db2/REQSTN006S.PROC` |
-| REQSTN007S | The one lookup proc: 4 code lists + ITEM autofill | `Db2/REQSTN007S.PROC` |
+| REQSTN007S | The one lookup proc: 4 code lists + ITEM autofill/search + badge list | `Db2/REQSTN007S.PROC` |
 | REQSTN008S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN008S.PROC` |
 | REQSTN009S | Delete requisition (backs out failed inserts) | `Db2/REQSTN009S.PROC` |
 

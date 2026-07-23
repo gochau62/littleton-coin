@@ -144,6 +144,10 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
+/* fixed column widths so the grid never reflows as data loads; cells
+   stay one line and ellipsize (full text on hover via title) */
+#tblGrid { table-layout: fixed; }
+#tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rq-grid thead th {
   position: sticky;
   top: 0;
@@ -168,8 +172,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 /* badge box: editable right in the grid (header-level - all lines of
    the req share it) */
-.rq-grid .rq-badge { width: 5.5rem; padding: .2rem .4rem; font-size: .85rem;
-                     border: 1px solid var(--rq-line); border-radius: 4px; }
+.rq-grid .rq-badge { width: 100%; box-sizing: border-box; padding: .2rem .4rem;
+                     font-size: .85rem; border: 1px solid var(--rq-line);
+                     border-radius: 4px; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
 .rq-num { text-align: right; }
@@ -385,9 +390,19 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     <span class="rq-updated" id="lblUpdated" title="Last successful refresh"></span>
   </div>
 
+  <!-- badge dropdown choices for the grid's Badge # boxes (filled from
+       the BADGE lookup: distinct badges from history, recent first) -->
+  <datalist id="badgeList"></datalist>
+
   <div class="rq-card">
     <div class="rq-tablewrap">
       <table class="rq-grid" id="tblGrid">
+        <colgroup>
+          <col style="width:3%"><col style="width:6%"><col style="width:8%">
+          <col style="width:12%"><col style="width:9%"><col style="width:24%">
+          <col style="width:4%"><col style="width:5%"><col style="width:5%">
+          <col style="width:16%"><col style="width:8%">
+        </colgroup>
         <thead>
           <tr>
             <th class="rq-sel"></th>
@@ -799,6 +814,11 @@ function esc(s) {
     return $('<span>').text(s == null ? '' : String(s)).html();
 }
 
+// esc() for attribute values (quotes escaped too)
+function attr(s) {
+    return esc(s).replace(/"/g, '&quot;');
+}
+
 function renderGrid() {
     var filter = $('#txtFilter').val().toLowerCase();
     var html = '';
@@ -827,16 +847,16 @@ function renderGrid() {
             '<td><span class="rq-reqlink" title="Open requisition ' + esc(r['RHREQ#']) + '">' +
                 esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td>' + esc(r.RHNAME) + '</td>' +
-            '<td>' + esc(r.RDITEM) + '</td>' +
-            '<td>' + esc(r.RDDESC) + '</td>' +
+            '<td title="' + attr(r.RHNAME) + '">' + esc(r.RHNAME) + '</td>' +
+            '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
+            '<td title="' + attr(r.RDDESC) + '">' + esc(r.RDDESC) + '</td>' +
             '<td>' + esc(r.RDLOC) + '</td>' +
             '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
             '<td>' + rush + '</td>' +
-            '<td>' + auth + '</td>' +
-            '<td><input class="rq-badge" maxlength="10"' +
+            '<td title="' + attr(authName) + '">' + auth + '</td>' +
+            '<td><input class="rq-badge" maxlength="10" list="badgeList"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' value="' + esc(r.RHBDGE).replace(/"/g, '&quot;') + '"></td>' +
+            ' value="' + attr(r.RHBDGE) + '"></td>' +
             '</tr>';
     });
 
@@ -858,6 +878,12 @@ function applyLookups(resp) {
     // the AUTHBY list (13k+ historical reqs store that literal string), and
     // it sorts first, so it is the natural default - nothing synthetic added.
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
+    // badge dropdown for the grid's Badge # boxes
+    var dl = '';
+    $.each(resp.badges || [], function (i, r) {
+        dl += '<option value="' + attr(r.CDCODE) + '">';
+    });
+    $('#badgeList').html(dl);
 }
 
 function loadLookups() {

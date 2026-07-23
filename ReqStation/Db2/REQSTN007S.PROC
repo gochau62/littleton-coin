@@ -10,6 +10,11 @@
 /*                         cost and retail for INKEY from history    */
 /*                         (entry-form autofill; swap to the         */
 /*                         corporate item master when confirmed)     */
+/*                       ITEMSRCH - type-ahead item search           */
+/*                       BADGE - distinct DataEntry badges from      */
+/*                         header history, most recently used first  */
+/*                         (the Access combo read the linked         */
+/*                         employee table, which did not migrate)    */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -69,10 +74,22 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              ORDER BY RDITEM
              FETCH FIRST 12 ROWS ONLY;
 
+        -- BADGE: distinct badges seen on headers, most recently used
+        -- first (recent-first floats the live badges above old junk)
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT RHBDGE AS CDCODE, '' AS CDDESC
+              FROM RQSREQHDRT
+             WHERE RHBDGE <> ''
+             GROUP BY RHBDGE
+             ORDER BY MAX(RHREQ#) DESC
+             FETCH FIRST 50 ROWS ONLY;
+
         IF INTYPE = 'ITEM' THEN
             OPEN C2;
         ELSEIF INTYPE = 'ITEMSRCH' THEN
             OPEN C3;
+        ELSEIF INTYPE = 'BADGE' THEN
+            OPEN C4;
         ELSE
             OPEN C1;
         END IF;

@@ -84,8 +84,9 @@ function rqsMonthly($conn, $yyyymm) {
 }
 
 // PROGRAM NAME: REQSTN007S - the one lookup proc: code lists by type
+// (BADGE is data-driven: distinct badges from header history)
 function rqsLookup($conn, $type) {
-    $allowed = array("NAMES", "AREACODE", "AREATYPE", "AUTHBY");
+    $allowed = array("NAMES", "AREACODE", "AREATYPE", "AUTHBY", "BADGE");
     if (!in_array($type, $allowed)) {
         $GLOBALS['rqsErr'] = "rqsLookup: list type not allowed";
         return false;

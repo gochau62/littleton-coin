@@ -67,13 +67,16 @@ if ($authorized != "yes") {
     // the page falls back to the ajax lookups if anything fails here
     $rqLookups = null;
     if (isset($authConn) && $authConn) {
-        $names = rqsLookup($authConn, "NAMES");
-        $codes = rqsLookup($authConn, "AREACODE");
-        $types = rqsLookup($authConn, "AREATYPE");
-        $auth  = rqsLookup($authConn, "AUTHBY");
-        if ($names !== false && $codes !== false && $types !== false && $auth !== false) {
+        $names  = rqsLookup($authConn, "NAMES");
+        $codes  = rqsLookup($authConn, "AREACODE");
+        $types  = rqsLookup($authConn, "AREATYPE");
+        $auth   = rqsLookup($authConn, "AUTHBY");
+        $badges = rqsLookup($authConn, "BADGE");
+        if ($names !== false && $codes !== false && $types !== false &&
+            $auth !== false && $badges !== false) {
             $rqLookups = array("ok" => true, "names" => $names, "areaCodes" => $codes,
-                               "areaTypes" => $types, "authBy" => $auth);
+                               "areaTypes" => $types, "authBy" => $auth,
+                               "badges" => $badges);
         }
     }
 
