@@ -71,15 +71,18 @@ switch ($action) {
 
     // dropdown data for the add-request form (fallback when not preloaded)
     case 'lookups':
-        $names = rqsLookup($conn, "NAMES");
-        $codes = rqsLookup($conn, "AREACODE");
-        $types = rqsLookup($conn, "AREATYPE");
-        $auth  = rqsLookup($conn, "AUTHBY");
-        if ($names === false || $codes === false || $types === false || $auth === false) {
+        $names  = rqsLookup($conn, "NAMES");
+        $codes  = rqsLookup($conn, "AREACODE");
+        $types  = rqsLookup($conn, "AREATYPE");
+        $auth   = rqsLookup($conn, "AUTHBY");
+        $badges = rqsLookup($conn, "BADGE");
+        if ($names === false || $codes === false || $types === false ||
+            $auth === false || $badges === false) {
             rqsOutFail();
         }
         rqsOut(array("ok" => true, "names" => $names, "areaCodes" => $codes,
-                     "areaTypes" => $types, "authBy" => $auth));
+                     "areaTypes" => $types, "authBy" => $auth,
+                     "badges" => $badges));
 
     // item autofill: most recent description/coin date/cost/retail
     case 'itemlookup':

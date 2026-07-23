@@ -34,7 +34,7 @@ is the full station.
 |---|---|
 | RQSREQHDRT | One row per requisition. RHREQ# is a GENERATED identity (restarted at 17179 after the history load). Name, DEC(8,0)/DEC(6,0) date+time, area code/type, rush flag, authorized flag + by, badge, comments. |
 | RQSREQDTLT | One row per line. PK (RDREQ#, RDLIN#). Item, loc, coin date, description, qty, cost/retail DEC(13,4), add cost, badge, SKU-to, RDRTNF returned flag + RDRTDT date returned. |
-| RQSCODEFLT | The code file: all four dropdown lists in one table, keyed by CDTYPE + CDCODE - AREACODE (3), AREATYPE (16), NAMES (65), AUTHBY (6). "Authorization = None" is a REAL AUTHBY row (13k+ historical headers store that literal), sorts first, and is the natural default - nothing synthetic in the code. |
+| RQSCODEFLT | The code file: all five dropdown lists in one table, keyed by CDTYPE + CDCODE - AREACODE (3), AREATYPE (16), NAMES (65), AUTHBY (6), BADGE (858 active employees: badge # = employee #, name in CDDESC). "Authorization = None" is a REAL AUTHBY row (13k+ historical headers store that literal), sorts first, and is the natural default - nothing synthetic in the code. |
 
 All three are journaled to LSCSAVLIB/LSCJRN. Dates follow the shop
 convention: DEC(8,0) yyyymmdd + DEC(6,0) hhmmss, not date types.
@@ -56,7 +56,7 @@ DYNUSRPRF = *OWNER`, built with RUNSQLSTM from QSQLSRC members.
 | REQSTN004S | One requisition | Header LEFT JOIN all lines, ordered by line. |
 | REQSTN005S | Update header | authorized-by, comments, badge - NULL leaves a column unchanged (COALESCE), so the view window and the grid's badge box share one proc. RHAUTF derives from the authorized-by value. |
 | REQSTN006S | Mark/unmark returned | Idempotent (flag guard). INRTDT = caller-entered return date; 0 stamps today. |
-| REQSTN007S | The one lookup proc | INTYPE picks the cursor: any code list from RQSCODEFLT; ITEM = most recent desc/coin date/cost/retail for a full item number; ITEMSRCH = type-ahead search, latest row per item via ROW_NUMBER(), first 12. |
+| REQSTN007S | The one lookup proc | INTYPE picks the cursor: any code list from RQSCODEFLT; ITEM = autofill from the ITMMSTP item master (description, coin year) + last-used cost/retail from history, with history fallback for legacy items; ITEMSRCH = type-ahead over ITMMSTP, first 12, history-enriched. |
 | REQSTN008S | Monthly report rows | IN yyyymm; returns header + lines with RDEXTC/RDEXTR computed, ordered name/date/req/line. |
 | REQSTN009S | Delete a requisition | Detail then header. The web insert's back-out - a failed submit never leaves half a requisition. |
 

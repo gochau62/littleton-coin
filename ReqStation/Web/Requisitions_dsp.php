@@ -698,8 +698,36 @@ $(document).ready(function () {
         }, function () { loadGrid(true); });
     });
 
+    // badge dropdown: the active-employee list from the code file.
+    // Focus shows the list, typing filters (badge # or name), click or
+    // arrow+Enter picks and saves; Enter alone commits what was typed.
+    $('#gridBody').on('focusin', '.rq-badge', function () {
+        showBadgeSuggest($(this), false);
+    });
+    $('#gridBody').on('input', '.rq-badge', function () {
+        showBadgeSuggest($(this), true);
+    });
+    $('#gridBody').on('blur', '.rq-badge', function () {
+        setTimeout(hideBadgeSuggest, 150);   // let a click on the list land
+    });
     $('#gridBody').on('keydown', '.rq-badge', function (e) {
-        if (e.key === 'Enter') { $(this).trigger('blur'); }   // commits via change
+        var box = $('#rqBadgeSuggest');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!box.length) { return; }
+            e.preventDefault();
+            var items = box.children();
+            var i = items.index(items.filter('.active'));
+            i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1)
+                                        : Math.max(i - 1, 0);
+            items.removeClass('active').eq(i).addClass('active');
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            var act = box.children('.active');
+            if (act.length) { act.trigger('mousedown'); }
+            else { $(this).trigger('blur'); }   // commits via change
+        } else if (e.key === 'Escape') {
+            hideBadgeSuggest();
+        }
     });
 
     // returned checkbox inside the view modal
@@ -1209,6 +1237,57 @@ function updateCurrent() {
         $('#mdlView').prop('hidden', true);
         swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
         loadGrid();
+    });
+}
+
+/* ---- badge dropdown ---- */
+
+// choices = the BADGE list from the code file (active employees:
+// badge # + name), reloaded with the page like the other lists
+function badgeChoices() {
+    var seen = {}, out = [];
+    if (lookups && lookups.badges) {
+        $.each(lookups.badges, function (i, r) {
+            var c = String(r.CDCODE == null ? '' : r.CDCODE).trim();
+            if (c !== '' && !seen[c]) {
+                seen[c] = 1;
+                out.push({ c: c, n: r.CDDESC || '' });
+            }
+        });
+    }
+    return out;
+}
+
+function hideBadgeSuggest() { $('#rqBadgeSuggest').remove(); }
+
+// filterTyped=true while typing (match on what's typed); false on
+// focus, where the list shows regardless of the current value
+function showBadgeSuggest(inp, filterTyped) {
+    hideBadgeSuggest();
+    var v = filterTyped ? inp.val().trim().toLowerCase() : '';
+    var rows = [];
+    $.each(badgeChoices(), function (i, b) {
+        // match on badge number prefix or anywhere in the name
+        if (v === '' || b.c.toLowerCase().indexOf(v) === 0 ||
+            b.n.toLowerCase().indexOf(v) >= 0) { rows.push(b); }
+    });
+    if (!rows.length || !inp.is(':focus')) { return; }
+    var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
+    $.each(rows.slice(0, 25), function (i, b) {
+        $('<div></div>')
+            .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
+            .data('code', b.c)
+            .appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        inp.val($(this).data('code'));
+        hideBadgeSuggest();
+        inp.trigger('change');            // saves via the change handler
     });
 }
 

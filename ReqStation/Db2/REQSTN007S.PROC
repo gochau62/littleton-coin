@@ -6,11 +6,15 @@
 /*                     list:                                         */
 /*                       AREACODE/AREATYPE/NAMES/AUTHBY - active     */
 /*                         rows of that type from RQSCODEFLT         */
-/*                       ITEM - most recent description, coin date,  */
-/*                         cost and retail for INKEY from history    */
-/*                         (entry-form autofill; swap to the         */
-/*                         corporate item master when confirmed)     */
-/*                       ITEMSRCH - type-ahead item search           */
+/*                       ITEM - entry-form autofill for INKEY:       */
+/*                         description and coin year from the        */
+/*                         ITMMSTP item master, last-used cost,      */
+/*                         retail and coin-date string from          */
+/*                         requisition history (the master carries   */
+/*                         no pricing)                               */
+/*                       ITEMSRCH - type-ahead search over the       */
+/*                         ITMMSTP item master (every inventory      */
+/*                         item, not just previously requisitioned) */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -50,24 +54,51 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
                AND CDACTV = 'Y'
              ORDER BY CDDESC, CDCODE;
 
+        -- ITEM autofill: description + coin year from the item master,
+        -- last-used cost/retail/coin-date string from history (the
+        -- master has no pricing). Falls back to history alone for
+        -- legacy items that are not on the master.
         DECLARE C2 CURSOR WITH RETURN FOR
-            SELECT RDDESC, RDCNDT, RDCOST, RDRETL
-              FROM RQSREQDTLT
-             WHERE RDITEM = INKEY
-             ORDER BY RDREQ# DESC, RDLIN# DESC
-             FETCH FIRST 1 ROW ONLY;
+            SELECT COALESCE(I.IIDESC, H.RDDESC) AS RDDESC,
+                   COALESCE(H.RDCNDT,
+                            TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))),
+                            '') AS RDCNDT,
+                   COALESCE(H.RDCOST, 0) AS RDCOST,
+                   COALESCE(H.RDRETL, 0) AS RDRETL
+              FROM (VALUES 1) X (N)
+              LEFT JOIN ITMMSTP I
+                ON I.IISKU# = INKEY
+              LEFT JOIN LATERAL
+                   (SELECT D.RDDESC, D.RDCNDT, D.RDCOST, D.RDRETL
+                      FROM RQSREQDTLT D
+                     WHERE D.RDITEM = INKEY
+                     ORDER BY D.RDREQ# DESC, D.RDLIN# DESC
+                     FETCH FIRST 1 ROW ONLY) H
+                ON 1 = 1
+             WHERE I.IISKU# IS NOT NULL
+                OR H.RDDESC IS NOT NULL;
 
-        -- ITEMSRCH: type-ahead search - distinct items starting with INKEY,
-        -- each with its most recent description/coin date/cost/retail
+        -- ITEMSRCH: type-ahead over the item master, so every inventory
+        -- item is findable; each hit enriched with its last-used
+        -- cost/retail from requisition history
         DECLARE C3 CURSOR WITH RETURN FOR
-            SELECT RDITEM, RDDESC, RDCNDT, RDCOST, RDRETL
-              FROM (SELECT RDITEM, RDDESC, RDCNDT, RDCOST, RDRETL,
-                           ROW_NUMBER() OVER (PARTITION BY RDITEM
-                                              ORDER BY RDREQ# DESC, RDLIN# DESC) AS RN
-                      FROM RQSREQDTLT
-                     WHERE UPPER(RDITEM) LIKE UPPER(INKEY) || '%') T
-             WHERE RN = 1
-             ORDER BY RDITEM
+            SELECT I.IISKU# AS RDITEM,
+                   I.IIDESC AS RDDESC,
+                   COALESCE(H.RDCNDT,
+                            TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))),
+                            '') AS RDCNDT,
+                   COALESCE(H.RDCOST, 0) AS RDCOST,
+                   COALESCE(H.RDRETL, 0) AS RDRETL
+              FROM ITMMSTP I
+              LEFT JOIN LATERAL
+                   (SELECT D.RDCNDT, D.RDCOST, D.RDRETL
+                      FROM RQSREQDTLT D
+                     WHERE D.RDITEM = I.IISKU#
+                     ORDER BY D.RDREQ# DESC, D.RDLIN# DESC
+                     FETCH FIRST 1 ROW ONLY) H
+                ON 1 = 1
+             WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) || '%'
+             ORDER BY I.IISKU#
              FETCH FIRST 12 ROWS ONLY;
 
         IF INTYPE = 'ITEM' THEN
