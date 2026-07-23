@@ -1301,15 +1301,16 @@ function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
         '<table class="rpt-hdr">' +
-        '<tr><td>Requisition # ' + esc(h['RHREQ#']) + '</td>' +
-            '<td>Requisitioner: ' + esc(h.RHNAME) + '</td><td></td></tr>' +
-        '<tr><td>Rush ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
-            '<td></td><td>Date: ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
-        '<tr><td>Authorized By ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
-            '<td>DataEntry: ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
-        '<tr><td>Area Code: ' + esc(h.RHARCD) + '</td>' +
-            '<td>Area Type: ' + esc(h.RHARTY) + '</td><td></td></tr>' +
-        '</table><br>';
+        '<colgroup><col style="width:40%"><col style="width:32%"><col style="width:28%"></colgroup>' +
+        '<tr><td><b>Requisition #</b> ' + esc(h['RHREQ#']) + '</td>' +
+            '<td><b>Requisitioner:</b> ' + esc(h.RHNAME) + '</td><td></td></tr>' +
+        '<tr><td><b>Rush</b> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
+            '<td></td><td><b>Date:</b> ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
+        '<tr><td><b>Authorized By</b> ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
+            '<td><b>DataEntry:</b> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
+        '<tr><td><b>Area Code:</b> ' + esc(h.RHARCD) + '</td>' +
+            '<td><b>Area Type:</b> ' + esc(h.RHARTY) + '</td><td></td></tr>' +
+        '</table>';
 
     var qty = 0, extc = 0, extr = 0;
     var body = '';
@@ -1320,7 +1321,7 @@ function reqPrintHtml(rows) {
         var er = q * (parseFloat(r.RDRETL) || 0);
         qty += q; extc += ec; extr += er;
         body += '<tr><td>' + esc(r.RDITEM) + '</td><td>' + esc(r.RDLOC) + '</td>' +
-            '<td>' + esc(r.RDCNDT) + '</td><td>' + esc(r.RDDESC) + '</td>' +
+            '<td>' + esc(r.RDCNDT) + '</td><td class="rpt-desc">' + esc(r.RDDESC) + '</td>' +
             '<td class="rq-num">' + q + '</td>' +
             '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
             '<td class="rq-num">' + money(ec) + '</td>' +
@@ -1334,7 +1335,12 @@ function reqPrintHtml(rows) {
     }
 
     return head +
-        '<table class="rpt-boxed"><thead><tr>' +
+        '<table class="rpt-boxed">' +
+        '<colgroup><col style="width:9%"><col style="width:5%"><col style="width:8%">' +
+        '<col style="width:30%"><col style="width:5%"><col style="width:7%">' +
+        '<col style="width:8%"><col style="width:7%"><col style="width:8%">' +
+        '<col style="width:7%"><col style="width:6%"></colgroup>' +
+        '<thead><tr>' +
         '<th>Sku #:</th><th>Loc:</th><th>Coin<br>Date:</th><th>Description:</th>' +
         '<th>Qty:</th><th>Cost:</th><th>Ext<br>Cost:</th>' +
         '<th>Retail:</th><th>Ext<br>Retail:</th><th>Add<br>Cost$:</th><th>Sku To:</th>' +
@@ -1373,13 +1379,18 @@ function printHtml(innerHtml, title) {
         '.rpt-cmnt{font-style:italic;color:#444;}' +
         '.rpt-subtotal td,.rpt-grand td{font-weight:bold;}' +
         '.rpt-grand td{border-top:2px solid #333;}' +
-        '.rpt-hdr td{border:none;padding:2px 30px 2px 0;}' +
+        // rptRequest header block: fixed columns, one line each, no wrap
+        '.rpt-hdr{table-layout:fixed;margin:6px 0 16px;}' +
+        '.rpt-hdr td{border:none;padding:6px 0;font-size:13px;white-space:nowrap;}' +
         '.rpt-totals{text-align:right;font-weight:bold;margin:12px 0;line-height:1.6;}' +
         '.rpt-stamp{margin-top:12px;color:#555;}' +
         '.rq-pill{font-weight:bold;}' +
         // rptRequest: boxed spreadsheet-style grid, like the printed sample
-        '.rpt-boxed th,.rpt-boxed td{border:1px solid #000;padding:2px 5px;}' +
-        '.rpt-boxed td{font-size:10px;}' +
+        '.rpt-boxed{table-layout:fixed;}' +
+        '.rpt-boxed th,.rpt-boxed td{border:1px solid #000;padding:3px 5px;}' +
+        '.rpt-boxed th{font-size:10.5px;}' +
+        '.rpt-boxed td{font-size:10px;white-space:nowrap;overflow:hidden;}' +
+        '.rpt-boxed td.rpt-desc{white-space:normal;}' +
         // Monthly Update: open layout, serif italic navy headings
         '.rpt-mu th,.rpt-mu td{border:none;vertical-align:top;}' +
         '.rpt-mu thead th{color:#00008b;}' +
