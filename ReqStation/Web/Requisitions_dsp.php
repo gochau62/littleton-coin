@@ -189,11 +189,20 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 /* badge box: editable right in the grid (header-level - all lines of
    the req share it) */
-.rq-grid .rq-badge { width: 100%; max-width: 4.5rem; box-sizing: border-box;
-                     padding: .2rem .4rem; font-size: .85rem;
+.rq-badgewrap { position: relative; display: inline-block; width: 100%;
+                max-width: 5rem; }
+.rq-grid .rq-badge { width: 100%; box-sizing: border-box;
+                     padding: .2rem 1.1rem .2rem .4rem; font-size: .85rem;
                      border: 1px solid var(--rq-line); border-radius: 4px; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
+/* the combo-style dropdown arrow, like the Access Badge#: box */
+.rq-badgedd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+              border: 0; background: none; padding: 0 .15rem; line-height: 1;
+              font-size: .7rem; color: var(--rq-muted); cursor: pointer; }
+.rq-badgedd:hover { color: var(--rq-blue); }
+.rq-suggest-empty { padding: .3rem .6rem; color: var(--rq-muted);
+                    font-style: italic; cursor: default; }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
@@ -710,6 +719,17 @@ $(document).ready(function () {
     $('#gridBody').on('blur', '.rq-badge', function () {
         setTimeout(hideBadgeSuggest, 150);   // let a click on the list land
     });
+    // the ▾ arrow toggles the list (mousedown so the input keeps focus)
+    $('#gridBody').on('mousedown', '.rq-badgedd', function (e) {
+        e.preventDefault();
+        var inp = $(this).siblings('.rq-badge');
+        if ($('#rqBadgeSuggest').length) {
+            hideBadgeSuggest();
+        } else {
+            inp.trigger('focus');
+            showBadgeSuggest(inp, false);
+        }
+    });
     $('#gridBody').on('keydown', '.rq-badge', function (e) {
         var box = $('#rqBadgeSuggest');
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -1000,9 +1020,11 @@ function renderGrid() {
             '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
             '<td>' + esc(r.RDLOC) + '</td>' +
             '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
-            '<td><input class="rq-badge" maxlength="10"' +
+            '<td><span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' value="' + attr(r.RHBDGE) + '"></td>' +
+            ' value="' + attr(r.RHBDGE) + '">' +
+            '<button type="button" class="rq-badgedd" tabindex="-1"' +
+            ' title="Pick employee">&#9662;</button></span></td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
@@ -1271,8 +1293,15 @@ function showBadgeSuggest(inp, filterTyped) {
         if (v === '' || b.c.toLowerCase().indexOf(v) === 0 ||
             b.n.toLowerCase().indexOf(v) >= 0) { rows.push(b); }
     });
-    if (!rows.length || !inp.is(':focus')) { return; }
+    if (!inp.is(':focus')) { return; }
+    if (!rows.length && filterTyped) { return; }   // typing, no match: no menu
     var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
+    if (!rows.length) {
+        // opened via focus/arrow but the list never loaded - say so
+        // instead of looking dead (REQSTN007S BADGE lookup empty)
+        $('<div class="rq-suggest-empty"></div>')
+            .text('Employee list unavailable').appendTo(box);
+    }
     $.each(rows.slice(0, 25), function (i, b) {
         $('<div></div>')
             .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
@@ -1282,10 +1311,13 @@ function showBadgeSuggest(inp, filterTyped) {
     var rc = inp[0].getBoundingClientRect();
     box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
     $('body').append(box);
-    // mousedown (not click) so the pick lands before the input's blur
+    // mousedown (not click) so the pick lands before the input's blur;
+    // the empty-state row carries no code and picks nothing
     box.children().on('mousedown', function (e) {
         e.preventDefault();
-        inp.val($(this).data('code'));
+        var code = $(this).data('code');
+        if (code == null) { return; }
+        inp.val(code);
         hideBadgeSuggest();
         inp.trigger('change');            // saves via the change handler
     });
