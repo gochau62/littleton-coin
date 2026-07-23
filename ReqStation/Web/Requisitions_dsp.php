@@ -144,12 +144,15 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
-/* frmMain-style two-line records: fixed percent columns so the grid
-   always spans the window exactly; line-1 cells stay one line and
-   ellipsize (full text on hover), description gets its own line */
-#tblGrid { table-layout: fixed; font-size: .86rem; }
+/* frmMain-style two-line records: compact fixed pixel columns (the
+   Requestor column takes the leftover width); line-1 cells stay one
+   line and ellipsize (full text on hover), description gets its own
+   line. Below 780px the wrap scrolls instead of crushing columns. */
+#tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem; }
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    padding: .42rem .55rem; }
+                    padding: .4rem .5rem; }
+#tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
+#tblGrid .rq-ret input { vertical-align: middle; margin-left: .35rem; }
 #tblGrid .rq-sel { vertical-align: middle; }
 #tblGrid tbody tr.rq-r1 td { border-bottom: none; padding-bottom: .12rem; }
 #tblGrid tbody tr.rq-r1 td.rq-sel { border-bottom: 1px solid var(--rq-line); }
@@ -403,15 +406,16 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
   <div class="rq-card">
     <div class="rq-tablewrap">
-      <!-- two-line records like Access frmMain: fields on line 1, the
-           description on its own line underneath (RUSH shows there as a
-           pill). Percent widths always total the window - no sideways
-           scroll, no crushed columns. -->
+      <!-- two-line records like Access frmMain: fields on line 1;
+           description and the Return Item checkbox on line 2. Columns
+           are compact fixed pixels (like the Access form) with the
+           leftover width going to Requestor, so nothing gets crushed. -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
-          <col style="width:3%"><col style="width:7%"><col style="width:10%">
-          <col style="width:16%"><col style="width:13%"><col style="width:6%">
-          <col style="width:7%"><col style="width:9%"><col style="width:29%">
+          <col style="width:22px"><col style="width:58px"><col style="width:88px">
+          <col>
+          <col style="width:96px"><col style="width:40px"><col style="width:52px">
+          <col style="width:68px"><col style="width:175px"><col style="width:54px">
         </colgroup>
         <thead>
           <tr>
@@ -424,10 +428,11 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             <th class="rq-num">Qty</th>
             <th>Badge #</th>
             <th>Authorized</th>
+            <th>Rush</th>
           </tr>
         </thead>
         <tbody id="gridBody">
-          <tr><td colspan="9" class="rq-empty">Loading...</td></tr>
+          <tr><td colspan="10" class="rq-empty">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -649,6 +654,19 @@ $(document).ready(function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').addClass('rq-hov');
     }).on('mouseleave', 'tr[data-rec]', function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
+    });
+
+    // Return Item checkbox on the grid (Access chkReturnItem): marks the
+    // line returned via REQSTN006S; the line leaves the open grid on the
+    // refresh that follows, exactly like frmMain's requery
+    $('#gridBody').on('change', '.rq-gridret', function () {
+        var cb = $(this);
+        postAjax({
+            action: 'returned',
+            reqNum: cb.data('req'),
+            lineNum: cb.data('line'),
+            flag: cb.is(':checked') ? 'Y' : 'N'
+        }, function () { loadGrid(); });
     });
 
     // badge # box in the grid: type a new badge, Enter or click away
@@ -887,9 +905,9 @@ function renderGrid() {
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
-        // two rows per record, like the Access form: fields on line 1,
-        // description (with the RUSH pill) on line 2. data-rec pairs the
-        // rows for striping/hover; data-req still drives select/open.
+        // two rows per record, like the Access form: fields on line 1;
+        // description and the Return Item checkbox on line 2. data-rec
+        // pairs the rows for striping/hover; data-req drives select/open.
         var recAttr = ' data-req="' + esc(r['RHREQ#']) + '" data-rec="' + shown + '"' +
                       ' class="' + (shown % 2 === 0 ? 'rq-alt ' : '');
         html += '<tr' + recAttr + 'rq-r1">' +
@@ -905,16 +923,21 @@ function renderGrid() {
             ' data-req="' + esc(r['RHREQ#']) + '"' +
             ' value="' + attr(r.RHBDGE) + '"></td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
+            '<td>' + rush + '</td>' +
             '</tr>' +
             '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="3"></td>' +
-            '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
-                (rush ? rush + ' ' : '') + esc(r.RDDESC) + '</td>' +
+            '<td colspan="4" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
+                esc(r.RDDESC) + '</td>' +
+            '<td colspan="2" class="rq-ret"><label>Return Item:' +
+            '<input type="checkbox" class="rq-gridret"' +
+            ' data-req="' + esc(r['RHREQ#']) + '"' +
+            ' data-line="' + esc(r['RDLIN#']) + '"></label></td>' +
             '</tr>';
     });
 
     $('#gridBody').html(html ||
-        '<tr><td colspan="9" class="rq-empty">No open requisitions.</td></tr>');
+        '<tr><td colspan="10" class="rq-empty">No open requisitions.</td></tr>');
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
