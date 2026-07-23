@@ -385,10 +385,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     <span class="rq-updated" id="lblUpdated" title="Last successful refresh"></span>
   </div>
 
-  <!-- badge dropdown choices for the grid's Badge # boxes (filled from
-       the BADGE lookup: distinct badges from history, recent first) -->
-  <datalist id="badgeList"></datalist>
-
   <div class="rq-card">
     <div class="rq-tablewrap">
       <table class="rq-grid" id="tblGrid">
@@ -635,8 +631,38 @@ $(document).ready(function () {
             badge: inp.val().trim()
         }, function () { loadGrid(true); });
     });
+
+    // badge dropdown - same pattern as the Item # search (the native
+    // datalist filters against the value already in the box, so a
+    // filled box looked like it had no dropdown at all). Focus shows
+    // the full list; typing filters it; click or Enter picks + saves.
+    $('#gridBody').on('focusin', '.rq-badge', function () {
+        showBadgeSuggest($(this), false);
+    });
+    $('#gridBody').on('input', '.rq-badge', function () {
+        showBadgeSuggest($(this), true);
+    });
+    $('#gridBody').on('blur', '.rq-badge', function () {
+        setTimeout(hideBadgeSuggest, 150);   // let a click on the list land
+    });
     $('#gridBody').on('keydown', '.rq-badge', function (e) {
-        if (e.key === 'Enter') { $(this).trigger('blur'); }
+        var box = $('#rqBadgeSuggest');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            if (!box.length) { return; }
+            e.preventDefault();
+            var items = box.children();
+            var i = items.index(items.filter('.active'));
+            i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1)
+                                        : Math.max(i - 1, 0);
+            items.removeClass('active').eq(i).addClass('active');
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            var act = box.children('.active');
+            if (act.length) { act.trigger('mousedown'); }
+            else { $(this).trigger('blur'); }
+        } else if (e.key === 'Escape') {
+            hideBadgeSuggest();
+        }
     });
 
     // returned checkbox inside the view modal
@@ -843,7 +869,7 @@ function renderGrid() {
             '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
             '<td>' + rush + '</td>' +
             '<td>' + auth + '</td>' +
-            '<td><input class="rq-badge" maxlength="10" list="badgeList"' +
+            '<td><input class="rq-badge" maxlength="10"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
             ' value="' + attr(r.RHBDGE) + '"></td>' +
             '</tr>';
@@ -867,12 +893,6 @@ function applyLookups(resp) {
     // the AUTHBY list (13k+ historical reqs store that literal string), and
     // it sorts first, so it is the natural default - nothing synthetic added.
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
-    // badge dropdown for the grid's Badge # boxes
-    var dl = '';
-    $.each(resp.badges || [], function (i, r) {
-        dl += '<option value="' + attr(r.CDCODE) + '">';
-    });
-    $('#badgeList').html(dl);
 }
 
 function loadLookups() {
@@ -1052,6 +1072,52 @@ function fmtDateTimeIso(d8, t6) {
     var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);
     return s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) + ' ' +
            t.slice(0, 2) + ':' + t.slice(2, 4) + ':' + t.slice(4, 6);
+}
+
+/* ------------------ badge dropdown ------------------ */
+
+// choices = the BADGE lookup (distinct badges from history, recent
+// first), plus any badges visible in the grid rows - so the dropdown
+// still works even if the lookup came back empty
+function badgeChoices() {
+    var seen = {}, out = [];
+    function add(b) {
+        b = String(b == null ? '' : b).trim();
+        if (b !== '' && !seen[b]) { seen[b] = 1; out.push(b); }
+    }
+    if (lookups && lookups.badges) {
+        $.each(lookups.badges, function (i, r) { add(r.CDCODE); });
+    }
+    $.each(gridRows, function (i, r) { add(r.RHBDGE); });
+    return out;
+}
+
+function hideBadgeSuggest() { $('#rqBadgeSuggest').remove(); }
+
+// filterTyped=true while typing (match on what's typed); false on
+// focus, where the full list shows regardless of the current value
+function showBadgeSuggest(inp, filterTyped) {
+    hideBadgeSuggest();
+    var v = filterTyped ? inp.val().trim().toLowerCase() : '';
+    var rows = [];
+    $.each(badgeChoices(), function (i, b) {
+        if (v === '' || b.toLowerCase().indexOf(v) === 0) { rows.push(b); }
+    });
+    if (!rows.length || !inp.is(':focus')) { return; }
+    var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
+    $.each(rows.slice(0, 15), function (i, b) {
+        $('<div></div>').text(b).appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        inp.val($(this).text());
+        hideBadgeSuggest();
+        inp.trigger('change');            // saves via the change handler
+    });
 }
 
 /* ------------------ item search dropdown ------------------ */
