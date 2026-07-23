@@ -5,6 +5,8 @@
 /* Program Narrative - Mark / Unmark a Requisition Line Returned.    */
 /*                     Sets or clears the date returned, matching    */
 /*                     the Access chkReturnItem_AfterUpdate logic.   */
+/*                     INRTDT is the caller-entered return date      */
+/*                     (yyyymmdd); pass 0 to stamp today's date.     */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -29,7 +31,8 @@
 CREATE OR REPLACE PROCEDURE REQSTN006S (
         IN INREQ#  DECIMAL(9, 0),
         IN INLIN#  DECIMAL(3, 0),
-        IN INRTNF  CHAR(1)
+        IN INRTNF  CHAR(1),
+        IN INRTDT  DECIMAL(8, 0)
         )
 
         LANGUAGE SQL
@@ -42,10 +45,10 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
         -- re-stamping the return date.
         UPDATE RQSREQDTLT
            SET RDRTNF = INRTNF,
-               RDRTDT = CASE WHEN INRTNF = 'Y'
-                             THEN DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP,
+               RDRTDT = CASE WHEN INRTNF <> 'Y' THEN 0
+                             WHEN INRTDT > 0    THEN INRTDT
+                             ELSE DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP,
                                       'YYYYMMDD'), 8, 0)
-                             ELSE 0
                         END
          WHERE RDREQ# = INREQ#
            AND RDLIN# = INLIN#

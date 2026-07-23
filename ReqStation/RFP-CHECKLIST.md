@@ -23,7 +23,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 | REQSTN003S | List open requisitions (main grid; no parameters) | `Db2/REQSTN003S.PROC` |
 | REQSTN004S | Get one requisition (header + lines) | `Db2/REQSTN004S.PROC` |
 | REQSTN005S | Update requisition header (authorized-by, comments, badge; NULL = unchanged) | `Db2/REQSTN005S.PROC` |
-| REQSTN006S | Mark/unmark line returned (idempotent) | `Db2/REQSTN006S.PROC` |
+| REQSTN006S | Mark/unmark line returned (idempotent; caller-entered return date, 0 = today) | `Db2/REQSTN006S.PROC` |
 | REQSTN007S | The one lookup proc: 4 code lists + ITEM autofill/search + badge list | `Db2/REQSTN007S.PROC` |
 | REQSTN008S | Monthly Requisitioned Product summary (report) | `Db2/REQSTN008S.PROC` |
 | REQSTN009S | Delete requisition (backs out failed inserts) | `Db2/REQSTN009S.PROC` |
@@ -43,10 +43,11 @@ htdocs folder. If the earlier versions were already built in dev, clean
 up with:
 `DROP TABLE LSCDEVLIBP/RQSACTLOGT`,
 `DROP PROCEDURE LSCDEVLIBP/REQSTN003S(CHAR(1))`, and
-`DROP PROCEDURE LSCDEVLIBP/REQSTN005S(DECIMAL, VARCHAR, VARCHAR)` — the
-new 003S takes no parameter and 005S grew a fourth (badge), and
-`OR REPLACE` does not replace across different parameter counts, so the
-old versions linger until dropped.
+`DROP PROCEDURE LSCDEVLIBP/REQSTN005S(DECIMAL, VARCHAR, VARCHAR)`, and
+`DROP PROCEDURE LSCDEVLIBP/REQSTN006S(DECIMAL, DECIMAL, CHAR)` — the
+new 003S takes no parameter, 005S grew a fourth parameter (badge) and
+006S a fourth (return date), and `OR REPLACE` does not replace across
+different parameter counts, so the old versions linger until dropped.
 
 ### IFS — `*IFS` (MD attribute `PHPSRC`), dev path `/www/seidendev/htdocs/requisitions/`
 

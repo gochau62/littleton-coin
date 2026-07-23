@@ -153,6 +153,8 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
                     padding: .4rem .5rem; }
 #tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
 #tblGrid .rq-ret input { vertical-align: middle; margin-left: .35rem; }
+#tblGrid .rq-retdate { width: 5.4rem; padding: .12rem .35rem; font-size: .78rem;
+                       border: 1px solid var(--rq-line); border-radius: 4px; }
 #tblGrid .rq-sel { vertical-align: middle; }
 #tblGrid tbody tr.rq-r1 td { border-bottom: none; padding-bottom: .12rem; }
 #tblGrid tbody tr.rq-r1 td.rq-sel { border-bottom: 1px solid var(--rq-line); }
@@ -415,7 +417,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <col style="width:22px"><col style="width:58px"><col style="width:88px">
           <col>
           <col style="width:96px"><col style="width:40px"><col style="width:52px">
-          <col style="width:68px"><col style="width:175px"><col style="width:54px">
+          <col style="width:68px"><col style="width:168px"><col style="width:50px">
         </colgroup>
         <thead>
           <tr>
@@ -656,16 +658,29 @@ $(document).ready(function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
     });
 
-    // Return Item checkbox on the grid (Access chkReturnItem): marks the
-    // line returned via REQSTN006S; the line leaves the open grid on the
-    // refresh that follows, exactly like frmMain's requery
+    // Return Item on the grid (Access chkReturnItem + its date box).
+    // Nothing saves until the user has ENTERED the return date - checking
+    // the box with no date warns and unchecks. With a valid date the line
+    // is marked returned via REQSTN006S and leaves the grid on refresh.
     $('#gridBody').on('change', '.rq-gridret', function () {
         var cb = $(this);
+        if (!cb.is(':checked')) { return; }
+        var dateInp = cb.closest('.rq-ret').find('.rq-retdate');
+        var d8 = parseDateMDY(dateInp.val().trim());
+        if (!d8) {
+            cb.prop('checked', false);
+            swal('Enter the return date first',
+                 'Type the date the item came back (mm/dd/yyyy) next to Return Item, then check the box.',
+                 'warning');
+            dateInp.trigger('focus');
+            return;
+        }
         postAjax({
             action: 'returned',
             reqNum: cb.data('req'),
             lineNum: cb.data('line'),
-            flag: cb.is(':checked') ? 'Y' : 'N'
+            flag: 'Y',
+            dateRet: d8
         }, function () { loadGrid(); });
     });
 
@@ -873,6 +888,16 @@ function fmtDate(dec) {
     return s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4);
 }
 
+// "mm/dd/yyyy" (or m/d/yyyy) -> yyyymmdd decimal; 0 if not a real date
+function parseDateMDY(s) {
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+    if (!m) { return 0; }
+    var mo = parseInt(m[1], 10), dy = parseInt(m[2], 10), yr = parseInt(m[3], 10);
+    var d = new Date(yr, mo - 1, dy);
+    if (d.getFullYear() !== yr || d.getMonth() !== mo - 1 || d.getDate() !== dy) { return 0; }
+    return yr * 10000 + mo * 100 + dy;
+}
+
 function esc(s) {
     return $('<span>').text(s == null ? '' : String(s)).html();
 }
@@ -926,13 +951,15 @@ function renderGrid() {
             '<td>' + rush + '</td>' +
             '</tr>' +
             '<tr' + recAttr + 'rq-r2">' +
-            '<td colspan="3"></td>' +
-            '<td colspan="4" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
+            '<td colspan="2"></td>' +
+            '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
                 esc(r.RDDESC) + '</td>' +
-            '<td colspan="2" class="rq-ret"><label>Return Item:' +
+            '<td colspan="2" class="rq-ret"><label>Return Item:</label>' +
+            '<input type="text" class="rq-retdate" placeholder="mm/dd/yyyy" maxlength="10">' +
             '<input type="checkbox" class="rq-gridret"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' data-line="' + esc(r['RDLIN#']) + '"></label></td>' +
+            ' data-line="' + esc(r['RDLIN#']) + '">' +
+            '</td>' +
             '</tr>';
     });
 

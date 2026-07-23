@@ -160,14 +160,16 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
-    // mark / unmark a line returned
+    // mark / unmark a line returned (dateRet yyyymmdd, 0 = today)
     case 'returned':
         $reqNum = intval($_POST['reqNum']);
         $lineNum = intval($_POST['lineNum']);
         $flag = ($_POST['flag'] == 'Y' ? 'Y' : 'N');
-        if (!rqsSetReturned($conn, $reqNum, $lineNum, $flag)) { rqsOutFail(); }
+        $dateRet = intval($_POST['dateRet'] ?? 0);
+        if (!rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet)) { rqsOutFail(); }
         rqsActLog($user, $flag == 'Y' ? 'RETURN' : 'UNRETURN',
-                  'req ' . $reqNum . ' line ' . $lineNum);
+                  'req ' . $reqNum . ' line ' . $lineNum .
+                  ($dateRet > 0 ? ' dated ' . $dateRet : ''));
         rqsOut(array("ok" => true));
 
     default:

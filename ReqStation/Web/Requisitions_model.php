@@ -183,9 +183,10 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
     return true;
 }
 
-// PROGRAM NAME: REQSTN006S - mark/unmark a line returned (idempotent)
-function rqsSetReturned($conn, $reqNum, $lineNum, $flag) {
-    $sql = "CALL REQSTN006S(?, ?, ?)";
+// PROGRAM NAME: REQSTN006S - mark/unmark a line returned (idempotent).
+// $dateRet is the user-entered return date (yyyymmdd); 0 = stamp today.
+function rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet = 0) {
+    $sql = "CALL REQSTN006S(?, ?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return rqsFail("prepare REQSTN006S"); }
@@ -193,6 +194,7 @@ function rqsSetReturned($conn, $reqNum, $lineNum, $flag) {
     db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
     db2_bind_param($stmt, 2, "lineNum", DB2_PARAM_IN);
     db2_bind_param($stmt, 3, "flag", DB2_PARAM_IN);
+    db2_bind_param($stmt, 4, "dateRet", DB2_PARAM_IN);
 
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN006S"); }
     return true;
