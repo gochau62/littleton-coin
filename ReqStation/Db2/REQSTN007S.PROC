@@ -102,7 +102,7 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
                 ON 1 = 1
              WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) || '%'
              ORDER BY I.IISKU#
-             FETCH FIRST 12 ROWS ONLY;
+             FETCH FIRST 200 ROWS ONLY;
 
         -- BADGE: live active employees from the production employee
         -- file - the badge dropdown is always current, nothing to seed

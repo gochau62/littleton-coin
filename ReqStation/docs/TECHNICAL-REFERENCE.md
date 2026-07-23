@@ -56,7 +56,7 @@ DYNUSRPRF = *OWNER`, built with RUNSQLSTM from QSQLSRC members.
 | REQSTN004S | One requisition | Header LEFT JOIN all lines, ordered by line. |
 | REQSTN005S | Update header | authorized-by, comments, badge - NULL leaves a column unchanged (COALESCE), so the view window and the grid's badge box share one proc. RHAUTF derives from the authorized-by value. |
 | REQSTN006S | Mark/unmark returned | Idempotent (flag guard). INRTDT = caller-entered return date; 0 stamps today. |
-| REQSTN007S | The one lookup proc | INTYPE picks the cursor: any code list from RQSCODEFLT; BADGE = live active employees (LEESTAT='A') from LSCPRDLIB/XEMPLOYP; ITEM = autofill from the LSCPRDLIB/ITMMSTP item master (description, coin year) + last-used cost/retail from history, with history fallback for legacy items; ITEMSRCH = type-ahead over LSCPRDLIB/ITMMSTP, first 12, history-enriched. |
+| REQSTN007S | The one lookup proc | INTYPE picks the cursor: any code list from RQSCODEFLT; BADGE = live active employees (LEESTAT='A') from LSCPRDLIB/XEMPLOYP; ITEM = autofill from the LSCPRDLIB/ITMMSTP item master (description, coin year) + last-used cost/retail from history, with history fallback for legacy items; ITEMSRCH = the item list from LSCPRDLIB/ITMMSTP (first 200 per prefix), history-enriched. |
 | REQSTN008S | Monthly report rows | IN yyyymm; returns header + lines with RDEXTC/RDEXTR computed, ordered name/date/req/line. |
 | REQSTN009S | Delete a requisition | Detail then header. The web insert's back-out - a failed submit never leaves half a requisition. |
 
@@ -115,7 +115,7 @@ columns alone.
 the ajax `lookups` action is the fallback if the preload failed.
 
 **Item autofill / search** - `itemlookup` (exact, on change) and
-`itemsearch` (type-ahead, 250ms debounce, 12 rows) both ride REQSTN007S.
+`itemsearch` (opens on focus with the full list, 250ms debounce while typing, 200 rows per view) both ride REQSTN007S.
 
 ## 6. Error model
 

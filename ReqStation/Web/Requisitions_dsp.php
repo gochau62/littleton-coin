@@ -794,18 +794,24 @@ $(document).ready(function () {
         row.find('.ln-loc').trigger('focus');
     });
 
-    // live item search: type 2+ characters in Item# and pick from the list
+    // live item search: clicking into Item # opens the item list from the
+    // top (like the badge dropdown, minus the arrow); typing narrows it
     var srchTimer = null;
     $('#lineBody').on('input', '.ln-item', function () {
         var inp = $(this);
         clearTimeout(srchTimer);
         var v = inp.val().trim();
-        if (v.length < 2) { hideSuggest(); return; }
         srchTimer = setTimeout(function () {
             postAjax({ action: 'itemsearch', q: v }, function (resp) {
                 showSuggest(inp, resp.rows);
             }, true);
         }, 250);
+    });
+    $('#lineBody').on('focusin', '.ln-item', function () {
+        var inp = $(this);
+        postAjax({ action: 'itemsearch', q: inp.val().trim() }, function (resp) {
+            showSuggest(inp, resp.rows);
+        }, true);
     });
     $('#lineBody').on('blur', '.ln-item', function () {
         setTimeout(hideSuggest, 150);      // let a click on the list land first
@@ -833,9 +839,15 @@ $(document).ready(function () {
         e.preventDefault();
         var box = $('#rqSuggest');
         if (box.length && $(this).hasClass('ln-item')) {
+            // pick only a deliberate choice: an arrowed-to row, or the top
+            // match for typed text. An untouched box just hops on.
             var act = box.children('.active');
-            (act.length ? act : box.children().first()).trigger('mousedown');
-            return;
+            if (act.length) { act.trigger('mousedown'); return; }
+            if ($(this).val().trim() !== '') {
+                box.children().first().trigger('mousedown');
+                return;
+            }
+            hideSuggest();
         }
         var inputs = $('#lineBody input:visible');
         var i = inputs.index(this);
@@ -1306,7 +1318,7 @@ function showBadgeSuggest(inp, filterTyped) {
         $('<div class="rq-suggest-empty"></div>')
             .text('Employee list unavailable').appendTo(box);
     }
-    $.each(rows.slice(0, 25), function (i, b) {
+    $.each(rows, function (i, b) {      // full list - the menu scrolls
         $('<div></div>')
             .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
             .data('code', b.c)

@@ -24,9 +24,9 @@ no Access, no shared .mdb file, any modern browser works.
    "Authorization = None" - leave it there unless you already have an
    authorizer.
 4. Fill the line sheet:
-   - Type the Item # . After two characters a dropdown appears with
-     matching items - pick one and the description, coin date, cost and
-     retail fill in from inventory. Typing a full item
+   - Click into Item # and the item list opens; type to narrow it.
+     Pick one and the description, coin date, cost and retail fill in
+     from inventory. Typing a full item
      number and tabbing out does the same fill.
    - Enter hops to the next box, like the old form. Enter on the last box
      of the last line starts a new line.
