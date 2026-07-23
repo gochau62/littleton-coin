@@ -7,7 +7,7 @@
 <!--  *   JSON. Every failure returns ok:false with the *  -->
 <!--  *   real Db2 message so support can act on what   *  -->
 <!--  *   the user reports. A failed insert backs out   *  -->
-<!--  *   the partial requisition (REQSTN013S).         *  -->
+<!--  *   the partial requisition (REQSTN009S).         *  -->
 <!--  *                                                 *  -->
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
@@ -57,9 +57,9 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
 
-    // main grid rows (open requisitions); first=1 logs the station OPEN
+    // main grid rows (open requisitions)
     case 'list':
-        $rows = rqsGetOpen($conn, intval($_POST['first'] ?? 0) ? 'Y' : 'N');
+        $rows = rqsGetOpen($conn);
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 

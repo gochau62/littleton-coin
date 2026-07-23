@@ -39,8 +39,6 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        DECLARE V_CNT INTEGER DEFAULT 0;
-
         UPDATE RQSREQHDRT
            SET RHAUTB = INAUTB,
                RHCMNT = INCMNT,
@@ -50,13 +48,4 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
                              THEN 'N' ELSE 'Y'
                         END
          WHERE RHREQ# = INREQ#;
-
-        GET DIAGNOSTICS V_CNT = ROW_COUNT;
-        IF V_CNT > 0 THEN
-            INSERT INTO RQSACTLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
-            VALUES (SUBSTR(USER, 1, 10),
-                    DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
-                    DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
-                    'UPDATE', INREQ#);
-        END IF;
     END;

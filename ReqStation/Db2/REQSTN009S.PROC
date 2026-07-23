@@ -2,11 +2,11 @@
 /*                                                                   */
 /* Program Name      - REQSTN009S                                    */
 /*                                                                   */
-/* Program Narrative - Delete a requisition (detail then header) and */
-/*                     log the removal. Used by the web insert to    */
-/*                     back out a partial requisition if a line      */
-/*                     insert fails, so a failed submit never leaves */
-/*                     a half-saved requisition behind.              */
+/* Program Narrative - Delete a requisition (detail then header).    */
+/*                     Used by the web insert to back out a partial  */
+/*                     requisition if a line insert fails, so a      */
+/*                     failed submit never leaves a half-saved       */
+/*                     requisition behind.                           */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -39,10 +39,4 @@ CREATE OR REPLACE PROCEDURE REQSTN009S (
     BEGIN
         DELETE FROM RQSREQDTLT WHERE RDREQ# = INREQ#;
         DELETE FROM RQSREQHDRT WHERE RHREQ# = INREQ#;
-
-        INSERT INTO RQSACTLOGT (ACUSER, ACDATE, ACTIME, ACACTN, ACREQ#)
-        VALUES (SUBSTR(USER, 1, 10),
-                DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0),
-                DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'HH24MISS'), 6, 0),
-                'DELETE', INREQ#);
     END;

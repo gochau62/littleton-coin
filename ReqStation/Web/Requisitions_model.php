@@ -51,10 +51,9 @@ function rqsFetchAll($conn, $sql, $params = array()) {
     return $result;
 }
 
-// PROGRAM NAME: REQSTN003S - open requisitions for the main grid.
-// $logOpen 'Y' on the page's first load writes the OPEN activity record.
-function rqsGetOpen($conn, $logOpen = 'N') {
-    return rqsFetchAll($conn, "CALL REQSTN003S(?)", array($logOpen));
+// PROGRAM NAME: REQSTN003S - open requisitions for the main grid
+function rqsGetOpen($conn) {
+    return rqsFetchAll($conn, "CALL REQSTN003S()");
 }
 
 // PROGRAM NAME: REQSTN004S - one requisition, header + all lines
@@ -177,8 +176,4 @@ function rqsSetReturned($conn, $reqNum, $lineNum, $flag) {
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN006S"); }
     return true;
 }
-
-// Activity logging lives inside the action procs themselves (INSERT in
-// 001S, OPEN in 003S, AUTHORIZE in 005S, RETURN/UNRETURN in 006S,
-// DELETE in 009S) - no separate logger to call or forget.
 ?>
