@@ -11,10 +11,6 @@
 /*                         (entry-form autofill; swap to the         */
 /*                         corporate item master when confirmed)     */
 /*                       ITEMSRCH - type-ahead item search           */
-/*                       BADGE - DataEntry badges + names, served    */
-/*                         from RQSCODEFLT like the other lists      */
-/*                         (seeded from the old employee tbl combo,  */
-/*                         DeptID# 30/36; maintained with INSERTs)   */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
