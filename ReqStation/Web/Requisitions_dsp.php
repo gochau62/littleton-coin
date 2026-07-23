@@ -169,7 +169,12 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-grid thead th {
   position: sticky;
   top: 0;
+  z-index: 5;                /* header always paints over cell content */
   background: var(--rq-accent);
+  /* collapsed borders don't travel with a sticky header - draw the
+     header's own lines so they stay attached while scrolling */
+  box-shadow: inset 1px 0 0 #b4b4b4, inset 0 1px 0 #b4b4b4,
+              inset 0 -2px 0 #b4b4b4;
   color: var(--rq-green-dk);
   text-align: left;
   padding: .55rem .7rem;
@@ -189,10 +194,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 /* badge box: editable right in the grid (header-level - all lines of
    the req share it) */
-.rq-badgewrap { position: relative; display: inline-block; width: 100%;
-                max-width: 5rem; }
+.rq-badgewrap { position: relative; display: inline-block; width: 100%; }
 .rq-grid .rq-badge { width: 100%; box-sizing: border-box;
-                     padding: .2rem 1.1rem .2rem .4rem; font-size: .85rem;
+                     padding: .2rem 1rem .2rem .35rem; font-size: .85rem;
                      border: 1px solid var(--rq-line); border-radius: 4px; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
@@ -426,7 +430,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <col style="width:22px"><col style="width:58px"><col style="width:88px">
           <col>
           <col style="width:96px"><col style="width:40px"><col style="width:52px">
-          <col style="width:68px"><col style="width:160px"><col style="width:72px">
+          <col style="width:88px"><col style="width:160px"><col style="width:68px">
         </colgroup>
         <thead>
           <tr>
