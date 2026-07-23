@@ -152,7 +152,8 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                     padding: .4rem .5rem; }
 #tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
-#tblGrid .rq-ret input { vertical-align: middle; margin-left: .35rem; }
+#tblGrid .rq-ret input { vertical-align: middle; }
+#tblGrid .rq-ret label { margin: 0 .35rem 0 .3rem; }
 #tblGrid .rq-retdate { width: 5.4rem; padding: .12rem .35rem; font-size: .78rem;
                        border: 1px solid var(--rq-line); border-radius: 4px; }
 #tblGrid .rq-sel { vertical-align: middle; }
@@ -594,6 +595,9 @@ var lookups = null;
 var autoTimer = null;
 var selectedReq = null;    // the requisition clicked in the grid (Access "current record")
 var lastReqRows = null;    // data behind the open view modal
+var pendingReturns = {};   // "req|line" -> return date string; checked Return
+                           // Items wait here until the next grid refresh
+                           // submits them (the Access requery behavior)
 
 $(document).ready(function () {
     loadLookups();
@@ -659,29 +663,31 @@ $(document).ready(function () {
     });
 
     // Return Item on the grid (Access chkReturnItem + its date box).
-    // Nothing saves until the user has ENTERED the return date - checking
-    // the box with no date warns and unchecks. With a valid date the line
-    // is marked returned via REQSTN006S and leaves the grid on refresh.
+    // Checking fills the date with today (editable); nothing is saved
+    // yet. The next grid refresh - the Refresh button or auto-refresh -
+    // submits the pending returns, like Access's requery. Unchecking
+    // before that clears the pending return.
     $('#gridBody').on('change', '.rq-gridret', function () {
         var cb = $(this);
-        if (!cb.is(':checked')) { return; }
+        var key = cb.attr('data-req') + '|' + cb.attr('data-line');
         var dateInp = cb.closest('.rq-ret').find('.rq-retdate');
-        var d8 = parseDateMDY(dateInp.val().trim());
-        if (!d8) {
-            cb.prop('checked', false);
-            swal('Enter the return date first',
-                 'Type the date the item came back (mm/dd/yyyy) next to Return Item, then check the box.',
-                 'warning');
-            dateInp.trigger('focus');
-            return;
+        if (cb.is(':checked')) {
+            if (dateInp.val().trim() === '') { dateInp.val(fmtToday()); }
+            pendingReturns[key] = dateInp.val().trim();
+        } else {
+            delete pendingReturns[key];
+            dateInp.val('');
         }
-        postAjax({
-            action: 'returned',
-            reqNum: cb.data('req'),
-            lineNum: cb.data('line'),
-            flag: 'Y',
-            dateRet: d8
-        }, function () { loadGrid(); });
+    });
+
+    // keep the pending date in step while the user edits it
+    $('#gridBody').on('input', '.rq-retdate', function () {
+        var td = $(this).closest('.rq-ret');
+        var cb = td.find('.rq-gridret');
+        if (cb.is(':checked')) {
+            pendingReturns[cb.attr('data-req') + '|' + cb.attr('data-line')] =
+                $(this).val().trim();
+        }
     });
 
     // badge # box in the grid: type a new badge, Enter or click away
@@ -870,16 +876,64 @@ function markStale() {
 
 /* ------------------------- grid ------------------------- */
 
+// every refresh first submits the pending Return Items (Access requery
+// behavior), then reloads the grid - the returned lines drop off here
 function loadGrid(background) {
-    postAjax({ action: 'list' }, function (resp) {
-        $('#lblUpdated').removeClass('rq-stale')
-            .text('Updated ' + new Date().toLocaleTimeString());
-        var j = JSON.stringify(resp.rows);
-        if (j === lastGridJson) { return; }     // nothing changed - skip the re-render
-        lastGridJson = j;
-        gridRows = resp.rows;
-        renderGrid();
+    submitPendingReturns(function () {
+        postAjax({ action: 'list' }, function (resp) {
+            $('#lblUpdated').removeClass('rq-stale')
+                .text('Updated ' + new Date().toLocaleTimeString());
+            var j = JSON.stringify(resp.rows);
+            if (j === lastGridJson) { return; }     // nothing changed - skip the re-render
+            lastGridJson = j;
+            gridRows = resp.rows;
+            renderGrid();
+        }, background === true);
     }, background === true);
+}
+
+// submit every checked Return Item, then run next(). If any pending
+// date is invalid the refresh is held (so nothing pending is lost) and
+// a foreground refresh explains why.
+function submitPendingReturns(next, silent) {
+    var keys = Object.keys(pendingReturns);
+    if (!keys.length) { next(); return; }
+
+    var bad = 0;
+    $.each(keys, function (i, k) {
+        if (!parseDateMDY(String(pendingReturns[k]))) { bad++; }
+    });
+    if (bad > 0) {
+        if (!silent) {
+            swal('Check the return date',
+                 'A checked Return Item has an invalid date (mm/dd/yyyy). Fix the date or uncheck the box, then refresh again.',
+                 'warning');
+        }
+        return;
+    }
+
+    var done = 0;
+    $.each(keys, function (i, k) {
+        var p = k.split('|');
+        postAjax({
+            action: 'returned',
+            reqNum: p[0],
+            lineNum: p[1],
+            flag: 'Y',
+            dateRet: parseDateMDY(String(pendingReturns[k]))
+        }, function () {
+            delete pendingReturns[k];
+            done++;
+            if (done === keys.length) { next(); }
+        }, silent);
+    });
+}
+
+// today as mm/dd/yyyy, for the Return Item date autofill
+function fmtToday() {
+    var d = new Date();
+    return String(101 + d.getMonth()).slice(1) + '/' +
+           String(100 + d.getDate()).slice(1) + '/' + d.getFullYear();
 }
 
 function fmtDate(dec) {
@@ -949,16 +1003,23 @@ function renderGrid() {
             ' value="' + attr(r.RHBDGE) + '"></td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
-            '</tr>' +
-            '<tr' + recAttr + 'rq-r2">' +
+            '</tr>';
+        // checkbox BEFORE the label, like the Access form; a pending
+        // (not-yet-refreshed) return survives re-renders via the map
+        var pendKey = String(r['RHREQ#']) + '|' + String(r['RDLIN#']);
+        var pend = pendingReturns.hasOwnProperty(pendKey) ? pendingReturns[pendKey] : null;
+        html += '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="2"></td>' +
             '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
                 esc(r.RDDESC) + '</td>' +
-            '<td colspan="2" class="rq-ret"><label>Return Item:</label>' +
-            '<input type="text" class="rq-retdate" placeholder="mm/dd/yyyy" maxlength="10">' +
+            '<td colspan="2" class="rq-ret">' +
             '<input type="checkbox" class="rq-gridret"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' data-line="' + esc(r['RDLIN#']) + '">' +
+            ' data-line="' + esc(r['RDLIN#']) + '"' +
+            (pend !== null ? ' checked' : '') + '>' +
+            '<label>Return Item:</label>' +
+            '<input type="text" class="rq-retdate" placeholder="mm/dd/yyyy" maxlength="10"' +
+            (pend !== null ? ' value="' + attr(pend) + '"' : '') + '>' +
             '</td>' +
             '</tr>';
     });
