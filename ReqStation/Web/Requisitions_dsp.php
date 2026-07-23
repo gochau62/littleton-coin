@@ -55,7 +55,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   padding: 0 0 2rem 0;
 }
 
-/* ---------- top bar ---------- */
+/* ----- top bar ----- */
 .rq-topbar {
   display: flex;
   align-items: center;
@@ -67,7 +67,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
 .rq-topbar-right { display: flex; gap: 1rem; font-size: .85rem; opacity: .9; }
 
-/* ---------- toolbar ---------- */
+/* ----- toolbar ----- */
 .rq-toolbar {
   display: flex;
   align-items: center;
@@ -89,7 +89,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-lines input.rq-bad { background: #fff5f5; }
 .rq-lines td:has(input.rq-bad) { outline: 2px solid var(--rq-red); outline-offset: -2px; }
 
-/* ---------- item type-ahead dropdown ---------- */
+/* ----- item type-ahead dropdown ----- */
 .rq-suggest {
   position: fixed;
   z-index: 200;
@@ -105,7 +105,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-suggest div b { color: var(--rq-blue); }
 .rq-suggest div.active, .rq-suggest div:hover { background: var(--rq-accent); }
 
-/* ---------- buttons ---------- */
+/* ----- buttons ----- */
 .rq-btn {
   display: inline-flex;
   align-items: center;
@@ -134,7 +134,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-btn-green:hover { background: var(--rq-green-hv); border-color: var(--rq-green-hv); color: #fff; }
 .rq-btn-ghost { border-style: dashed; color: var(--rq-muted); margin: .5rem 0; }
 
-/* ---------- card + grid ---------- */
+/* ----- card + grid ----- */
 .rq-card {
   background: #fff;
   border: 1px solid var(--rq-line);
@@ -197,7 +197,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
-/* ---------- status pills ---------- */
+/* ----- status pills ----- */
 .rq-pill {
   display: inline-block;
   padding: .1rem .55rem;
@@ -210,7 +210,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-warn     { background: #fdf0dd; color: var(--rq-amber); }
 .rq-rushpill { background: #ffd1d1; color: var(--rq-red); }
 
-/* ---------- modals ---------- */
+/* ----- modals ----- */
 .rq-overlay {
   position: fixed;
   inset: 0;
@@ -260,7 +260,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-x:hover { color: var(--rq-red); }
 .rq-linedel { font-size: 1rem; }
 
-/* ---------- add / view forms ---------- */
+/* ----- add / view forms ----- */
 .rq-formrow {
   display: flex;
   gap: 1rem;
@@ -329,7 +329,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-comments { margin-top: .9rem; }
 .rq-comments input { width: 100%; }
 
-/* ---------- legacy-style requisition view ---------- */
+/* ----- legacy-style requisition view ----- */
 .rq-lgcy { font-size: .9rem; }
 .rq-lgcyrow { margin: .3rem 0; display: flex; align-items: center; }
 .rq-lgcyrow label { min-width: 118px; color: var(--rq-text); }
@@ -352,7 +352,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                          background: #fff; padding: .2rem .45rem; }
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
-/* ---------- entry-only mode (workfloor shortcut ?mode=entry) ---------- */
+/* ----- entry-only mode (workfloor shortcut ?mode=entry) ----- */
 /* No grid, no reports - the entry form IS the page, and it can't be
    dismissed, matching the old request.php the floor had favorited. */
 .rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
@@ -361,8 +361,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
 .rq-entry .rq-modal-wide { max-width: 1280px; }   /* room for the full sheet */
 
-/* ---------- monthly report (matches the printed Access sample:
-     serif italic navy headings, open layout with no gridlines) ---------- */
+/* ----- monthly report (matches the printed Access sample:
+     serif italic navy headings, open layout with no gridlines) ----- */
 #rptMonthSel, #rptYearSel { padding: .35rem .5rem; border: 1px solid var(--rq-line);
                             border-radius: 6px; background: #fff; font-size: .9rem; }
 .rpt-stamp { margin-top: .75rem; color: var(--rq-muted); font-size: .85rem; }
@@ -397,7 +397,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     <button type="button" class="rq-btn" id="btnRefresh">&#8635; Refresh</button>
     <button type="button" class="rq-btn" id="btnMonthly">Monthly Report</button>
     <button type="button" class="rq-btn" id="btnPreview">Preview Report</button>
-    <button type="button" class="rq-btn" id="btnOutstanding">Total Outstanding</button>
     <label class="rq-auto">
       <input type="checkbox" id="chkAutoRefresh" checked> Auto-refresh
     </label>
@@ -511,7 +510,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     </div>
   </div>
 
-  <!-- ==== View / Authorize modal (replaces getIdInfo.php + getUpdate.php) ==== -->
+  <!-- ============ View / Update modal (replaces getIdInfo.php + getUpdate.php) ============ -->
   <div class="rq-overlay" id="mdlView" hidden>
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
@@ -559,7 +558,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     </div>
   </div>
 
-  <!-- === Monthly Report modal (replaces "Requested Material Summary") === -->
+  <!-- ============ Monthly Report modal (replaces "Requested Material Summary") ============ -->
   <div class="rq-overlay" id="mdlReport" hidden>
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
@@ -614,9 +613,8 @@ $(document).ready(function () {
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
     $('#txtFilter').on('input', renderGrid);
-    // the entry sheet in a new tab - the same move Access's "Add Requests"
-    // button made when it opened request.php in a browser window; the grid
-    // stays open behind it and picks up the new req on its next refresh
+    // entry sheet in a new tab (like Access's Add Requests button); the
+    // grid picks up the new req on its next refresh
     $('#btnAdd').on('click', function () {
         window.open('Requisitions_ctl.php?mode=entry', '_blank');
     });
@@ -628,7 +626,6 @@ $(document).ready(function () {
     // per-requisition Print (rptRequest "Preview Report")
     $('#btnMonthly').on('click', openMonthlyReport);
     $('#btnPreview').on('click', previewReport);
-    $('#btnOutstanding').on('click', printOutstanding);
     $('#btnRunReport').on('click', runMonthlyReport);
     // picking a different month/year re-runs the report right away
     $('#rptMonthSel, #rptYearSel').on('change', runMonthlyReport);
@@ -810,6 +807,8 @@ $(document).ready(function () {
     }
 });
 
+/* ---- clock + auto-refresh ---- */
+
 function tickClock() {
     var now = new Date().toLocaleString();
     $('#rqClock').text(now);
@@ -825,6 +824,8 @@ function startAutoRefresh() {
         }, 60000);
     }
 }
+
+/* ---- ajax + shared helpers ---- */
 
 // silent=true: background work (auto-refresh, autofill) marks the freshness
 // indicator stale instead of popping error dialogs at a kiosk screen
@@ -845,7 +846,41 @@ function markStale() {
     $('#lblUpdated').addClass('rq-stale');
 }
 
-/* ------------------------- grid ------------------------- */
+// today as mm/dd/yyyy, for the Return Item date autofill
+function fmtToday() {
+    var d = new Date();
+    return String(101 + d.getMonth()).slice(1) + '/' +
+           String(100 + d.getDate()).slice(1) + '/' + d.getFullYear();
+}
+
+// DEC(8,0) yyyymmdd -> mm/dd/yyyy
+function fmtDate(dec) {
+    var s = String(dec);
+    if (s.length !== 8 || s === '00000000') { return ''; }
+    return s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4);
+}
+
+// "mm/dd/yyyy" (or m/d/yyyy) -> yyyymmdd decimal; 0 if not a real date
+function parseDateMDY(s) {
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+    if (!m) { return 0; }
+    var mo = parseInt(m[1], 10), dy = parseInt(m[2], 10), yr = parseInt(m[3], 10);
+    var d = new Date(yr, mo - 1, dy);
+    if (d.getFullYear() !== yr || d.getMonth() !== mo - 1 || d.getDate() !== dy) { return 0; }
+    return yr * 10000 + mo * 100 + dy;
+}
+
+// HTML-escape for element text
+function esc(s) {
+    return $('<span>').text(s == null ? '' : String(s)).html();
+}
+
+// esc() for attribute values (quotes escaped too)
+function attr(s) {
+    return esc(s).replace(/"/g, '&quot;');
+}
+
+/* ---- grid ---- */
 
 // every refresh first submits the pending Return Items (Access requery
 // behavior), then reloads the grid - the returned lines drop off here
@@ -898,38 +933,6 @@ function submitPendingReturns(next, silent) {
             if (done === keys.length) { next(); }
         }, silent);
     });
-}
-
-// today as mm/dd/yyyy, for the Return Item date autofill
-function fmtToday() {
-    var d = new Date();
-    return String(101 + d.getMonth()).slice(1) + '/' +
-           String(100 + d.getDate()).slice(1) + '/' + d.getFullYear();
-}
-
-function fmtDate(dec) {
-    var s = String(dec);
-    if (s.length !== 8 || s === '00000000') { return ''; }
-    return s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4);
-}
-
-// "mm/dd/yyyy" (or m/d/yyyy) -> yyyymmdd decimal; 0 if not a real date
-function parseDateMDY(s) {
-    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
-    if (!m) { return 0; }
-    var mo = parseInt(m[1], 10), dy = parseInt(m[2], 10), yr = parseInt(m[3], 10);
-    var d = new Date(yr, mo - 1, dy);
-    if (d.getFullYear() !== yr || d.getMonth() !== mo - 1 || d.getDate() !== dy) { return 0; }
-    return yr * 10000 + mo * 100 + dy;
-}
-
-function esc(s) {
-    return $('<span>').text(s == null ? '' : String(s)).html();
-}
-
-// esc() for attribute values (quotes escaped too)
-function attr(s) {
-    return esc(s).replace(/"/g, '&quot;');
 }
 
 function renderGrid() {
@@ -1000,7 +1003,7 @@ function renderGrid() {
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
-/* --------------------- add requisition ------------------- */
+/* ---- add requisition ---- */
 
 function applyLookups(resp) {
     lookups = resp;
@@ -1122,7 +1125,7 @@ function submitRequisition() {
     });
 }
 
-/* -------------------- view / authorize ------------------- */
+/* ---- view / update ---- */
 
 function openViewModal(reqNum) {
     postAjax({ action: 'get', reqNum: reqNum }, function (resp) {
@@ -1194,7 +1197,22 @@ function fmtDateTimeIso(d8, t6) {
            t.slice(0, 2) + ':' + t.slice(2, 4) + ':' + t.slice(4, 6);
 }
 
-/* ------------------ item search dropdown ------------------ */
+// the view window's Update button: authorized-by + comments via 005S
+function updateCurrent() {
+    var reqNum = $('#mdlView').data('req');
+    postAjax({
+        action: 'update',
+        reqNum: reqNum,
+        authBy: $('#authBy').val(),
+        comments: $('#authComments').val()
+    }, function () {
+        $('#mdlView').prop('hidden', true);
+        swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
+        loadGrid();
+    });
+}
+
+/* ---- item search dropdown ---- */
 
 function hideSuggest() { $('#rqSuggest').remove(); }
 
@@ -1226,7 +1244,7 @@ function showSuggest(inp, rows) {
     });
 }
 
-/* ---------------------- reports ---------------------- */
+/* ---- reports ---- */
 
 function money(n) {
     n = parseFloat(n) || 0;
@@ -1358,69 +1376,6 @@ function renderMonthlyReport(rows, label) {
         '</div>');
 }
 
-// "Total Outstanding Requisitions" - the Access report of the same name:
-// every open line grouped by requisitioner, Sum(Quantity)/Sum(Total Retail)
-// group footers, long-date print stamp
-function printOutstanding() {
-    if (!gridRows.length) {
-        swal('Nothing outstanding', 'There are no open requisition lines to print.', 'info');
-        return;
-    }
-    var rows = gridRows.slice().sort(function (a, b) {
-        return (a.RHNAME + a.RHRQDT).localeCompare(b.RHNAME + b.RHRQDT);
-    });
-    var name = null, sub = null;
-    var grand = { qty: 0, cost: 0, retl: 0 };
-
-    function subtotalRow() {
-        if (name === null) { return ''; }
-        return '<tr class="rpt-subtotal"><td colspan="4">Summary for ' + esc(name) + '</td>' +
-               '<td class="rq-num">' + sub.qty + '</td><td></td>' +
-               '<td class="rq-num">' + money(sub.cost) + '</td>' +
-               '<td class="rq-num">' + money(sub.retl) + '</td></tr>';
-    }
-
-    var body = '';
-    $.each(rows, function (i, r) {
-        if (r.RHNAME !== name) {
-            body += subtotalRow();
-            name = r.RHNAME;
-            sub = { qty: 0, cost: 0, retl: 0 };
-            body += '<tr class="rpt-group"><td colspan="8">' + esc(name) + '</td></tr>';
-        }
-        var qty = parseFloat(r.RDQTY) || 0;
-        var extc = qty * (parseFloat(r.RDCOST) || 0);
-        var extr = qty * (parseFloat(r.RDRETL) || 0);
-        sub.qty += qty; sub.cost += extc; sub.retl += extr;
-        grand.qty += qty; grand.cost += extc; grand.retl += extr;
-        body += '<tr>' +
-            '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td>' + esc(r.RDITEM) + '</td>' +
-            '<td>' + esc(r.RDCNDT) + '</td>' +
-            '<td>' + esc(r.RDDESC) + '</td>' +
-            '<td class="rq-num">' + qty + '</td>' +
-            '<td>' + esc(r.RHARTY) + '</td>' +
-            '<td class="rq-num">' + money(extc) + '</td>' +
-            '<td class="rq-num">' + money(extr) + '</td>' +
-            '</tr>';
-    });
-    body += subtotalRow();
-    body += '<tr class="rpt-grand"><td colspan="4">Grand total</td>' +
-            '<td class="rq-num">' + grand.qty + '</td><td></td>' +
-            '<td class="rq-num">' + money(grand.cost) + '</td>' +
-            '<td class="rq-num">' + money(grand.retl) + '</td></tr>';
-
-    printHtml('<h3>Total Outstanding Requisitions</h3>' +
-        '<div>Printed ' + new Date().toLocaleDateString('en-US',
-            { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + '</div><br>' +
-        '<table><thead><tr>' +
-        '<th>Date of Request</th><th>Item # Requested</th><th>Date of Coin</th>' +
-        '<th>Description of Material</th><th class="rq-num">Amount Requested</th>' +
-        '<th>Area Type</th><th class="rq-num">Total Cost</th><th class="rq-num">Total Retail</th>' +
-        '</tr></thead><tbody>' + body + '</tbody></table>',
-        'Total Outstanding Requisitions');
-}
-
 // "1/20/2011 11:09:03 AM" from the decimal date + time pair, matching
 // the printed report's Date field
 function fmtDateTime(d8, t6) {
@@ -1505,8 +1460,10 @@ function previewReport() {
     });
 }
 
-// open a clean window with just the report and print it - the web version
-// of Access's separate report preview window
+/* ---- print ---- */
+
+// one clean window per report - the web version of Access's separate
+// report preview window
 function printHtml(innerHtml, title) {
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>' + title + '</title><style>' +
@@ -1514,17 +1471,11 @@ function printHtml(innerHtml, title) {
         'h3{margin:0 0 12px 0;}table{width:100%;border-collapse:collapse;}' +
         'th,td{border-bottom:1px solid #999;padding:3px 6px;text-align:left;}' +
         '.rq-num{text-align:right;}' +
-        '.rpt-group td{font-weight:bold;border-bottom:2px solid #333;padding-top:10px;}' +
-        '.rpt-req td{font-weight:bold;color:#444;}' +
-        '.rpt-cmnt{font-style:italic;color:#444;}' +
-        '.rpt-subtotal td,.rpt-grand td{font-weight:bold;}' +
-        '.rpt-grand td{border-top:2px solid #333;}' +
         // rptRequest header block: fixed columns, one line each, no wrap
         '.rpt-hdr{table-layout:fixed;margin:6px 0 16px;}' +
         '.rpt-hdr td{border:none;padding:6px 0;font-size:13px;white-space:nowrap;}' +
         '.rpt-totals{text-align:right;font-weight:bold;margin:12px 0;line-height:1.6;}' +
         '.rpt-stamp{margin-top:12px;color:#555;}' +
-        '.rq-pill{font-weight:bold;}' +
         // rptRequest: boxed spreadsheet-style grid, like the printed sample
         '.rpt-boxed{table-layout:fixed;}' +
         '.rpt-boxed th,.rpt-boxed td{border:1px solid #000;padding:3px 5px;}' +
@@ -1543,10 +1494,8 @@ function printHtml(innerHtml, title) {
         '.rpt-totblk > .rpt-ital{margin-right:40px;vertical-align:top;}' +
         '.rpt-totvals{display:inline-block;text-align:left;}' +
         '</style></head><body>' + innerHtml +
-        // the report window prints ITSELF and closes when the dialog is
-        // dismissed. If the station called w.print(), the station's own
-        // thread would sit blocked in the dialog and the whole app froze
-        // while the blank print window stayed open.
+        // the window prints itself and closes on afterprint - print() from
+        // the station's own thread would block the app while the dialog is up
         '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
         'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
         '</body></html>');
@@ -1556,20 +1505,6 @@ function printHtml(innerHtml, title) {
 function printRequisition() {
     if (!lastReqRows || !lastReqRows.length) { return; }
     printHtml(reqPrintHtml(lastReqRows), 'Requisition ' + $('#viewReqNum').text());
-}
-
-function updateCurrent() {
-    var reqNum = $('#mdlView').data('req');
-    postAjax({
-        action: 'update',
-        reqNum: reqNum,
-        authBy: $('#authBy').val(),
-        comments: $('#authComments').val()
-    }, function () {
-        $('#mdlView').prop('hidden', true);
-        swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
-        loadGrid();
-    });
 }
 </script>
 

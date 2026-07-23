@@ -89,7 +89,7 @@ fields; Enter on the last box grows the sheet.
 
 **Report modals/windows** - Monthly Update (month/year dropdowns - not
 `input type=month`, which Firefox renders as a dead text box), Preview
-Report, Total Outstanding. Print windows print THEMSELVES on load and
+Report. Print windows print THEMSELVES on load and
 close on afterprint - if the station called print(), the station's own
 thread sat blocked in the dialog and the whole app froze.
 

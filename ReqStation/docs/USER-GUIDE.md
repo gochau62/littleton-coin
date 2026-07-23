@@ -91,7 +91,6 @@ Authorized By and Comments.
 |---|---|
 | Monthly Report | "Monthly Update: Requisitioned Product" for the month you pick from the Month and Year dropdowns - grouped by name with Req. Comments, Req. Totals and Totals by Name, same layout as the old printed report. |
 | Preview Report | The requisition report (old rptRequest) for the **selected** row - click a row first. Shows unreturned items only. |
-| Total Outstanding | Every open line, grouped by requisitioner, with cost and retail totals. |
 
 Print opens the report in its own window, shows the print dialog, and
 the window closes itself when you're done - printed or cancelled.
