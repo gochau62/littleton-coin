@@ -615,7 +615,7 @@ var lastGridJson = '';
 var gridShow = 'O';
 // header sort starts on Date ascending, the order the grid opens in, so the Date column shows its up arrow right away and the first click flips it
 var gridSort = { key: 'RHRQDT', dir: 1 };
-// debounce for the Returned/All server-side filter search
+// debounce for the Returned/All filter search that runs on the server
 var gridSearchTimer = null;
 var lookups = null;
 var autoTimer = null;
@@ -623,7 +623,7 @@ var autoTimer = null;
 var selectedReq = null;
 // lastReqRows holds the data behind the open view window
 var lastReqRows = null;
-// pendingReturns "req|line" -> date; checked Return Items wait here until the next refresh submits them (the Access requery behavior)
+// pendingReturns maps "req|line" to a date; checked Return Items wait here until the next refresh submits them (the Access requery behavior)
 var pendingReturns = {};
 // true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
 var sheetNavMove = false;
@@ -643,14 +643,13 @@ $(document).ready(function () {
 
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
-    // Show Open / Returned / All: re-query so returned lines can come back
+    // Show Open / Returned / All: requery so returned lines can come back
     $('#selShow').on('change', function () {
         gridShow = $(this).val();
         lastGridJson = '';
         loadGrid();
     });
-    // filter box: Open filters the loaded rows instantly; Returned/All search
-    // the whole history server-side (debounced), since only 500 are loaded
+    // filter box: Open filters the loaded rows instantly; Returned/All search the whole history on the server (debounced), since only 500 are loaded
     $('#txtFilter').on('input', function () {
         if (gridShow === 'O') {
             renderGrid();
@@ -677,11 +676,11 @@ $(document).ready(function () {
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
 
-    // report buttons: the Monthly Update and the per-requisition preview
+    // report buttons: the Monthly Update and the per requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
     $('#btnPreview').on('click', previewReport);
     $('#btnRunReport').on('click', runMonthlyReport);
-    // picking a different month/year re-runs the report right away
+    // picking a different month/year reruns the report right away
     $('#rptMonthSel, #rptYearSel').on('change', runMonthlyReport);
     $('#btnPrintReport').on('click', function () {
         printHtml($('#rptBody').html(), 'Monthly Update: Requisitioned Product');
@@ -741,10 +740,7 @@ $(document).ready(function () {
         var inp = $(this);
         var reqNum = String(inp.data('req'));
         var val = inp.val().trim();
-        // only a real badge number saves: a blank clears it, a value on
-        // the employee list, or a plain number typed by hand. Typed name
-        // text (from filtering the dropdown) never becomes the badge; it
-        // reverts to the stored value, like the Access combo
+        // only a real badge number saves: a blank clears it, a value on the employee list, or a plain number typed by hand. Typed name text (from filtering the dropdown) never becomes the badge; it reverts to the stored value, like the Access combo
         var codes = badgeCodeSet();
         if (val !== '' && !codes[val] && !/^\d+$/.test(val)) {
             inp.val(reqBadge(reqNum));
@@ -755,8 +751,7 @@ $(document).ready(function () {
             reqNum: reqNum,
             badge: val
         }, function () {
-            // persist in memory and to the req's other lines in place, so
-            // the grid does not reload and the page keeps its scroll spot
+            // persist in memory and to the req's other lines in place, so the grid does not reload and the page keeps its scroll spot
             $.each(gridRows, function (i, r) {
                 if (String(r['RHREQ#']) === reqNum) { r.RHBDGE = val; }
             });
@@ -823,7 +818,7 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
-    // ESC closes the topmost window (never the entry-mode form)
+    // ESC closes the topmost window (never the entry mode form)
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape' && RQ_MODE !== 'entry') {
             $('.rq-overlay').not('[hidden]').last().prop('hidden', true);
@@ -863,7 +858,7 @@ $(document).ready(function () {
         }, 250);
     });
     $('#lineBody').on('focusin', '.ln-item', function () {
-        // arrow-key travel through the column should not pop the menu
+        // arrow key travel through the column should not pop the menu
         if (sheetNavMove) { sheetNavMove = false; return; }
         var inp = $(this);
         postAjax({ action: 'itemsearch', q: inp.val().trim() }, function (resp) {
@@ -884,7 +879,7 @@ $(document).ready(function () {
             i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
             items.removeClass('active').eq(i).addClass('active');
         } else if (e.key === 'Tab' && !e.shiftKey) {
-            // Tab picks like Enter: the arrowed-to row, or the top match for typed text; an untouched box just tabs on
+            // Tab picks like Enter: the arrowed to row, or the top match for typed text; an untouched box just tabs on
             var act = items.filter('.active');
             if (act.length) {
                 e.preventDefault();
@@ -964,7 +959,7 @@ $(document).ready(function () {
     }
 });
 
-// clock and auto-refresh
+// clock and auto refresh
 
 function tickClock() {
     var now = new Date().toLocaleString();
@@ -973,15 +968,17 @@ function tickClock() {
     $('#addDate').val(now);
 }
 
+
 function startAutoRefresh() {
     if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
     if ($('#chkAutoRefresh').is(':checked')) {
-        // Access used a form timer; same one-minute cadence
+        // Access used a form timer; same one minute cadence
         autoTimer = setInterval(function () {
             if (!document.hidden) { loadGrid(true); }
         }, 60000);
     }
 }
+
 
 // ajax and shared helpers
 
@@ -999,9 +996,11 @@ function postAjax(data, onOk, silent) {
     });
 }
 
+
 function markStale() {
     $('#lblUpdated').addClass('rq-stale');
 }
+
 
 // today as mm/dd/yyyy, for the Return Item date autofill
 function fmtToday() {
@@ -1010,14 +1009,16 @@ function fmtToday() {
            String(100 + d.getDate()).slice(1) + '/' + d.getFullYear();
 }
 
-// DEC(8,0) yyyymmdd -> mm/dd/yyyy
+
+// DEC(8,0) yyyymmdd to mm/dd/yyyy
 function fmtDate(dec) {
     var s = String(dec);
     if (s.length !== 8 || s === '00000000') { return ''; }
     return s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4);
 }
 
-// "mm/dd/yyyy" (or m/d/yyyy) -> yyyymmdd decimal; 0 if not a real date
+
+// "mm/dd/yyyy" (or m/d/yyyy) to yyyymmdd decimal; 0 if not a real date
 function parseDateMDY(s) {
     var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
     if (!m) { return 0; }
@@ -1027,29 +1028,31 @@ function parseDateMDY(s) {
     return yr * 10000 + mo * 100 + dy;
 }
 
-// HTML-escape for element text
+
+// HTML escape for element text
 function esc(s) {
     return $('<span>').text(s == null ? '' : String(s)).html();
 }
+
 
 // esc() for attribute values (quotes escaped too)
 function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
 }
 
+
 // grid
 
 // a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
-    // Returned/All search the whole history server-side; Open loads all its
-    // rows (blank q) and filters them in the browser
+    // Returned/All search the whole history on the server; Open loads all its rows (blank q) and filters them in the browser
     var q = (gridShow === 'O') ? '' : $('#txtFilter').val().trim();
     submitPendingReturns(function () {
         postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
             $('#lblUpdated').removeClass('rq-stale')
                 .text('Updated ' + new Date().toLocaleTimeString());
             var j = JSON.stringify(resp.rows);
-            // nothing changed, skip the re-render
+            // nothing changed, skip the redraw
             if (j === lastGridJson) { return; }
             lastGridJson = j;
             gridRows = resp.rows;
@@ -1057,6 +1060,7 @@ function loadGrid(background) {
         }, background === true);
     }, background === true);
 }
+
 
 // submit every checked Return Item, then run next(); an invalid pending date holds the refresh so nothing pending is lost
 function submitPendingReturns(next, silent) {
@@ -1093,13 +1097,13 @@ function submitPendingReturns(next, silent) {
     });
 }
 
+
 function renderGrid() {
     var filter = $('#txtFilter').val().toLowerCase();
     var html = '';
     var shown = 0;
 
-    // Open filters the loaded rows here; Returned/All are already filtered by
-    // the server (only the most recent 500 are loaded), so show them all
+    // Open filters the loaded rows here; Returned/All are already filtered by the server (only the most recent 500 are loaded), so show them all
     var rows = gridRows;
     if (gridShow === 'O' && filter) {
         rows = $.grep(gridRows, function (r) {
@@ -1123,7 +1127,7 @@ function renderGrid() {
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
-        // two rows per record like Access: fields, then description and Return Item; data-rec pairs them, data-req selects/opens
+        // two rows per record like Access: fields, then description and Return Item; data rec pairs them, data req selects/opens
         var recAttr = ' data-req="' + esc(r['RHREQ#']) + '" data-rec="' + shown + '"' +
                       ' class="' + (shown % 2 === 0 ? 'rq-alt ' : '');
         html += '<tr' + recAttr + 'rq-r1">' +
@@ -1143,15 +1147,14 @@ function renderGrid() {
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
-        // second-line right cell: an already-returned line just shows when it
-        // came back (read-only); an open line gets the Return Item checkbox
+        // second line right cell: an already returned line just shows when it came back (read only); an open line gets the Return Item checkbox
         var retCell;
         if (r.RDRTNF === 'Y') {
             var rdate = fmtDate(r.RDRTDT);
             retCell = '<span class="rq-retdone">Returned' +
                       (rdate ? ' ' + rdate : '') + '</span>';
         } else {
-            // pending (not-yet-refreshed) returns survive re-renders via the map
+            // pending (not yet refreshed) returns survive redraws via the map
             var pendKey = String(r['RHREQ#']) + '|' + String(r['RDLIN#']);
             var pend = pendingReturns.hasOwnProperty(pendKey) ? pendingReturns[pendKey] : null;
             retCell = '<input type="checkbox" class="rq-gridret"' +
@@ -1185,6 +1188,7 @@ function renderGrid() {
     updateSortIndicators();
 }
 
+
 // header sort comparator; numeric columns compare as numbers, text lowercased
 function gridCompare(a, b) {
     var k = gridSort.key, av, bv;
@@ -1212,6 +1216,7 @@ function gridCompare(a, b) {
     return 0;
 }
 
+
 // paint the up/down arrow on the active sort header
 function updateSortIndicators() {
     $('#tblGrid thead th[data-sortkey]').each(function () {
@@ -1231,15 +1236,17 @@ function applyLookups(resp) {
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
-    // "Authorization = None" is a REAL AUTHBY row (13k+ reqs store the literal); it sorts first, so it is the natural default
+    // the literal Authorization None is a REAL AUTHBY row (13k+ reqs store the literal); it sorts first, so it is the natural default
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
 }
+
 
 function loadLookups() {
     // the lists usually ride in with the page
     if (RQ_PRELOAD) { applyLookups(RQ_PRELOAD); return; }
     postAjax({ action: 'lookups' }, applyLookups);
 }
+
 
 function fillSelect(sel, rows, valCol, txtCol) {
     var html = '';
@@ -1249,6 +1256,7 @@ function fillSelect(sel, rows, valCol, txtCol) {
     $(sel).html(html);
 }
 
+
 function openAddModal() {
     $('#lineBody').empty();
     // entry mode opens the tall legacy sheet; the station modal starts small
@@ -1256,7 +1264,7 @@ function openAddModal() {
     for (var i = 0; i < rows; i++) { addLineRow(); }
     $('#addComments').val('');
     $('input[name="addRush"][value="N"]').prop('checked', true);
-    // "Authorization = None" sorts first
+    // the literal Authorization None sorts first
     $('#addAuthBy').prop('selectedIndex', 0);
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
@@ -1265,6 +1273,7 @@ function openAddModal() {
         $('#lineBody input:first').trigger('focus');
     }, 150);
 }
+
 
 function addLineRow() {
     var row = '<tr>' +
@@ -1282,6 +1291,7 @@ function addLineRow() {
         '</tr>';
     $('#lineBody').append(row);
 }
+
 
 function submitRequisition() {
     var lines = [];
@@ -1360,7 +1370,7 @@ function openViewModal(reqNum) {
         var h = resp.rows[0];
         $('#viewReqNum').text(h['RHREQ#']);
 
-        // legacy-style header fields
+        // legacy style header fields
         $('#v_id').text(h['RHREQ#']);
         $('#v_name').text(h.RHNAME);
         $('#v_acode').text(h.RHARCD);
@@ -1376,7 +1386,7 @@ function openViewModal(reqNum) {
         });
         $('#v_returned').text(anyLine && allReturned ? 'Yes' : 'No');
 
-        // preselect the stored authorizer, adding an off-list old name
+        // preselect the stored authorizer, adding an off list old name
         var sel = $('#authBy');
         var val = h.RHAUTB || 'Authorization = None';
         if (!sel.find('option').filter(function () { return this.value === val; }).length) {
@@ -1410,7 +1420,8 @@ function openViewModal(reqNum) {
     });
 }
 
-// "2011-01-20 11:09:03" like the legacy view's Date field
+
+// build the legacy view Date field value, the year then month then day then the clock time exactly as the old getIdInfo screen showed it
 function fmtDateTimeIso(d8, t6) {
     var s = String(d8);
     if (s.length !== 8 || s === '00000000') { return ''; }
@@ -1419,7 +1430,8 @@ function fmtDateTimeIso(d8, t6) {
            t.slice(0, 2) + ':' + t.slice(2, 4) + ':' + t.slice(4, 6);
 }
 
-// the view window's Update button: authorized-by + comments via 005S
+
+// the view window Update button, sending the authorized by name and comments through REQSTN005S
 function updateCurrent() {
     var reqNum = $('#mdlView').data('req');
     postAjax({
@@ -1451,12 +1463,14 @@ function badgeChoices() {
     return out;
 }
 
+
 // the set of valid badge numbers, for rejecting typed name text
 function badgeCodeSet() {
     var set = {};
     $.each(badgeChoices(), function (i, b) { set[b.c] = 1; });
     return set;
 }
+
 
 // the badge currently stored for a requisition (for revert)
 function reqBadge(reqNum) {
@@ -1466,6 +1480,7 @@ function reqBadge(reqNum) {
     });
     return out;
 }
+
 
 function hideBadgeSuggest() { $('#rqBadgeSuggest').remove(); }
 
@@ -1498,7 +1513,7 @@ function showBadgeSuggest(inp, filterTyped) {
     var rc = inp[0].getBoundingClientRect();
     box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
     $('body').append(box);
-    // mousedown lands before blur; the empty-state row picks nothing
+    // mousedown lands before blur; the empty state row picks nothing
     box.children().on('mousedown', function (e) {
         e.preventDefault();
         var code = $(this).data('code');
@@ -1572,6 +1587,7 @@ function openMonthlyReport() {
     $('#mdlReport').prop('hidden', false);
 }
 
+
 function runMonthlyReport() {
     var m = parseInt($('#rptMonthSel').val(), 10);
     var y = parseInt($('#rptYearSel').val(), 10);
@@ -1579,6 +1595,7 @@ function runMonthlyReport() {
     postAjax({ action: 'monthly', yyyymm: y * 100 + m },
              function (resp) { renderMonthlyReport(resp.rows, label); });
 }
+
 
 // one stacked totals block, matching the printed sample's layout
 function muTotals(label, t) {
@@ -1590,6 +1607,7 @@ function muTotals(label, t) {
         '<div><span class="rpt-ital">Total Cost:</span> $' + money(t.cost) + '</div>' +
         '</span></div></td></tr>';
 }
+
 
 // faithful to the printed Monthly Update: no gridlines, serif navy headings, name group, req date, lines, comments, stacked totals
 function renderMonthlyReport(rows, label) {
@@ -1672,6 +1690,7 @@ function renderMonthlyReport(rows, label) {
         '</div>');
 }
 
+
 // "1/20/2011 11:09:03 AM" like the printed report's Date field
 function fmtDateTime(d8, t6) {
     var s = String(d8);
@@ -1685,7 +1704,8 @@ function fmtDateTime(d8, t6) {
            ' ' + hh + ':' + t.slice(2, 4) + ':' + t.slice(4, 6) + ' ' + ap;
 }
 
-// faithful to the printed rptRequest: plain four-line header block, boxed line grid, unreturned lines only
+
+// faithful to the printed rptRequest, a plain four line header block, a boxed line grid, and unreturned lines only
 function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
@@ -1741,6 +1761,7 @@ function reqPrintHtml(rows) {
         (h.RHCMNT ? '<div>Comments: ' + esc(h.RHCMNT) + '</div>' : '');
 }
 
+
 function previewReport() {
     if (!selectedReq) {
         swal('Pick a requisition', 'Click a row in the grid first, then Preview Report.', 'info');
@@ -1770,7 +1791,7 @@ function printHtml(innerHtml, title) {
         '.rpt-hdr td{border:none;padding:6px 0;font-size:13px;white-space:nowrap;}' +
         '.rpt-totals{text-align:right;font-weight:bold;margin:12px 0;line-height:1.6;}' +
         '.rpt-stamp{margin-top:12px;color:#555;}' +
-        // rptRequest: boxed spreadsheet-style grid, like the printed sample
+        // rptRequest: boxed spreadsheet style grid, like the printed sample
         '.rpt-boxed{table-layout:fixed;}' +
         '.rpt-boxed th,.rpt-boxed td{border:1px solid #000;padding:3px 5px;}' +
         '.rpt-boxed th{font-size:10.5px;}' +
@@ -1794,6 +1815,7 @@ function printHtml(innerHtml, title) {
         '</body></html>');
     w.document.close();
 }
+
 
 function printRequisition() {
     if (!lastReqRows || !lastReqRows.length) { return; }
