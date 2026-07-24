@@ -579,15 +579,15 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 <script>
 // Requisition Material front-end logic (grid, add/entry, view, reports)
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
-// RQ_MODE 'entry' = the workfloor entry-only shortcut
+// RQ_MODE 'entry' is the workfloor entry only shortcut
 var RQ_MODE = '<?php echo $mode; ?>';
 var gridRows = [];
 var lastGridJson = '';
 var lookups = null;
 var autoTimer = null;
-// selectedReq = the grid row last clicked (Access "current record")
+// selectedReq is the grid row last clicked (Access "current record")
 var selectedReq = null;
-// lastReqRows = data behind the open view window
+// lastReqRows holds the data behind the open view window
 var lastReqRows = null;
 // pendingReturns "req|line" -> date; checked Return Items wait here until the next refresh submits them (the Access requery behavior)
 var pendingReturns = {};
@@ -634,7 +634,7 @@ $(document).ready(function () {
         $('#' + $(this).data('close')).prop('hidden', true);
     });
 
-    // clicking a row selects it (the ▶ gutter) - it does not open it
+    // clicking a row selects it (the ▶ gutter), it does not open it
     $('#gridBody').on('click', 'tr[data-req]', function () {
         selectedReq = $(this).data('req');
         $('#gridBody tr').removeClass('rq-selected');
@@ -646,14 +646,14 @@ $(document).ready(function () {
         openViewModal($(this).closest('tr').data('req'));
     });
 
-    // hover highlights the whole record - both of its rows
+    // hover highlights the whole record, both of its rows
     $('#gridBody').on('mouseenter', 'tr[data-rec]', function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').addClass('rq-hov');
     }).on('mouseleave', 'tr[data-rec]', function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
     });
 
-    // Return Item: checking fills today's date but saves nothing yet - the next grid refresh submits it, like Access's requery
+    // Return Item: checking fills today's date but saves nothing yet; the next grid refresh submits it, like Access's requery
     $('#gridBody').on('change', '.rq-gridret', function () {
         var cb = $(this);
         var key = cb.attr('data-req') + '|' + cb.attr('data-line');
@@ -871,7 +871,7 @@ $(document).ready(function () {
         }
     });
 
-    // deep links: ?id=N opens that requisition, ?action=add opens entry
+    // deep links: id opens that requisition, action add opens the entry form
     if (RQ_MODE !== 'entry') {
         var qs = new URLSearchParams(window.location.search);
         if (qs.get('id')) {
@@ -882,7 +882,7 @@ $(document).ready(function () {
     }
 });
 
-// ---- clock + auto-refresh ----
+// clock and auto-refresh
 
 function tickClock() {
     var now = new Date().toLocaleString();
@@ -901,9 +901,9 @@ function startAutoRefresh() {
     }
 }
 
-// ---- ajax + shared helpers ----
+// ajax and shared helpers
 
-// silent=true: background failures mark the stamp stale, no dialogs
+// when silent, background failures mark the stamp stale, no dialogs
 function postAjax(data, onOk, silent) {
     $.post('Requisitions_ajax.php', data, function (resp) {
         if (resp && resp.ok) { onOk(resp); }
@@ -955,7 +955,7 @@ function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
 }
 
-// ---- grid ----
+// grid
 
 // a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
@@ -964,7 +964,7 @@ function loadGrid(background) {
             $('#lblUpdated').removeClass('rq-stale')
                 .text('Updated ' + new Date().toLocaleTimeString());
             var j = JSON.stringify(resp.rows);
-            // nothing changed - skip the re-render
+            // nothing changed, skip the re-render
             if (j === lastGridJson) { return; }
             lastGridJson = j;
             gridRows = resp.rows;
@@ -1072,7 +1072,7 @@ function renderGrid() {
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
-// ---- add requisition ----
+// add requisition
 
 function applyLookups(resp) {
     lookups = resp;
@@ -1197,7 +1197,7 @@ function submitRequisition() {
     });
 }
 
-// ---- view / update ----
+// view and update
 
 function openViewModal(reqNum) {
     postAjax({ action: 'get', reqNum: reqNum }, function (resp) {
@@ -1283,9 +1283,9 @@ function updateCurrent() {
     });
 }
 
-// ---- badge dropdown ----
+// badge dropdown
 
-// badge choices = the live employee list that rode in with the page
+// badge choices come from the live employee list that rode in with the page
 function badgeChoices() {
     var seen = {}, out = [];
     if (lookups && lookups.badges) {
@@ -1317,11 +1317,11 @@ function showBadgeSuggest(inp, filterTyped) {
     if (!rows.length && filterTyped) { return; }
     var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
     if (!rows.length) {
-        // the list never loaded (BADGE lookup empty) - say so, not silence
+        // the list never loaded (BADGE lookup empty), say so, not silence
         $('<div class="rq-suggest-empty"></div>')
             .text('Employee list unavailable').appendTo(box);
     }
-    // full list - the menu scrolls
+    // full list, the menu scrolls
     $.each(rows, function (i, b) {
         $('<div></div>')
             .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
@@ -1343,7 +1343,7 @@ function showBadgeSuggest(inp, filterTyped) {
     });
 }
 
-// ---- item search dropdown ----
+// item search dropdown
 
 function hideSuggest() { $('#rqSuggest').remove(); }
 
@@ -1375,7 +1375,7 @@ function showSuggest(inp, rows) {
     });
 }
 
-// ---- reports ----
+// reports
 
 function money(n) {
     n = parseFloat(n) || 0;
@@ -1588,9 +1588,9 @@ function previewReport() {
     });
 }
 
-// ---- print ----
+// print
 
-// one clean window per report - the web version of Access's preview
+// one clean window per report, the web version of Access's preview
 function printHtml(innerHtml, title) {
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>' + title + '</title><style>' +
@@ -1621,7 +1621,7 @@ function printHtml(innerHtml, title) {
         '.rpt-totblk > .rpt-ital{margin-right:40px;vertical-align:top;}' +
         '.rpt-totvals{display:inline-block;text-align:left;}' +
         '</style></head><body>' + innerHtml +
-        // the window prints itself and closes on afterprint - print() from the station's own thread would block the app while the dialog is up
+        // the window prints itself and closes on afterprint; print() from the station's own thread would block the app while the dialog is up
         '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
         'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
         '</body></html>');

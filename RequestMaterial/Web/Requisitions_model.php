@@ -20,7 +20,7 @@ $GLOBALS['rqsErr'] = '';
 
 define('RQS_ACT_LOG', __DIR__ . '/requisition_activity.log');
 
-// append one activity line (ClarioSFTP_pull.log pattern); write failures are ignored - logging must never take the app down
+// append one activity line (ClarioSFTP_pull.log pattern); write failures are ignored, logging must never take the app down
 function rqsActLog($user, $action, $detail = '') {
     @file_put_contents(
         RQS_ACT_LOG,
@@ -57,22 +57,22 @@ function rqsFetchAll($conn, $sql, $params = array()) {
     return $result;
 }
 
-// PROGRAM NAME: REQSTN003S - open requisitions for the main grid
+// PROGRAM NAME REQSTN003S: open requisitions for the main grid
 function rqsGetOpen($conn) {
     return rqsFetchAll($conn, "CALL REQSTN003S()");
 }
 
-// PROGRAM NAME: REQSTN004S - one requisition, header + all lines
+// PROGRAM NAME REQSTN004S: one requisition, header + all lines
 function rqsGet($conn, $reqNum) {
     return rqsFetchAll($conn, "CALL REQSTN004S(?)", array($reqNum));
 }
 
-// PROGRAM NAME: REQSTN008S - monthly report rows
+// PROGRAM NAME REQSTN008S: monthly report rows
 function rqsMonthly($conn, $yyyymm) {
     return rqsFetchAll($conn, "CALL REQSTN008S(?)", array($yyyymm));
 }
 
-// PROGRAM NAME: REQSTN007S - code lists by type (BADGE = live employees)
+// PROGRAM NAME REQSTN007S: code lists by type (BADGE gives live employees)
 function rqsLookup($conn, $type) {
     $allowed = array("NAMES", "AREACODE", "AREATYPE", "AUTHBY", "BADGE");
     if (!in_array($type, $allowed)) {
@@ -82,17 +82,17 @@ function rqsLookup($conn, $type) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array($type, ""));
 }
 
-// PROGRAM NAME: REQSTN007S type ITEM - entry-form autofill
+// PROGRAM NAME REQSTN007S type ITEM: entry-form autofill
 function rqsItemLookup($conn, $item) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEM", $item));
 }
 
-// PROGRAM NAME: REQSTN007S type ITEMSRCH - type-ahead item search
+// PROGRAM NAME REQSTN007S type ITEMSRCH: type-ahead item search
 function rqsItemSearch($conn, $prefix) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEMSRCH", $prefix));
 }
 
-// PROGRAM NAME: REQSTN001S - insert header, returns the new req# (false on error)
+// PROGRAM NAME REQSTN001S: insert header, returns the new req# (false on error)
 function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
                          $rush, $authBy, $badge, $comments) {
     $sql = "CALL REQSTN001S(?, ?, ?, ?, ?, ?, ?, ?)";
@@ -114,7 +114,7 @@ function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
     return $newReq;
 }
 
-// PROGRAM NAME: REQSTN002S - insert one detail line
+// PROGRAM NAME REQSTN002S: insert one detail line
 function rqsInsertLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
                        $desc, $qty, $cost, $retail, $addCost, $badge, $skuTo) {
     $sql = "CALL REQSTN002S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -139,7 +139,7 @@ function rqsInsertLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
     return true;
 }
 
-// PROGRAM NAME: REQSTN009S - back out a partial requisition after a failed insert
+// PROGRAM NAME REQSTN009S: back out a partial requisition after a failed insert
 function rqsDeleteRequisition($conn, $reqNum) {
     $sql = "CALL REQSTN009S(?)";
     $stmt = db2_prepare($conn, $sql);
@@ -149,7 +149,7 @@ function rqsDeleteRequisition($conn, $reqNum) {
     return true;
 }
 
-// PROGRAM NAME: REQSTN005S - update header; NULL leaves a column unchanged
+// PROGRAM NAME REQSTN005S: update header; NULL leaves a column unchanged
 function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
     $sql = "CALL REQSTN005S(?, ?, ?, ?)";
 
@@ -165,7 +165,7 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
     return true;
 }
 
-// PROGRAM NAME: REQSTN006S - mark/unmark a line returned; dateRet 0 = today
+// PROGRAM NAME REQSTN006S: mark/unmark a line returned; dateRet 0 means today
 function rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet = 0) {
     $sql = "CALL REQSTN006S(?, ?, ?, ?)";
 

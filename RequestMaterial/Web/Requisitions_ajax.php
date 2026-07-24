@@ -16,7 +16,7 @@
 <!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
-// AJAX endpoint - buffer from byte 0 so stray include output can't corrupt the JSON
+// AJAX endpoint, buffer from byte 0 so stray include output can't corrupt the JSON
 ob_start();
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
@@ -151,7 +151,7 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
-    // mark / unmark a line returned (dateRet yyyymmdd, 0 = today)
+    // mark or unmark a line returned (dateRet yyyymmdd, 0 means today)
     case 'returned':
         $reqNum = intval($_POST['reqNum']);
         $lineNum = intval($_POST['lineNum']);

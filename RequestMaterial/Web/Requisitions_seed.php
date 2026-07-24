@@ -47,7 +47,7 @@ $TABLES = array(
     'RQSCODEFLT' => array('CDTYPE','CDCODE','CDDESC','CDACTV'),
 );
 
-// ---- the load ----
+// the load
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     header('Content-Type: text/plain; charset=utf-8');
 
@@ -163,7 +163,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     exit;
 }
 
-// ---- the form ----
+// the form
 ?>
 <!DOCTYPE html>
 <html><head><title>Requisitions Seeder</title></head>

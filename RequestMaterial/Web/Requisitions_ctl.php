@@ -33,7 +33,7 @@
 
     document.title = "Requisition Material";
 
-    // ---- message helpers (LCC convention) ----
+    // message helpers (LCC convention)
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
@@ -43,7 +43,7 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// ***--- Check users authority (10 is the minimum to use LCCOnline) ---***
+// check users authority (10 is the minimum to use LCCOnline)
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
@@ -72,7 +72,7 @@ if ($authorized != "yes") {
         }
     }
 
-    // mode=entry = the workfloor entry-only shortcut; the plain URL = the full station
+    // mode entry is the workfloor entry only shortcut; the plain URL is the full station
     $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
     rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
