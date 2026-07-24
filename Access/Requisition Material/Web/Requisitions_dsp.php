@@ -822,6 +822,19 @@ $(document).ready(function () {
             var i = items.index(items.filter('.active'));
             i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
             items.removeClass('active').eq(i).addClass('active');
+        } else if (e.key === 'Tab' && !e.shiftKey) {
+            // Tab picks like Enter: the arrowed-to row, or the top match
+            // for typed text; an untouched box just tabs on
+            var act = items.filter('.active');
+            if (act.length) {
+                e.preventDefault();
+                act.trigger('mousedown');
+            } else if ($(this).val().trim() !== '') {
+                e.preventDefault();
+                items.first().trigger('mousedown');
+            } else {
+                hideSuggest();
+            }
         } else if (e.key === 'Escape') {
             hideSuggest();
             e.stopPropagation();
@@ -1126,9 +1139,11 @@ function openAddModal() {
     $('#addAuthBy').prop('selectedIndex', 0);
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
-    // focus the first cell without popping its item menu
-    sheetNavMove = true;
-    $('#lineBody input:first').trigger('focus');
+    // focus the first cell after layout settles so its item menu opens
+    // in the right place
+    setTimeout(function () {
+        $('#lineBody input:first').trigger('focus');
+    }, 150);
 }
 
 function addLineRow() {
