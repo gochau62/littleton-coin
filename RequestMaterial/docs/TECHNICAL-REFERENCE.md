@@ -57,7 +57,7 @@ DYNUSRPRF = *OWNER`, built with RUNSQLSTM from QSQLSRC members.
 | REQSTN005S | Update header | authorized-by, comments, badge - NULL leaves a column unchanged (COALESCE), so the view window and the grid's badge box share one proc. RHAUTF derives from the authorized-by value. |
 | REQSTN006S | Mark/unmark returned | Idempotent (flag guard). INRTDT = caller-entered return date; 0 stamps today. |
 | REQSTN007S | The one lookup proc | INTYPE picks the cursor: any code list from RQSCODEFLT; BADGE = live active employees (LEESTAT='A') from LSCPRDLIB/XEMPLOYP; ITEM = autofill from the LSCPRDLIB/ITMMSTP item master (description, coin year) + last-used cost/retail from history, with history fallback for legacy items; ITEMSRCH = the item list from LSCPRDLIB/ITMMSTP (first 200 per prefix), history-enriched. |
-| REQSTN008S | Monthly report rows | IN yyyymm; returns header + lines with RDEXTC/RDEXTR computed, ordered name/date/req/line. |
+| REQSTN008S | Monthly report rows | IN yyyymm; returns header + lines with RDEXTC/RDEXTR computed plus RDRTNF/RDRTDT for the Returned column, ordered name/date/req/line. |
 | REQSTN009S | Delete a requisition | Detail then header. The web insert's back-out - a failed submit never leaves half a requisition. |
 
 **The OR REPLACE gotcha:** `CREATE OR REPLACE PROCEDURE` does NOT
@@ -100,9 +100,13 @@ here too; a Date Ret. column shows when each returned line came back;
 Print.
 
 **Report modals/windows** - Monthly Update (month/year dropdowns - not
-`input type=month`, which Firefox renders as a dead text box), Preview
-Report. Print windows print THEMSELVES on load and
-close on afterprint - if the station called print(), the station's own
+`input type=month`, which Firefox renders as a dead text box; opens on
+the current month automatically) and Preview Report. Both add a Returned
+column (green return date, or a dash while still out); the Preview lists
+every line now, not just unreturned, and the Monthly totals are compact
+single ruled lines so a busy month stays to few pages. Print windows
+print THEMSELVES on load and close on afterprint - if the station called
+print(), the station's own
 thread sat blocked in the dialog and the whole app froze.
 
 ## 5. Workflows

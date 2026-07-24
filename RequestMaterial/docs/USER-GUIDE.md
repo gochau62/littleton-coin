@@ -111,8 +111,8 @@ Authorized By and Comments.
 
 | Button | What it prints |
 |---|---|
-| Monthly Report | "Monthly Update: Requisitioned Product" for the month you pick from the Month and Year dropdowns - grouped by name with Req. Comments, Req. Totals and Totals by Name, same layout as the old printed report. |
-| Preview Report | The requisition report (old rptRequest) for the **selected** row - click a row first. Shows unreturned items only. |
+| Monthly Report | "Monthly Update: Requisitioned Product" - opens straight onto the **current month** (change it with the Month and Year dropdowns). Grouped by name with Req. Comments, Req. Totals and Totals by Name, and a **Returned** column showing the return date (or a dash if the item is still out). |
+| Preview Report | The requisition report (old rptRequest) for the **selected** row - click a row first. Lists **every** line with a **Returned** column (return date, or a dash if still out). |
 
 Print opens the report in its own window, shows the print dialog, and
 the window closes itself when you're done - printed or cancelled.
