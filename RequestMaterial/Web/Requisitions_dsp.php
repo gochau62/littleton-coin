@@ -680,11 +680,34 @@ $(document).ready(function () {
     // badge # box: a change saves it (every line of the req shares it)
     $('#gridBody').on('change', '.rq-badge', function () {
         var inp = $(this);
+        var reqNum = String(inp.data('req'));
+        var val = inp.val().trim();
+        // only a real badge number saves: a blank clears it, a value on
+        // the employee list, or a plain number typed by hand. Typed name
+        // text (from filtering the dropdown) never becomes the badge; it
+        // reverts to the stored value, like the Access combo
+        var codes = badgeCodeSet();
+        if (val !== '' && !codes[val] && !/^\d+$/.test(val)) {
+            inp.val(reqBadge(reqNum));
+            return;
+        }
         postAjax({
             action: 'update',
-            reqNum: inp.data('req'),
-            badge: inp.val().trim()
-        }, function () { loadGrid(true); });
+            reqNum: reqNum,
+            badge: val
+        }, function () {
+            // persist in memory and to the req's other lines in place, so
+            // the grid does not reload and the page keeps its scroll spot
+            $.each(gridRows, function (i, r) {
+                if (String(r['RHREQ#']) === reqNum) { r.RHBDGE = val; }
+            });
+            lastGridJson = JSON.stringify(gridRows);
+            $('#gridBody .rq-badge').each(function () {
+                if (this !== inp[0] && String($(this).data('req')) === reqNum) {
+                    $(this).val(val);
+                }
+            });
+        });
     });
 
     // badge dropdown: focus opens the employee list, typing filters it, click or arrow+Enter picks and saves
@@ -1297,6 +1320,22 @@ function badgeChoices() {
             }
         });
     }
+    return out;
+}
+
+// the set of valid badge numbers, for rejecting typed name text
+function badgeCodeSet() {
+    var set = {};
+    $.each(badgeChoices(), function (i, b) { set[b.c] = 1; });
+    return set;
+}
+
+// the badge currently stored for a requisition (for revert)
+function reqBadge(reqNum) {
+    var out = '';
+    $.each(gridRows, function (i, r) {
+        if (String(r['RHREQ#']) === reqNum) { out = r.RHBDGE || ''; return false; }
+    });
     return out;
 }
 
