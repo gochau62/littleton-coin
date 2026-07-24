@@ -136,7 +136,9 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
 /* frmMain-style two-line records: fixed pixel columns, Requestor flexes; below 780px the wrap scrolls */
-#tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem; }
+/* separate borders (not collapsed) so the sticky header keeps its lines while scrolling, which Firefox drops in collapse mode */
+#tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem;
+           border-collapse: separate; border-spacing: 0; }
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                     padding: .4rem .5rem; }
 #tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
@@ -160,15 +162,21 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   /* header always paints over cell content */
   z-index: 5;
   background: var(--rq-accent);
-  /* collapsed borders don't stick - draw the header's own lines */
-  box-shadow: inset 1px 0 0 #b4b4b4, inset 0 1px 0 #b4b4b4,
-              inset 0 -2px 0 #b4b4b4;
   color: var(--rq-green-dk);
   text-align: left;
   padding: .55rem .7rem;
   border-bottom: 2px solid var(--rq-line);
   white-space: nowrap;
 }
+/* real cell borders on the station header, so the box and the column
+   separators stay put while scrolling (they belong to each th, not the
+   collapsed table) */
+#tblGrid thead th {
+  border-top: 1px solid #b4b4b4;
+  border-right: 1px solid #b4b4b4;
+  border-bottom: 2px solid #b4b4b4;
+}
+#tblGrid thead th:first-child { border-left: 1px solid #b4b4b4; }
 .rq-grid tbody td {
   padding: .45rem .7rem;
   border-bottom: 1px solid var(--rq-line);
