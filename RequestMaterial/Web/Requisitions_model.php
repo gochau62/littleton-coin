@@ -2,17 +2,9 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_model.php           *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Material model. All      *  -->
-<!--  *   database access goes through the REQSTNnnnS   *  -->
-<!--  *   stored procedures - no inline SQL, no string  *  -->
-<!--  *   concatenation. Failures never die() mid-JSON: *  -->
-<!--  *   functions return false and the real Db2       *  -->
-<!--  *   message is kept in $GLOBALS['rqsErr'] (and    *  -->
-<!--  *   the PHP error log) for the ajax layer.        *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
 <!--  * Date Written 07/20/2026                         *  -->
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
@@ -21,15 +13,14 @@
 <!--  * Date      -                                     *  -->
 <!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
-<!--  * Project   -                                     *  -->
+<!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
 $GLOBALS['rqsErr'] = '';
 
 define('RQS_ACT_LOG', __DIR__ . '/requisition_activity.log');
 
-// append one activity line (ClarioSFTP_pull.log pattern); write failures
-// are ignored - logging must never take the app down
+// append one activity line (ClarioSFTP_pull.log pattern); write failures are ignored - logging must never take the app down
 function rqsActLog($user, $action, $detail = '') {
     @file_put_contents(
         RQS_ACT_LOG,

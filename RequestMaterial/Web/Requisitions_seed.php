@@ -2,19 +2,10 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_seed.php            *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - One-time data seeder (DEV TOOL, not *  -->
-<!--  *   part of the runtime app). Pick one of the     *  -->
-<!--  *   Data/*.csv files from your PC and it loads    *  -->
-<!--  *   the matching table: RQSREQHDRT, RQSREQDTLT    *  -->
-<!--  *   or RQSCODEFLT. Batched-commit inserts, auto   *  -->
-<!--  *   identity RESTART after a header load, and     *  -->
-<!--  *   validation counts at the end. The CSVs are    *  -->
-<!--  *   already in Db2 format - no transforms here.   *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
-<!--  * Date Written 07/22/2026                         *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
+<!--  * Date Written 07/20/2026                         *  -->
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
 <!--  *                                                 *  -->
@@ -22,7 +13,7 @@
 <!--  * Date      -                                     *  -->
 <!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
-<!--  * Project   -                                     *  -->
+<!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
@@ -56,7 +47,7 @@ $TABLES = array(
     'RQSCODEFLT' => array('CDTYPE','CDCODE','CDDESC','CDACTV'),
 );
 
-/* ----------------------------- the load ------------------------------ */
+// ---- the load ----
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     header('Content-Type: text/plain; charset=utf-8');
 
@@ -172,7 +163,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     exit;
 }
 
-/* ----------------------------- the form ------------------------------ */
+// ---- the form ----
 ?>
 <!DOCTYPE html>
 <html><head><title>Requisitions Seeder</title></head>

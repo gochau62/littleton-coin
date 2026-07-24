@@ -2,16 +2,9 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_ajax.php            *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Material ajax handler.   *  -->
-<!--  *   Maps action names to model calls and returns  *  -->
-<!--  *   JSON. Every failure returns ok:false with the *  -->
-<!--  *   real Db2 message so support can act on what   *  -->
-<!--  *   the user reports. A failed insert backs out   *  -->
-<!--  *   the partial requisition (REQSTN009S).         *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
 <!--  * Date Written 07/20/2026                         *  -->
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
@@ -20,7 +13,7 @@
 <!--  * Date      -                                     *  -->
 <!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
-<!--  * Project   -                                     *  -->
+<!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
 // AJAX endpoint - buffer from byte 0 so stray include output can't corrupt the JSON

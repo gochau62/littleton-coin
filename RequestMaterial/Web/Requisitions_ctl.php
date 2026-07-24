@@ -2,16 +2,9 @@
 /*    ***************************************************  -->
 <!--  * Program Name - Requisitions_ctl.php             *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Material controller.     *  -->
-<!--  *   Web replacement for the Access frmMain grid   *  -->
-<!--  *   and the legacy request.php entry page.        *  -->
-<!--  *   Bootstraps exactly like SellbriteBulkLoader:  *  -->
-<!--  *   StartBlockScriptA/B, guarded authority check, *  -->
-<!--  *   then the display function.                    *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
 <!--  * Date Written 07/20/2026                         *  -->
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
@@ -20,7 +13,7 @@
 <!--  * Date      -                                     *  -->
 <!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
-<!--  * Project   -                                     *  -->
+<!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 ?>
 
@@ -40,7 +33,7 @@
 
     document.title = "Requisition Material";
 
-    /* ---- message helpers (LCC convention) ---- */
+    // ---- message helpers (LCC convention) ----
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
@@ -50,7 +43,7 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-//***--- Check users authority (10 is the minimum to use LCCOnline) ---***
+// ***--- Check users authority (10 is the minimum to use LCCOnline) ---***
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);

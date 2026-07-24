@@ -1,20 +1,10 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - Requisitions_dsp.php                   *  -->
+<!--  * Program Name - Requisitions_dsp.php             *  -->
 <!--  *                                                 *  -->
-<!--  * Narrative - Requisition Material display.        *  -->
-<!--  *   Main grid (replaces Access frmMain), add-     *  -->
-<!--  *   request modal (replaces legacy getEntry.php)  *  -->
-<!--  *   and view/authorize modal (replaces            *  -->
-<!--  *   getIdInfo.php / getUpdate.php).               *  -->
-<!--  *   Styling lives in the <style> block up top and *  -->
-<!--  *   the page logic in the <script> block at the   *  -->
-<!--  *   bottom (Sellbrite/WavePickSearch pattern) -   *  -->
-<!--  *   the display owns everything the browser gets. *  -->
-<!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
 <!--  * Date Written 07/20/2026                         *  -->
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
@@ -23,7 +13,7 @@
 <!--  * Date      -                                     *  -->
 <!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
-<!--  * Project   -                                     *  -->
+<!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
 function dspRequisitions($user, $rqLookups = null, $mode = '') {
@@ -417,10 +407,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
   <div class="rq-card">
     <div class="rq-tablewrap">
-      <!-- two-line records like Access frmMain: fields on line 1;
-           description and the Return Item checkbox on line 2. Columns
-           are compact fixed pixels (like the Access form) with the
-           leftover width going to Requestor, so nothing gets crushed. -->
+      <!-- two-line records like Access frmMain: fields on line 1; description and the Return Item checkbox on line 2. Columns are compact fixed pixels (like the Access form) with the leftover width going to Requestor, so nothing gets crushed. -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
           <col style="width:22px"><col style="width:58px"><col style="width:88px">
@@ -573,8 +560,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <div class="rq-modal-head">
         <h2>Monthly Update: Requisitioned Product</h2>
         <div>
-          <!-- real dropdowns, not input type=month - Firefox renders that
-               as a bare text box, which is what the floor runs -->
+          <!-- real dropdowns, not input type=month - Firefox renders that as a bare text box, which is what the floor runs -->
           <select id="rptMonthSel" title="Month"></select>
           <select id="rptYearSel" title="Year"></select>
           <button type="button" class="rq-btn" id="btnRunReport">Run</button>
@@ -591,10 +577,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 </div>
 
 <script>
-/* Requisition Material front-end logic - inline at the bottom of the
-   display per the Sellbrite/WavePickSearch pattern: grid load and
-   auto-refresh (replaces the Access Form_Timer), add-request modal
-   with dynamic lines, authorize and return-item actions via ajax. */
+// Requisition Material front-end logic (grid, add/entry, view, reports)
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 // RQ_MODE 'entry' = the workfloor entry-only shortcut
 var RQ_MODE = '<?php echo $mode; ?>';
@@ -606,11 +589,9 @@ var autoTimer = null;
 var selectedReq = null;
 // lastReqRows = data behind the open view window
 var lastReqRows = null;
-// pendingReturns "req|line" -> date; checked Return Items wait here
-// until the next refresh submits them (the Access requery behavior)
+// pendingReturns "req|line" -> date; checked Return Items wait here until the next refresh submits them (the Access requery behavior)
 var pendingReturns = {};
-// true while arrow keys travel the sheet, so landing on an Item # cell
-// does not pop its menu
+// true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
 var sheetNavMove = false;
 
 $(document).ready(function () {
@@ -672,8 +653,7 @@ $(document).ready(function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
     });
 
-    // Return Item: checking fills today's date but saves nothing yet -
-    // the next grid refresh submits it, like Access's requery
+    // Return Item: checking fills today's date but saves nothing yet - the next grid refresh submits it, like Access's requery
     $('#gridBody').on('change', '.rq-gridret', function () {
         var cb = $(this);
         var key = cb.attr('data-req') + '|' + cb.attr('data-line');
@@ -707,8 +687,7 @@ $(document).ready(function () {
         }, function () { loadGrid(true); });
     });
 
-    // badge dropdown: focus opens the employee list, typing filters it,
-    // click or arrow+Enter picks and saves
+    // badge dropdown: focus opens the employee list, typing filters it, click or arrow+Enter picks and saves
     $('#gridBody').on('focusin', '.rq-badge', function () {
         showBadgeSuggest($(this), false);
     });
@@ -823,8 +802,7 @@ $(document).ready(function () {
             i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
             items.removeClass('active').eq(i).addClass('active');
         } else if (e.key === 'Tab' && !e.shiftKey) {
-            // Tab picks like Enter: the arrowed-to row, or the top match
-            // for typed text; an untouched box just tabs on
+            // Tab picks like Enter: the arrowed-to row, or the top match for typed text; an untouched box just tabs on
             var act = items.filter('.active');
             if (act.length) {
                 e.preventDefault();
@@ -841,8 +819,7 @@ $(document).ready(function () {
         }
     });
 
-    // Enter hops fields like the legacy onEnterKey chain; on the last
-    // box of the last row it grows the sheet
+    // Enter hops fields like the legacy onEnterKey chain; on the last box of the last row it grows the sheet
     $('#lineBody').on('keydown', 'input', function (e) {
         if (e.key !== 'Enter') { return; }
         e.preventDefault();
@@ -866,8 +843,7 @@ $(document).ready(function () {
         inputs.eq(i + 1).trigger('focus');
     });
 
-    // spreadsheet arrows on the sheet: up/down move rows, left/right move
-    // cells once the caret reaches the edge of the text
+    // spreadsheet arrows on the sheet: up/down move rows, left/right move cells once the caret reaches the edge of the text
     $('#lineBody').on('keydown', 'input', function (e) {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.key) < 0) { return; }
         // an open item menu owns the up/down keys
@@ -906,7 +882,7 @@ $(document).ready(function () {
     }
 });
 
-/* ---- clock + auto-refresh ---- */
+// ---- clock + auto-refresh ----
 
 function tickClock() {
     var now = new Date().toLocaleString();
@@ -925,7 +901,7 @@ function startAutoRefresh() {
     }
 }
 
-/* ---- ajax + shared helpers ---- */
+// ---- ajax + shared helpers ----
 
 // silent=true: background failures mark the stamp stale, no dialogs
 function postAjax(data, onOk, silent) {
@@ -979,7 +955,7 @@ function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
 }
 
-/* ---- grid ---- */
+// ---- grid ----
 
 // a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
@@ -997,8 +973,7 @@ function loadGrid(background) {
     }, background === true);
 }
 
-// submit every checked Return Item, then run next(); an invalid
-// pending date holds the refresh so nothing pending is lost
+// submit every checked Return Item, then run next(); an invalid pending date holds the refresh so nothing pending is lost
 function submitPendingReturns(next, silent) {
     var keys = Object.keys(pendingReturns);
     if (!keys.length) { next(); return; }
@@ -1044,9 +1019,7 @@ function renderGrid() {
         if (filter && hay.indexOf(filter) < 0) { return; }
         shown++;
 
-        // any real authorizer name is green; only the None / In Process
-        // placeholders stay yellow (legacy rows carry the stored flag
-        // inconsistently, so the name text decides)
+        // any real authorizer name is green; only the None / In Process placeholders stay yellow (legacy rows carry the stored flag inconsistently, so the name text decides)
         var authName = r.RHAUTB || 'Authorization = None';
         var isReal = authName !== 'Authorization = None' &&
                      authName !== 'Authorization In Process';
@@ -1055,8 +1028,7 @@ function renderGrid() {
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
-        // two rows per record like Access: fields, then description and
-        // Return Item; data-rec pairs them, data-req selects/opens
+        // two rows per record like Access: fields, then description and Return Item; data-rec pairs them, data-req selects/opens
         var recAttr = ' data-req="' + esc(r['RHREQ#']) + '" data-rec="' + shown + '"' +
                       ' class="' + (shown % 2 === 0 ? 'rq-alt ' : '');
         html += '<tr' + recAttr + 'rq-r1">' +
@@ -1100,7 +1072,7 @@ function renderGrid() {
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
-/* ---- add requisition ---- */
+// ---- add requisition ----
 
 function applyLookups(resp) {
     lookups = resp;
@@ -1109,8 +1081,7 @@ function applyLookups(resp) {
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
-    // "Authorization = None" is a REAL AUTHBY row (13k+ reqs store the
-    // literal); it sorts first, so it is the natural default
+    // "Authorization = None" is a REAL AUTHBY row (13k+ reqs store the literal); it sorts first, so it is the natural default
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
 }
 
@@ -1139,8 +1110,7 @@ function openAddModal() {
     $('#addAuthBy').prop('selectedIndex', 0);
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
-    // focus the first cell after layout settles so its item menu opens
-    // in the right place
+    // focus the first cell after layout settles so its item menu opens in the right place
     setTimeout(function () {
         $('#lineBody input:first').trigger('focus');
     }, 150);
@@ -1227,7 +1197,7 @@ function submitRequisition() {
     });
 }
 
-/* ---- view / update ---- */
+// ---- view / update ----
 
 function openViewModal(reqNum) {
     postAjax({ action: 'get', reqNum: reqNum }, function (resp) {
@@ -1313,7 +1283,7 @@ function updateCurrent() {
     });
 }
 
-/* ---- badge dropdown ---- */
+// ---- badge dropdown ----
 
 // badge choices = the live employee list that rode in with the page
 function badgeChoices() {
@@ -1373,7 +1343,7 @@ function showBadgeSuggest(inp, filterTyped) {
     });
 }
 
-/* ---- item search dropdown ---- */
+// ---- item search dropdown ----
 
 function hideSuggest() { $('#rqSuggest').remove(); }
 
@@ -1405,7 +1375,7 @@ function showSuggest(inp, rows) {
     });
 }
 
-/* ---- reports ---- */
+// ---- reports ----
 
 function money(n) {
     n = parseFloat(n) || 0;
@@ -1454,8 +1424,7 @@ function muTotals(label, t) {
         '</span></div></td></tr>';
 }
 
-// faithful to the printed Monthly Update: no gridlines, serif navy
-// headings, name group, req date, lines, comments, stacked totals
+// faithful to the printed Monthly Update: no gridlines, serif navy headings, name group, req date, lines, comments, stacked totals
 function renderMonthlyReport(rows, label) {
     if (!rows.length) {
         $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(label) + '.</div>');
@@ -1549,8 +1518,7 @@ function fmtDateTime(d8, t6) {
            ' ' + hh + ':' + t.slice(2, 4) + ':' + t.slice(4, 6) + ' ' + ap;
 }
 
-// faithful to the printed rptRequest: plain four-line header block,
-// boxed line grid, unreturned lines only
+// faithful to the printed rptRequest: plain four-line header block, boxed line grid, unreturned lines only
 function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
@@ -1620,7 +1588,7 @@ function previewReport() {
     });
 }
 
-/* ---- print ---- */
+// ---- print ----
 
 // one clean window per report - the web version of Access's preview
 function printHtml(innerHtml, title) {
@@ -1653,8 +1621,7 @@ function printHtml(innerHtml, title) {
         '.rpt-totblk > .rpt-ital{margin-right:40px;vertical-align:top;}' +
         '.rpt-totvals{display:inline-block;text-align:left;}' +
         '</style></head><body>' + innerHtml +
-        // the window prints itself and closes on afterprint - print() from
-        // the station's own thread would block the app while the dialog is up
+        // the window prints itself and closes on afterprint - print() from the station's own thread would block the app while the dialog is up
         '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
         'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
         '</body></html>');
