@@ -37,6 +37,8 @@ while (ob_get_level() > 0) { ob_end_clean(); }
 header('Content-Type: application/json');
 
 function rqsOut($arr) { echo json_encode($arr); exit; }
+
+
 function rqsOutFail($msg = '') {
     rqsOut(array("ok" => false,
                  "msg" => $msg !== '' ? $msg : ($GLOBALS['rqsErr'] ?: 'Request failed.')));
@@ -64,7 +66,7 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
-    // dropdown data for the add-request form (fallback when not preloaded)
+    // the four dropdown lists plus the badge list for the add request form, used only as a fallback when the controller did not preload them onto the page
     case 'lookups':
         $names  = rqsLookup($conn, "NAMES");
         $codes  = rqsLookup($conn, "AREACODE");
@@ -85,7 +87,7 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "row" => $rows ? $rows[0] : null));
 
-    // type-ahead item search for the entry form's dropdown
+    // the typeahead item search that feeds the entry form item dropdown as the user types
     case 'itemsearch':
         $rows = rqsItemSearch($conn, trim($_POST['q'] ?? ''));
         if ($rows === false) { rqsOutFail(); }

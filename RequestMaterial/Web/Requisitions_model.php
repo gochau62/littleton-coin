@@ -18,17 +18,12 @@
 
 $GLOBALS['rqsErr'] = '';
 
-// write into the LCCOnline_logs folder next to the PHP: the docroot itself is
-// not writable by the web profile, but LCCOnline_logs is (it is where the
-// framework/Sellbrite logs already land), so the file actually appears. still
-// a plain Clario-style file append, promotion-safe (relative to __DIR__)
+
+// activity log path in the LCCOnline_logs folder beside the PHP, because the docroot itself is not writable by the web profile but LCCOnline_logs is (the same folder the framework and Sellbrite logs already land in) so the file actually appears, kept relative to __DIR__ so it promotes across instances as a plain Clario style file append
 define('RQS_ACT_LOG', __DIR__ . '/LCCOnline_logs/requisition_activity.log');
 
-// append one activity line (ClarioSFTP_pull.log pattern). the file write is
-// still suppressed so a bad write never takes the app down, but if it fails
-// (usually the web profile lacks write authority to this folder) the reason
-// and the line drop to error_log instead of vanishing, so nothing is lost
-// and php.log shows why no requisition_activity.log appeared
+
+// append one activity line in the ClarioSFTP_pull.log style, suppressing the write so a bad one never takes the app down, and if the write still fails (usually the web profile lacking write authority to the folder) the reason and the line fall to error_log so nothing is lost and php.log shows why no requisition_activity.log appeared
 function rqsActLog($user, $action, $detail = '') {
     $line = date('Y-m-d H:i:s') . ' ' .
             ($user !== '' ? $user : 'unknown') . ' ' .
@@ -41,14 +36,16 @@ function rqsActLog($user, $action, $detail = '') {
     }
 }
 
-// record the real Db2 error for the caller and the log, return false
+
+// record the real Db2 error for the caller and the log, then return false so callers can bail
 function rqsFail($where) {
     $GLOBALS['rqsErr'] = $where . ': ' . db2_stmt_error() . ' ' . db2_stmt_errormsg();
     error_log('Requisitions ' . $GLOBALS['rqsErr']);
     return false;
 }
 
-// shared result-set runner for procs that return rows
+
+// shared runner for every proc that returns a result set: prepare, bind each parameter in order, execute, and collect every row as an associative array
 function rqsFetchAll($conn, $sql, $params = array()) {
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return rqsFail("prepare $sql"); }
@@ -66,25 +63,28 @@ function rqsFetchAll($conn, $sql, $params = array()) {
     return $result;
 }
 
-// PROGRAM NAME REQSTN003S: grid rows, show O open (default), R returned, A all;
-// search filters req#/name/item/badge (blank = all); returned/all cap at 500
+
+// PROGRAM NAME REQSTN003S: grid rows where show O gives open lines (the default), R gives returned lines, A gives all, the search narrows by req number name item or badge (blank means everything), and returned or all come back capped to the 500 most recent
 function rqsGetOpen($conn, $show = 'O', $search = '') {
     $show = strtoupper(substr(trim($show), 0, 1));
     if (!in_array($show, array('O', 'R', 'A'))) { $show = 'O'; }
     return rqsFetchAll($conn, "CALL REQSTN003S(?, ?)", array($show, substr(trim($search), 0, 50)));
 }
 
-// PROGRAM NAME REQSTN004S: one requisition, header + all lines
+
+// PROGRAM NAME REQSTN004S: one requisition by number, its header plus every line including already returned ones, for the view window
 function rqsGet($conn, $reqNum) {
     return rqsFetchAll($conn, "CALL REQSTN004S(?)", array($reqNum));
 }
 
-// PROGRAM NAME REQSTN008S: monthly report rows
+
+// PROGRAM NAME REQSTN008S: the monthly report rows for a given yyyymm accounting period
 function rqsMonthly($conn, $yyyymm) {
     return rqsFetchAll($conn, "CALL REQSTN008S(?)", array($yyyymm));
 }
 
-// PROGRAM NAME REQSTN007S: code lists by type (BADGE gives live employees)
+
+// PROGRAM NAME REQSTN007S: code lists by type, where the BADGE type reads live active employees rather than a stored list
 function rqsLookup($conn, $type) {
     $allowed = array("NAMES", "AREACODE", "AREATYPE", "AUTHBY", "BADGE");
     if (!in_array($type, $allowed)) {
@@ -94,17 +94,20 @@ function rqsLookup($conn, $type) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array($type, ""));
 }
 
-// PROGRAM NAME REQSTN007S type ITEM: entry-form autofill
+
+// PROGRAM NAME REQSTN007S type ITEM: the entry form autofill that fills description, coin date, cost and retail from one exact item number
 function rqsItemLookup($conn, $item) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEM", $item));
 }
 
-// PROGRAM NAME REQSTN007S type ITEMSRCH: type-ahead item search
+
+// PROGRAM NAME REQSTN007S type ITEMSRCH: the typeahead item search that lists matching item master rows for the entry form dropdown
 function rqsItemSearch($conn, $prefix) {
     return rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("ITEMSRCH", $prefix));
 }
 
-// PROGRAM NAME REQSTN001S: insert header, returns the new req# (false on error)
+
+// PROGRAM NAME REQSTN001S: insert the header and return the new req number, or false on error
 function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
                          $rush, $authBy, $badge, $comments) {
     $sql = "CALL REQSTN001S(?, ?, ?, ?, ?, ?, ?, ?)";
@@ -126,7 +129,8 @@ function rqsInsertHeader($conn, $reqName, $areaCode, $areaType,
     return $newReq;
 }
 
-// PROGRAM NAME REQSTN002S: insert one detail line
+
+// PROGRAM NAME REQSTN002S: insert one detail line onto an existing requisition header
 function rqsInsertLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
                        $desc, $qty, $cost, $retail, $addCost, $badge, $skuTo) {
     $sql = "CALL REQSTN002S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -151,7 +155,8 @@ function rqsInsertLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate,
     return true;
 }
 
-// PROGRAM NAME REQSTN009S: back out a partial requisition after a failed insert
+
+// PROGRAM NAME REQSTN009S: delete a whole requisition, used only to back out a partial insert after a line failed
 function rqsDeleteRequisition($conn, $reqNum) {
     $sql = "CALL REQSTN009S(?)";
     $stmt = db2_prepare($conn, $sql);
@@ -161,7 +166,8 @@ function rqsDeleteRequisition($conn, $reqNum) {
     return true;
 }
 
-// PROGRAM NAME REQSTN005S: update header; NULL leaves a column unchanged
+
+// PROGRAM NAME REQSTN005S: update the header authorized by, comments and badge, where a NULL argument leaves that column unchanged
 function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
     $sql = "CALL REQSTN005S(?, ?, ?, ?)";
 
@@ -177,7 +183,8 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
     return true;
 }
 
-// PROGRAM NAME REQSTN006S: mark/unmark a line returned; dateRet 0 means today
+
+// PROGRAM NAME REQSTN006S: mark or unmark a single line returned, where a dateRet of 0 stamps today
 function rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet = 0) {
     $sql = "CALL REQSTN006S(?, ?, ?, ?)";
 

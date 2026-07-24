@@ -37,7 +37,7 @@ if (!$conn || $authorized != "yes") {
     exit('Not authorized (sign in to LCC Online first).');
 }
 
-// table name -> column list; CSV column order matches exactly (no header row)
+// each target table mapped to its column list in the exact order the CSV columns appear, since the exported CSV files carry no header row
 $TABLES = array(
     'RQSREQHDRT' => array('RHREQ#','RHNAME','RHRQDT','RHRQTM','RHARCD','RHARTY',
                           'RHRUSH','RHAUTF','RHAUTB','RHBDGE','RHCMNT'),
@@ -47,7 +47,7 @@ $TABLES = array(
     'RQSCODEFLT' => array('CDTYPE','CDCODE','CDDESC','CDACTV'),
 );
 
-// the load
+// the load runs when a CSV is posted: it streams the file row by row into the chosen table with batched commits for speed on the journaled tables
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     header('Content-Type: text/plain; charset=utf-8');
 
@@ -94,7 +94,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     $fh = fopen($up['tmp_name'], 'r');
     $row = 0; $ok = 0; $bad = 0; $t0 = microtime(true);
     while (($f = fgetcsv($fh)) !== false) {
-        // blank line
+        // skip a fully blank line, which fgetcsv hands back as a single null field
         if ($f === array(null)) { continue; }
         $row++;
         if (count($f) !== $ncol) {
@@ -163,7 +163,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     exit;
 }
 
-// the form
+// the upload form shown on a plain GET request, listing the CSV files to pick and the order they load in
 ?>
 <!DOCTYPE html>
 <html><head><title>Requisitions Seeder</title></head>

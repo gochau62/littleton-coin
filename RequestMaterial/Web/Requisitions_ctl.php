@@ -33,8 +33,10 @@
 
     document.title = "Requisition Material";
 
-    // message helpers (LCC convention)
+    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+
+
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
 
