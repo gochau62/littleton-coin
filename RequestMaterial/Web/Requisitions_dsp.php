@@ -414,6 +414,12 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rpt-totv .rpt-ital { margin-right: .3rem; }
 .rpt-nametot { background: #f2f5fc; border-top-color: #4a5c93; }
 .rpt-grand { margin-top: 5px; border-top: 2px solid #17306e; background: #eaeff9; }
+/* the report modal lives inside the LCCOnline framework page, whose global table styling draws a gridline on every cell; these id scoped rules outrank it so the on screen preview matches the clean printed layout exactly */
+#rptBody .rpt-mu th, #rptBody .rpt-mu td { border: 0; background: none; }
+#rptBody .rpt-mu thead th { border-bottom: 1.5px solid #4a5c93; }
+#rptBody .rpt-mu tr.rpt-line td { border-bottom: 1px solid #dce1ea; }
+#rptBody .rpt-mu tr.rpt-alt td { background: #f6f8fc; }
+#rptBody .rpt-mu tr.rpt-name td { background: #e4eafb; border-top: 2px solid #17306e; border-bottom: 1px solid #c3ccdf; }
 .rq-modal-head .rq-btn { margin-right: .4rem; }
 </style>
 
