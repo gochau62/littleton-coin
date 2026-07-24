@@ -1817,10 +1817,18 @@ function previewReport() {
 
 // print
 
-// one clean window per report, the web version of Access's preview
+// render the report into a hidden iframe on this same page and print that, so no separate window opens to confuse anyone
 function printHtml(innerHtml, title) {
-    var w = window.open('', '_blank');
-    w.document.write('<html><head><title>' + title + '</title><style>' +
+    var old = document.getElementById('rqPrintFrame');
+    if (old) { old.parentNode.removeChild(old); }
+    var frame = document.createElement('iframe');
+    frame.id = 'rqPrintFrame';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(frame);
+    var doc = frame.contentWindow.document;
+    doc.open();
+    doc.write('<html><head><title>' + title + '</title><style>' +
         'body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#1b1d21;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
         'h3{margin:0;}table{width:100%;border-collapse:collapse;}td,th{text-align:left;}' +
         '.rq-num{text-align:right;font-variant-numeric:tabular-nums;}' +
@@ -1859,11 +1867,10 @@ function printHtml(innerHtml, title) {
         '.rpt-grand{margin-top:5px;border-top:2px solid #17306e;background:#eaeff9;}' +
         '.rpt-stamp{margin-top:12px;color:#5b6371;font-size:10px;}' +
         '</style></head><body>' + innerHtml +
-        // the popup prints itself on load and closes on afterprint, so the station JS thread never calls print and only the browser print dialog is on screen, which frees itself the moment the user prints or cancels
-        '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
-        'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
+        // the iframe prints itself once its content has loaded, so only the browser print dialog appears over the current page with no extra window to close
+        '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};</scr' + 'ipt>' +
         '</body></html>');
-    w.document.close();
+    doc.close();
 }
 
 
