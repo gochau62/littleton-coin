@@ -146,10 +146,13 @@ Events: OPEN (page load, station vs entry form), INSERT (req + line
 count), UPDATE (req, badge when changed from the grid), RETURN/UNRETURN
 (req + line + entered date), BACKOUT (failed insert rolled back).
 
-Write failures are @-suppressed - logging can never take the app down.
-The file is created on first write (web profile needs write authority to
-the folder) and grows forever; trim it yearly. Replaced the RQSACTLOGT
-Db2 table, which nothing read.
+The file is created on first write, so the web profile needs write
+authority to the app folder - the usual reason no log appears. The
+write is still suppressed so a bad write never takes the app down, but
+on failure the reason and the line drop to `error_log` (the instance
+php.log) instead of vanishing, so nothing is lost and you can see why.
+The file grows forever; trim it yearly. Replaced the RQSACTLOGT Db2
+table, which nothing read.
 
 ## 8. Build, load, promote
 

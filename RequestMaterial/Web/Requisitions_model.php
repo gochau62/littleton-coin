@@ -20,16 +20,21 @@ $GLOBALS['rqsErr'] = '';
 
 define('RQS_ACT_LOG', __DIR__ . '/requisition_activity.log');
 
-// append one activity line (ClarioSFTP_pull.log pattern); write failures are ignored, logging must never take the app down
+// append one activity line (ClarioSFTP_pull.log pattern). the file write is
+// still suppressed so a bad write never takes the app down, but if it fails
+// (usually the web profile lacks write authority to this folder) the reason
+// and the line drop to error_log instead of vanishing, so nothing is lost
+// and php.log shows why no requisition_activity.log appeared
 function rqsActLog($user, $action, $detail = '') {
-    @file_put_contents(
-        RQS_ACT_LOG,
-        date('Y-m-d H:i:s') . ' ' .
-        ($user !== '' ? $user : 'unknown') . ' ' .
-        ($_SERVER['REMOTE_ADDR'] ?? '-') . ' ' .
-        $action . ($detail !== '' ? ' ' . $detail : '') . PHP_EOL,
-        FILE_APPEND
-    );
+    $line = date('Y-m-d H:i:s') . ' ' .
+            ($user !== '' ? $user : 'unknown') . ' ' .
+            ($_SERVER['REMOTE_ADDR'] ?? '-') . ' ' .
+            $action . ($detail !== '' ? ' ' . $detail : '');
+    if (@file_put_contents(RQS_ACT_LOG, $line . PHP_EOL, FILE_APPEND) === false) {
+        error_log('requisition_activity.log write failed (' .
+                  (error_get_last()['message'] ?? 'unknown reason') .
+                  ') - activity: ' . $line);
+    }
 }
 
 // record the real Db2 error for the caller and the log, return false
