@@ -9,10 +9,12 @@
 /*                     R returned lines only, A all lines.           */
 /*                     INSRCH is an optional filter (req#, name,     */
 /*                     item or badge); blank returns everything.     */
-/*                     Returned and All are capped to the 500 most   */
-/*                     recent (by return date) so the browser never  */
-/*                     tries to draw the whole 50k-line history;     */
-/*                     the search reaches all of it.                 */
+/*                     Open lines are always returned in full. The   */
+/*                     returned lines are capped to the 500 most     */
+/*                     recent by return date, so R gives those 500   */
+/*                     and A gives every open line plus those 500;   */
+/*                     the browser never draws the whole 50k         */
+/*                     history and the search still reaches all.     */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -59,9 +61,10 @@ CREATE OR REPLACE PROCEDURE REQSTN003S (
                             D.RDLOC, D.RDQTY, D.RDCOST, D.RDRETL,
                             D.RDRTNF, D.RDRTDT,
                             ROW_NUMBER() OVER (
-                                ORDER BY D.RDRTNF, D.RDRTDT DESC,
+                                PARTITION BY D.RDRTNF
+                                ORDER BY D.RDRTDT DESC,
                                          H.RHRQDT, H.RHRQTM,
-                                         H.RHREQ#, D.RDLIN# ) AS RN
+                                         H.RHREQ#, D.RDLIN# ) AS RRANK
                        FROM RQSREQHDRT H
                        JOIN RQSREQDTLT D
                          ON D.RDREQ# = H.RHREQ#
@@ -73,8 +76,10 @@ CREATE OR REPLACE PROCEDURE REQSTN003S (
                            OR UPPER(H.RHNAME)      LIKE '%' || SRCH || '%'
                            OR UPPER(D.RDITEM)      LIKE '%' || SRCH || '%'
                            OR UPPER(H.RHBDGE)      LIKE '%' || SRCH || '%' ) ) T
-             WHERE RN <= CASE WHEN INSHOW IN ('R', 'A') THEN 500 ELSE 100000 END
-             ORDER BY RN;
+             WHERE RDRTNF = 'N'
+                OR RRANK <= 500
+             ORDER BY RDRTNF, RDRTDT DESC,
+                      RHRQDT, RHRQTM, RHREQ#, RDLIN#;
 
         SET SRCH = UPPER(TRIM(COALESCE(INSRCH, '')));
 
