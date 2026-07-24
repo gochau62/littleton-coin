@@ -613,8 +613,8 @@ var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
 var gridShow = 'O';
-// header sort starts on Date ascending, the order the grid opens in, so the Date column shows its up arrow right away and the first click flips it
-var gridSort = { key: 'RHRQDT', dir: 1 };
+// header sort starts on Date descending, newest requisitions first, so the Date column shows its down arrow right away and the first click flips it
+var gridSort = { key: 'RHRQDT', dir: -1 };
 // debounce for the Returned/All filter search that runs on the server
 var gridSearchTimer = null;
 var lookups = null;
