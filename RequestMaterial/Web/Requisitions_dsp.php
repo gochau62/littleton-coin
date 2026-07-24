@@ -609,10 +609,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <div class="rq-modal-head">
         <h2>Monthly Update: Requisitioned Product</h2>
         <div>
-          <!-- real dropdowns, not input type=month - Firefox renders that as a bare text box, which is what the floor runs -->
+          <!-- real dropdowns, not input type=month - Firefox renders that as a bare text box, which is what the floor runs. Picking a month or year re-runs the report on its own, so there is no Run button. -->
           <select id="rptMonthSel" title="Month"></select>
           <select id="rptYearSel" title="Year"></select>
-          <button type="button" class="rq-btn" id="btnRunReport">Run</button>
           <button type="button" class="rq-btn rq-btn-primary" id="btnPrintReport">&#128424; Print</button>
           <button type="button" class="rq-x" data-close="mdlReport">&times;</button>
         </div>
@@ -700,8 +699,7 @@ $(document).ready(function () {
     // report buttons: the Monthly Update and the per requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
     $('#btnPreview').on('click', previewReport);
-    $('#btnRunReport').on('click', runMonthlyReport);
-    // picking a different month/year reruns the report right away
+    // opening the report and picking a different month or year both run it on their own, so there is no separate Run button
     $('#rptMonthSel, #rptYearSel').on('change', runMonthlyReport);
     $('#btnPrintReport').on('click', function () {
         printHtml($('#rptBody').html(), 'Monthly Update: Requisitioned Product');
