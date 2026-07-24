@@ -6,7 +6,8 @@
 /*                     Feeds the web version of the Access report    */
 /*                     "Requested Material Summary" (Monthly Update: */
 /*                     Requisitioned Product) - all lines requested  */
-/*                     in the given month with extended cost/retail, */
+/*                     in the given month with extended cost/retail  */
+/*                     plus the returned flag and return date,        */
 /*                     grouped by requisitioner on the page.         */
 /*                                                                   */
 /* Author            - G Chau                                        */
@@ -45,7 +46,7 @@ CREATE OR REPLACE PROCEDURE REQSTN008S (
                    D.RDQTY, D.RDCOST, D.RDRETL,
                    D.RDQTY * D.RDCOST AS RDEXTC,
                    D.RDQTY * D.RDRETL AS RDEXTR,
-                   D.RDSKUT
+                   D.RDSKUT, D.RDRTNF, D.RDRTDT
               FROM RQSREQHDRT H
               JOIN RQSREQDTLT D
                 ON D.RDREQ# = H.RHREQ#

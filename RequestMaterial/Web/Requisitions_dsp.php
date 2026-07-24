@@ -382,23 +382,37 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 /* room for the full sheet */
 .rq-entry .rq-modal-wide { max-width: 1280px; }
 
-/* ----- monthly report (matches the printed Access sample) ----- */
+/* ----- monthly report: modernized open layout, same text sizes as the printed Access sample ----- */
 #rptMonthSel, #rptYearSel { padding: .35rem .5rem; border: 1px solid var(--rq-line);
                             border-radius: 6px; background: #fff; font-size: .9rem; }
-.rpt-stamp { margin-top: .75rem; color: var(--rq-muted); font-size: .85rem; }
-.rpt-mu table { width: 100%; border-collapse: collapse; }
-.rpt-mu th, .rpt-mu td { border: none; padding: 2px 6px; text-align: left;
-                         vertical-align: top; font-size: .82rem; }
-.rpt-mu thead th { color: #00008b; font-weight: 700; }
-.rpt-mu .rq-num { text-align: right; }
+.rpt-stamp { margin-top: .75rem; color: var(--rq-muted); font-size: .8rem; }
 .rpt-mutitle { font-family: Georgia, "Times New Roman", serif; font-style: italic;
-               color: #00008b; margin: 0 0 .8rem 0; font-size: 1.35rem; }
+               color: #17306e; margin: 0 0 1px 0; font-size: 1.35rem; }
+.rpt-musub { color: #5b6371; font-size: .8rem; margin: 0 0 .7rem 0; }
 .rpt-ital { font-family: Georgia, "Times New Roman", serif; font-style: italic;
-            font-weight: 700; color: #00008b; }
-.rpt-mu .rpt-name td { font-weight: 700; padding-top: 10px; }
-.rpt-totblk { text-align: center; margin: 4px 0 14px; }
-.rpt-totblk > .rpt-ital { margin-right: 2.5rem; vertical-align: top; }
-.rpt-totvals { display: inline-block; text-align: left; }
+            font-weight: 700; color: #17306e; }
+.rpt-mu table { width: 100%; border-collapse: collapse; font-size: .82rem; line-height: 1.3; }
+.rpt-mu th, .rpt-mu td { border: none; padding: 2px 8px; text-align: left; vertical-align: top; }
+.rpt-mu thead th { color: #17306e; font-weight: 700; font-size: .72rem;
+                   text-transform: uppercase; letter-spacing: .04em;
+                   padding-bottom: 4px; border-bottom: 1.5px solid #4a5c93; }
+.rpt-mu .rq-num { text-align: right; font-variant-numeric: tabular-nums; }
+.rpt-mu tr.rpt-line td { border-bottom: 1px solid #dce1ea; }
+.rpt-mu tr.rpt-alt td { background: #f6f8fc; }
+.rpt-mu tr.rpt-name td { font-weight: 700; color: #17306e; font-size: .88rem;
+                         background: #eef2fb; padding: 4px 8px; border-radius: 4px; }
+.rpt-mu tr.rpt-reqhd td { color: #5b6371; padding-top: 4px; font-weight: 600; }
+.rpt-mu tr.rpt-reqhd .rpt-rq { color: #17306e; font-weight: 700; }
+.rpt-mu tr.rpt-cmt td { color: #5b6371; font-size: .78rem; padding-top: 1px; }
+.rpt-ret .rpt-y { color: #1c7a4c; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rpt-ret .rpt-n { color: #8a91a0; }
+.rpt-totblk { display: flex; flex-wrap: wrap; gap: .1rem 2rem; align-items: baseline;
+              margin: 1px 0 3px; padding: 2px 8px; border-top: 1px solid #b7bdca; }
+.rpt-totlbl { min-width: 165px; }
+.rpt-totv { font-variant-numeric: tabular-nums; }
+.rpt-totv .rpt-ital { margin-right: .3rem; }
+.rpt-nametot { background: #f2f5fc; border-top-color: #4a5c93; }
+.rpt-grand { margin-top: 5px; border-top: 2px solid #17306e; background: #eaeff9; }
 .rq-modal-head .rq-btn { margin-right: .4rem; }
 </style>
 
@@ -597,7 +611,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         </div>
       </div>
       <div class="rq-modal-body" id="rptBody">
-        <div class="rq-empty">Pick a month and press Run.</div>
+        <div class="rq-empty">Loading this month...</div>
       </div>
     </div>
   </div>
@@ -1583,8 +1597,10 @@ function openMonthlyReport() {
     var d = new Date();
     $('#rptMonthSel').val(String(d.getMonth() + 1));
     $('#rptYearSel').val(String(d.getFullYear()));
-    $('#rptBody').html('<div class="rq-empty">Pick a month and press Run.</div>');
+    $('#rptBody').html('<div class="rq-empty">Loading this month...</div>');
     $('#mdlReport').prop('hidden', false);
+    // open straight onto the current month instead of an empty prompt
+    runMonthlyReport();
 }
 
 
@@ -1597,19 +1613,26 @@ function runMonthlyReport() {
 }
 
 
-// one stacked totals block, matching the printed sample's layout
-function muTotals(label, t) {
-    return '<tr><td colspan="10"><div class="rpt-totblk">' +
-        '<span class="rpt-ital">' + label + '</span>' +
-        '<span class="rpt-totvals">' +
-        '<div><span class="rpt-ital">Total Qty:</span> ' + t.qty + '</div>' +
-        '<div><span class="rpt-ital">Total Retail:</span> $' + money(t.retl) + '</div>' +
-        '<div><span class="rpt-ital">Total Cost:</span> $' + money(t.cost) + '</div>' +
-        '</span></div></td></tr>';
+// a report Returned cell: the return date in green when the line came back, a muted dash while it is still out
+function rptReturned(r) {
+    return r.RDRTNF === 'Y'
+        ? '<span class="rpt-y">' + fmtDate(r.RDRTDT) + '</span>'
+        : '<span class="rpt-n">&mdash;</span>';
 }
 
 
-// faithful to the printed Monthly Update: no gridlines, serif navy headings, name group, req date, lines, comments, stacked totals
+// one compact totals line (a thin rule plus the three figures inline), where cls marks the name subtotal or the grand report total so a long report stays to few pages
+function muTotals(label, t, cls) {
+    return '<tr><td colspan="11"><div class="rpt-totblk ' + (cls || '') + '">' +
+        '<span class="rpt-totlbl rpt-ital">' + label + '</span>' +
+        '<span class="rpt-totv"><span class="rpt-ital">Qty</span> ' + t.qty + '</span>' +
+        '<span class="rpt-totv"><span class="rpt-ital">Retail</span> $' + money(t.retl) + '</span>' +
+        '<span class="rpt-totv"><span class="rpt-ital">Cost</span> $' + money(t.cost) + '</span>' +
+        '</div></td></tr>';
+}
+
+
+// the Monthly Update grouped by name then requisition, each item line ending in the Returned column, with compact per req, per name and grand totals so a busy month stays to few pages
 function renderMonthlyReport(rows, label) {
     if (!rows.length) {
         $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(label) + '.</div>');
@@ -1619,18 +1642,19 @@ function renderMonthlyReport(rows, label) {
     var name = null, req = null;
     var nT = null, rT = null, reqComments = '';
     var grand = { qty: 0, cost: 0, retl: 0, reqs: 0 };
+    var alt = 0;
 
     function closeReq() {
         if (req === null) { return; }
-        body += '<tr><td></td><td class="rpt-ital">Req. Comments:</td>' +
-                '<td colspan="8">' + esc(reqComments) + '</td></tr>';
-        body += muTotals('Req. Totals:', rT);
+        body += '<tr class="rpt-cmt"><td></td><td class="rpt-ital">Req. Comments:</td>' +
+                '<td colspan="9">' + esc(reqComments) + '</td></tr>';
+        body += muTotals('Req. Totals:', rT, '');
         req = null;
     }
     function closeName() {
         if (name === null) { return; }
         closeReq();
-        body += muTotals('Totals by Name:', nT);
+        body += muTotals('Totals by Name:', nT, 'rpt-nametot');
         name = null;
     }
 
@@ -1639,7 +1663,7 @@ function renderMonthlyReport(rows, label) {
             closeName();
             name = r.RHNAME;
             nT = { qty: 0, cost: 0, retl: 0 };
-            body += '<tr class="rpt-name"><td colspan="10">' + esc(name) + '</td></tr>';
+            body += '<tr class="rpt-name"><td colspan="11">' + esc(name) + '</td></tr>';
         }
         if (r['RHREQ#'] !== req) {
             closeReq();
@@ -1647,7 +1671,9 @@ function renderMonthlyReport(rows, label) {
             rT = { qty: 0, cost: 0, retl: 0 };
             reqComments = r.RHCMNT || '';
             grand.reqs++;
-            body += '<tr><td></td><td>' + fmtDate(r.RHRQDT) + '</td><td colspan="8"></td></tr>';
+            body += '<tr class="rpt-reqhd"><td></td><td colspan="10">' +
+                    '<span class="rpt-rq">Req. ' + esc(req) + '</span> &nbsp; ' +
+                    fmtDate(r.RHRQDT) + '</td></tr>';
         }
         var q = parseFloat(r.RDQTY) || 0;
         var c = parseFloat(r.RDCOST) || 0, rt = parseFloat(r.RDRETL) || 0;
@@ -1655,7 +1681,8 @@ function renderMonthlyReport(rows, label) {
         rT.qty += q; rT.cost += ec; rT.retl += er;
         nT.qty += q; nT.cost += ec; nT.retl += er;
         grand.qty += q; grand.cost += ec; grand.retl += er;
-        body += '<tr>' +
+        alt++;
+        body += '<tr class="rpt-line' + (alt % 2 === 0 ? ' rpt-alt' : '') + '">' +
             '<td></td>' +
             '<td>' + esc(r.RDITEM) + '</td>' +
             '<td>' + esc(r.RDCNDT) + '</td>' +
@@ -1666,23 +1693,25 @@ function renderMonthlyReport(rows, label) {
             '<td class="rq-num">$' + money(rt) + '</td>' +
             '<td class="rq-num">$' + money(er) + '</td>' +
             '<td>' + esc(r.RDSKUT) + '</td>' +
+            '<td class="rpt-ret">' + rptReturned(r) + '</td>' +
             '</tr>';
     });
     closeName();
-    body += muTotals('Report Totals (' + grand.reqs + ' requisitions):', grand);
+    body += muTotals('Report Totals (' + grand.reqs + ' requisitions):', grand, 'rpt-grand');
 
     $('#rptBody').html(
         '<div class="rpt-mu">' +
         '<h3 class="rpt-mutitle">Monthly Update: Requisitioned Product</h3>' +
+        '<div class="rpt-musub">' + esc(label) + '</div>' +
         '<table>' +
-        '<colgroup><col style="width:11%"><col style="width:9%"><col style="width:9%">' +
-        '<col style="width:29%"><col style="width:5%"><col style="width:8%">' +
+        '<colgroup><col style="width:10%"><col style="width:9%"><col style="width:8%">' +
+        '<col style="width:24%"><col style="width:5%"><col style="width:8%">' +
         '<col style="width:8%"><col style="width:8%"><col style="width:8%">' +
-        '<col style="width:5%"></colgroup>' +
+        '<col style="width:5%"><col style="width:7%"></colgroup>' +
         '<thead><tr>' +
         '<th>Name</th><th>Req. Date<br>Item #</th><th>Coin Date</th><th>Description</th>' +
         '<th class="rq-num">Qty</th><th class="rq-num">Cost</th><th class="rq-num">Ext.<br>Cost</th>' +
-        '<th class="rq-num">Retail</th><th class="rq-num">Ext.<br>Retail</th><th>Sku To</th>' +
+        '<th class="rq-num">Retail</th><th class="rq-num">Ext.<br>Retail</th><th>Sku To</th><th>Returned</th>' +
         '</tr></thead><tbody>' + body + '</tbody></table>' +
         '<div class="rpt-stamp">' + esc(label) + ' &mdash; printed ' +
         new Date().toLocaleDateString('en-US',
@@ -1705,27 +1734,27 @@ function fmtDateTime(d8, t6) {
 }
 
 
-// faithful to the printed rptRequest, a plain four line header block, a boxed line grid, and unreturned lines only
+// the per requisition rptRequest, a four field header block over a boxed line grid, now listing every line with a Returned column so a printed copy shows what came back and when
 function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
         '<table class="rpt-hdr">' +
         '<colgroup><col style="width:40%"><col style="width:32%"><col style="width:28%"></colgroup>' +
-        '<tr><td><b>Requisition #</b> ' + esc(h['RHREQ#']) + '</td>' +
-            '<td><b>Requisitioner:</b> ' + esc(h.RHNAME) + '</td><td></td></tr>' +
-        '<tr><td><b>Rush</b> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
-            '<td></td><td><b>Date:</b> ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
-        '<tr><td><b>Authorized By</b> ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
-            '<td><b>DataEntry:</b> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
-        '<tr><td><b>Area Code:</b> ' + esc(h.RHARCD) + '</td>' +
-            '<td><b>Area Type:</b> ' + esc(h.RHARTY) + '</td><td></td></tr>' +
+        '<tr><td><span class="rpt-lbl">Requisition #</span> ' + esc(h['RHREQ#']) + '</td>' +
+            '<td><span class="rpt-lbl">Requisitioner:</span> ' + esc(h.RHNAME) + '</td><td></td></tr>' +
+        '<tr><td><span class="rpt-lbl">Rush</span> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
+            '<td></td><td><span class="rpt-lbl">Date:</span> ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
+        '<tr><td><span class="rpt-lbl">Authorized By</span> ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
+            '<td><span class="rpt-lbl">DataEntry:</span> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
+        '<tr><td><span class="rpt-lbl">Area Code:</span> ' + esc(h.RHARCD) + '</td>' +
+            '<td><span class="rpt-lbl">Area Type:</span> ' + esc(h.RHARTY) + '</td><td></td></tr>' +
         '</table>';
 
     var qty = 0, extc = 0, extr = 0;
     var body = '';
     $.each(rows, function (i, r) {
-        // unreturned lines only
-        if (r['RDLIN#'] == null || r.RDRTNF === 'Y') { return; }
+        // every line now, returned and unreturned, so the Returned column has meaning
+        if (r['RDLIN#'] == null) { return; }
         var q = parseFloat(r.RDQTY) || 0;
         var ec = q * (parseFloat(r.RDCOST) || 0);
         var er = q * (parseFloat(r.RDRETL) || 0);
@@ -1738,27 +1767,30 @@ function reqPrintHtml(rows) {
             '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
             '<td class="rq-num">' + money(er) + '</td>' +
             '<td class="rq-num">' + money(r.RDACST) + '</td>' +
-            '<td>' + esc(r.RDSKUT) + '</td></tr>';
+            '<td>' + esc(r.RDSKUT) + '</td>' +
+            '<td class="rpt-ret">' + rptReturned(r) + '</td></tr>';
     });
     if (body === '') {
-        body = '<tr><td colspan="11">All items on this requisition have been returned.</td></tr>';
+        body = '<tr><td colspan="12">This requisition has no lines.</td></tr>';
     }
 
     return head +
         '<table class="rpt-boxed">' +
-        '<colgroup><col style="width:9%"><col style="width:5%"><col style="width:8%">' +
-        '<col style="width:30%"><col style="width:5%"><col style="width:7%">' +
-        '<col style="width:8%"><col style="width:7%"><col style="width:8%">' +
-        '<col style="width:7%"><col style="width:6%"></colgroup>' +
+        '<colgroup><col style="width:9%"><col style="width:4%"><col style="width:7%">' +
+        '<col style="width:23%"><col style="width:5%"><col style="width:7%">' +
+        '<col style="width:7%"><col style="width:7%"><col style="width:7%">' +
+        '<col style="width:6%"><col style="width:6%"><col style="width:12%"></colgroup>' +
         '<thead><tr>' +
         '<th>Sku #:</th><th>Loc:</th><th>Coin<br>Date:</th><th>Description:</th>' +
-        '<th>Qty:</th><th>Cost:</th><th>Ext<br>Cost:</th>' +
-        '<th>Retail:</th><th>Ext<br>Retail:</th><th>Add<br>Cost$:</th><th>Sku To:</th>' +
+        '<th class="rq-num">Qty:</th><th class="rq-num">Cost:</th><th class="rq-num">Ext<br>Cost:</th>' +
+        '<th class="rq-num">Retail:</th><th class="rq-num">Ext<br>Retail:</th><th class="rq-num">Add<br>Cost$:</th><th>Sku To:</th><th>Returned:</th>' +
         '</tr></thead><tbody>' + body + '</tbody></table>' +
-        '<div class="rpt-totals">Total Qty: ' + qty + '<br>' +
-        'Total Retail: $' + money(extr) + '<br>' +
-        'Total Cost: $' + money(extc) + '</div>' +
-        (h.RHCMNT ? '<div>Comments: ' + esc(h.RHCMNT) + '</div>' : '');
+        '<div class="rpt-totals">' +
+        '<span><span class="rpt-ital">Total Qty</span> ' + qty + '</span>' +
+        '<span><span class="rpt-ital">Total Retail</span> $' + money(extr) + '</span>' +
+        '<span><span class="rpt-ital">Total Cost</span> $' + money(extc) + '</span>' +
+        '</div>' +
+        (h.RHCMNT ? '<div class="rpt-cmtline"><b>Comments:</b> ' + esc(h.RHCMNT) + '</div>' : '');
 }
 
 
@@ -1782,32 +1814,43 @@ function previewReport() {
 function printHtml(innerHtml, title) {
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>' + title + '</title><style>' +
-        'body{font-family:Arial,sans-serif;font-size:11px;margin:24px;}' +
-        'h3{margin:0 0 12px 0;}table{width:100%;border-collapse:collapse;}' +
-        'th,td{border-bottom:1px solid #999;padding:3px 6px;text-align:left;}' +
-        '.rq-num{text-align:right;}' +
-        // rptRequest header block: fixed columns, one line each, no wrap
+        'body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#1b1d21;}' +
+        'h3{margin:0;}table{width:100%;border-collapse:collapse;}td,th{text-align:left;}' +
+        '.rq-num{text-align:right;font-variant-numeric:tabular-nums;}' +
+        // shared serif navy italic labels and the green or dash Returned cell
+        '.rpt-ital{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:bold;color:#17306e;}' +
+        '.rpt-ret .rpt-y{color:#1c7a4c;font-weight:bold;font-variant-numeric:tabular-nums;}' +
+        '.rpt-ret .rpt-n{color:#8a91a0;}' +
+        // rptRequest header block, fixed columns one line each, navy field labels
         '.rpt-hdr{table-layout:fixed;margin:6px 0 16px;}' +
-        '.rpt-hdr td{border:none;padding:6px 0;font-size:13px;white-space:nowrap;}' +
-        '.rpt-totals{text-align:right;font-weight:bold;margin:12px 0;line-height:1.6;}' +
-        '.rpt-stamp{margin-top:12px;color:#555;}' +
-        // rptRequest: boxed spreadsheet style grid, like the printed sample
+        '.rpt-hdr td{border:none;padding:5px 0;font-size:12.5px;white-space:nowrap;}' +
+        '.rpt-lbl{color:#17306e;font-weight:bold;}' +
+        // rptRequest boxed grid with a light navy header tint and quiet zebra rows
         '.rpt-boxed{table-layout:fixed;}' +
-        '.rpt-boxed th,.rpt-boxed td{border:1px solid #000;padding:3px 5px;}' +
-        '.rpt-boxed th{font-size:10.5px;}' +
-        '.rpt-boxed td{font-size:10px;white-space:nowrap;overflow:hidden;}' +
+        '.rpt-boxed th,.rpt-boxed td{border:1px solid #23262c;padding:3px 5px;overflow:hidden;white-space:nowrap;font-size:10px;}' +
+        '.rpt-boxed thead th{background:#eef2fb;color:#17306e;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;vertical-align:bottom;}' +
+        '.rpt-boxed tbody tr:nth-child(even) td{background:#f6f8fc;}' +
         '.rpt-boxed td.rpt-desc{white-space:normal;}' +
-        // Monthly Update: open layout, serif italic navy headings
-        '.rpt-mu th,.rpt-mu td{border:none;vertical-align:top;}' +
-        '.rpt-mu thead th{color:#00008b;}' +
-        '.rpt-mu .rpt-name td{font-weight:bold;padding-top:10px;}' +
-        '.rpt-mutitle{font-family:Georgia,"Times New Roman",serif;font-style:italic;' +
-            'color:#00008b;margin:0 0 10px 0;font-size:20px;}' +
-        '.rpt-ital{font-family:Georgia,"Times New Roman",serif;font-style:italic;' +
-            'font-weight:bold;color:#00008b;}' +
-        '.rpt-totblk{text-align:center;margin:4px 0 14px;}' +
-        '.rpt-totblk > .rpt-ital{margin-right:40px;vertical-align:top;}' +
-        '.rpt-totvals{display:inline-block;text-align:left;}' +
+        '.rpt-totals{display:flex;justify-content:flex-end;gap:2.2rem;margin:12px 0 2px;font-weight:bold;font-size:12px;font-variant-numeric:tabular-nums;}' +
+        '.rpt-totals .rpt-ital{margin-right:.3rem;}' +
+        '.rpt-cmtline{margin-top:8px;font-size:11px;color:#5b6371;}' +
+        // Monthly Update open layout, serif navy headings, compact single line totals
+        '.rpt-mu table{font-size:11px;line-height:1.3;}' +
+        '.rpt-mu th,.rpt-mu td{border:none;vertical-align:top;padding:2px 8px;}' +
+        '.rpt-mu thead th{color:#17306e;font-weight:bold;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid #4a5c93;padding-bottom:4px;}' +
+        '.rpt-mu tr.rpt-line td{border-bottom:1px solid #dce1ea;}' +
+        '.rpt-mu tr.rpt-alt td{background:#f6f8fc;}' +
+        '.rpt-mu tr.rpt-name td{font-weight:bold;color:#17306e;font-size:12px;background:#eef2fb;padding:4px 8px;}' +
+        '.rpt-mu tr.rpt-reqhd td{color:#5b6371;padding-top:4px;font-weight:bold;}' +
+        '.rpt-mu tr.rpt-reqhd .rpt-rq{color:#17306e;}' +
+        '.rpt-mu tr.rpt-cmt td{color:#5b6371;font-size:10px;padding-top:1px;}' +
+        '.rpt-mutitle{font-family:Georgia,"Times New Roman",serif;font-style:italic;color:#17306e;margin:0 0 1px 0;font-size:20px;}' +
+        '.rpt-musub{color:#5b6371;font-size:11px;margin:0 0 10px 0;}' +
+        '.rpt-totblk{display:flex;flex-wrap:wrap;gap:.1rem 2rem;align-items:baseline;margin:1px 0 3px;padding:2px 8px;border-top:1px solid #b7bdca;}' +
+        '.rpt-totlbl{min-width:165px;}.rpt-totv .rpt-ital{margin-right:.3rem;}' +
+        '.rpt-nametot{background:#f2f5fc;border-top-color:#4a5c93;}' +
+        '.rpt-grand{margin-top:5px;border-top:2px solid #17306e;background:#eaeff9;}' +
+        '.rpt-stamp{margin-top:12px;color:#5b6371;font-size:10px;}' +
         '</style></head><body>' + innerHtml +
         // the window prints itself and closes on afterprint; print() from the station's own thread would block the app while the dialog is up
         '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
