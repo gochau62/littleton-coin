@@ -18,7 +18,11 @@
 
 $GLOBALS['rqsErr'] = '';
 
-define('RQS_ACT_LOG', __DIR__ . '/requisition_activity.log');
+// write into the LCCOnline_logs folder next to the PHP: the docroot itself is
+// not writable by the web profile, but LCCOnline_logs is (it is where the
+// framework/Sellbrite logs already land), so the file actually appears. still
+// a plain Clario-style file append, promotion-safe (relative to __DIR__)
+define('RQS_ACT_LOG', __DIR__ . '/LCCOnline_logs/requisition_activity.log');
 
 // append one activity line (ClarioSFTP_pull.log pattern). the file write is
 // still suppressed so a bad write never takes the app down, but if it fails
@@ -62,11 +66,12 @@ function rqsFetchAll($conn, $sql, $params = array()) {
     return $result;
 }
 
-// PROGRAM NAME REQSTN003S: grid rows, show O open (default), R returned, A all
-function rqsGetOpen($conn, $show = 'O') {
+// PROGRAM NAME REQSTN003S: grid rows, show O open (default), R returned, A all;
+// search filters req#/name/item/badge (blank = all); returned/all cap at 500
+function rqsGetOpen($conn, $show = 'O', $search = '') {
     $show = strtoupper(substr(trim($show), 0, 1));
     if (!in_array($show, array('O', 'R', 'A'))) { $show = 'O'; }
-    return rqsFetchAll($conn, "CALL REQSTN003S(?)", array($show));
+    return rqsFetchAll($conn, "CALL REQSTN003S(?, ?)", array($show, substr(trim($search), 0, 50)));
 }
 
 // PROGRAM NAME REQSTN004S: one requisition, header + all lines

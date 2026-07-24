@@ -7,6 +7,12 @@
 /*                     O (or any other value) open lines only, the   */
 /*                     Access frmMain qryMain recordsource,          */
 /*                     R returned lines only, A all lines.           */
+/*                     INSRCH is an optional filter (req#, name,     */
+/*                     item or badge); blank returns everything.     */
+/*                     Returned and All are capped to the 500 most   */
+/*                     recent (by return date) so the browser never  */
+/*                     tries to draw the whole 50k-line history;     */
+/*                     the search reaches all of it.                 */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -29,7 +35,8 @@
 /*-------------------------------------------------------------------*/
 
 CREATE OR REPLACE PROCEDURE REQSTN003S (
-        IN INSHOW CHAR(1) )
+        IN INSHOW CHAR(1),
+        IN INSRCH VARCHAR(50) )
 
         LANGUAGE SQL
         READS SQL DATA
@@ -37,20 +44,39 @@ CREATE OR REPLACE PROCEDURE REQSTN003S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
+        DECLARE SRCH VARCHAR(50) DEFAULT '';
+
         DECLARE C1 CURSOR WITH RETURN FOR
-            SELECT H.RHREQ#, H.RHNAME, H.RHRQDT, H.RHRQTM,
-                   H.RHARCD, H.RHARTY, H.RHRUSH, H.RHAUTF, H.RHAUTB,
-                   H.RHBDGE,
-                   D.RDLIN#, D.RDITEM, D.RDCNDT, D.RDDESC, D.RDLOC,
-                   D.RDQTY, D.RDCOST, D.RDRETL, D.RDRTNF, D.RDRTDT
-              FROM RQSREQHDRT H
-              JOIN RQSREQDTLT D
-                ON D.RDREQ# = H.RHREQ#
-             WHERE ( INSHOW = 'A' )
-                OR ( INSHOW = 'R' AND D.RDRTNF = 'Y' )
-                OR ( INSHOW NOT IN ('A', 'R') AND D.RDRTNF = 'N' )
-             ORDER BY D.RDRTNF, D.RDRTDT DESC,
-                      H.RHRQDT, H.RHRQTM, H.RHREQ#, D.RDLIN#;
+            SELECT RHREQ#, RHNAME, RHRQDT, RHRQTM,
+                   RHARCD, RHARTY, RHRUSH, RHAUTF, RHAUTB,
+                   RHBDGE,
+                   RDLIN#, RDITEM, RDCNDT, RDDESC, RDLOC,
+                   RDQTY, RDCOST, RDRETL, RDRTNF, RDRTDT
+              FROM ( SELECT H.RHREQ#, H.RHNAME, H.RHRQDT, H.RHRQTM,
+                            H.RHARCD, H.RHARTY, H.RHRUSH, H.RHAUTF,
+                            H.RHAUTB, H.RHBDGE,
+                            D.RDLIN#, D.RDITEM, D.RDCNDT, D.RDDESC,
+                            D.RDLOC, D.RDQTY, D.RDCOST, D.RDRETL,
+                            D.RDRTNF, D.RDRTDT,
+                            ROW_NUMBER() OVER (
+                                ORDER BY D.RDRTNF, D.RDRTDT DESC,
+                                         H.RHRQDT, H.RHRQTM,
+                                         H.RHREQ#, D.RDLIN# ) AS RN
+                       FROM RQSREQHDRT H
+                       JOIN RQSREQDTLT D
+                         ON D.RDREQ# = H.RHREQ#
+                      WHERE ( ( INSHOW = 'A' )
+                           OR ( INSHOW = 'R' AND D.RDRTNF = 'Y' )
+                           OR ( INSHOW NOT IN ('A', 'R') AND D.RDRTNF = 'N' ) )
+                        AND ( SRCH = ''
+                           OR TRIM(CHAR(H.RHREQ#)) LIKE '%' || SRCH || '%'
+                           OR UPPER(H.RHNAME)      LIKE '%' || SRCH || '%'
+                           OR UPPER(D.RDITEM)      LIKE '%' || SRCH || '%'
+                           OR UPPER(H.RHBDGE)      LIKE '%' || SRCH || '%' ) ) T
+             WHERE RN <= CASE WHEN INSHOW IN ('R', 'A') THEN 500 ELSE 100000 END
+             ORDER BY RN;
+
+        SET SRCH = UPPER(TRIM(COALESCE(INSRCH, '')));
 
         OPEN C1;
     END;

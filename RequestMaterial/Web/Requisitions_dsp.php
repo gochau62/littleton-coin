@@ -175,13 +175,21 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 /* real cell borders on the station header, so the box and the column
    separators stay put while scrolling (they belong to each th, not the
-   collapsed table) */
+   collapsed table). the bottom divider is an inset box-shadow as well as a
+   border, because a sticky cell can drop its bottom border mid-scroll but
+   an inset shadow travels with the cell */
 #tblGrid thead th {
-  border-top: 1px solid #b4b4b4;
-  border-right: 1px solid #b4b4b4;
-  border-bottom: 2px solid #b4b4b4;
+  border-top: 1px solid #333;
+  border-right: 1px solid #333;
+  border-bottom: 2px solid #333;
+  box-shadow: inset 0 -2px 0 0 #333;
 }
-#tblGrid thead th:first-child { border-left: 1px solid #b4b4b4; }
+#tblGrid thead th:first-child { border-left: 1px solid #333; }
+/* clickable sort headers */
+#tblGrid thead th[data-sortkey] { cursor: pointer; user-select: none; }
+#tblGrid thead th[data-sortkey]:hover { background: #dbeee2; }
+#tblGrid thead th .rq-sortind { color: var(--rq-green); font-size: .7rem; margin-left: .2rem; }
+#tblGrid thead th.rq-sorted { background: #d3ecdd; }
 .rq-grid tbody td {
   padding: .45rem .7rem;
   border-bottom: 1px solid var(--rq-line);
@@ -438,15 +446,15 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <thead>
           <tr>
             <th class="rq-sel"></th>
-            <th>Req #</th>
-            <th>Date</th>
-            <th>Requestor</th>
-            <th>Item #</th>
-            <th>Loc</th>
-            <th class="rq-num">Qty</th>
-            <th>Badge #</th>
-            <th>Authorized</th>
-            <th>Rush</th>
+            <th data-sortkey="RHREQ#">Req #<span class="rq-sortind"></span></th>
+            <th data-sortkey="RHRQDT">Date<span class="rq-sortind"></span></th>
+            <th data-sortkey="RHNAME">Requestor<span class="rq-sortind"></span></th>
+            <th data-sortkey="RDITEM">Item #<span class="rq-sortind"></span></th>
+            <th data-sortkey="RDLOC">Loc<span class="rq-sortind"></span></th>
+            <th class="rq-num" data-sortkey="RDQTY">Qty<span class="rq-sortind"></span></th>
+            <th data-sortkey="RHBDGE">Badge #<span class="rq-sortind"></span></th>
+            <th data-sortkey="RHAUTB">Authorized<span class="rq-sortind"></span></th>
+            <th data-sortkey="RHRUSH">Rush<span class="rq-sortind"></span></th>
           </tr>
         </thead>
         <tbody id="gridBody">
@@ -605,6 +613,10 @@ var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
 var gridShow = 'O';
+// header sort: key is a column field, dir 1 asc / -1 desc, null = server order
+var gridSort = { key: null, dir: 1 };
+// debounce for the Returned/All server-side filter search
+var gridSearchTimer = null;
 var lookups = null;
 var autoTimer = null;
 // selectedReq is the grid row last clicked (Access "current record")
@@ -637,7 +649,26 @@ $(document).ready(function () {
         lastGridJson = '';
         loadGrid();
     });
-    $('#txtFilter').on('input', renderGrid);
+    // filter box: Open filters the loaded rows instantly; Returned/All search
+    // the whole history server-side (debounced), since only 500 are loaded
+    $('#txtFilter').on('input', function () {
+        if (gridShow === 'O') {
+            renderGrid();
+        } else {
+            clearTimeout(gridSearchTimer);
+            gridSearchTimer = setTimeout(function () {
+                lastGridJson = '';
+                loadGrid();
+            }, 300);
+        }
+    });
+    // click a column header to sort by it; click again to flip direction
+    $('#tblGrid thead').on('click', 'th[data-sortkey]', function () {
+        var key = $(this).data('sortkey');
+        if (gridSort.key === key) { gridSort.dir = -gridSort.dir; }
+        else { gridSort.key = key; gridSort.dir = 1; }
+        renderGrid();
+    });
     // entry sheet in a new tab; the grid picks up the new req on refresh
     $('#btnAdd').on('click', function () {
         window.open('Requisitions_ctl.php?mode=entry', '_blank');
@@ -1010,8 +1041,11 @@ function attr(s) {
 
 // a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
+    // Returned/All search the whole history server-side; Open loads all its
+    // rows (blank q) and filters them in the browser
+    var q = (gridShow === 'O') ? '' : $('#txtFilter').val().trim();
     submitPendingReturns(function () {
-        postAjax({ action: 'list', show: gridShow }, function (resp) {
+        postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
             $('#lblUpdated').removeClass('rq-stale')
                 .text('Updated ' + new Date().toLocaleTimeString());
             var j = JSON.stringify(resp.rows);
@@ -1064,10 +1098,20 @@ function renderGrid() {
     var html = '';
     var shown = 0;
 
-    $.each(gridRows, function (i, r) {
-        var hay = (r['RHREQ#'] + ' ' + r.RHNAME + ' ' + r.RDITEM + ' ' +
-                   r.RDDESC + ' ' + (r.RHBDGE || '')).toLowerCase();
-        if (filter && hay.indexOf(filter) < 0) { return; }
+    // Open filters the loaded rows here; Returned/All are already filtered by
+    // the server (only the most recent 500 are loaded), so show them all
+    var rows = gridRows;
+    if (gridShow === 'O' && filter) {
+        rows = $.grep(gridRows, function (r) {
+            var hay = (r['RHREQ#'] + ' ' + r.RHNAME + ' ' + r.RDITEM + ' ' +
+                       r.RDDESC + ' ' + (r.RHBDGE || '')).toLowerCase();
+            return hay.indexOf(filter) >= 0;
+        });
+    }
+    // header sort: sort a copy so the server order is kept when unsorted
+    if (gridSort.key) { rows = rows.slice().sort(gridCompare); }
+
+    $.each(rows, function (i, r) {
         shown++;
 
         // any real authorizer name is green; only the None / In Process placeholders stay yellow (legacy rows carry the stored flag inconsistently, so the name text decides)
@@ -1127,12 +1171,60 @@ function renderGrid() {
             '</tr>';
     });
 
-    var emptyMsg = gridShow === 'R' ? 'No returned requisitions.'
+    var searching = gridShow !== 'O' && $('#txtFilter').val().trim() !== '';
+    var emptyMsg = searching ? 'No matches - try a different req #, name, item or badge.'
+                 : gridShow === 'R' ? 'No returned requisitions.'
                  : gridShow === 'A' ? 'No requisitions.'
                  : 'No open requisitions.';
     $('#gridBody').html(html ||
         '<tr><td colspan="10" class="rq-empty">' + emptyMsg + '</td></tr>');
-    $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
+
+    // count, plus a note when Returned/All hit the 500-row server cap
+    var count = shown + ' line' + (shown === 1 ? '' : 's');
+    if (gridShow !== 'O' && shown >= 500) {
+        count += ' - showing the 500 most recent' +
+                 (searching ? ' matches' : '') + ', use Filter to narrow';
+    }
+    $('#lblCount').text(count);
+
+    updateSortIndicators();
+}
+
+// header sort comparator; numeric columns compare as numbers, text lowercased
+function gridCompare(a, b) {
+    var k = gridSort.key, av, bv;
+    if (k === 'RHREQ#') { av = +a['RHREQ#']; bv = +b['RHREQ#']; }
+    else if (k === 'RHRQDT') {
+        av = (+a.RHRQDT || 0) * 1000000 + (+a.RHRQTM || 0);
+        bv = (+b.RHRQDT || 0) * 1000000 + (+b.RHRQTM || 0);
+    }
+    else if (k === 'RDQTY') { av = +a.RDQTY || 0; bv = +b.RDQTY || 0; }
+    else if (k === 'RHBDGE') {
+        av = parseInt(a.RHBDGE, 10); bv = parseInt(b.RHBDGE, 10);
+        if (isNaN(av)) { av = -1; } if (isNaN(bv)) { bv = -1; }
+    }
+    else {
+        if (k === 'RHAUTB') { av = a.RHAUTB || 'Authorization = None'; bv = b.RHAUTB || 'Authorization = None'; }
+        else if (k === 'RHNAME') { av = a.RHNAME || ''; bv = b.RHNAME || ''; }
+        else if (k === 'RDITEM') { av = a.RDITEM || ''; bv = b.RDITEM || ''; }
+        else if (k === 'RDLOC') { av = a.RDLOC || ''; bv = b.RDLOC || ''; }
+        else if (k === 'RHRUSH') { av = a.RHRUSH || ''; bv = b.RHRUSH || ''; }
+        else { return 0; }
+        av = String(av).toLowerCase(); bv = String(bv).toLowerCase();
+    }
+    if (av < bv) { return -gridSort.dir; }
+    if (av > bv) { return gridSort.dir; }
+    return 0;
+}
+
+// paint the up/down arrow on the active sort header
+function updateSortIndicators() {
+    $('#tblGrid thead th[data-sortkey]').each(function () {
+        var th = $(this);
+        var active = th.data('sortkey') === gridSort.key;
+        th.toggleClass('rq-sorted', active);
+        th.find('.rq-sortind').text(active ? (gridSort.dir === 1 ? ' ▲' : ' ▼') : '');
+    });
 }
 
 // add requisition

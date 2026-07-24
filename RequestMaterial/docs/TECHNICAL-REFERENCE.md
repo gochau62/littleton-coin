@@ -52,7 +52,7 @@ DYNUSRPRF = *OWNER`, built with RUNSQLSTM from QSQLSRC members.
 |---|---|---|
 | REQSTN001S | Insert header | OUT new req# via IDENTITY_VAL_LOCAL(). Kills the legacy max(req_num)+1 race. |
 | REQSTN002S | Insert one line | 12 IN parameters. |
-| REQSTN003S | Grid lines | IN INSHOW CHAR(1): O open (RDRTNF='N', the default), R returned (RDRTNF='Y'), A all. Header JOIN detail, returned lines ordered by return date. |
+| REQSTN003S | Grid lines | IN INSHOW CHAR(1): O open (RDRTNF='N', the default), R returned (RDRTNF='Y'), A all. IN INSRCH VARCHAR(50) filters req#/name/item/badge (blank = all). Header JOIN detail, returned ordered by return date; ROW_NUMBER caps Returned/All to the 500 most recent so the 50k history never renders at once. |
 | REQSTN004S | One requisition | Header LEFT JOIN all lines, ordered by line. |
 | REQSTN005S | Update header | authorized-by, comments, badge - NULL leaves a column unchanged (COALESCE), so the view window and the grid's badge box share one proc. RHAUTF derives from the authorized-by value. |
 | REQSTN006S | Mark/unmark returned | Idempotent (flag guard). INRTDT = caller-entered return date; 0 stamps today. |
@@ -77,8 +77,14 @@ act on the whole record (the two rows are paired by a record id). The
 Badge # box is a live input (change = save). The Show dropdown (Open /
 Returned / All) re-queries 003S with the INSHOW code; returned lines
 render their return date read-only in place of the Return Item box.
-Auto-refresh every 60s, plus on tab-visibility; a JSON compare skips
-re-renders when nothing changed.
+Returned/All are capped server-side to the 500 most recent, and the
+Filter box drives an INSRCH server search over the whole history for
+those modes (debounced) while Open filters its loaded rows in the
+browser. Every column header sorts client-side (click to toggle
+asc/desc, arrow shown). The sticky header uses separate-border cells
+plus an inset box-shadow on the bottom edge so its black box and column
+lines stay put while scrolling. Auto-refresh every 60s, plus on
+tab-visibility; a JSON compare skips re-renders when nothing changed.
 
 **Entry form** (modal on the station, full page in `?mode=entry`) -
 legacy getEntry.php layout: header fields, then the spreadsheet-style
@@ -108,7 +114,7 @@ failed ... nothing was saved."
 
 **Grid refresh** - `loadGrid()` first submits every pending Return Item
 (006S per line, with the entered date), then pulls 003S with the current
-Show code (open/returned/all). Checking
+Show code and (for Returned/All) the Filter text as the search. Checking
 Return Item only queues the return client-side (a map keyed req|line
 that survives re-renders); the refresh is what commits it - the Access
 requery behavior. A pending return with an invalid date holds the
@@ -138,21 +144,24 @@ the ajax `lookups` action is the fallback if the preload failed.
 
 ## 7. Activity log
 
-`requisition_activity.log`, next to the PHP - same
-`@file_put_contents(..., FILE_APPEND)` pattern as ClarioSFTP_pull.log.
-One line per event: timestamp, user profile, station IP, action, detail.
+`requisition_activity.log` in the `LCCOnline_logs` folder beside the
+PHP - same `@file_put_contents(..., FILE_APPEND)` pattern as
+ClarioSFTP_pull.log. One line per event: timestamp, user profile,
+station IP, action, detail.
 
 Events: OPEN (page load, station vs entry form), INSERT (req + line
 count), UPDATE (req, badge when changed from the grid), RETURN/UNRETURN
 (req + line + entered date), BACKOUT (failed insert rolled back).
 
-The file is created on first write, so the web profile needs write
-authority to the app folder - the usual reason no log appears. The
-write is still suppressed so a bad write never takes the app down, but
-on failure the reason and the line drop to `error_log` (the instance
-php.log) instead of vanishing, so nothing is lost and you can see why.
-The file grows forever; trim it yearly. Replaced the RQSACTLOGT Db2
-table, which nothing read.
+It targets `LCCOnline_logs` rather than the docroot because the web
+profile is not granted write to the docroot but is to LCCOnline_logs
+(where the framework and Sellbrite logs already land) - point it at the
+docroot and no file ever appears. The write is still suppressed so a
+bad write never takes the app down, but on failure the reason and the
+line drop to `error_log` (the instance php.log) instead of vanishing.
+The monthly LCCOnline_logs purge keys on modification time, so an
+actively appended log is never swept; archive it for multi-year audit
+history. Replaced the RQSACTLOGT Db2 table, which nothing read.
 
 ## 8. Build, load, promote
 

@@ -51,10 +51,19 @@ lines only** - anything not yet returned - just like Access.
   and **All**. This is how you bring a returned req form back up - pick
   Returned and it lists the lines that have been turned back in, each
   with the date it was returned. All shows open and returned together.
+  Because there are ~50,000 returned lines, Returned and All show the
+  **500 most recent** (newest returns first); type in the Filter box to
+  reach older ones.
 - It refreshes itself every minute (and when you come back to the tab).
   The Updated time in the corner tells you the last refresh; if it turns
   red the connection hiccupped - hit Refresh.
-- The filter box narrows the grid by req #, name, item or badge.
+- The **Filter** box narrows the grid by req #, name, item or badge. In
+  Open it filters what is on screen; in Returned/All it searches the
+  whole history, so you can pull up any old returned form, not just the
+  recent 500.
+- **Sort** by clicking any column header - Req #, Date, Requestor,
+  Badge #, and so on. Click once for up, click again for down; a small
+  arrow shows which way.
 - Click a row to select it - the ▶ marker shows which requisition
   Preview Report will print.
 - Click the blue req # to open the requisition.

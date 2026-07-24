@@ -50,9 +50,11 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
 
-    // main grid rows, show O open (default), R returned, A all
+    // main grid rows, show O open (default), R returned, A all; q searches
     case 'list':
-        $rows = rqsGetOpen($conn, $_POST['show'] ?? $_GET['show'] ?? 'O');
+        $rows = rqsGetOpen($conn,
+                           $_POST['show'] ?? $_GET['show'] ?? 'O',
+                           $_POST['q'] ?? $_GET['q'] ?? '');
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
