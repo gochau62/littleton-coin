@@ -96,7 +96,8 @@ switch ($action) {
             rqsOutFail("No requisition lines received.");
         }
 
-        $badge = substr($payload['reqName'], 0, 10);
+        // new requisitions start with badge 0; someone fills it in later
+        $badge = '0';
         $reqNum = rqsInsertHeader($conn,
                       $payload['reqName'],
                       $payload['areaCode'],
