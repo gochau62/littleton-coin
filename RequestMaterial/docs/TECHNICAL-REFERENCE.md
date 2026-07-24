@@ -104,10 +104,13 @@ Print.
 the current month automatically) and Preview Report. Both add a Returned
 column (green return date, or a dash while still out); the Preview lists
 every line now, not just unreturned, and the Monthly totals are compact
-single ruled lines so a busy month stays to few pages. Print windows
-print THEMSELVES on load and close on afterprint - if the station called
-print(), the station's own
-thread sat blocked in the dialog and the whole app froze.
+single ruled lines so a busy month stays to few pages. The report opens
+in a preview window with its own Print and Close buttons (hidden on the
+printout via `@media print`) and `print-color-adjust: exact` so the band
+and totals backgrounds actually render on paper. It no longer auto fires
+the print dialog: the browser modal print dialog would lock the whole
+station the moment the report opened, so the user prints when ready
+instead.
 
 ## 5. Workflows
 
