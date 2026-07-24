@@ -30,20 +30,19 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 ?>
 
 <style>
-/* Requisition Material styling - inline per shop preference:
-   the display file owns everything visual. */
+/* Requisition Material styling - inline: the display owns everything visual */
 :root {
   /* LCC house palette - same greens as SellbriteBulkLoader */
-  --rq-green-dk: #1C4532;   /* headings, header bar */
-  --rq-green:    #2e8b57;   /* .btn-green actions (Authorize) */
-  --rq-green-hv: #1e6e43;   /* green hover, accents */
-  --rq-blue:     #007bff;   /* primary buttons (Sellbrite default .btn) */
-  --rq-blue-hv:  #0056b3;   /* primary hover */
-  --rq-accent:   #eaf6ee;   /* light green fills */
+  --rq-green-dk: #1C4532;
+  --rq-green:    #2e8b57;
+  --rq-green-hv: #1e6e43;
+  --rq-blue:     #007bff;
+  --rq-blue-hv:  #0056b3;
+  --rq-accent:   #eaf6ee;
   --rq-bg:       #f8f8f8;
   --rq-line:     #dfe6e1;
   --rq-text:     #222;
-  --rq-muted:    #5f6b62;   /* the standard LCC label/text color */
+  --rq-muted:    #5f6b62;
   --rq-amber:    #9a6a14;
   --rq-red:      #c0392b;
 }
@@ -112,14 +111,16 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   gap: 6px;
   padding: .45rem 1.1rem;
   border: 1px solid #b4b4b4;
-  border-radius: 50px;               /* house pill buttons */
+  /* house pill buttons */
+  border-radius: 50px;
   background: #fff;
   color: var(--rq-text);
   font-size: .9rem;
   font-weight: 700;
   cursor: pointer;
 }
-.rq-btn:hover { border-color: var(--rq-blue); color: var(--rq-blue); }   /* Sellbrite .btn-ghost hover */
+/* ghost hover, same as the Sellbrite buttons */
+.rq-btn:hover { border-color: var(--rq-blue); color: var(--rq-blue); }
 .rq-btn-primary {
   background: var(--rq-blue);
   border-color: var(--rq-blue);
@@ -144,10 +145,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
-/* frmMain-style two-line records: compact fixed pixel columns (the
-   Requestor column takes the leftover width); line-1 cells stay one
-   line and ellipsize (full text on hover), description gets its own
-   line. Below 780px the wrap scrolls instead of crushing columns. */
+/* frmMain-style two-line records: fixed pixel columns, Requestor flexes; below 780px the wrap scrolls */
 #tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem; }
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                     padding: .4rem .5rem; }
@@ -169,10 +167,10 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-grid thead th {
   position: sticky;
   top: 0;
-  z-index: 5;                /* header always paints over cell content */
+  /* header always paints over cell content */
+  z-index: 5;
   background: var(--rq-accent);
-  /* collapsed borders don't travel with a sticky header - draw the
-     header's own lines so they stay attached while scrolling */
+  /* collapsed borders don't stick - draw the header's own lines */
   box-shadow: inset 1px 0 0 #b4b4b4, inset 0 1px 0 #b4b4b4,
               inset 0 -2px 0 #b4b4b4;
   color: var(--rq-green-dk);
@@ -192,8 +190,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink { color: var(--rq-blue); font-weight: 600; cursor: pointer; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
-/* badge box: editable right in the grid (header-level - all lines of
-   the req share it) */
+/* badge box: editable in the grid; all lines of a req share it */
 .rq-badgewrap { position: relative; display: inline-block; width: 100%; }
 .rq-grid .rq-badge { width: 100%; box-sizing: border-box;
                      padding: .2rem 1rem .2rem .35rem; font-size: .85rem;
@@ -306,8 +303,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                     align-items: center; font-size: .9rem; color: var(--rq-text); }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
-/* spreadsheet-style sheet: the CELL is the box (one grid, no boxes in
-   boxes), the input inside is invisible, the focused cell lights up */
+/* spreadsheet sheet: the cell is the box, the input is invisible */
 .rq-lines { table-layout: fixed; border-collapse: collapse; }
 .rq-lines th { padding: .3rem .45rem; }
 .rq-lines tbody td {
@@ -322,7 +318,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   outline: 2px solid var(--rq-blue);
   outline-offset: -2px;
 }
-.rq-lines tbody td:last-child {                       /* the ✕ column */
+/* the ✕ column */
+.rq-lines tbody td:last-child {
   border: none;
   background: none;
   text-align: center;
@@ -366,16 +363,15 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
 /* ----- entry-only mode (workfloor shortcut ?mode=entry) ----- */
-/* No grid, no reports - the entry form IS the page, and it can't be
-   dismissed, matching the old request.php the floor had favorited. */
+/* the entry form IS the page and cannot be dismissed (old request.php) */
 .rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x,
 .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
-.rq-entry .rq-modal-wide { max-width: 1280px; }   /* room for the full sheet */
+/* room for the full sheet */
+.rq-entry .rq-modal-wide { max-width: 1280px; }
 
-/* ----- monthly report (matches the printed Access sample:
-     serif italic navy headings, open layout with no gridlines) ----- */
+/* ----- monthly report (matches the printed Access sample) ----- */
 #rptMonthSel, #rptYearSel { padding: .35rem .5rem; border: 1px solid var(--rq-line);
                             border-radius: 6px; background: #fff; font-size: .9rem; }
 .rpt-stamp { margin-top: .75rem; color: var(--rq-muted); font-size: .85rem; }
@@ -600,16 +596,22 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
    auto-refresh (replaces the Access Form_Timer), add-request modal
    with dynamic lines, authorize and return-item actions via ajax. */
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
-var RQ_MODE = '<?php echo $mode; ?>';    // 'entry' = workfloor entry-only shortcut
+// RQ_MODE 'entry' = the workfloor entry-only shortcut
+var RQ_MODE = '<?php echo $mode; ?>';
 var gridRows = [];
 var lastGridJson = '';
 var lookups = null;
 var autoTimer = null;
-var selectedReq = null;    // the requisition clicked in the grid (Access "current record")
-var lastReqRows = null;    // data behind the open view modal
-var pendingReturns = {};   // "req|line" -> return date string; checked Return
-                           // Items wait here until the next grid refresh
-                           // submits them (the Access requery behavior)
+// selectedReq = the grid row last clicked (Access "current record")
+var selectedReq = null;
+// lastReqRows = data behind the open view window
+var lastReqRows = null;
+// pendingReturns "req|line" -> date; checked Return Items wait here
+// until the next refresh submits them (the Access requery behavior)
+var pendingReturns = {};
+// true while arrow keys travel the sheet, so landing on an Item # cell
+// does not pop its menu
+var sheetNavMove = false;
 
 $(document).ready(function () {
     loadLookups();
@@ -617,7 +619,8 @@ $(document).ready(function () {
     setInterval(tickClock, 1000);
 
     if (RQ_MODE === 'entry') {
-        openAddModal();          // the entry form IS the page
+        // entry mode: the entry form IS the page
+        openAddModal();
     } else {
         loadGrid();
         startAutoRefresh();
@@ -626,8 +629,7 @@ $(document).ready(function () {
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
     $('#txtFilter').on('input', renderGrid);
-    // entry sheet in a new tab (like Access's Add Requests button); the
-    // grid picks up the new req on its next refresh
+    // entry sheet in a new tab; the grid picks up the new req on refresh
     $('#btnAdd').on('click', function () {
         window.open('Requisitions_ctl.php?mode=entry', '_blank');
     });
@@ -635,8 +637,7 @@ $(document).ready(function () {
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
 
-    // reports - Monthly Report button (Requested Material Summary) and the
-    // per-requisition Print (rptRequest "Preview Report")
+    // report buttons: the Monthly Update and the per-requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
     $('#btnPreview').on('click', previewReport);
     $('#btnRunReport').on('click', runMonthlyReport);
@@ -652,8 +653,7 @@ $(document).ready(function () {
         $('#' + $(this).data('close')).prop('hidden', true);
     });
 
-    // clicking a row SELECTS the requisition (the ▶ gutter shows it, like
-    // Access's record pointer) - it does not open it
+    // clicking a row selects it (the ▶ gutter) - it does not open it
     $('#gridBody').on('click', 'tr[data-req]', function () {
         selectedReq = $(this).data('req');
         $('#gridBody tr').removeClass('rq-selected');
@@ -672,11 +672,8 @@ $(document).ready(function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
     });
 
-    // Return Item on the grid (Access chkReturnItem + its date box).
-    // Checking fills the date with today (editable); nothing is saved
-    // yet. The next grid refresh - the Refresh button or auto-refresh -
-    // submits the pending returns, like Access's requery. Unchecking
-    // before that clears the pending return.
+    // Return Item: checking fills today's date but saves nothing yet -
+    // the next grid refresh submits it, like Access's requery
     $('#gridBody').on('change', '.rq-gridret', function () {
         var cb = $(this);
         var key = cb.attr('data-req') + '|' + cb.attr('data-line');
@@ -700,8 +697,7 @@ $(document).ready(function () {
         }
     });
 
-    // badge # box in the grid: type a new badge, Enter or click away
-    // saves it (header-level - every line of that req shares it)
+    // badge # box: a change saves it (every line of the req shares it)
     $('#gridBody').on('change', '.rq-badge', function () {
         var inp = $(this);
         postAjax({
@@ -711,9 +707,8 @@ $(document).ready(function () {
         }, function () { loadGrid(true); });
     });
 
-    // badge dropdown: the active-employee list from the code file.
-    // Focus shows the list, typing filters (badge # or name), click or
-    // arrow+Enter picks and saves; Enter alone commits what was typed.
+    // badge dropdown: focus opens the employee list, typing filters it,
+    // click or arrow+Enter picks and saves
     $('#gridBody').on('focusin', '.rq-badge', function () {
         showBadgeSuggest($(this), false);
     });
@@ -721,7 +716,8 @@ $(document).ready(function () {
         showBadgeSuggest($(this), true);
     });
     $('#gridBody').on('blur', '.rq-badge', function () {
-        setTimeout(hideBadgeSuggest, 150);   // let a click on the list land
+        // wait so a click on the list lands before blur hides it
+        setTimeout(hideBadgeSuggest, 150);
     });
     // the ▾ arrow toggles the list (mousedown so the input keeps focus)
     $('#gridBody').on('mousedown', '.rq-badgedd', function (e) {
@@ -748,7 +744,8 @@ $(document).ready(function () {
             e.preventDefault();
             var act = box.children('.active');
             if (act.length) { act.trigger('mousedown'); }
-            else { $(this).trigger('blur'); }   // commits via change
+            // no highlighted row: Enter commits what was typed
+            else { $(this).trigger('blur'); }
         } else if (e.key === 'Escape') {
             hideBadgeSuggest();
         }
@@ -765,8 +762,7 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
-    // ESC closes the topmost open window (except the entry-mode form,
-    // which is the whole page)
+    // ESC closes the topmost window (never the entry-mode form)
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape' && RQ_MODE !== 'entry') {
             $('.rq-overlay').not('[hidden]').last().prop('hidden', true);
@@ -778,8 +774,7 @@ $(document).ready(function () {
         if (!document.hidden) { loadGrid(true); }
     });
 
-    // item autofill - the legacy dRec() behavior: entering an item number
-    // fills description/coin date/cost/retail from its most recent use
+    // item autofill (legacy dRec): a full item number fills the line
     $('#lineBody').on('change', '.ln-item', function () {
         var row = $(this).closest('tr');
         var item = $(this).val().trim();
@@ -794,8 +789,7 @@ $(document).ready(function () {
         row.find('.ln-loc').trigger('focus');
     });
 
-    // live item search: clicking into Item # opens the item list from the
-    // top (like the badge dropdown, minus the arrow); typing narrows it
+    // item list: focus opens it from the top, typing narrows it
     var srchTimer = null;
     $('#lineBody').on('input', '.ln-item', function () {
         var inp = $(this);
@@ -808,13 +802,16 @@ $(document).ready(function () {
         }, 250);
     });
     $('#lineBody').on('focusin', '.ln-item', function () {
+        // arrow-key travel through the column should not pop the menu
+        if (sheetNavMove) { sheetNavMove = false; return; }
         var inp = $(this);
         postAjax({ action: 'itemsearch', q: inp.val().trim() }, function (resp) {
             showSuggest(inp, resp.rows);
         }, true);
     });
     $('#lineBody').on('blur', '.ln-item', function () {
-        setTimeout(hideSuggest, 150);      // let a click on the list land first
+        // wait so a click on the list lands before blur hides it
+        setTimeout(hideSuggest, 150);
     });
     $('#lineBody').on('keydown', '.ln-item', function (e) {
         var box = $('#rqSuggest');
@@ -831,16 +828,14 @@ $(document).ready(function () {
         }
     });
 
-    // Enter hops to the next field like the legacy form's onEnterKey chain;
-    // Enter on the last field of the last row starts a new line. With the
-    // item dropdown open, Enter picks the highlighted item instead.
+    // Enter hops fields like the legacy onEnterKey chain; on the last
+    // box of the last row it grows the sheet
     $('#lineBody').on('keydown', 'input', function (e) {
         if (e.key !== 'Enter') { return; }
         e.preventDefault();
         var box = $('#rqSuggest');
         if (box.length && $(this).hasClass('ln-item')) {
-            // pick only a deliberate choice: an arrowed-to row, or the top
-            // match for typed text. An untouched box just hops on.
+            // pick only a deliberate choice; an untouched box hops on
             var act = box.children('.active');
             if (act.length) { act.trigger('mousedown'); return; }
             if ($(this).val().trim() !== '') {
@@ -858,9 +853,36 @@ $(document).ready(function () {
         inputs.eq(i + 1).trigger('focus');
     });
 
-    // deep links, for shortcuts and shared links:
-    //   ?id=N        -> open that requisition's view
-    //   ?action=add  -> open the entry form directly
+    // spreadsheet arrows on the sheet: up/down move rows, left/right move
+    // cells once the caret reaches the edge of the text
+    $('#lineBody').on('keydown', 'input', function (e) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.key) < 0) { return; }
+        // an open item menu owns the up/down keys
+        if ($('#rqSuggest').length && $(this).hasClass('ln-item')) { return; }
+        var cell = $(this).closest('td');
+        var row = cell.closest('tr');
+        var target = null;
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            var col = row.children('td').index(cell);
+            var tr = (e.key === 'ArrowDown') ? row.next('tr') : row.prev('tr');
+            target = tr.children('td').eq(col).find('input');
+        } else {
+            var atStart = this.selectionStart === 0 && this.selectionEnd === 0;
+            var atEnd = this.selectionStart === this.value.length &&
+                        this.selectionEnd === this.value.length;
+            if (e.key === 'ArrowLeft' && atStart) { target = cell.prev('td').find('input'); }
+            else if (e.key === 'ArrowRight' && atEnd) { target = cell.next('td').find('input'); }
+        }
+        if (target && target.length) {
+            e.preventDefault();
+            sheetNavMove = target.hasClass('ln-item');
+            target.trigger('focus');
+            // select the landing cell's text for instant overwrite
+            target[0].select();
+        }
+    });
+
+    // deep links: ?id=N opens that requisition, ?action=add opens entry
     if (RQ_MODE !== 'entry') {
         var qs = new URLSearchParams(window.location.search);
         if (qs.get('id')) {
@@ -876,14 +898,15 @@ $(document).ready(function () {
 function tickClock() {
     var now = new Date().toLocaleString();
     $('#rqClock').text(now);
-    $('#addDate').val(now);    // the entry form's Date runs live, like the
-                               // legacy form's Clock.js
+    // the entry form's Date runs live, like the legacy Clock.js
+    $('#addDate').val(now);
 }
 
 function startAutoRefresh() {
     if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
     if ($('#chkAutoRefresh').is(':checked')) {
-        autoTimer = setInterval(function () {      // Access used a form timer
+        // Access used a form timer; same one-minute cadence
+        autoTimer = setInterval(function () {
             if (!document.hidden) { loadGrid(true); }
         }, 60000);
     }
@@ -891,8 +914,7 @@ function startAutoRefresh() {
 
 /* ---- ajax + shared helpers ---- */
 
-// silent=true: background work (auto-refresh, autofill) marks the freshness
-// indicator stale instead of popping error dialogs at a kiosk screen
+// silent=true: background failures mark the stamp stale, no dialogs
 function postAjax(data, onOk, silent) {
     $.post('Requisitions_ajax.php', data, function (resp) {
         if (resp && resp.ok) { onOk(resp); }
@@ -946,15 +968,15 @@ function attr(s) {
 
 /* ---- grid ---- */
 
-// every refresh first submits the pending Return Items (Access requery
-// behavior), then reloads the grid - the returned lines drop off here
+// a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
     submitPendingReturns(function () {
         postAjax({ action: 'list' }, function (resp) {
             $('#lblUpdated').removeClass('rq-stale')
                 .text('Updated ' + new Date().toLocaleTimeString());
             var j = JSON.stringify(resp.rows);
-            if (j === lastGridJson) { return; }     // nothing changed - skip the re-render
+            // nothing changed - skip the re-render
+            if (j === lastGridJson) { return; }
             lastGridJson = j;
             gridRows = resp.rows;
             renderGrid();
@@ -962,9 +984,8 @@ function loadGrid(background) {
     }, background === true);
 }
 
-// submit every checked Return Item, then run next(). If any pending
-// date is invalid the refresh is held (so nothing pending is lost) and
-// a foreground refresh explains why.
+// submit every checked Return Item, then run next(); an invalid
+// pending date holds the refresh so nothing pending is lost
 function submitPendingReturns(next, silent) {
     var keys = Object.keys(pendingReturns);
     if (!keys.length) { next(); return; }
@@ -1010,9 +1031,8 @@ function renderGrid() {
         if (filter && hay.indexOf(filter) < 0) { return; }
         shown++;
 
-        // always show the stored text; green only for a real authorizer.
-        // (Legacy data has flag=Y rows whose name is still the None
-        // placeholder - the old Update set the flag unconditionally.)
+        // stored text always; green only for a real authorizer (legacy
+        // rows can carry flag=Y with the None placeholder)
         var authName = r.RHAUTB || 'Authorization = None';
         var isReal = r.RHAUTF === 'Y' &&
                      authName !== 'Authorization = None' &&
@@ -1022,9 +1042,8 @@ function renderGrid() {
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
-        // two rows per record, like the Access form: fields on line 1;
-        // description and the Return Item checkbox on line 2. data-rec
-        // pairs the rows for striping/hover; data-req drives select/open.
+        // two rows per record like Access: fields, then description and
+        // Return Item; data-rec pairs them, data-req selects/opens
         var recAttr = ' data-req="' + esc(r['RHREQ#']) + '" data-rec="' + shown + '"' +
                       ' class="' + (shown % 2 === 0 ? 'rq-alt ' : '');
         html += '<tr' + recAttr + 'rq-r1">' +
@@ -1044,8 +1063,7 @@ function renderGrid() {
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
-        // checkbox BEFORE the label, like the Access form; a pending
-        // (not-yet-refreshed) return survives re-renders via the map
+        // pending (not-yet-refreshed) returns survive re-renders via the map
         var pendKey = String(r['RHREQ#']) + '|' + String(r['RDLIN#']);
         var pend = pendingReturns.hasOwnProperty(pendKey) ? pendingReturns[pendKey] : null;
         html += '<tr' + recAttr + 'rq-r2">' +
@@ -1078,14 +1096,14 @@ function applyLookups(resp) {
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
-    // entry form's pre-authorizer. "Authorization = None" is a REAL row in
-    // the AUTHBY list (13k+ historical reqs store that literal string), and
-    // it sorts first, so it is the natural default - nothing synthetic added.
+    // "Authorization = None" is a REAL AUTHBY row (13k+ reqs store the
+    // literal); it sorts first, so it is the natural default
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
 }
 
 function loadLookups() {
-    if (RQ_PRELOAD) { applyLookups(RQ_PRELOAD); return; }   // came with the page
+    // the lists usually ride in with the page
+    if (RQ_PRELOAD) { applyLookups(RQ_PRELOAD); return; }
     postAjax({ action: 'lookups' }, applyLookups);
 }
 
@@ -1099,13 +1117,13 @@ function fillSelect(sel, rows, valCol, txtCol) {
 
 function openAddModal() {
     $('#lineBody').empty();
-    // entry mode presents the tall sheet like the legacy form; the
-    // station modal starts small - Enter on the last field grows both
+    // entry mode opens the tall legacy sheet; the station modal starts small
     var rows = (RQ_MODE === 'entry') ? 15 : 3;
     for (var i = 0; i < rows; i++) { addLineRow(); }
     $('#addComments').val('');
     $('input[name="addRush"][value="N"]').prop('checked', true);
-    $('#addAuthBy').prop('selectedIndex', 0);   // "Authorization = None" sorts first
+    // "Authorization = None" sorts first
+    $('#addAuthBy').prop('selectedIndex', 0);
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
     $('#lineBody input:first').trigger('focus');
@@ -1183,7 +1201,8 @@ function submitRequisition() {
         swal('Requisition ' + resp.reqNum + ' created',
              resp.lines + ' line(s) inserted.', 'success');
         if (RQ_MODE === 'entry') {
-            openAddModal();          // fresh blank form for the next request
+            // fresh blank form for the next request
+            openAddModal();
         } else {
             $('#mdlAdd').prop('hidden', true);
             loadGrid();
@@ -1220,8 +1239,7 @@ function openViewModal(reqNum) {
         });
         $('#v_returned').text(anyLine && allReturned ? 'Yes' : 'No');
 
-        // authorized-by: preselect the stored value, adding it if it is an
-        // old name no longer on the AUTHBY list
+        // preselect the stored authorizer, adding an off-list old name
         var sel = $('#authBy');
         var val = h.RHAUTB || 'Authorization = None';
         if (!sel.find('option').filter(function () { return this.value === val; }).length) {
@@ -1280,8 +1298,7 @@ function updateCurrent() {
 
 /* ---- badge dropdown ---- */
 
-// choices = the BADGE list from the code file (active employees:
-// badge # + name), reloaded with the page like the other lists
+// badge choices = the live employee list that rode in with the page
 function badgeChoices() {
     var seen = {}, out = [];
     if (lookups && lookups.badges) {
@@ -1298,8 +1315,7 @@ function badgeChoices() {
 
 function hideBadgeSuggest() { $('#rqBadgeSuggest').remove(); }
 
-// filterTyped=true while typing (match on what's typed); false on
-// focus, where the list shows regardless of the current value
+// filterTyped: match what was typed; on focus the list shows regardless
 function showBadgeSuggest(inp, filterTyped) {
     hideBadgeSuggest();
     var v = filterTyped ? inp.val().trim().toLowerCase() : '';
@@ -1310,15 +1326,16 @@ function showBadgeSuggest(inp, filterTyped) {
             b.n.toLowerCase().indexOf(v) >= 0) { rows.push(b); }
     });
     if (!inp.is(':focus')) { return; }
-    if (!rows.length && filterTyped) { return; }   // typing, no match: no menu
+    // typing with no match: no menu
+    if (!rows.length && filterTyped) { return; }
     var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
     if (!rows.length) {
-        // opened via focus/arrow but the list never loaded - say so
-        // instead of looking dead (REQSTN007S BADGE lookup empty)
+        // the list never loaded (BADGE lookup empty) - say so, not silence
         $('<div class="rq-suggest-empty"></div>')
             .text('Employee list unavailable').appendTo(box);
     }
-    $.each(rows, function (i, b) {      // full list - the menu scrolls
+    // full list - the menu scrolls
+    $.each(rows, function (i, b) {
         $('<div></div>')
             .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
             .data('code', b.c)
@@ -1327,15 +1344,15 @@ function showBadgeSuggest(inp, filterTyped) {
     var rc = inp[0].getBoundingClientRect();
     box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
     $('body').append(box);
-    // mousedown (not click) so the pick lands before the input's blur;
-    // the empty-state row carries no code and picks nothing
+    // mousedown lands before blur; the empty-state row picks nothing
     box.children().on('mousedown', function (e) {
         e.preventDefault();
         var code = $(this).data('code');
         if (code == null) { return; }
         inp.val(code);
         hideBadgeSuggest();
-        inp.trigger('change');            // saves via the change handler
+        // saves via the change handler
+        inp.trigger('change');
     });
 }
 
@@ -1382,7 +1399,8 @@ var RQ_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
                  'July', 'August', 'September', 'October', 'November', 'December'];
 
 function openMonthlyReport() {
-    if (!$('#rptMonthSel option').length) {          // build the dropdowns once
+    // build the dropdowns once
+    if (!$('#rptMonthSel option').length) {
         var mh = '', yh = '';
         $.each(RQ_MONTHS, function (i, m) {
             mh += '<option value="' + (i + 1) + '">' + m + '</option>';
@@ -1408,8 +1426,7 @@ function runMonthlyReport() {
              function (resp) { renderMonthlyReport(resp.rows, label); });
 }
 
-// one stacked totals block ("Req. Totals:" / "Totals by Name:"), matching
-// the printed sample's centered Total Qty / Total Retail / Total Cost
+// one stacked totals block, matching the printed sample's layout
 function muTotals(label, t) {
     return '<tr><td colspan="10"><div class="rpt-totblk">' +
         '<span class="rpt-ital">' + label + '</span>' +
@@ -1420,9 +1437,8 @@ function muTotals(label, t) {
         '</span></div></td></tr>';
 }
 
-// Faithful to the printed "Monthly Update:Requisitioned Product": no
-// gridlines, serif italic navy headings, Name group, then the req date,
-// item lines, "Req. Comments:", stacked "Req. Totals", "Totals by Name".
+// faithful to the printed Monthly Update: no gridlines, serif navy
+// headings, name group, req date, lines, comments, stacked totals
 function renderMonthlyReport(rows, label) {
     if (!rows.length) {
         $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(label) + '.</div>');
@@ -1503,12 +1519,12 @@ function renderMonthlyReport(rows, label) {
         '</div>');
 }
 
-// "1/20/2011 11:09:03 AM" from the decimal date + time pair, matching
-// the printed report's Date field
+// "1/20/2011 11:09:03 AM" like the printed report's Date field
 function fmtDateTime(d8, t6) {
     var s = String(d8);
     if (s.length !== 8 || s === '00000000') { return ''; }
-    var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);   // pad hhmmss
+    // pad hhmmss
+    var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);
     var hh = parseInt(t.slice(0, 2), 10);
     var ap = hh >= 12 ? 'PM' : 'AM';
     hh = hh % 12; if (hh === 0) { hh = 12; }
@@ -1516,9 +1532,8 @@ function fmtDateTime(d8, t6) {
            ' ' + hh + ':' + t.slice(2, 4) + ':' + t.slice(4, 6) + ' ' + ap;
 }
 
-// "Preview Report" - faithful to the printed rptRequest: the plain
-// four-line header block, then the boxed Sku#..Sku To grid. Returned
-// lines are left off - the report shows what is still out.
+// faithful to the printed rptRequest: plain four-line header block,
+// boxed line grid, unreturned lines only
 function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
@@ -1537,7 +1552,8 @@ function reqPrintHtml(rows) {
     var qty = 0, extc = 0, extr = 0;
     var body = '';
     $.each(rows, function (i, r) {
-        if (r['RDLIN#'] == null || r.RDRTNF === 'Y') { return; }   // unreturned only
+        // unreturned lines only
+        if (r['RDLIN#'] == null || r.RDRTNF === 'Y') { return; }
         var q = parseFloat(r.RDQTY) || 0;
         var ec = q * (parseFloat(r.RDCOST) || 0);
         var er = q * (parseFloat(r.RDRETL) || 0);
@@ -1589,8 +1605,7 @@ function previewReport() {
 
 /* ---- print ---- */
 
-// one clean window per report - the web version of Access's separate
-// report preview window
+// one clean window per report - the web version of Access's preview
 function printHtml(innerHtml, title) {
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>' + title + '</title><style>' +

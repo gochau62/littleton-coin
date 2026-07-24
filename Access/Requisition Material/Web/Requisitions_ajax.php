@@ -96,8 +96,7 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
-    // insert a requisition: header fields + JSON array of lines.
-    // Any line failure backs the whole requisition out - never half-saved.
+    // insert: header + JSON lines; any failure backs the whole requisition out
     case 'insert':
         $payload = json_decode($_POST['payload'], true);
         if (!$payload || empty($payload['lines'])) {
@@ -139,8 +138,7 @@ switch ($action) {
         rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines)');
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
-    // update a requisition header. The view window sends authBy+comments;
-    // the grid's badge box sends badge only - missing fields stay unchanged.
+    // update a header: missing fields (authBy/comments/badge) stay unchanged
     case 'update':
         $reqNum = intval($_POST['reqNum']);
         $badge  = isset($_POST['badge']) ? substr(trim($_POST['badge']), 0, 10) : null;

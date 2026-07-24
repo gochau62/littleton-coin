@@ -63,8 +63,7 @@ if ($authorized != "yes") {
 
     require_once __DIR__ . '/Requisitions_model.php';
 
-    // preload the dropdown lists with the page (saves an ajax round trip);
-    // the page falls back to the ajax lookups if anything fails here
+    // preload the dropdown lists with the page; the ajax lookups action is the fallback
     $rqLookups = null;
     if (isset($authConn) && $authConn) {
         $names  = rqsLookup($authConn, "NAMES");
@@ -80,8 +79,7 @@ if ($authorized != "yes") {
         }
     }
 
-    // mode=entry is the workfloor shortcut: entry form only, no grid.
-    // The plain URL is the full station view for IT/supervisors.
+    // mode=entry = the workfloor entry-only shortcut; the plain URL = the full station
     $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
     rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
@@ -91,7 +89,8 @@ if ($authorized != "yes") {
 ?>
 <!--  End Content Here -->
 <?php
-} // end authority check
+// end authority check
+}
 
 if (file_exists('EndBlock.php')) { include "EndBlock.php"; }
 ?>

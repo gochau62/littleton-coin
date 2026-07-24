@@ -97,12 +97,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { exit("Prepare failed: " . db2_stmt_errormsg() . "\n"); }
 
-    @db2_autocommit($conn, DB2_AUTOCOMMIT_OFF);   // batch commits: much faster on journaled tables
+    // batch commits: much faster on journaled tables
+    @db2_autocommit($conn, DB2_AUTOCOMMIT_OFF);
 
     $fh = fopen($up['tmp_name'], 'r');
     $row = 0; $ok = 0; $bad = 0; $t0 = microtime(true);
     while (($f = fgetcsv($fh)) !== false) {
-        if ($f === array(null)) { continue; }     // blank line
+        // blank line
+        if ($f === array(null)) { continue; }
         $row++;
         if (count($f) !== $ncol) {
             $bad++;
