@@ -1044,11 +1044,11 @@ function renderGrid() {
         if (filter && hay.indexOf(filter) < 0) { return; }
         shown++;
 
-        // stored text always; green only for a real authorizer (legacy
-        // rows can carry flag=Y with the None placeholder)
+        // any real authorizer name is green; only the None / In Process
+        // placeholders stay yellow (legacy rows carry the stored flag
+        // inconsistently, so the name text decides)
         var authName = r.RHAUTB || 'Authorization = None';
-        var isReal = r.RHAUTF === 'Y' &&
-                     authName !== 'Authorization = None' &&
+        var isReal = authName !== 'Authorization = None' &&
                      authName !== 'Authorization In Process';
         var auth = '<span class="rq-pill ' + (isReal ? 'rq-ok' : 'rq-warn') + '">' +
                    esc(authName) + '</span>';
