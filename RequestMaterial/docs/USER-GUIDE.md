@@ -25,9 +25,11 @@ no Access, no shared .mdb file, any modern browser works.
    authorizer.
 4. Fill the line sheet:
    - Click into Item # and the item list opens; type to narrow it.
-     Pick one and the description, coin date, cost and retail fill in
-     from inventory. Typing a full item
-     number and tabbing out does the same fill.
+     Pick one (click, Tab or Enter) and the description, coin date, cost
+     and retail fill in from inventory. Typing a full item number and
+     tabbing out does the same fill.
+   - Arrow keys move around the sheet like a spreadsheet: up/down between
+     rows, left/right between cells.
    - Enter hops to the next box, like the old form. Enter on the last box
      of the last line starts a new line.
    - The gray ✕ at the end of a line removes it.
@@ -52,10 +54,12 @@ only** - anything not yet returned.
 - Click a row to select it - the ▶ marker shows which requisition
   Preview Report will print.
 - Click the blue req # to open the requisition.
-- **Badge #** is editable right in the grid. Click the box for a dropdown
-  of employees (type to filter by badge or name), or type the number -
-  Enter or clicking away saves immediately. All lines of the same requisition
-  share one badge.
+- **Badge #** starts at 0 on a new requisition; the real badge is filled
+  in later. It is editable right in the grid - click the box for the
+  employee dropdown (type to filter by badge or name) or type a number.
+  Only a real badge number saves; typed name text is ignored, and saving
+  no longer jumps the page. All lines of the same requisition share one
+  badge.
 - **Return Item**: check the box and today's date fills in next to it -
   change the date if the item actually came back earlier. Nothing is
   saved yet: the return goes through on the next refresh (the Refresh

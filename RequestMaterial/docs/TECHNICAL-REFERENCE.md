@@ -8,7 +8,7 @@ Requisition Material is a web screen on the IBM i, built on the
 LCCOnline framework like the other LCC tools (same pattern as the
 Sellbrite Bulk Loader). The entry point is `Requisitions_ctl.php`. It
 runs the framework session scripts (StartBlockScriptA/B), checks
-authority (`chkAutUsr`, LCCONLINE level 50), preloads the four dropdown
+authority (`chkAutUsr`, LCCONLINE level 50), preloads the dropdown
 lists, and renders the page. After the page loads, every action goes
 through `Requisitions_ajax.php` as an AJAX request that returns JSON.
 There are no page reloads.
@@ -81,8 +81,10 @@ changed.
 **Entry form** (modal on the station, full page in `?mode=entry`) -
 legacy getEntry.php layout: header fields, then the spreadsheet-style
 line sheet (the cell is the box; the focused cell gets a slim blue
-inner outline). Item # has autofill + a type-ahead dropdown. Enter hops
-fields; Enter on the last box grows the sheet.
+inner outline). Item # has autofill + a type-ahead dropdown (opens on
+focus, filters as you type, Tab or Enter picks). Arrow keys move around
+the sheet like a spreadsheet. Enter hops fields; Enter on the last box
+grows the sheet.
 
 **View window** - legacy request.php layout; Update posts authorized-by
 + comments; per-line Returned checkboxes post immediately; Print.
