@@ -173,18 +173,18 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   border-bottom: 2px solid var(--rq-line);
   white-space: nowrap;
 }
-/* real cell borders on the station header, so the box and the column
-   separators stay put while scrolling (they belong to each th, not the
-   collapsed table). the bottom divider is an inset box-shadow as well as a
-   border, because a sticky cell can drop its bottom border mid-scroll but
-   an inset shadow travels with the cell */
+/* the station header box and column separators are drawn with box-shadow, not
+   borders, because a sticky cell drops real borders while scrolling in several
+   browsers while box-shadow travels with the cell so the black lines stay put.
+   the bottom line is an outset shadow so it paints over the rows sliding under
+   the sticky header */
 #tblGrid thead th {
-  border-top: 1px solid #333;
-  border-right: 1px solid #333;
-  border-bottom: 2px solid #333;
-  box-shadow: inset 0 -2px 0 0 #333;
+  border: none;
+  box-shadow: inset -1px 0 0 0 #333, inset 0 1px 0 0 #333, 0 2px 0 0 #333;
 }
-#tblGrid thead th:first-child { border-left: 1px solid #333; }
+#tblGrid thead th:first-child {
+  box-shadow: inset 1px 0 0 0 #333, inset -1px 0 0 0 #333, inset 0 1px 0 0 #333, 0 2px 0 0 #333;
+}
 /* clickable sort headers */
 #tblGrid thead th[data-sortkey] { cursor: pointer; user-select: none; }
 #tblGrid thead th[data-sortkey]:hover { background: #dbeee2; }
@@ -605,7 +605,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 </div>
 
 <script>
-// Requisition Material front-end logic (grid, add/entry, view, reports)
+// Requisition Material frontend logic (grid, add/entry, view, reports)
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 // RQ_MODE 'entry' is the workfloor entry only shortcut
 var RQ_MODE = '<?php echo $mode; ?>';
@@ -613,8 +613,8 @@ var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
 var gridShow = 'O';
-// header sort: key is a column field, dir 1 asc / -1 desc, null = server order
-var gridSort = { key: null, dir: 1 };
+// header sort starts on Date ascending, the order the grid opens in, so the Date column shows its up arrow right away and the first click flips it
+var gridSort = { key: 'RHRQDT', dir: 1 };
 // debounce for the Returned/All server-side filter search
 var gridSearchTimer = null;
 var lookups = null;
@@ -1179,13 +1179,8 @@ function renderGrid() {
     $('#gridBody').html(html ||
         '<tr><td colspan="10" class="rq-empty">' + emptyMsg + '</td></tr>');
 
-    // count, plus a note when Returned/All hit the 500-row server cap
-    var count = shown + ' line' + (shown === 1 ? '' : 's');
-    if (gridShow !== 'O' && shown >= 500) {
-        count += ' - showing the 500 most recent' +
-                 (searching ? ' matches' : '') + ', use Filter to narrow';
-    }
-    $('#lblCount').text(count);
+    // just the line count, the same plain readout every Show mode uses
+    $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 
     updateSortIndicators();
 }
