@@ -57,9 +57,11 @@ function rqsFetchAll($conn, $sql, $params = array()) {
     return $result;
 }
 
-// PROGRAM NAME REQSTN003S: open requisitions for the main grid
-function rqsGetOpen($conn) {
-    return rqsFetchAll($conn, "CALL REQSTN003S()");
+// PROGRAM NAME REQSTN003S: grid rows, show O open (default), R returned, A all
+function rqsGetOpen($conn, $show = 'O') {
+    $show = strtoupper(substr(trim($show), 0, 1));
+    if (!in_array($show, array('O', 'R', 'A'))) { $show = 'O'; }
+    return rqsFetchAll($conn, "CALL REQSTN003S(?)", array($show));
 }
 
 // PROGRAM NAME REQSTN004S: one requisition, header + all lines

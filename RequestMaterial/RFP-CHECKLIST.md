@@ -20,7 +20,7 @@ from `LSCDEVLIBP`, PHP as `*IFS` / `PHPSRC` from the dev web root).
 |---|---|---|
 | REQSTN001S | Insert requisition header (OUT new req#) | `Db2/REQSTN001S.PROC` |
 | REQSTN002S | Insert requisition detail line | `Db2/REQSTN002S.PROC` |
-| REQSTN003S | List open requisitions (main grid; no parameters) | `Db2/REQSTN003S.PROC` |
+| REQSTN003S | List requisitions for the main grid (INSHOW: O open, R returned, A all) | `Db2/REQSTN003S.PROC` |
 | REQSTN004S | Get one requisition (header + lines) | `Db2/REQSTN004S.PROC` |
 | REQSTN005S | Update requisition header (authorized-by, comments, badge; NULL = unchanged) | `Db2/REQSTN005S.PROC` |
 | REQSTN006S | Mark/unmark line returned (idempotent; caller-entered return date, 0 = today) | `Db2/REQSTN006S.PROC` |
@@ -42,12 +42,13 @@ is not an RFP object; the web profile needs write authority to the
 htdocs folder. If the earlier versions were already built in dev, clean
 up with:
 `DROP TABLE LSCDEVLIBP/RQSACTLOGT`,
-`DROP PROCEDURE LSCDEVLIBP/REQSTN003S(CHAR(1))`, and
+`DROP PROCEDURE LSCDEVLIBP/REQSTN003S()`, and
 `DROP PROCEDURE LSCDEVLIBP/REQSTN005S(DECIMAL, VARCHAR, VARCHAR)`, and
 `DROP PROCEDURE LSCDEVLIBP/REQSTN006S(DECIMAL, DECIMAL, CHAR)` — the
-new 003S takes no parameter, 005S grew a fourth parameter (badge) and
-006S a fourth (return date), and `OR REPLACE` does not replace across
-different parameter counts, so the old versions linger until dropped.
+new 003S grew an INSHOW CHAR(1) parameter (open/returned/all), 005S
+grew a fourth parameter (badge) and 006S a fourth (return date), and
+`OR REPLACE` does not replace across different parameter counts, so the
+old versions linger until dropped.
 
 ### IFS — `*IFS` (MD attribute `PHPSRC`), dev path `/www/seidendev/htdocs/requisitions/`
 
@@ -113,6 +114,12 @@ history if a behavior question ever comes up.
    grid's Badge # box calls REQSTN005S; it replaced the always-empty
    Returned column, which only ever applied to lines the open-only grid
    filters out anyway).
+8. The grid has a Show filter (Open / Returned / All) so returned req
+   forms can be brought back up - Access only ever showed open lines.
+   REQSTN003S takes an INSHOW parameter; returned lines display their
+   return date read-only, and the requisition view lists a Date Ret.
+   column per line (who requested it, quantity and return date are all
+   visible without touching the database).
 
 ## 5. Security actions from the legacy audit (do these regardless)
 

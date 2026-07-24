@@ -1,6 +1,6 @@
 # Requisition Material - User Guide
 
-Updated 7/23/2026
+Updated 7/24/2026
 
 Requisition Material replaces the Access "Req Station" database and the
 old request.php pages. Inventory handlers enter requisitions for material
@@ -44,9 +44,13 @@ then submit again. No half-saved requisitions.
 ## The station grid
 
 Each requisition line is two rows, like the old Access screen: the
-details on top, the description underneath. The grid shows **open lines
-only** - anything not yet returned.
+details on top, the description underneath. The grid opens on **open
+lines only** - anything not yet returned - just like Access.
 
+- **Show** dropdown: switch between **Open** (the default), **Returned**
+  and **All**. This is how you bring a returned req form back up - pick
+  Returned and it lists the lines that have been turned back in, each
+  with the date it was returned. All shows open and returned together.
 - It refreshes itself every minute (and when you come back to the tab).
   The Updated time in the corner tells you the last refresh; if it turns
   red the connection hiccupped - hit Refresh.
@@ -77,9 +81,13 @@ Authorized By and Comments.
   "Authorization = None" or "Authorization In Process" marks it not
   authorized. There is no separate authorize step - the value you pick IS
   the authorization.
+- Every line is listed here - open and returned - with a **Date Ret.**
+  column showing when each returned line came back, so a turned-in req
+  form shows who requested it, the quantities and the return dates all
+  in one place.
 - Each line has its own Returned checkbox here. These save immediately
-  and stamp today's date. This window is also the only place to
-  UN-return a line (the grid can't - returned lines aren't on it).
+  and stamp today's date. This window is also where you UN-return a line
+  - uncheck the box and it goes back to open.
 - Print gives you the requisition report for this req.
 
 ## The colors
@@ -105,9 +113,9 @@ the window closes itself when you're done - printed or cancelled.
 - The old request.php links died at cutover. Use the new shortcut; if you
   don't have it, ask IT.
 - Works in any browser now - the Firefox-only restriction is gone.
-- The grid is open lines only, but nothing is ever deleted: open any
-  requisition by its number (`?id=N` on the station link) to see all of
-  its lines, returned included.
+- Nothing is ever deleted: the Show dropdown brings returned req forms
+  back up, and opening any requisition by its number (`?id=N` on the
+  station link) shows all of its lines, returned included.
 - Change not showing up? Ctrl+F5 forces a fresh reload.
 - Blank page or an error box - that's on our end, not something you did.
   Contact IT.

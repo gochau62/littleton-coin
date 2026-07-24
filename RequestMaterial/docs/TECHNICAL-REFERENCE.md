@@ -1,6 +1,6 @@
 # Requisition Material - Technical Reference
 
-Updated 7/23/2026
+Updated 7/24/2026
 
 ## 1. Architecture
 
@@ -52,7 +52,7 @@ DYNUSRPRF = *OWNER`, built with RUNSQLSTM from QSQLSRC members.
 |---|---|---|
 | REQSTN001S | Insert header | OUT new req# via IDENTITY_VAL_LOCAL(). Kills the legacy max(req_num)+1 race. |
 | REQSTN002S | Insert one line | 12 IN parameters. |
-| REQSTN003S | Open lines for the grid | No parameters. Header JOIN detail WHERE RDRTNF='N'. |
+| REQSTN003S | Grid lines | IN INSHOW CHAR(1): O open (RDRTNF='N', the default), R returned (RDRTNF='Y'), A all. Header JOIN detail, returned lines ordered by return date. |
 | REQSTN004S | One requisition | Header LEFT JOIN all lines, ordered by line. |
 | REQSTN005S | Update header | authorized-by, comments, badge - NULL leaves a column unchanged (COALESCE), so the view window and the grid's badge box share one proc. RHAUTF derives from the authorized-by value. |
 | REQSTN006S | Mark/unmark returned | Idempotent (flag guard). INRTDT = caller-entered return date; 0 stamps today. |
@@ -74,9 +74,11 @@ description + the Return Item checkbox/date on line 2. Fixed pixel
 columns with the leftover width on Requestor; below 780px the wrap
 scrolls sideways instead of crushing. Stripe, hover and the ▶ selection
 act on the whole record (the two rows are paired by a record id). The
-Badge # box is a live input (change = save). Auto-refresh every 60s,
-plus on tab-visibility; a JSON compare skips re-renders when nothing
-changed.
+Badge # box is a live input (change = save). The Show dropdown (Open /
+Returned / All) re-queries 003S with the INSHOW code; returned lines
+render their return date read-only in place of the Return Item box.
+Auto-refresh every 60s, plus on tab-visibility; a JSON compare skips
+re-renders when nothing changed.
 
 **Entry form** (modal on the station, full page in `?mode=entry`) -
 legacy getEntry.php layout: header fields, then the spreadsheet-style
@@ -87,7 +89,9 @@ the sheet like a spreadsheet. Enter hops fields; Enter on the last box
 grows the sheet.
 
 **View window** - legacy request.php layout; Update posts authorized-by
-+ comments; per-line Returned checkboxes post immediately; Print.
++ comments; per-line Returned checkboxes post immediately and un-return
+here too; a Date Ret. column shows when each returned line came back;
+Print.
 
 **Report modals/windows** - Monthly Update (month/year dropdowns - not
 `input type=month`, which Firefox renders as a dead text box), Preview
@@ -103,7 +107,8 @@ failure calls 009S to back the whole requisition out and returns "Line N
 failed ... nothing was saved."
 
 **Grid refresh** - `loadGrid()` first submits every pending Return Item
-(006S per line, with the entered date), then pulls 003S. Checking
+(006S per line, with the entered date), then pulls 003S with the current
+Show code (open/returned/all). Checking
 Return Item only queues the return client-side (a map keyed req|line
 that survives re-renders); the refresh is what commits it - the Access
 requery behavior. A pending return with an invalid date holds the
@@ -176,6 +181,9 @@ Db2 table, which nothing read.
 6. Returns from the grid require a date (autofilled today, editable)
    and commit on refresh; the view window still stamps today directly.
 7. A failed submit backs out completely instead of half-saving.
+8. A grid Show filter (Open / Returned / All) can bring returned req
+   forms back up with their return dates - Access only ever showed open
+   lines.
 
 ## 10. Good to know
 
@@ -183,7 +191,8 @@ Db2 table, which nothing read.
   (both flagged for rotation at cutover).
 - The legacy PHP and the full Access extraction (VBA, queries, schemas,
   data) are preserved in this branch's git history.
-- The station grid shows open lines only; nothing is deleted -
-  REQSTN009S runs only as the insert back-out.
+- The station grid opens on open lines only, but the Show filter
+  surfaces returned lines too; nothing is deleted - REQSTN009S runs only
+  as the insert back-out.
 - Blank page after a copy usually means a stale or corrupted file -
   compare against git and Ctrl+F5.

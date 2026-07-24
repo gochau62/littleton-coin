@@ -73,6 +73,10 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 .rq-count { color: var(--rq-muted); font-size: .85rem; margin-left: auto; }
 .rq-auto  { color: var(--rq-muted); font-size: .85rem; user-select: none; }
+.rq-show  { color: var(--rq-muted); font-size: .85rem; user-select: none; }
+.rq-showsel { margin-left: .3rem; padding: .35rem .5rem; font-size: .85rem;
+              border: 1px solid var(--rq-line); border-radius: 6px; background: #fff;
+              color: var(--rq-text); }
 .rq-updated { color: var(--rq-muted); font-size: .8rem; }
 .rq-updated.rq-stale { color: var(--rq-red); font-weight: 700; }
 .rq-lines input.rq-bad { background: #fff5f5; }
@@ -146,6 +150,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 #tblGrid .rq-ret label { margin: 0 .35rem 0 .3rem; }
 #tblGrid .rq-retdate { width: 5.4rem; padding: .12rem .35rem; font-size: .78rem;
                        border: 1px solid var(--rq-line); border-radius: 4px; }
+#tblGrid .rq-retdone { color: var(--rq-green); font-weight: 700; font-size: .78rem; }
 #tblGrid .rq-sel { vertical-align: middle; }
 #tblGrid tbody tr.rq-r1 td { border-bottom: none; padding-bottom: .12rem; }
 #tblGrid tbody tr.rq-r1 td.rq-sel { border-bottom: 1px solid var(--rq-line); }
@@ -407,6 +412,13 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     <label class="rq-auto">
       <input type="checkbox" id="chkAutoRefresh" checked> Auto-refresh
     </label>
+    <label class="rq-show">Show
+      <select id="selShow" class="rq-showsel">
+        <option value="O" selected>Open</option>
+        <option value="R">Returned</option>
+        <option value="A">All</option>
+      </select>
+    </label>
     <input type="search" id="txtFilter" class="rq-filter"
            placeholder="Filter by req #, name, item, badge...">
     <span class="rq-count" id="lblCount"></span>
@@ -552,7 +564,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                 <th>Item#:</th><th>Location:</th><th>Date:</th><th>Description:</th>
                 <th class="rq-num">Qty:</th><th class="rq-num">Cost:</th>
                 <th class="rq-num">Retail:</th><th class="rq-num">Add. Cost</th>
-                <th>SKU To:</th><th>Returned</th>
+                <th>SKU To:</th><th>Returned</th><th>Date Ret.</th>
               </tr>
             </thead>
             <tbody id="viewLineBody"></tbody>
@@ -591,6 +603,8 @@ var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 var RQ_MODE = '<?php echo $mode; ?>';
 var gridRows = [];
 var lastGridJson = '';
+// which lines the grid shows: O open (default), R returned, A all
+var gridShow = 'O';
 var lookups = null;
 var autoTimer = null;
 // selectedReq is the grid row last clicked (Access "current record")
@@ -617,6 +631,12 @@ $(document).ready(function () {
 
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
+    // Show Open / Returned / All: re-query so returned lines can come back
+    $('#selShow').on('change', function () {
+        gridShow = $(this).val();
+        lastGridJson = '';
+        loadGrid();
+    });
     $('#txtFilter').on('input', renderGrid);
     // entry sheet in a new tab; the grid picks up the new req on refresh
     $('#btnAdd').on('click', function () {
@@ -991,7 +1011,7 @@ function attr(s) {
 // a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
     submitPendingReturns(function () {
-        postAjax({ action: 'list' }, function (resp) {
+        postAjax({ action: 'list', show: gridShow }, function (resp) {
             $('#lblUpdated').removeClass('rq-stale')
                 .text('Updated ' + new Date().toLocaleTimeString());
             var j = JSON.stringify(resp.rows);
@@ -1079,27 +1099,39 @@ function renderGrid() {
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
-        // pending (not-yet-refreshed) returns survive re-renders via the map
-        var pendKey = String(r['RHREQ#']) + '|' + String(r['RDLIN#']);
-        var pend = pendingReturns.hasOwnProperty(pendKey) ? pendingReturns[pendKey] : null;
+        // second-line right cell: an already-returned line just shows when it
+        // came back (read-only); an open line gets the Return Item checkbox
+        var retCell;
+        if (r.RDRTNF === 'Y') {
+            var rdate = fmtDate(r.RDRTDT);
+            retCell = '<span class="rq-retdone">Returned' +
+                      (rdate ? ' ' + rdate : '') + '</span>';
+        } else {
+            // pending (not-yet-refreshed) returns survive re-renders via the map
+            var pendKey = String(r['RHREQ#']) + '|' + String(r['RDLIN#']);
+            var pend = pendingReturns.hasOwnProperty(pendKey) ? pendingReturns[pendKey] : null;
+            retCell = '<input type="checkbox" class="rq-gridret"' +
+                ' data-req="' + esc(r['RHREQ#']) + '"' +
+                ' data-line="' + esc(r['RDLIN#']) + '"' +
+                (pend !== null ? ' checked' : '') + '>' +
+                '<label>Return Item:</label>' +
+                '<input type="text" class="rq-retdate" maxlength="10"' +
+                (pend !== null ? ' value="' + attr(pend) + '"' : '') + '>';
+        }
         html += '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="2"></td>' +
             '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
                 esc(r.RDDESC) + '</td>' +
-            '<td colspan="2" class="rq-ret">' +
-            '<input type="checkbox" class="rq-gridret"' +
-            ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' data-line="' + esc(r['RDLIN#']) + '"' +
-            (pend !== null ? ' checked' : '') + '>' +
-            '<label>Return Item:</label>' +
-            '<input type="text" class="rq-retdate" maxlength="10"' +
-            (pend !== null ? ' value="' + attr(pend) + '"' : '') + '>' +
+            '<td colspan="2" class="rq-ret">' + retCell +
             '</td>' +
             '</tr>';
     });
 
+    var emptyMsg = gridShow === 'R' ? 'No returned requisitions.'
+                 : gridShow === 'A' ? 'No requisitions.'
+                 : 'No open requisitions.';
     $('#gridBody').html(html ||
-        '<tr><td colspan="10" class="rq-empty">No open requisitions.</td></tr>');
+        '<tr><td colspan="10" class="rq-empty">' + emptyMsg + '</td></tr>');
     $('#lblCount').text(shown + ' line' + (shown === 1 ? '' : 's'));
 }
 
@@ -1282,6 +1314,7 @@ function openViewModal(reqNum) {
                 '<td class="rq-nobox"><input type="checkbox" class="rq-returned"' +
                 ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
                 (r.RDRTNF === 'Y' ? ' checked' : '') + '></td>' +
+                '<td>' + (r.RDRTNF === 'Y' ? fmtDate(r.RDRTDT) : '') + '</td>' +
                 '</tr>';
         });
         $('#viewLineBody').html(html);

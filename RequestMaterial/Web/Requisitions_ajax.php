@@ -50,9 +50,9 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
 
-    // main grid rows (open requisitions)
+    // main grid rows, show O open (default), R returned, A all
     case 'list':
-        $rows = rqsGetOpen($conn);
+        $rows = rqsGetOpen($conn, $_POST['show'] ?? $_GET['show'] ?? 'O');
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 

@@ -2,10 +2,11 @@
 /*                                                                   */
 /* Program Name      - REQSTN003S                                    */
 /*                                                                   */
-/* Program Narrative - List Open Requisitions (main grid).           */
-/*                     Returns header + detail rows where the line   */
-/*                     has not been returned, matching the Access    */
-/*                     frmMain qryMain recordsource.                 */
+/* Program Narrative - List Requisitions for the main grid.          */
+/*                     INSHOW picks which lines come back:           */
+/*                     O (or any other value) open lines only, the   */
+/*                     Access frmMain qryMain recordsource,          */
+/*                     R returned lines only, A all lines.           */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -27,7 +28,8 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN003S ()
+CREATE OR REPLACE PROCEDURE REQSTN003S (
+        IN INSHOW CHAR(1) )
 
         LANGUAGE SQL
         READS SQL DATA
@@ -44,8 +46,11 @@ CREATE OR REPLACE PROCEDURE REQSTN003S ()
               FROM RQSREQHDRT H
               JOIN RQSREQDTLT D
                 ON D.RDREQ# = H.RHREQ#
-             WHERE D.RDRTNF = 'N'
-             ORDER BY H.RHRQDT, H.RHRQTM, H.RHREQ#, D.RDLIN#;
+             WHERE ( INSHOW = 'A' )
+                OR ( INSHOW = 'R' AND D.RDRTNF = 'Y' )
+                OR ( INSHOW NOT IN ('A', 'R') AND D.RDRTNF = 'N' )
+             ORDER BY D.RDRTNF, D.RDRTDT DESC,
+                      H.RHRQDT, H.RHRQTM, H.RHREQ#, D.RDLIN#;
 
         OPEN C1;
     END;
