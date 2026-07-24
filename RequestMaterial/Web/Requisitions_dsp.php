@@ -1852,19 +1852,12 @@ function printHtml(innerHtml, title) {
         '.rpt-nametot{background:#f2f5fc;border-top-color:#4a5c93;}' +
         '.rpt-grand{margin-top:5px;border-top:2px solid #17306e;background:#eaeff9;}' +
         '.rpt-stamp{margin-top:12px;color:#5b6371;font-size:10px;}' +
-        // the preview toolbar sits at the top of the window and is hidden on the printout itself
-        '.rpt-bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #d0d5de;padding:8px 0 12px;margin-bottom:14px;display:flex;gap:10px;}' +
-        '.rpt-bar button{font:600 12px Arial,sans-serif;padding:6px 16px;border-radius:6px;border:1px solid #17306e;cursor:pointer;}' +
-        '.rpt-bar .pbtn{background:#17306e;color:#fff;}.rpt-bar .cbtn{background:#fff;color:#17306e;}' +
-        '@media print{.rpt-bar{display:none;}}' +
-        '</style></head><body>' +
-        // open as a preview the station stays usable behind, since the blocking print dialog only appears when the user clicks Print rather than the moment the window opens
-        '<div class="rpt-bar"><button type="button" class="pbtn" onclick="window.print()">Print</button>' +
-        '<button type="button" class="cbtn" onclick="window.close()">Close</button></div>' +
-        innerHtml +
+        '</style></head><body>' + innerHtml +
+        // the popup prints itself on load and closes on afterprint, so the station JS thread never calls print and only the browser print dialog is on screen, which frees itself the moment the user prints or cancels
+        '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
+        'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
         '</body></html>');
     w.document.close();
-    w.focus();
 }
 
 

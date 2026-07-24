@@ -105,12 +105,12 @@ the current month automatically) and Preview Report. Both add a Returned
 column (green return date, or a dash while still out); the Preview lists
 every line now, not just unreturned, and the Monthly totals are compact
 single ruled lines so a busy month stays to few pages. The report opens
-in a preview window with its own Print and Close buttons (hidden on the
-printout via `@media print`) and `print-color-adjust: exact` so the band
-and totals backgrounds actually render on paper. It no longer auto fires
-the print dialog: the browser modal print dialog would lock the whole
-station the moment the report opened, so the user prints when ready
-instead.
+in a popup that prints itself on load and closes after, with
+`print-color-adjust: exact` so the band and totals backgrounds render on
+paper. Printing always brings up the browser modal print dialog, which
+briefly locks the browser until the user prints or cancels (unavoidable
+from a web page); the popup carries the print call so the station's own
+JS thread is never the one blocked.
 
 ## 5. Workflows
 
