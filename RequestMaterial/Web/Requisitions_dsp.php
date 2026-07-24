@@ -399,9 +399,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rpt-mu .rq-num { text-align: right; font-variant-numeric: tabular-nums; }
 .rpt-mu tr.rpt-line td { border-bottom: 1px solid #dce1ea; }
 .rpt-mu tr.rpt-alt td { background: #f6f8fc; }
-.rpt-mu tr.rpt-name td { font-weight: 700; color: #17306e; font-size: .88rem;
-                         background: #eef2fb; padding: 4px 8px; border-radius: 4px; }
-.rpt-mu tr.rpt-reqhd td { color: #5b6371; padding-top: 4px; font-weight: 600; }
+.rpt-mu tr.rpt-name td { font-weight: 700; color: #17306e; font-size: .98rem;
+                         background: #e4eafb; padding: 7px 8px;
+                         border-top: 2px solid #17306e; border-bottom: 1px solid #c3ccdf; }
+.rpt-mu tr.rpt-reqhd td { color: #5b6371; padding-top: 5px; font-weight: 600; }
 .rpt-mu tr.rpt-reqhd .rpt-rq { color: #17306e; font-weight: 700; }
 .rpt-mu tr.rpt-cmt td { color: #5b6371; font-size: .78rem; padding-top: 1px; }
 .rpt-ret .rpt-y { color: #1c7a4c; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -1814,7 +1815,7 @@ function previewReport() {
 function printHtml(innerHtml, title) {
     var w = window.open('', '_blank');
     w.document.write('<html><head><title>' + title + '</title><style>' +
-        'body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#1b1d21;}' +
+        'body{font-family:Arial,sans-serif;font-size:11px;margin:24px;color:#1b1d21;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
         'h3{margin:0;}table{width:100%;border-collapse:collapse;}td,th{text-align:left;}' +
         '.rq-num{text-align:right;font-variant-numeric:tabular-nums;}' +
         // shared serif navy italic labels and the green or dash Returned cell
@@ -1840,7 +1841,7 @@ function printHtml(innerHtml, title) {
         '.rpt-mu thead th{color:#17306e;font-weight:bold;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid #4a5c93;padding-bottom:4px;}' +
         '.rpt-mu tr.rpt-line td{border-bottom:1px solid #dce1ea;}' +
         '.rpt-mu tr.rpt-alt td{background:#f6f8fc;}' +
-        '.rpt-mu tr.rpt-name td{font-weight:bold;color:#17306e;font-size:12px;background:#eef2fb;padding:4px 8px;}' +
+        '.rpt-mu tr.rpt-name td{font-weight:bold;color:#17306e;font-size:13px;background:#e4eafb;padding:7px 8px;border-top:2px solid #17306e;border-bottom:1px solid #c3ccdf;}' +
         '.rpt-mu tr.rpt-reqhd td{color:#5b6371;padding-top:4px;font-weight:bold;}' +
         '.rpt-mu tr.rpt-reqhd .rpt-rq{color:#17306e;}' +
         '.rpt-mu tr.rpt-cmt td{color:#5b6371;font-size:10px;padding-top:1px;}' +
@@ -1851,12 +1852,19 @@ function printHtml(innerHtml, title) {
         '.rpt-nametot{background:#f2f5fc;border-top-color:#4a5c93;}' +
         '.rpt-grand{margin-top:5px;border-top:2px solid #17306e;background:#eaeff9;}' +
         '.rpt-stamp{margin-top:12px;color:#5b6371;font-size:10px;}' +
-        '</style></head><body>' + innerHtml +
-        // the window prints itself and closes on afterprint; print() from the station's own thread would block the app while the dialog is up
-        '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};' +
-        'window.onafterprint=function(){window.close();};</scr' + 'ipt>' +
+        // the preview toolbar sits at the top of the window and is hidden on the printout itself
+        '.rpt-bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #d0d5de;padding:8px 0 12px;margin-bottom:14px;display:flex;gap:10px;}' +
+        '.rpt-bar button{font:600 12px Arial,sans-serif;padding:6px 16px;border-radius:6px;border:1px solid #17306e;cursor:pointer;}' +
+        '.rpt-bar .pbtn{background:#17306e;color:#fff;}.rpt-bar .cbtn{background:#fff;color:#17306e;}' +
+        '@media print{.rpt-bar{display:none;}}' +
+        '</style></head><body>' +
+        // open as a preview the station stays usable behind, since the blocking print dialog only appears when the user clicks Print rather than the moment the window opens
+        '<div class="rpt-bar"><button type="button" class="pbtn" onclick="window.print()">Print</button>' +
+        '<button type="button" class="cbtn" onclick="window.close()">Close</button></div>' +
+        innerHtml +
         '</body></html>');
     w.document.close();
+    w.focus();
 }
 
 
