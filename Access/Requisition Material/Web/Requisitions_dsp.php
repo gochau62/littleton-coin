@@ -1126,6 +1126,8 @@ function openAddModal() {
     $('#addAuthBy').prop('selectedIndex', 0);
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
+    // focus the first cell without popping its item menu
+    sheetNavMove = true;
     $('#lineBody input:first').trigger('focus');
 }
 
