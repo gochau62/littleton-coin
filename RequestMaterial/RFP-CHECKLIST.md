@@ -79,7 +79,13 @@ shortcut and Access station link keeps working:
   permanently, so a permanent code would keep redirecting users even
   after the file was put back during a rollback.
 - `RQS_NEW_APP` at the top is the only line to change when the target
-  moves between instances.
+  moves between instances. It currently holds the full address
+  `http://lcc1:8068/LCCOnline`.
+- Note the old folder is reached on `lcc1.littletoncoin.com` while the
+  target is written as `lcc1`. Those are different host names to a
+  browser, and the sign-on cookie is stored per host name, so a user may
+  be asked to sign in once after landing. Pointing both at the same host
+  name, or setting `RQS_NEW_APP` to just `/LCCOnline`, avoids that.
 - `request.php?shimtest=1` prints where it *would* send you instead of
   redirecting, which is how the redirect gets verified before anyone is
   pointed at it.
@@ -104,12 +110,9 @@ on an instance with short tags enabled. The replacements use the full
 
 ### Testing the redirect before cutover
 
-The old page and the new screen are on the same host and port, so the
-redirect target is written as a path rather than a full address. That
-keeps the browser on whatever host name the user typed, which matters
-because the sign on cookie does not travel between host names: sending
-someone from `lcc1.littletoncoin.com` to `lcc1` would appear to sign them
-out. Checking it needs no change to production:
+The redirect target is the full address of the new screen, set in
+`RQS_NEW_APP` at the top of each file:
+`http://lcc1:8068/LCCOnline`. Checking it needs no change to production:
 
 1. Put the new `request.php` on the **dev** copy of the old folder.
 2. Open `request.php?shimtest=1` in a browser. It prints the address it

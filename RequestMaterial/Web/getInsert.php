@@ -20,7 +20,7 @@
 // it is stopped here because a browser tab left open on the old form could still post to it after cutover, and that requisition would land in the old database where nobody is looking
 // the entry is deliberately NOT saved and NOT forwarded, because a silent redirect would let someone believe their work was filed when it was not
 
-define('RQS_NEW_APP', '/LCCOnline');
+define('RQS_NEW_APP', 'http://lcc1:8068/LCCOnline');
 $target = RQS_NEW_APP . '/Requisitions_ctl.php?mode=entry';
 
 $safe = htmlspecialchars($target, ENT_QUOTES);

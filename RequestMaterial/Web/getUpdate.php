@@ -19,7 +19,7 @@
 // this was the authorize and comment save of the old view page and it wrote straight into the old database
 // it is stopped here for the same reason as the old insert: a tab left open could still post to it after cutover and quietly change a record nobody is reading
 
-define('RQS_NEW_APP', '/LCCOnline');
+define('RQS_NEW_APP', 'http://lcc1:8068/LCCOnline');
 
 // carry the requisition number through when the old page sent one, so the new screen opens the same requisition
 $req = 0;

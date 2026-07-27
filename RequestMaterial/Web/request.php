@@ -19,10 +19,9 @@
 // this file replaces the old requisition entry page in place, so every saved bookmark and desktop shortcut keeps working and simply lands on the new screen
 // it must stay at the old address; the old page body was removed because the browser never gets far enough to render anything
 
-// the one line to change if the new screen ever moves, with no trailing slash
-// this is deliberately a path and not a full address, so the browser stays on whatever host name the user typed
-// a full address here would move them to a different host name, and the sign on cookie does not travel between host names, so they would be asked to sign in again
-define('RQS_NEW_APP', '/LCCOnline');
+// the full address of the new screen, with no trailing slash, and the one line to change if it ever moves
+// if anyone lands on the sign on page instead of the form, it is because they reached this file on a different host name than the one below and the sign on cookie does not follow them across host names
+define('RQS_NEW_APP', 'http://lcc1:8068/LCCOnline');
 
 // a requisition number on the old link opens that same requisition on the new screen, anything else goes to the work floor entry form
 $id = 0;
