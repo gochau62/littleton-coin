@@ -1,0 +1,56 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN005S                                    */
+/*                                                                   */
+/* Program Narrative - Update a Requisition header: authorized-by,   */
+/*                     comments and DataEntry badge. A NULL          */
+/*                     parameter leaves that column unchanged (the   */
+/*                     view window sends authby+comments, the grid's */
+/*                     badge box sends badge only). The authorized   */
+/*                     flag is derived - 'Y' when a real person is   */
+/*                     named, 'N' for the "Authorization = None" /   */
+/*                     "In Process" placeholder values.              */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN005S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN005S (
+        IN INREQ#  DECIMAL(9, 0),
+        IN INAUTB  VARCHAR(50),
+        IN INCMNT  VARCHAR(500),
+        IN INBDGE  VARCHAR(10)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        UPDATE RQSREQHDRT
+           SET RHAUTB = COALESCE(INAUTB, RHAUTB),
+               RHCMNT = COALESCE(INCMNT, RHCMNT),
+               RHBDGE = COALESCE(INBDGE, RHBDGE),
+               RHAUTF = CASE WHEN COALESCE(INAUTB, RHAUTB) = ''
+                              OR  COALESCE(INAUTB, RHAUTB) = 'Authorization = None'
+                              OR  COALESCE(INAUTB, RHAUTB) = 'Authorization In Process'
+                             THEN 'N' ELSE 'Y'
+                        END
+         WHERE RHREQ# = INREQ#;
+    END;

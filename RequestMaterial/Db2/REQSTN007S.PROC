@@ -1,0 +1,125 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN007S                                    */
+/*                                                                   */
+/* Program Narrative - The one lookup procedure. INTYPE picks the    */
+/*                     list:                                         */
+/*                       AREACODE/AREATYPE/NAMES/AUTHBY - active     */
+/*                         rows of that type from RQSCODEFLT         */
+/*                       BADGE - live active-employee list (badge #  */
+/*                         + name) from the production employee      */
+/*                         file; always current, nothing to seed     */
+/*                       ITEM - entry-form autofill for INKEY:       */
+/*                         description and coin year from the        */
+/*                         ITMMSTP item master, last-used cost,      */
+/*                         retail and coin-date string from          */
+/*                         requisition history (the master carries   */
+/*                         no pricing)                               */
+/*                       ITEMSRCH - type-ahead search over the       */
+/*                         ITMMSTP item master (every inventory      */
+/*                         item, not just previously requisitioned) */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN007S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN007S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(16)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT CDCODE, CDDESC
+              FROM RQSCODEFLT
+             WHERE CDTYPE = INTYPE
+               AND CDACTV = 'Y'
+             ORDER BY CDDESC, CDCODE;
+
+        -- ITEM autofill: description + coin year from the item master,
+        -- last-used cost/retail/coin-date string from history (the
+        -- master has no pricing). Falls back to history alone for
+        -- legacy items that are not on the master.
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT COALESCE(I.IIDESC, H.RDDESC) AS RDDESC,
+                   COALESCE(H.RDCNDT,
+                            TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))),
+                            '') AS RDCNDT,
+                   COALESCE(H.RDCOST, 0) AS RDCOST,
+                   COALESCE(H.RDRETL, 0) AS RDRETL
+              FROM (VALUES 1) X (N)
+              LEFT JOIN LSCPRDLIB/ITMMSTP I
+                ON I.IISKU# = INKEY
+              LEFT JOIN LATERAL
+                   (SELECT D.RDDESC, D.RDCNDT, D.RDCOST, D.RDRETL
+                      FROM RQSREQDTLT D
+                     WHERE D.RDITEM = INKEY
+                     ORDER BY D.RDREQ# DESC, D.RDLIN# DESC
+                     FETCH FIRST 1 ROW ONLY) H
+                ON 1 = 1
+             WHERE I.IISKU# IS NOT NULL
+                OR H.RDDESC IS NOT NULL;
+
+        -- ITEMSRCH: type-ahead over the item master, so every inventory
+        -- item is findable; each hit enriched with its last-used
+        -- cost/retail from requisition history
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT I.IISKU# AS RDITEM,
+                   I.IIDESC AS RDDESC,
+                   COALESCE(H.RDCNDT,
+                            TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))),
+                            '') AS RDCNDT,
+                   COALESCE(H.RDCOST, 0) AS RDCOST,
+                   COALESCE(H.RDRETL, 0) AS RDRETL
+              FROM LSCPRDLIB/ITMMSTP I
+              LEFT JOIN LATERAL
+                   (SELECT D.RDCNDT, D.RDCOST, D.RDRETL
+                      FROM RQSREQDTLT D
+                     WHERE D.RDITEM = I.IISKU#
+                     ORDER BY D.RDREQ# DESC, D.RDLIN# DESC
+                     FETCH FIRST 1 ROW ONLY) H
+                ON 1 = 1
+             WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) || '%'
+             ORDER BY I.IISKU#
+             FETCH FIRST 200 ROWS ONLY;
+
+        -- BADGE: live active employees from the production employee
+        -- file - the badge dropdown is always current, nothing to seed
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
+                   TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
+              FROM LSCPRDLIB/XEMPLOYP E
+             WHERE E.LEESTAT = 'A'
+             ORDER BY 2, 1;
+
+        IF INTYPE = 'ITEM' THEN
+            OPEN C2;
+        ELSEIF INTYPE = 'ITEMSRCH' THEN
+            OPEN C3;
+        ELSEIF INTYPE = 'BADGE' THEN
+            OPEN C4;
+        ELSE
+            OPEN C1;
+        END IF;
+    END;
