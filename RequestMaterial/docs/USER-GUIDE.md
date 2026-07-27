@@ -16,65 +16,94 @@ install and no database file to open.
 
 ## Entering a requisition
 
-1. Pick your name from the **Requestor** list. The date fills itself in,
-   you never touch it.
-2. Set **Rush** to Yes or No.
-3. Pick the **Area Code** and **Area Type**. Leave Authorized By alone
-   unless you already have an authorizer.
-4. Fill in the lines. Click into **Item #** and the item list opens: type
-   to narrow it, then pick with a click, Tab or Enter, and the
-   description, coin date, cost and retail fill in for you. Arrow keys
-   move around the sheet like a spreadsheet, Enter jumps to the next box,
-   and Enter on the last box starts a new line. The gray X removes a line.
-5. Add **Comments** if you have any.
-6. Press **Insert**. You get the new requisition number back and a fresh
-   form.
+The entry form is the whole job for most people: four steps, top to
+bottom, and you are done.
 
-If a box turns red, fix it before submitting: quantity has to be a number
-above zero, and the dollar boxes have to be numbers. If the save fails,
-**nothing is saved** and the message tells you which line to fix. There
-is no such thing as a half saved requisition.
+### Step 1: Say who is asking
+
+Five boxes across the top describe the whole requisition. You only touch
+four of them.
+
+1. **Requestor:** pick your name from the list.
+2. **Date:** fills itself in and keeps ticking. You never touch it.
+3. **Rush:** Yes or No.
+4. **Area Code** and **Area Type:** where the material is going.
+5. **Authorized By:** leave it alone unless you already have an
+   authorizer. Someone can set it later.
+
+### Step 2: Add the item lines
+
+The lines behave like a spreadsheet, so you can stay on the keyboard the
+whole way through.
+
+- Click into **Item #** and the item list opens. Type to narrow it, then
+  pick with a click, Tab or Enter.
+- Picking an item fills the description, coin date, cost and retail for
+  you. Typing a full item number and tabbing out does the same thing.
+- **Arrow keys** move around the sheet. Up and down change rows, left and
+  right move between boxes.
+- **Enter** jumps to the next box, and Enter on the last box starts a new
+  line.
+- The gray **X** at the end of a line removes it.
+
+If an item is not in the list it is not in inventory under that number.
+Check the number before you type it in by hand.
+
+### Step 3: Watch the colors
+
+- **Red box:** fix this before you submit. Quantity has to be a number
+  above zero, and the dollar boxes have to be numbers.
+- Everything else: you are fine to submit.
+
+### Step 4: Insert
+
+Add **Comments** if you have any, then press **Insert**. You get the new
+requisition number back and a fresh blank form.
+
+If the save fails, **nothing at all is saved** and the message names the
+line to fix. There is no such thing as a half saved requisition, so fix
+that line and submit again.
 
 ## The station grid
 
-Each requisition line takes two rows: the details on top, the description
-underneath. The grid opens on **open lines only**, meaning anything not
-yet returned.
+This is the supervisor view. Each requisition line takes two rows: the
+details on top, the description underneath. It opens on **open lines
+only**, meaning anything not yet returned.
 
-- **Show** switches between **Open**, **Returned** and **All**. This is
+- **Show:** switches between **Open**, **Returned** and **All**. This is
   how you bring a returned req form back up and see when it came back.
   Returned and All list the 500 most recent, so use Filter to reach older
   ones.
-- **Filter** narrows the grid by req number, name, item or badge. On
+- **Filter:** narrows the grid by req number, name, item or badge. On
   Returned and All it searches the whole history, not just what is on
   screen.
-- **Sort** by clicking any column heading. Click it again to flip the
-  direction, and the small arrow shows which way. The grid starts on Date
+- **Sort:** click any column heading, and click it again to flip the
+  direction. The small arrow shows which way. The grid starts on Date
   with the newest first.
-- **Badge #** can be edited right in the grid. Click the box for the
-  employee list or type a number. New requisitions start at 0 and someone
-  fills in the real badge later.
-- **Return Item** puts today's date beside the tick box. Change the date
-  if the material actually came back earlier. Nothing is saved until the
-  next refresh, so untick the box to cancel.
-- Click a row to select it. The marker shows which requisition **Preview
-  Report** will print.
-- Click the blue **req number** to open that requisition.
-- The grid refreshes itself every minute. If the Updated time turns red
-  the connection hiccupped, so press **Refresh**.
+- **Badge #:** edit it right in the grid. Click the box for the employee
+  list or type a number. New requisitions start at 0 and someone fills in
+  the real badge later.
+- **Return Item:** ticking it puts today's date beside the box. Change
+  the date if the material actually came back earlier. Nothing is saved
+  until the next refresh, so untick the box to cancel.
+- **Refresh:** the grid also refreshes itself every minute. If the
+  Updated time turns red the connection hiccupped, so press it yourself.
+- **Clicking a row** selects it, and the marker shows which requisition
+  Preview Report will print. **Clicking the blue req number** opens that
+  requisition.
 
 ## Opening a requisition
 
 Clicking the blue req number opens the requisition window.
 
-- Pick a name under **Authorized By** and press **Update**. Picking a real
+- **Authorized By:** pick a name and press **Update**. Picking a real
   person is what marks it authorized, there is no separate approval step.
-- Every line is listed, open and returned, with a **Date Ret.** column. A
-  turned in form therefore shows who requested it, how much, and when it
-  came back, all in one place.
-- Each line has its own **Returned** tick box that saves straight away.
+- **Date Ret.:** every line is listed, open and returned, with the date it
+  came back. A turned in form therefore shows who requested it, how much,
+  and when it came back, all in one place.
+- **Returned:** each line has its own tick box that saves straight away.
   This window is also the only place to undo a return.
-- **Print** gives you the paper copy of this requisition.
+- **Print:** the paper copy of this requisition.
 
 ## What the colors mean
 
@@ -82,6 +111,8 @@ Clicking the blue req number opens the requisition window.
 - **Green** pill: a real authorizer's name is on it.
 - **Red RUSH** pill: the requisition was marked rush.
 - **Red box** on the entry sheet: fix that value before you submit.
+- **Green date** in the Returned column: the date that line came back. A
+  dash means it is still out.
 
 ## Reports
 

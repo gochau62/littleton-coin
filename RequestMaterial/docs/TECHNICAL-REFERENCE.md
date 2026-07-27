@@ -207,13 +207,32 @@ archived for multi year audit history.
 8. The Show filter can bring returned req forms back up with their return
    dates, which the old screen could never do.
 
-## 10. Good to know
+## 10. Things not to do
+
+- **Never add a parameter to a procedure without dropping the old
+  signature.** `CREATE OR REPLACE` leaves the previous overload in place
+  and the web profile may keep resolving to it, so the change appears to
+  do nothing.
+- **Never hardcode the library in source.** The members are promoted
+  between libraries, and a hardcoded name breaks that.
+- **Never point the activity log at the docroot.** The web profile cannot
+  write there, and because the write is suppressed the file simply never
+  appears.
+- **Never lift the 500 row cap on Returned and All.** Roughly 49,000 of
+  the 50,000 detail lines are returned, and drawing them all locks up the
+  browser. Use the Filter search to reach older ones instead.
+- **Never use REQSTN009S as a user facing delete.** It exists only to back
+  out a half written insert. The old system had no delete either, and
+  returning a line is what takes it off the grid.
+
+## 11. Good to know
 
 - The two passwords found in the old system are flagged for rotation at
   cutover. They were stored in plain text where anyone with the file
   could read them.
 - The station grid opens on open lines only, but the Show filter surfaces
-  returned lines too. Nothing is deleted, and REQSTN009S runs only as the
-  insert back out.
+  returned lines too. Nothing is ever deleted.
 - A blank page after a copy usually means a stale or corrupted file, so
   recopy it and press Ctrl+F5.
+- SQL0551 on a procedure call means the web profile is missing authority
+  to the library, which is a GRTOBJAUT, not a code problem.
