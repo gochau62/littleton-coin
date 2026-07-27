@@ -41,9 +41,14 @@ if (isset($_GET['shimtest'])) {
 }
 
 // 302 and not 301 on purpose: a browser remembers a 301 forever, so a permanent code would keep sending people to the new screen even after this file was put back
-header('Location: ' . $target, true, 302);
+if (!headers_sent()) {
+    header('Location: ' . $target, true, 302);
+}
 
-// a plain link for the rare browser that ignores the redirect header
-echo '<html><body>This page has moved. <a href="' . htmlspecialchars($target, ENT_QUOTES) . '">Open the requisition form</a>.</body></html>';
+// the header above is the normal path, but if anything printed before this point the header is ignored, so the page also carries a meta refresh and a script that move the browser anyway
+$safe = htmlspecialchars($target, ENT_QUOTES);
+echo '<html><head><meta http-equiv="refresh" content="0;url=' . $safe . '">' .
+     '<script>window.location.replace(' . json_encode($target) . ');</script></head>' .
+     '<body>This page has moved. <a href="' . $safe . '">Open the requisition form</a>.</body></html>';
 exit;
 ?>
