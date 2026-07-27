@@ -201,7 +201,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     <b><?php echo ini_get('upload_max_filesize'); ?></b>, post_max_size =
     <b><?php echo ini_get('post_max_size'); ?></b>. The detail CSV is ~5&nbsp;MB -
     if the limit shows smaller, IT needs to raise it (or use the CPYFRMIMPF
-    route in Data/README.md).
+    route from the command line).
   </p>
 </div>
 </body></html>
