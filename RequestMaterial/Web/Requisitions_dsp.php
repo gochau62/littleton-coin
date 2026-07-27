@@ -20,9 +20,8 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 ?>
 
 <style>
-/* all the styling for this screen lives here, not in a shared stylesheet */
+/* Requisition Material styling - inline: the display owns everything visual */
 :root {
-  /* one place for the house colors, so every green and blue on the screen matches */
   --rq-green-dk: #1C4532;
   --rq-green:    #2e8b57;
   --rq-green-hv: #1e6e43;
@@ -44,7 +43,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   padding: 0 0 2rem 0;
 }
 
-/* dark green title bar, with the signed in user and the clock on the right */
+/* ----- top bar ----- */
 .rq-topbar {
   display: flex;
   align-items: center;
@@ -56,7 +55,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
 .rq-topbar-right { display: flex; gap: 1rem; font-size: .85rem; opacity: .9; }
 
-/* strip above the grid: action buttons, the Show list, and the filter box */
+/* ----- toolbar ----- */
 .rq-toolbar {
   display: flex;
   align-items: center;
@@ -82,7 +81,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-lines input.rq-bad { background: #fff5f5; }
 .rq-lines td:has(input.rq-bad) { outline: 2px solid var(--rq-red); outline-offset: -2px; }
 
-/* typeahead list that drops under the item number and badge boxes */
+/* ----- item type-ahead dropdown ----- */
 .rq-suggest {
   position: fixed;
   z-index: 200;
@@ -98,7 +97,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-suggest div b { color: var(--rq-blue); }
 .rq-suggest div.active, .rq-suggest div:hover { background: var(--rq-accent); }
 
-/* white pill buttons, used on the toolbar and inside the popup windows */
+/* ----- buttons ----- */
 .rq-btn {
   display: inline-flex;
   align-items: center;
@@ -113,7 +112,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   font-weight: 700;
   cursor: pointer;
 }
-/* hover only recolors the outline and text, so the plain button stays white */
+/* ghost hover, same as the Sellbrite buttons */
 .rq-btn:hover { border-color: var(--rq-blue); color: var(--rq-blue); }
 .rq-btn-primary {
   background: var(--rq-blue);
@@ -129,7 +128,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-btn-green:hover { background: var(--rq-green-hv); border-color: var(--rq-green-hv); color: #fff; }
 .rq-btn-ghost { border-style: dashed; color: var(--rq-muted); margin: .5rem 0; }
 
-/* the grid sits in a rounded white card and scrolls inside it, header staying put */
+/* ----- card + grid ----- */
 .rq-card {
   background: #fff;
   border: 1px solid var(--rq-line);
@@ -139,7 +138,8 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 }
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
-/* fixed column widths; borders stay uncollapsed so the frozen header keeps its lines */
+/* frmMain-style two-line records: fixed pixel columns, Requestor flexes; below 780px the wrap scrolls */
+/* separate borders (not collapsed) so the sticky header keeps its lines while scrolling, which Firefox drops in collapse mode */
 #tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem;
            border-collapse: separate; border-spacing: 0; }
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -155,7 +155,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 #tblGrid tbody tr.rq-r1 td.rq-sel { border-bottom: 1px solid var(--rq-line); }
 #tblGrid tbody tr.rq-r2 td { padding-top: 0; }
 #tblGrid .rq-desc { color: var(--rq-muted); font-size: .82rem; }
-/* striping, hover and selection cover the whole record, both of its rows */
+/* stripe / hover / select the whole record (both lines), not one row */
 #tblGrid tbody tr { background: #fff; }
 #tblGrid tbody tr.rq-alt { background: #f7faf8; }
 #tblGrid tbody tr.rq-hov { background: var(--rq-accent); }
@@ -172,7 +172,11 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
   border-bottom: 2px solid var(--rq-line);
   white-space: nowrap;
 }
-/* shadows, not borders, so the frozen header keeps its lines and paints over the rows */
+/* the station header box and column separators are drawn with box-shadow, not
+   borders, because a sticky cell drops real borders while scrolling in several
+   browsers while box-shadow travels with the cell so the black lines stay put.
+   the bottom line is an outset shadow so it paints over the rows sliding under
+   the sticky header */
 #tblGrid thead th {
   border: none;
   box-shadow: inset -1px 0 0 0 #333, inset 0 1px 0 0 #333, 0 2px 0 0 #333;
@@ -203,7 +207,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                      border: 1px solid var(--rq-line); border-radius: 4px; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
-/* the small arrow that opens the employee list, like the old Access badge box */
+/* the combo-style dropdown arrow, like the Access Badge#: box */
 .rq-badgedd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
               border: 0; background: none; padding: 0 .15rem; line-height: 1;
               font-size: .7rem; color: var(--rq-muted); cursor: pointer; }
@@ -213,7 +217,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-num { text-align: right; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
-/* small colored labels in the Authorized and Rush columns */
+/* ----- status pills ----- */
 .rq-pill {
   display: inline-block;
   padding: .1rem .55rem;
@@ -226,7 +230,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-warn     { background: #fdf0dd; color: var(--rq-amber); }
 .rq-rushpill { background: #ffd1d1; color: var(--rq-red); }
 
-/* modals: the shaded overlay and the white window that add, view and report all share */
+/* ----- modals ----- */
 .rq-overlay {
   position: fixed;
   inset: 0;
@@ -276,7 +280,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-x:hover { color: var(--rq-red); }
 .rq-linedel { font-size: 1rem; }
 
-/* labels, boxes and the Rush choice on the new requisition form */
+/* ----- add / view forms ----- */
 .rq-formrow {
   display: flex;
   gap: 1rem;
@@ -309,7 +313,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                     align-items: center; font-size: .9rem; color: var(--rq-text); }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
-/* line grid looks like a spreadsheet: the cell draws the box, the input shows none */
+/* spreadsheet sheet: the cell is the box, the input is invisible */
 .rq-lines { table-layout: fixed; border-collapse: collapse; }
 .rq-lines th { padding: .3rem .45rem; }
 .rq-lines tbody td {
@@ -324,7 +328,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   outline: 2px solid var(--rq-blue);
   outline-offset: -2px;
 }
-/* last column is the remove line button, so it gets no box and no shading */
+/* the ✕ column */
 .rq-lines tbody td:last-child {
   border: none;
   background: none;
@@ -345,7 +349,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-comments { margin-top: .9rem; }
 .rq-comments input { width: 100%; }
 
-/* the view window keeps the boxed, stacked look of the old requisition screen */
+/* ----- legacy-style requisition view ----- */
 .rq-lgcy { font-size: .9rem; }
 .rq-lgcyrow { margin: .3rem 0; display: flex; align-items: center; }
 .rq-lgcyrow label { min-width: 118px; color: var(--rq-text); }
@@ -368,15 +372,16 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                          background: #fff; padding: .2rem .45rem; }
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
-/* entry only mode: the work floor form fills the page and cannot be closed */
+/* ----- entry-only mode (workfloor shortcut ?mode=entry) ----- */
+/* the entry form IS the page and cannot be dismissed (old request.php) */
 .rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x,
 .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
-/* wider window in entry mode so every column of the line sheet fits */
+/* room for the full sheet */
 .rq-entry .rq-modal-wide { max-width: 1280px; }
 
-/* monthly report: cleaner layout, but the text sizes match the old printed report */
+/* ----- monthly report: modernized open layout, same text sizes as the printed Access sample ----- */
 #rptMonthSel, #rptYearSel { padding: .35rem .5rem; border: 1px solid var(--rq-line);
                             border-radius: 6px; background: #fff; font-size: .9rem; }
 .rpt-stamp { margin-top: .75rem; color: var(--rq-muted); font-size: .8rem; }
@@ -408,7 +413,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rpt-totv .rpt-ital { margin-right: .3rem; }
 .rpt-nametot { background: #f2f5fc; border-top-color: #4a5c93; }
 .rpt-grand { margin-top: 5px; border-top: 2px solid #17306e; background: #eaeff9; }
-/* the surrounding page puts a line on every table cell, so the report block sets its own */
+/* the report modal lives inside the LCCOnline framework page, whose global table styling draws a gridline on every cell; these id scoped rules outrank it so the on screen preview matches the clean printed layout exactly */
 #rptBody .rpt-mu th, #rptBody .rpt-mu td { border: 0; background: none; }
 #rptBody .rpt-mu thead th { border-bottom: 1.5px solid #4a5c93; }
 #rptBody .rpt-mu tr.rpt-line td { border-bottom: 1px solid #dce1ea; }
@@ -450,7 +455,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
   <div class="rq-card">
     <div class="rq-tablewrap">
-      <!-- compact fixed pixel columns with the leftover width going to Requestor, so nothing gets crushed -->
+      <!-- two-line records like Access frmMain: fields on line 1; description and the Return Item checkbox on line 2. Columns are compact fixed pixels (like the Access form) with the leftover width going to Requestor, so nothing gets crushed. -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
           <col style="width:22px"><col style="width:58px"><col style="width:88px">
@@ -479,7 +484,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     </div>
   </div>
 
-  <!-- Add Requisition window, standing in for the old entry page -->
+  <!-- ============ Add Requisition modal (replaces getEntry.php) ============ -->
   <div class="rq-overlay" id="mdlAdd" hidden>
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
@@ -488,7 +493,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       </div>
 
       <div class="rq-modal-body">
-        <!-- requestor, date, rush and the area choices that apply to the whole requisition -->
+        <!-- header fields laid out like the legacy getEntry.php form -->
         <div class="rq-formrow">
           <label>Requestor:
             <select id="addName"></select>
@@ -549,7 +554,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     </div>
   </div>
 
-  <!-- View and Update window, doing the job of the old detail and update pages -->
+  <!-- ============ View / Update modal (replaces getIdInfo.php + getUpdate.php) ============ -->
   <div class="rq-overlay" id="mdlView" hidden>
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
@@ -561,7 +566,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       </div>
 
       <div class="rq-modal-body">
-        <!-- one requisition stacked label over value; Authorized By and Comments are editable here -->
+        <!-- header fields stacked like the legacy request.php?id= view -->
         <div class="rq-lgcy">
           <div class="rq-lgcyrow"><label>ID:</label><span class="rq-lgcyval" id="v_id"></span></div>
           <div class="rq-lgcyrow"><label>Name:</label><span class="rq-lgcyval" id="v_name"></span></div>
@@ -597,13 +602,13 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     </div>
   </div>
 
-  <!-- Monthly Report window, the old Requested Material Summary report rebuilt for the browser -->
+  <!-- ============ Monthly Report modal (replaces "Requested Material Summary") ============ -->
   <div class="rq-overlay" id="mdlReport" hidden>
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
         <h2>Monthly Update: Requisitioned Product</h2>
         <div>
-          <!-- plain month and year dropdowns because Firefox draws a month picker as a bare text box -->
+          <!-- real dropdowns, not input type=month - Firefox renders that as a bare text box, which is what the floor runs. Picking a month or year re-runs the report on its own, so there is no Run button. -->
           <select id="rptMonthSel" title="Month"></select>
           <select id="rptYearSel" title="Year"></select>
           <button type="button" class="rq-btn rq-btn-primary" id="btnPrintReport">&#128424; Print</button>
@@ -621,23 +626,23 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 <script>
 // Requisition Material frontend logic (grid, add/entry, view, reports)
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
-// entry mode comes from the workfloor shortcut link and is checked all through this script
+// RQ_MODE 'entry' is the workfloor entry only shortcut
 var RQ_MODE = '<?php echo $mode; ?>';
 var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
 var gridShow = 'O';
-// the grid opens sorted by date with the newest requisitions first
+// header sort starts on Date descending, newest requisitions first, so the Date column shows its down arrow right away and the first click flips it
 var gridSort = { key: 'RHRQDT', dir: -1 };
-// brief pause before the Returned or All search runs, so it does not fire on every keystroke
+// debounce for the Returned/All filter search that runs on the server
 var gridSearchTimer = null;
 var lookups = null;
 var autoTimer = null;
-// grid row last clicked, the current record the arrow points at
+// selectedReq is the grid row last clicked (Access "current record")
 var selectedReq = null;
-// the rows of the requisition showing in the view window, reused by its Print button
+// lastReqRows holds the data behind the open view window
 var lastReqRows = null;
-// checked Return Items wait here with their date until the next refresh saves them
+// pendingReturns maps "req|line" to a date; checked Return Items wait here until the next refresh submits them (the Access requery behavior)
 var pendingReturns = {};
 // true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
 var sheetNavMove = false;
@@ -657,13 +662,13 @@ $(document).ready(function () {
 
     $('#btnRefresh').on('click', loadGrid);
     $('#chkAutoRefresh').on('change', startAutoRefresh);
-    // changing Show reloads from the server so returned lines can come back into view
+    // Show Open / Returned / All: requery so returned lines can come back
     $('#selShow').on('change', function () {
         gridShow = $(this).val();
         lastGridJson = '';
         loadGrid();
     });
-    // with Show on Open the filter works on the loaded rows; Returned and All search the server
+    // filter box: Open filters the loaded rows instantly; Returned/All search the whole history on the server (debounced), since only 500 are loaded
     $('#txtFilter').on('input', function () {
         if (gridShow === 'O') {
             renderGrid();
@@ -693,14 +698,14 @@ $(document).ready(function () {
     // report buttons: the Monthly Update and the per requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
     $('#btnPreview').on('click', previewReport);
-    // changing month or year reruns the report on the spot
+    // opening the report and picking a different month or year both run it on their own, so there is no separate Run button
     $('#rptMonthSel, #rptYearSel').on('change', runMonthlyReport);
     $('#btnPrintReport').on('click', function () {
         printHtml($('#rptBody').html(), 'Monthly Update: Requisitioned Product');
     });
     $('#btnPrintReq').on('click', printRequisition);
 
-    // X and Cancel buttons close whichever window they sit in
+    // close buttons for both modals
     $('[data-close]').on('click', function () {
         $('#' + $(this).data('close')).prop('hidden', true);
     });
@@ -724,7 +729,7 @@ $(document).ready(function () {
         $('#gridBody tr[data-rec="' + $(this).data('rec') + '"]').removeClass('rq-hov');
     });
 
-    // checking Return Item fills in today's date, but nothing saves until the next refresh
+    // Return Item: checking fills today's date but saves nothing yet; the next grid refresh submits it, like Access's requery
     $('#gridBody').on('change', '.rq-gridret', function () {
         var cb = $(this);
         var key = cb.attr('data-req') + '|' + cb.attr('data-line');
@@ -748,12 +753,12 @@ $(document).ready(function () {
         }
     });
 
-    // the badge box saves as soon as you leave it; every line of the requisition shares it
+    // badge # box: a change saves it (every line of the req shares it)
     $('#gridBody').on('change', '.rq-badge', function () {
         var inp = $(this);
         var reqNum = String(inp.data('req'));
         var val = inp.val().trim();
-        // only a real badge number saves; typed name text reverts to what was stored
+        // only a real badge number saves: a blank clears it, a value on the employee list, or a plain number typed by hand. Typed name text (from filtering the dropdown) never becomes the badge; it reverts to the stored value, like the Access combo
         var codes = badgeCodeSet();
         if (val !== '' && !codes[val] && !/^\d+$/.test(val)) {
             inp.val(reqBadge(reqNum));
@@ -764,7 +769,7 @@ $(document).ready(function () {
             reqNum: reqNum,
             badge: val
         }, function () {
-            // update the requisition's other lines in place so the grid keeps its scroll spot
+            // persist in memory and to the req's other lines in place, so the grid does not reload and the page keeps its scroll spot
             $.each(gridRows, function (i, r) {
                 if (String(r['RHREQ#']) === reqNum) { r.RHBDGE = val; }
             });
@@ -777,7 +782,7 @@ $(document).ready(function () {
         });
     });
 
-    // the badge box opens the employee list on focus and narrows it as you type
+    // badge dropdown: focus opens the employee list, typing filters it, click or arrow+Enter picks and saves
     $('#gridBody').on('focusin', '.rq-badge', function () {
         showBadgeSuggest($(this), false);
     });
@@ -785,10 +790,10 @@ $(document).ready(function () {
         showBadgeSuggest($(this), true);
     });
     $('#gridBody').on('blur', '.rq-badge', function () {
-        // short wait so a click on the list registers before the menu closes
+        // wait so a click on the list lands before blur hides it
         setTimeout(hideBadgeSuggest, 150);
     });
-    // small arrow opens or closes the list without taking focus off the box
+    // the ▾ arrow toggles the list (mousedown so the input keeps focus)
     $('#gridBody').on('mousedown', '.rq-badgedd', function (e) {
         e.preventDefault();
         var inp = $(this).siblings('.rq-badge');
@@ -820,7 +825,7 @@ $(document).ready(function () {
         }
     });
 
-    // checking Returned in the view window saves that line right away
+    // returned checkbox inside the view modal
     $('#viewLineBody').on('change', '.rq-returned', function () {
         var cb = $(this);
         postAjax({
@@ -838,12 +843,12 @@ $(document).ready(function () {
         }
     });
 
-    // switching back to this tab refreshes the grid right away
+    // refresh immediately when the tab becomes visible again
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) { loadGrid(true); }
     });
 
-    // leaving a full item number fills the blank description, item date and price boxes
+    // item autofill (legacy dRec): a full item number fills the line
     $('#lineBody').on('change', '.ln-item', function () {
         var row = $(this).closest('tr');
         var item = $(this).val().trim();
@@ -858,7 +863,7 @@ $(document).ready(function () {
         row.find('.ln-loc').trigger('focus');
     });
 
-    // item list drops down when you land in the box, and narrows as you type
+    // item list: focus opens it from the top, typing narrows it
     var srchTimer = null;
     $('#lineBody').on('input', '.ln-item', function () {
         var inp = $(this);
@@ -879,7 +884,7 @@ $(document).ready(function () {
         }, true);
     });
     $('#lineBody').on('blur', '.ln-item', function () {
-        // small pause so a click on the list lands before the menu closes
+        // wait so a click on the list lands before blur hides it
         setTimeout(hideSuggest, 150);
     });
     $('#lineBody').on('keydown', '.ln-item', function (e) {
@@ -892,7 +897,7 @@ $(document).ready(function () {
             i = (e.key === 'ArrowDown') ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
             items.removeClass('active').eq(i).addClass('active');
         } else if (e.key === 'Tab' && !e.shiftKey) {
-            // Tab picks the highlighted row or the top match; an empty box just tabs on
+            // Tab picks like Enter: the arrowed to row, or the top match for typed text; an untouched box just tabs on
             var act = items.filter('.active');
             if (act.length) {
                 e.preventDefault();
@@ -909,7 +914,7 @@ $(document).ready(function () {
         }
     });
 
-    // Enter moves to the next box; past the last box it adds another requisition line
+    // Enter hops fields like the legacy onEnterKey chain; on the last box of the last row it grows the sheet
     $('#lineBody').on('keydown', 'input', function (e) {
         if (e.key !== 'Enter') { return; }
         e.preventDefault();
@@ -933,7 +938,7 @@ $(document).ready(function () {
         inputs.eq(i + 1).trigger('focus');
     });
 
-    // up and down arrows change rows; left and right jump cells once the cursor reaches the end of the text
+    // spreadsheet arrows on the sheet: up/down move rows, left/right move cells once the caret reaches the edge of the text
     $('#lineBody').on('keydown', 'input', function (e) {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.key) < 0) { return; }
         // an open item menu owns the up/down keys
@@ -956,7 +961,7 @@ $(document).ready(function () {
             e.preventDefault();
             sheetNavMove = target.hasClass('ln-item');
             target.trigger('focus');
-            // the cell you land on has its text selected, so typing replaces it
+            // select the landing cell's text for instant overwrite
             target[0].select();
         }
     });
@@ -977,7 +982,7 @@ $(document).ready(function () {
 function tickClock() {
     var now = new Date().toLocaleString();
     $('#rqClock').text(now);
-    // Date box on the entry form keeps ticking along with the header clock
+    // the entry form's Date runs live, like the legacy Clock.js
     $('#addDate').val(now);
 }
 
@@ -985,7 +990,7 @@ function tickClock() {
 function startAutoRefresh() {
     if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
     if ($('#chkAutoRefresh').is(':checked')) {
-        // with the box checked it quietly reloads once a minute, like the old Access timer
+        // Access used a form timer; same one minute cadence
         autoTimer = setInterval(function () {
             if (!document.hidden) { loadGrid(true); }
         }, 60000);
@@ -995,7 +1000,7 @@ function startAutoRefresh() {
 
 // ajax and shared helpers
 
-// a quiet background request that fails just turns the Updated time red, no error box
+// when silent, background failures mark the stamp stale, no dialogs
 function postAjax(data, onOk, silent) {
     $.post('Requisitions_ajax.php', data, function (resp) {
         if (resp && resp.ok) { onOk(resp); }
@@ -1023,7 +1028,7 @@ function fmtToday() {
 }
 
 
-// stored dates are an 8 digit yyyymmdd number, so show them as mm/dd/yyyy
+// DEC(8,0) yyyymmdd to mm/dd/yyyy
 function fmtDate(dec) {
     var s = String(dec);
     if (s.length !== 8 || s === '00000000') { return ''; }
@@ -1031,7 +1036,7 @@ function fmtDate(dec) {
 }
 
 
-// turn a typed mm/dd/yyyy date into the 8 digit stored number; 0 when it is not a real date
+// "mm/dd/yyyy" (or m/d/yyyy) to yyyymmdd decimal; 0 if not a real date
 function parseDateMDY(s) {
     var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
     if (!m) { return 0; }
@@ -1058,7 +1063,7 @@ function attr(s) {
 
 // a refresh submits pending Return Items first, then reloads the grid
 function loadGrid(background) {
-    // Open pulls all its rows and filters them in the browser; Returned and All search on the server
+    // Returned/All search the whole history on the server; Open loads all its rows (blank q) and filters them in the browser
     var q = (gridShow === 'O') ? '' : $('#txtFilter').val().trim();
     submitPendingReturns(function () {
         postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
@@ -1075,7 +1080,7 @@ function loadGrid(background) {
 }
 
 
-// checked Return Items are saved before the grid reloads; a bad date halts it so nothing is lost
+// submit every checked Return Item, then run next(); an invalid pending date holds the refresh so nothing pending is lost
 function submitPendingReturns(next, silent) {
     var keys = Object.keys(pendingReturns);
     if (!keys.length) { next(); return; }
@@ -1116,7 +1121,7 @@ function renderGrid() {
     var html = '';
     var shown = 0;
 
-    // Returned and All come back already filtered and capped at 500, so only Open filters here
+    // Open filters the loaded rows here; Returned/All are already filtered by the server (only the most recent 500 are loaded), so show them all
     var rows = gridRows;
     if (gridShow === 'O' && filter) {
         rows = $.grep(gridRows, function (r) {
@@ -1131,7 +1136,7 @@ function renderGrid() {
     $.each(rows, function (i, r) {
         shown++;
 
-        // the name text decides the color; only Authorization None and In Process stay yellow
+        // any real authorizer name is green; only the None / In Process placeholders stay yellow (legacy rows carry the stored flag inconsistently, so the name text decides)
         var authName = r.RHAUTB || 'Authorization = None';
         var isReal = authName !== 'Authorization = None' &&
                      authName !== 'Authorization In Process';
@@ -1140,7 +1145,7 @@ function renderGrid() {
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
-        // each record draws as two rows: the fields on top, description and Return Item below
+        // two rows per record like Access: fields, then description and Return Item; data rec pairs them, data req selects/opens
         var recAttr = ' data-req="' + esc(r['RHREQ#']) + '" data-rec="' + shown + '"' +
                       ' class="' + (shown % 2 === 0 ? 'rq-alt ' : '');
         html += '<tr' + recAttr + 'rq-r1">' +
@@ -1160,14 +1165,14 @@ function renderGrid() {
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
-        // a returned line just shows Returned with its date; an open line gets the Return Item box
+        // second line right cell: an already returned line just shows when it came back (read only); an open line gets the Return Item checkbox
         var retCell;
         if (r.RDRTNF === 'Y') {
             var rdate = fmtDate(r.RDRTDT);
             retCell = '<span class="rq-retdone">Returned' +
                       (rdate ? ' ' + rdate : '') + '</span>';
         } else {
-            // a box checked but not yet saved keeps its check and its date when the grid redraws
+            // pending (not yet refreshed) returns survive redraws via the map
             var pendKey = String(r['RHREQ#']) + '|' + String(r['RDLIN#']);
             var pend = pendingReturns.hasOwnProperty(pendKey) ? pendingReturns[pendKey] : null;
             retCell = '<input type="checkbox" class="rq-gridret"' +
@@ -1202,7 +1207,7 @@ function renderGrid() {
 }
 
 
-// header sort: number columns compare as numbers, everything else ignores case
+// header sort comparator; numeric columns compare as numbers, text lowercased
 function gridCompare(a, b) {
     var k = gridSort.key, av, bv;
     if (k === 'RHREQ#') { av = +a['RHREQ#']; bv = +b['RHREQ#']; }
@@ -1249,7 +1254,7 @@ function applyLookups(resp) {
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
-    // Authorization None is a stored choice in the code list, not a placeholder added here
+    // the literal Authorization None is a REAL AUTHBY row (13k+ reqs store the literal); it sorts first, so it is the natural default
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
 }
 
@@ -1272,12 +1277,12 @@ function fillSelect(sel, rows, valCol, txtCol) {
 
 function openAddModal() {
     $('#lineBody').empty();
-    // entry mode opens fifteen blank lines; the popup on the main screen starts with three
+    // entry mode opens the tall legacy sheet; the station modal starts small
     var rows = (RQ_MODE === 'entry') ? 15 : 3;
     for (var i = 0; i < rows; i++) { addLineRow(); }
     $('#addComments').val('');
     $('input[name="addRush"][value="N"]').prop('checked', true);
-    // a new requisition starts on the first choice, Authorization None
+    // the literal Authorization None sorts first
     $('#addAuthBy').prop('selectedIndex', 0);
     $('#addDate').val(new Date().toLocaleString());
     $('#mdlAdd').prop('hidden', false);
@@ -1399,7 +1404,7 @@ function openViewModal(reqNum) {
         });
         $('#v_returned').text(anyLine && allReturned ? 'Yes' : 'No');
 
-        // preselect the saved authorizer; an old name no longer on the list is added so it appears
+        // preselect the stored authorizer, adding an off list old name
         var sel = $('#authBy');
         var val = h.RHAUTB || 'Authorization = None';
         if (!sel.find('option').filter(function () { return this.value === val; }).length) {
@@ -1434,7 +1439,7 @@ function openViewModal(reqNum) {
 }
 
 
-// the view window Date reads year then month then day with the time, like the old screen
+// build the legacy view Date field value, the year then month then day then the clock time exactly as the old getIdInfo screen showed it
 function fmtDateTimeIso(d8, t6) {
     var s = String(d8);
     if (s.length !== 8 || s === '00000000') { return ''; }
@@ -1477,7 +1482,7 @@ function badgeChoices() {
 }
 
 
-// valid badge numbers, used to reject typed name text
+// the set of valid badge numbers, for rejecting typed name text
 function badgeCodeSet() {
     var set = {};
     $.each(badgeChoices(), function (i, b) { set[b.c] = 1; });
@@ -1485,7 +1490,7 @@ function badgeCodeSet() {
 }
 
 
-// badge currently stored for a requisition, so a bad entry can revert
+// the badge currently stored for a requisition (for revert)
 function reqBadge(reqNum) {
     var out = '';
     $.each(gridRows, function (i, r) {
@@ -1497,7 +1502,7 @@ function reqBadge(reqNum) {
 
 function hideBadgeSuggest() { $('#rqBadgeSuggest').remove(); }
 
-// the second argument decides whether the list filters on typed text or shows everyone
+// filterTyped: match what was typed; on focus the list shows regardless
 function showBadgeSuggest(inp, filterTyped) {
     hideBadgeSuggest();
     var v = filterTyped ? inp.val().trim().toLowerCase() : '';
@@ -1512,11 +1517,11 @@ function showBadgeSuggest(inp, filterTyped) {
     if (!rows.length && filterTyped) { return; }
     var box = $('<div id="rqBadgeSuggest" class="rq-suggest"></div>');
     if (!rows.length) {
-        // employee list came back empty, so say so rather than show nothing
+        // the list never loaded (BADGE lookup empty), say so, not silence
         $('<div class="rq-suggest-empty"></div>')
             .text('Employee list unavailable').appendTo(box);
     }
-    // no cap on the list, the menu box scrolls when there are many employees
+    // full list, the menu scrolls
     $.each(rows, function (i, b) {
         $('<div></div>')
             .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
@@ -1533,7 +1538,7 @@ function showBadgeSuggest(inp, filterTyped) {
         if (code == null) { return; }
         inp.val(code);
         hideBadgeSuggest();
-        // picking a name saves the badge, same as typing one and leaving the box
+        // saves via the change handler
         inp.trigger('change');
     });
 }
@@ -1581,7 +1586,7 @@ var RQ_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
                  'July', 'August', 'September', 'October', 'November', 'December'];
 
 function openMonthlyReport() {
-    // month and year lists are built the first time the report opens
+    // build the dropdowns once
     if (!$('#rptMonthSel option').length) {
         var mh = '', yh = '';
         $.each(RQ_MONTHS, function (i, m) {
@@ -1612,7 +1617,7 @@ function runMonthlyReport() {
 }
 
 
-// Returned column: the date in green once it came back, a muted dash while still out
+// a report Returned cell: the return date in green when the line came back, a muted dash while it is still out
 function rptReturned(r) {
     return r.RDRTNF === 'Y'
         ? '<span class="rpt-y">' + fmtDate(r.RDRTDT) + '</span>'
@@ -1620,7 +1625,7 @@ function rptReturned(r) {
 }
 
 
-// one compact totals row; the class marks it as a name subtotal or the grand total
+// one compact totals line (a thin rule plus the three figures inline), where cls marks the name subtotal or the grand report total so a long report stays to few pages
 function muTotals(label, t, cls) {
     return '<tr><td colspan="11"><div class="rpt-totblk ' + (cls || '') + '">' +
         '<span class="rpt-totlbl rpt-ital">' + label + '</span>' +
@@ -1631,7 +1636,7 @@ function muTotals(label, t, cls) {
 }
 
 
-// the monthly report groups lines by name, then by requisition, with totals at each break
+// the Monthly Update grouped by name then requisition, each item line ending in the Returned column, with compact per req, per name and grand totals so a busy month stays to few pages
 function renderMonthlyReport(rows, label) {
     if (!rows.length) {
         $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(label) + '.</div>');
@@ -1723,7 +1728,7 @@ function renderMonthlyReport(rows, label) {
 function fmtDateTime(d8, t6) {
     var s = String(d8);
     if (s.length !== 8 || s === '00000000') { return ''; }
-    // pad the stored time back to six digits so 90503 reads as 9:05:03
+    // pad hhmmss
     var t = String(1000000 + (parseInt(t6, 10) || 0)).slice(1);
     var hh = parseInt(t.slice(0, 2), 10);
     var ap = hh >= 12 ? 'PM' : 'AM';
@@ -1733,7 +1738,7 @@ function fmtDateTime(d8, t6) {
 }
 
 
-// the printed copy of one requisition, a header block over a boxed grid of its lines
+// the per requisition rptRequest, a four field header block over a boxed line grid, now listing every line with a Returned column so a printed copy shows what came back and when
 function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
@@ -1752,7 +1757,7 @@ function reqPrintHtml(rows) {
     var qty = 0, extc = 0, extr = 0;
     var body = '';
     $.each(rows, function (i, r) {
-        // returned lines print too; only a row with no line number is skipped
+        // every line now, returned and unreturned, so the Returned column has meaning
         if (r['RDLIN#'] == null) { return; }
         var q = parseFloat(r.RDQTY) || 0;
         var ec = q * (parseFloat(r.RDCOST) || 0);
@@ -1809,7 +1814,7 @@ function previewReport() {
 
 // print
 
-// print from a hidden frame on this page, so no extra window opens for anyone to close
+// render the report into a hidden iframe on this same page and print that, so no separate window opens to confuse anyone
 function printHtml(innerHtml, title) {
     var old = document.getElementById('rqPrintFrame');
     if (old) { old.parentNode.removeChild(old); }
@@ -1828,11 +1833,11 @@ function printHtml(innerHtml, title) {
         '.rpt-ital{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:bold;color:#17306e;}' +
         '.rpt-ret .rpt-y{color:#1c7a4c;font-weight:bold;font-variant-numeric:tabular-nums;}' +
         '.rpt-ret .rpt-n{color:#8a91a0;}' +
-        // header block on the printed requisition, one line per field
+        // rptRequest header block, fixed columns one line each, navy field labels
         '.rpt-hdr{table-layout:fixed;margin:6px 0 16px;}' +
         '.rpt-hdr td{border:none;padding:5px 0;font-size:12.5px;white-space:nowrap;}' +
         '.rpt-lbl{color:#17306e;font-weight:bold;}' +
-        // boxed line grid on the printed requisition, tinted heading row and quiet stripes
+        // rptRequest boxed grid with a light navy header tint and quiet zebra rows
         '.rpt-boxed{table-layout:fixed;}' +
         '.rpt-boxed th,.rpt-boxed td{border:1px solid #23262c;padding:3px 5px;overflow:hidden;white-space:nowrap;font-size:10px;}' +
         '.rpt-boxed thead th{background:#eef2fb;color:#17306e;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;vertical-align:bottom;}' +
@@ -1859,7 +1864,7 @@ function printHtml(innerHtml, title) {
         '.rpt-grand{margin-top:5px;border-top:2px solid #17306e;background:#eaeff9;}' +
         '.rpt-stamp{margin-top:12px;color:#5b6371;font-size:10px;}' +
         '</style></head><body>' + innerHtml +
-        // print fires only after the frame content loads, so nothing prints half built
+        // the iframe prints itself once its content has loaded, so only the browser print dialog appears over the current page with no extra window to close
         '<scr' + 'ipt>window.onload=function(){window.focus();window.print();};</scr' + 'ipt>' +
         '</body></html>');
     doc.close();

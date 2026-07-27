@@ -19,11 +19,11 @@
 $GLOBALS['rqsErr'] = '';
 
 
-// activity log path in the LCCOnline_logs folder beside the PHP, because the docroot itself is not writable by the web profile but LCCOnline_logs is (the same folder the framework and Sellbrite logs already land in) so the file actually appears, kept relative to __DIR__ so it promotes across instances as a plain Clario style file append
+// activity log path in the LCCOnline_logs
 define('RQS_ACT_LOG', __DIR__ . '/LCCOnline_logs/requisition_activity.log');
 
 
-// append one activity line in the ClarioSFTP_pull.log style, suppressing the write so a bad one never takes the app down, and if the write still fails (usually the web profile lacking write authority to the folder) the reason and the line fall to error_log so nothing is lost and php.log shows why no requisition_activity.log appeared
+// append one activity line
 function rqsActLog($user, $action, $detail = '') {
     $line = date('Y-m-d H:i:s') . ' ' .
             ($user !== '' ? $user : 'unknown') . ' ' .

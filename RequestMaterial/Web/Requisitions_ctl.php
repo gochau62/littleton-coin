@@ -24,7 +24,7 @@
     $password = $_SESSION['password'] ?? '';
 ?>
 
-<!-- includes css and javascript libraries (local copies, same as the other LCC tools) -->
+<!-- includes css and javascript libraries -->
 <script type='text/javascript' src='jQuery/jquery.js'></script>
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
@@ -49,7 +49,7 @@ if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
 }
 
 if ($authorized != "yes") {
