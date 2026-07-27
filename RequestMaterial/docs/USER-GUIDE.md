@@ -2,129 +2,105 @@
 
 Updated 7/24/2026
 
-Requisition Material replaces the Access "Req Station" database and the
-old request.php pages. Inventory handlers enter requisitions for material
-pulled from the vault; the station screen is where those requisitions get
-tracked, updated and marked returned. Everything runs in the browser -
-no Access, no shared .mdb file, any modern browser works.
+Requisition Material is where inventory handlers request coins and
+material out of the vault, and where those requests are tracked until the
+material comes back. It runs in the browser, so there is nothing to
+install and no database file to open.
 
 ## Two ways in
 
-| Link | Who | What you get |
+| Link | Who uses it | What you get |
 |---|---|---|
-| `Requisitions_ctl.php?mode=entry` | Workfloor / inventory handlers | The entry form and nothing else. A fresh blank form appears after every submit. This is the favorited shortcut. |
-| `Requisitions_ctl.php` | IT / supervisors | The full station: the open-requisitions grid, updates, returns and reports. |
+| `Requisitions_ctl.php?mode=entry` | Workfloor and inventory handlers | Just the entry form. A fresh blank form appears after every submit. **This is the one to bookmark.** |
+| `Requisitions_ctl.php` | IT and supervisors | The full station: the grid, updates, returns and reports. |
 
 ## Entering a requisition
 
-1. Pick your name from the Requestor list. The date runs on its own - it
-   is the live clock, you never touch it.
-2. Rush: Yes or No.
-3. Pick the Area Code and Area Type. Authorized By starts at
-   "Authorization = None" - leave it there unless you already have an
-   authorizer.
-4. Fill the line sheet:
-   - Click into Item # and the item list opens; type to narrow it.
-     Pick one (click, Tab or Enter) and the description, coin date, cost
-     and retail fill in from inventory. Typing a full item number and
-     tabbing out does the same fill.
-   - Arrow keys move around the sheet like a spreadsheet: up/down between
-     rows, left/right between cells.
-   - Enter hops to the next box, like the old form. Enter on the last box
-     of the last line starts a new line.
-   - The gray ✕ at the end of a line removes it.
-5. Comments if you have them.
-6. Hit Insert. You get the new requisition number back and a fresh form.
+1. Pick your name from the **Requestor** list. The date fills itself in,
+   you never touch it.
+2. Set **Rush** to Yes or No.
+3. Pick the **Area Code** and **Area Type**. Leave Authorized By alone
+   unless you already have an authorizer.
+4. Fill in the lines. Click into **Item #** and the item list opens: type
+   to narrow it, then pick with a click, Tab or Enter, and the
+   description, coin date, cost and retail fill in for you. Arrow keys
+   move around the sheet like a spreadsheet, Enter jumps to the next box,
+   and Enter on the last box starts a new line. The gray X removes a line.
+5. Add **Comments** if you have any.
+6. Press **Insert**. You get the new requisition number back and a fresh
+   form.
 
-If a box turns red, fix it: quantity has to be a number greater than
-zero, and the dollar boxes have to be numbers. If anything fails on the
-server, **nothing** is saved - the message tells you which line to fix,
-then submit again. No half-saved requisitions.
+If a box turns red, fix it before submitting: quantity has to be a number
+above zero, and the dollar boxes have to be numbers. If the save fails,
+**nothing is saved** and the message tells you which line to fix. There
+is no such thing as a half saved requisition.
 
 ## The station grid
 
-Each requisition line is two rows, like the old Access screen: the
-details on top, the description underneath. The grid opens on **open
-lines only** - anything not yet returned - just like Access.
+Each requisition line takes two rows: the details on top, the description
+underneath. The grid opens on **open lines only**, meaning anything not
+yet returned.
 
-- **Show** dropdown: switch between **Open** (the default), **Returned**
-  and **All**. This is how you bring a returned req form back up - pick
-  Returned and it lists the lines that have been turned back in, each
-  with the date it was returned. All shows open and returned together.
-  Because there are ~50,000 returned lines, Returned and All show the
-  **500 most recent** (newest returns first); type in the Filter box to
-  reach older ones.
-- It refreshes itself every minute (and when you come back to the tab).
-  The Updated time in the corner tells you the last refresh; if it turns
-  red the connection hiccupped - hit Refresh.
-- The **Filter** box narrows the grid by req #, name, item or badge. In
-  Open it filters what is on screen; in Returned/All it searches the
-  whole history, so you can pull up any old returned form, not just the
-  recent 500.
-- **Sort** by clicking any column header - Req #, Date, Requestor,
-  Badge #, and so on. Click once for up, click again for down; a small
-  arrow shows which way.
-- Click a row to select it - the ▶ marker shows which requisition
-  Preview Report will print.
-- Click the blue req # to open the requisition.
-- **Badge #** starts at 0 on a new requisition; the real badge is filled
-  in later. It is editable right in the grid - click the box for the
-  employee dropdown (type to filter by badge or name) or type a number.
-  Only a real badge number saves; typed name text is ignored, and saving
-  no longer jumps the page. All lines of the same requisition share one
-  badge.
-- **Return Item**: check the box and today's date fills in next to it -
-  change the date if the item actually came back earlier. Nothing is
-  saved yet: the return goes through on the next refresh (the Refresh
-  button or the automatic one), and the line drops off the grid, same as
-  the old screen. Uncheck before the refresh to cancel.
+- **Show** switches between **Open**, **Returned** and **All**. This is
+  how you bring a returned req form back up and see when it came back.
+  Returned and All list the 500 most recent, so use Filter to reach older
+  ones.
+- **Filter** narrows the grid by req number, name, item or badge. On
+  Returned and All it searches the whole history, not just what is on
+  screen.
+- **Sort** by clicking any column heading. Click it again to flip the
+  direction, and the small arrow shows which way. The grid starts on Date
+  with the newest first.
+- **Badge #** can be edited right in the grid. Click the box for the
+  employee list or type a number. New requisitions start at 0 and someone
+  fills in the real badge later.
+- **Return Item** puts today's date beside the tick box. Change the date
+  if the material actually came back earlier. Nothing is saved until the
+  next refresh, so untick the box to cancel.
+- Click a row to select it. The marker shows which requisition **Preview
+  Report** will print.
+- Click the blue **req number** to open that requisition.
+- The grid refreshes itself every minute. If the Updated time turns red
+  the connection hiccupped, so press **Refresh**.
 
 ## Opening a requisition
 
-The blue req # opens the requisition window - laid out like the old
-request.php view: ID, name, area code/type, date, Inv DE Number, then
-Authorized By and Comments.
+Clicking the blue req number opens the requisition window.
 
-- To update: pick the Authorized By name and/or edit Comments, hit
-  **Update**. Picking a real person marks the requisition authorized;
-  "Authorization = None" or "Authorization In Process" marks it not
-  authorized. There is no separate authorize step - the value you pick IS
-  the authorization.
-- Every line is listed here - open and returned - with a **Date Ret.**
-  column showing when each returned line came back, so a turned-in req
-  form shows who requested it, the quantities and the return dates all
-  in one place.
-- Each line has its own Returned checkbox here. These save immediately
-  and stamp today's date. This window is also where you UN-return a line
-  - uncheck the box and it goes back to open.
-- Print gives you the requisition report for this req.
+- Pick a name under **Authorized By** and press **Update**. Picking a real
+  person is what marks it authorized, there is no separate approval step.
+- Every line is listed, open and returned, with a **Date Ret.** column. A
+  turned in form therefore shows who requested it, how much, and when it
+  came back, all in one place.
+- Each line has its own **Returned** tick box that saves straight away.
+  This window is also the only place to undo a return.
+- **Print** gives you the paper copy of this requisition.
 
-## The colors
+## What the colors mean
 
-- Yellow pill - "Authorization = None" or "In Process": nobody has
-  signed off yet.
-- Green pill - a real authorizer's name.
-- Red RUSH pill - the requisition was flagged rush.
-- Red box on the entry sheet - fix that value before submitting.
+- **Yellow** pill: nobody has authorized it yet.
+- **Green** pill: a real authorizer's name is on it.
+- **Red RUSH** pill: the requisition was marked rush.
+- **Red box** on the entry sheet: fix that value before you submit.
 
 ## Reports
 
-| Button | What it prints |
+| Button | What it gives you |
 |---|---|
-| Monthly Report | "Monthly Update: Requisitioned Product" - opens straight onto the **current month** (change it with the Month and Year dropdowns). Grouped by name with Req. Comments, Req. Totals and Totals by Name, and a **Returned** column showing the return date (or a dash if the item is still out). |
-| Preview Report | The requisition report (old rptRequest) for the **selected** row - click a row first. Lists **every** line with a **Returned** column (return date, or a dash if still out). |
+| Monthly Report | Monthly Update: Requisitioned Product. It opens on the **current month**, and you change it with the Month and Year lists. Grouped by requestor with totals, plus a **Returned** column showing the return date, or a dash while the item is still out. |
+| Preview Report | The paper copy of the **selected** requisition, so click a row first. It lists every line with its return date. |
 
-Print opens the report in its own window, shows the print dialog, and
-the window closes itself when you're done - printed or cancelled.
+Print brings up your normal print box on the page you are already on. No
+extra window opens, so close the print box and you are back where you
+were.
 
 ## Good to know
 
-- The old request.php links died at cutover. Use the new shortcut; if you
-  don't have it, ask IT.
-- Works in any browser now - the Firefox-only restriction is gone.
-- Nothing is ever deleted: the Show dropdown brings returned req forms
-  back up, and opening any requisition by its number (`?id=N` on the
-  station link) shows all of its lines, returned included.
-- Change not showing up? Ctrl+F5 forces a fresh reload.
-- Blank page or an error box - that's on our end, not something you did.
+- The old links stopped working at cutover. Use the new shortcut, and ask
+  IT if you do not have it.
+- It works in any browser now.
+- **Nothing is ever deleted.** Returned requisitions are still there, and
+  the Show list brings them back.
+- Change not showing up? **Ctrl+F5** forces a fresh load.
+- A blank page or an error box is on our end, not something you did.
   Contact IT.
