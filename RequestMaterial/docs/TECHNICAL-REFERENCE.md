@@ -26,8 +26,6 @@ URL is the full station.
 | `Requisitions_ajax.php` | AJAX router. JSON for everything: validates, backs out a failed insert, writes the activity log. |
 | `Requisitions_model.php` | Db2 access. The rqs functions call `REQSTNnnnS` procedures only, with no inline SQL anywhere. |
 | `request.php` | The old requisition address, now a redirect onto the new screen. |
-| `getInsert.php` | The old save target, now refuses the write and says nothing was saved. |
-| `getUpdate.php` | The old authorize save, same treatment. |
 
 ### Keeping the old address alive
 
@@ -45,15 +43,10 @@ is the only line to change if the screen moves. Adding `shimtest` to the
 old address prints the target instead of redirecting, which is how the
 address is checked before anyone is pointed at it.
 
-`getInsert.php` and `getUpdate.php` are the POST targets of the old form
-and the old view page, reachable only by submitting them, so a browser
-tab left open on the old form could still write into the old database
-after cutover. Both now refuse the write and say plainly that nothing was
-saved. They deliberately do not redirect silently, which would let
-someone believe their entry was filed.
-
-`getEntry.php` and `getIdInfo.php` hold only function definitions and
-print nothing when opened directly, so they need no replacement.
+The rest of the old folder retires at cutover. `getEntry.php` and
+`getIdInfo.php` hold only function definitions and print nothing on their
+own, and the old save pages go with them, so once the folder is gone
+nothing can write to the old database.
 
 ## 2. Tables (library currently LSCDEVLIBP)
 
@@ -92,8 +85,12 @@ DYNUSRPRF = *OWNER`, built with RUNSQLSTM from QSQLSRC members.
 **The OR REPLACE gotcha:** `CREATE OR REPLACE PROCEDURE` does NOT replace
 across different parameter counts. Changing a signature creates a second
 overload and the old one lingers until it is dropped with
-`DROP PROCEDURE name(type, type)`. The RFP checklist tracks the drops
-done during development.
+`DROP PROCEDURE name(type, type)`. Three procedures changed signature
+during development, so a library that was built along the way needs these
+dropped once: `DROP PROCEDURE REQSTN003S()`,
+`DROP PROCEDURE REQSTN003S(CHAR)`,
+`DROP PROCEDURE REQSTN005S(DECIMAL, VARCHAR, VARCHAR)` and
+`DROP PROCEDURE REQSTN006S(DECIMAL, DECIMAL, CHAR)`.
 
 ## 4. Screens
 
