@@ -127,8 +127,9 @@ were.
 
 ## Good to know
 
-- The old links stopped working at cutover. Use the new shortcut, and ask
-  IT if you do not have it.
+- **Your old bookmark still works.** The old requisition link now brings
+  you straight here, so nothing to change. You may be asked to sign in
+  once when it does.
 - It works in any browser now.
 - **Nothing is ever deleted.** Returned requisitions are still there, and
   the Show list brings them back.

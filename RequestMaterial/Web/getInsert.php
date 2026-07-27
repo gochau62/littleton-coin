@@ -16,9 +16,9 @@
 <!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
-// this was the save target of the old entry form and it wrote straight into the old database
-// it is stopped here because a browser tab left open on the old form could still post to it after cutover, and that requisition would land in the old database where nobody is looking
-// the entry is deliberately NOT saved and NOT forwarded, because a silent redirect would let someone believe their work was filed when it was not
+// this was the save target of the old entry form and it wrote straight into the old database, so a tab left open on that form could still file a requisition where nobody would see it
+
+// nothing is saved and nothing is forwarded on purpose, because a silent redirect would let someone believe their work was filed when it was not
 
 define('RQS_NEW_APP', 'http://lcc1:8068/LCCOnline');
 $target = RQS_NEW_APP . '/Requisitions_ctl.php?mode=entry';

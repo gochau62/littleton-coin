@@ -108,7 +108,13 @@ Note the old handlers open with the short `<?` tag, so they only ever ran
 on an instance with short tags enabled. The replacements use the full
 `<?php` tag and do not depend on that setting.
 
-### Testing the redirect before cutover
+### Testing the redirect
+
+Confirmed working in dev on 07/27/2026 at
+`/www/seidendev/htdocs/Requisitions/request.php`, reached through
+`lcc1.littletoncoin.com:8068/requisitions/request.php`.
+
+
 
 The redirect target is the full address of the new screen, set in
 `RQS_NEW_APP` at the top of each file:

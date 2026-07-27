@@ -17,7 +17,7 @@ the page, the grid and reports never render, and a fresh blank form
 follows every submit. That link is the workfloor shortcut and the plain
 URL is the full station.
 
-### The four PHP files
+### The PHP files
 
 | File | Role |
 |---|---|
@@ -25,6 +25,35 @@ URL is the full station.
 | `Requisitions_dsp.php` | Display. The CSS, all HTML (grid and modals) and all JavaScript, inline in the one file. |
 | `Requisitions_ajax.php` | AJAX router. JSON for everything: validates, backs out a failed insert, writes the activity log. |
 | `Requisitions_model.php` | Db2 access. The rqs functions call `REQSTNnnnS` procedures only, with no inline SQL anywhere. |
+| `request.php` | The old requisition address, now a redirect onto the new screen. |
+| `getInsert.php` | The old save target, now refuses the write and says nothing was saved. |
+| `getUpdate.php` | The old authorize save, same treatment. |
+
+### Keeping the old address alive
+
+`request.php` keeps its original address so every bookmark, desktop
+shortcut and station link still works. With no parameters it sends the
+user to the entry form; with a requisition number it opens that
+requisition. The redirect is the first thing the file does, so the old
+browser check and the old password prompt never run.
+
+It sends a temporary redirect rather than a permanent one on purpose: a
+browser caches a permanent redirect indefinitely, which would keep
+sending users to the new screen even after a rollback put the old file
+back. `RQS_NEW_APP` at the top of the file holds the target address and
+is the only line to change if the screen moves. Adding `shimtest` to the
+old address prints the target instead of redirecting, which is how the
+address is checked before anyone is pointed at it.
+
+`getInsert.php` and `getUpdate.php` are the POST targets of the old form
+and the old view page, reachable only by submitting them, so a browser
+tab left open on the old form could still write into the old database
+after cutover. Both now refuse the write and say plainly that nothing was
+saved. They deliberately do not redirect silently, which would let
+someone believe their entry was filed.
+
+`getEntry.php` and `getIdInfo.php` hold only function definitions and
+print nothing when opened directly, so they need no replacement.
 
 ## 2. Tables (library currently LSCDEVLIBP)
 
