@@ -61,6 +61,8 @@ the old versions linger until dropped.
 | Requisitions_model.php | Model (rqs* functions, CALL REQSTNnnnS only) | `Web/Requisitions_model.php` |
 | Requisitions_ajax.php | Ajax dispatcher (JSON) | `Web/Requisitions_ajax.php` |
 | request.php | Replaces the legacy entry page in place; redirects to the new screen | `Web/request.php` |
+| getInsert.php | Stops the old save so a stale form cannot write to the old database | `Web/getInsert.php` |
+| getUpdate.php | Stops the old authorize save for the same reason | `Web/getUpdate.php` |
 
 **request.php is an update to the existing production file, not a new
 object.** It keeps the old address alive so every bookmark, desktop
@@ -82,16 +84,32 @@ shortcut and Access station link keeps working:
   redirecting, which is how the redirect gets verified before anyone is
   pointed at it.
 
-The other four legacy filenames (`getEntry.php`, `getIdInfo.php`,
-`getInsert.php`, `getUpdate.php`) were only ever called *from*
-request.php, never bookmarked directly, so they retire with the old
-folder.
+**`getInsert.php` and `getUpdate.php` also have to be replaced, not just
+retired.** They are the POST targets of the old form and the old view
+page, and they write straight into the old MySQL database. A browser tab
+left open on the old form can still post to them after cutover, and that
+requisition would land in the old database where nobody is looking. Both
+now refuse the write and say plainly that nothing was saved, with a link
+to the new screen. They deliberately do **not** redirect silently: a
+silent redirect would let someone believe their entry was filed when it
+was not.
+
+`getEntry.php` and `getIdInfo.php` contain only function definitions and
+print nothing when opened directly, so they are harmless once
+request.php no longer includes them. They retire with the folder.
+
+Note the old handlers open with the short `<?` tag, so they only ever ran
+on an instance with short tags enabled. The replacements use the full
+`<?php` tag and do not depend on that setting.
 
 ### Testing the redirect before cutover
 
-The old page and the new screen sit on different instances, so the
-redirect target is an absolute URL and can be checked without touching
-production:
+The old page and the new screen are on the same host and port, so the
+redirect target is written as a path rather than a full address. That
+keeps the browser on whatever host name the user typed, which matters
+because the sign on cookie does not travel between host names: sending
+someone from `lcc1.littletoncoin.com` to `lcc1` would appear to sign them
+out. Checking it needs no change to production:
 
 1. Put the new `request.php` on the **dev** copy of the old folder.
 2. Open `request.php?shimtest=1` in a browser. It prints the address it
@@ -110,6 +128,14 @@ production:
 If step 4 lands on the LCCOnline sign-on page instead of the form, that
 is correct behavior for a browser with no active session; sign in and it
 continues to the form.
+
+**If the old form still renders instead of redirecting,** the file being
+served is not the file that was edited. Confirm with `?shimtest=1`: the
+new file always answers that with plain text, so if the old form appears
+instead, the web instance is still running the old copy. Check that the
+edit landed on the served path rather than only on an RFP source member,
+and that the instance is not holding a compiled copy in its opcode
+cache.
 
 ### Data (not RFP objects — one-time load inputs)
 
@@ -134,7 +160,7 @@ continues to the form.
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 12 Db2 objects and 5 IFS files above (level 10, same as
+2. Assign the 12 Db2 objects and 7 IFS files above (level 10, same as
    Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
