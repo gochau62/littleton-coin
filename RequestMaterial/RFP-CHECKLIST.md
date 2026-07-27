@@ -60,19 +60,56 @@ the old versions linger until dropped.
 | Requisitions_dsp.php | Display function dspRequisitions(): grid + modals, styling and page JS inline | `Web/Requisitions_dsp.php` |
 | Requisitions_model.php | Model (rqs* functions, CALL REQSTNnnnS only) | `Web/Requisitions_model.php` |
 | Requisitions_ajax.php | Ajax dispatcher (JSON) | `Web/Requisitions_ajax.php` |
-No legacy-URL shims: at cutover the old `/requisitions/` folder on the
-10088 instance is simply retired, and the workfloor PCs and inventory
-handlers get a shortcut to the new URL instead (IT can push it to the
-desktops). The app supports direct links for those shortcuts:
-`Requisitions_ctl.php?action=add` opens the entry form straight away,
-`?id=N` opens a specific requisition.
+| request.php | Replaces the legacy entry page in place; redirects to the new screen | `Web/request.php` |
 
-### Legacy originals
+**request.php is an update to the existing production file, not a new
+object.** It keeps the old address alive so every bookmark, desktop
+shortcut and Access station link keeps working:
 
-The production `request.php`/`getEntry.php`/`getIdInfo.php`/
-`getInsert.php`/`getUpdate.php` sources (and the full Access extraction:
-VBA, queries, schemas, data CSVs) are preserved in this branch's git
-history if a behavior question ever comes up.
+- `request.php` with no parameters redirects to
+  `Requisitions_ctl.php?mode=entry` (the workfloor entry form).
+- `request.php?id=N` redirects to `Requisitions_ctl.php?id=N`, so a link
+  to one requisition still opens that requisition.
+- The redirect is the first thing the file does, so the old Firefox-only
+  check and the old Basic auth prompt never run. Workfloor users on any
+  browser land on the new screen without a password box.
+- It sends a **302, not a 301**, on purpose: browsers cache a 301
+  permanently, so a permanent code would keep redirecting users even
+  after the file was put back during a rollback.
+- `RQS_NEW_APP` at the top is the only line to change when the target
+  moves between instances.
+- `request.php?shimtest=1` prints where it *would* send you instead of
+  redirecting, which is how the redirect gets verified before anyone is
+  pointed at it.
+
+The other four legacy filenames (`getEntry.php`, `getIdInfo.php`,
+`getInsert.php`, `getUpdate.php`) were only ever called *from*
+request.php, never bookmarked directly, so they retire with the old
+folder.
+
+### Testing the redirect before cutover
+
+The old page and the new screen sit on different instances, so the
+redirect target is an absolute URL and can be checked without touching
+production:
+
+1. Put the new `request.php` on the **dev** copy of the old folder.
+2. Open `request.php?shimtest=1` in a browser. It prints the address it
+   would send you to. Nothing moves, so this is safe to run repeatedly.
+3. Open `request.php?id=17204&shimtest=1` and confirm the number is
+   carried through.
+4. Drop `shimtest` and open `request.php` for real. You should land on
+   the entry form, signed in through LCCOnline, with no Firefox warning
+   and no password box.
+5. Try it in Chrome or Edge as well. The old page refused anything but
+   Firefox; the new one must not.
+6. Enter one test requisition end to end, then open
+   `request.php?id=` that new number and confirm it opens that
+   requisition.
+
+If step 4 lands on the LCCOnline sign-on page instead of the form, that
+is correct behavior for a browser with no active session; sign in and it
+continues to the form.
 
 ### Data (not RFP objects — one-time load inputs)
 
@@ -97,7 +134,7 @@ history if a behavior question ever comes up.
 ## 3. RFP mechanics (mirror Sellbrite 3185)
 
 1. Create the RFP under appl `LCC`, tie it to the Requisitions project/task.
-2. Assign the 12 Db2 objects and 4 IFS files above (level 10, same as
+2. Assign the 12 Db2 objects and 5 IFS files above (level 10, same as
    Sellbrite). Status flows 01-Assigned → Created → promotion like any RFP.
 3. The superseded legacy PHP files ride the same RFP as `*IFS` updates when
    they're stubbed/redirected at cutover.
@@ -158,14 +195,16 @@ history if a behavior question ever comes up.
    authority level number for `chkAutUsr`.
 3. Web-profile authority to LSCDEVLIBP (the dev log already shows
    SQLCODE -551 against it for Sellbrite) — GRTOBJAUT before testing procs.
-4. At go-live: retire the old `/requisitions/` folder on the 10088
-   instance and push two shortcuts to the desktops:
+4. At go-live: replace `request.php` in the old `/requisitions/` folder
+   with the redirect version (the rest of that folder retires), and push
+   two shortcuts to the desktops:
    - **Workfloor / inventory handlers**: `Requisitions_ctl.php?mode=entry`
      — entry form only, nothing else visible; a fresh blank form after
      each submit (their replacement for the favorited request.php).
    - **IT / supervisors**: the plain URL — full station view (grid,
      authorize, returns, reports).
-   The old saved links stop working by design.
+   Old saved links keep working through the request.php redirect, so
+   nobody is stranded on day one if a shortcut was missed.
 
 Reports are done and match the printed Access samples: Monthly Report
 button = "Monthly Update: Requisitioned Product" (REQSTN008S; open layout
