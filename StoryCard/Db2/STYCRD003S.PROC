@@ -1,0 +1,55 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD003S                                    */
+/*                                                                   */
+/* Program Narrative - Read the shared story card footer.  The Access */
+/*                     screens only ever used key 1 - the combo box   */
+/*                     was bound to a query that could return nothing */
+/*                     else - so the key defaults to 1 here and the   */
+/*                     caller does not have to know about it.         */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD003S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE STYCRD003S (
+        IN INSKY DECIMAL(7, 0)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE WKSKY DECIMAL(7, 0);
+
+        SET WKSKY = COALESCE(NULLIF(INSKY, 0), 1);
+
+        BEGIN
+            DECLARE C1 CURSOR WITH RETURN FOR
+                SELECT F.SCFLNO        AS SCFLNO,
+                       RTRIM(F.SCFTXT) AS SCFTXT
+                  FROM LSCPRDLIB/IVSCFOOTP F
+                 WHERE F.SCFSKY = WKSKY
+                 ORDER BY F.SCFLNO;
+
+            OPEN C1;
+        END;
+    END;

@@ -1,0 +1,74 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD005S                                    */
+/*                                                                   */
+/* Program Narrative - Tidy the tail of a story card.  Blanks every   */
+/*                     line past the end of side 1 and past the end   */
+/*                     of side 2 in one statement.                    */
+/*                                                                   */
+/*                     This is the old UpdateBlank loop, done right.  */
+/*                     That loop only ran over side 2, stopped at 21  */
+/*                     instead of 22, and made one round trip per     */
+/*                     line, so shortening side 1 left the dropped    */
+/*                     lines printing on the card for ever.           */
+/*                                                                   */
+/*                     Lines are blanked and not deleted, which is    */
+/*                     what the Access screen did, so any program     */
+/*                     that reads the card by SKU and line number     */
+/*                     still finds its record.                        */
+/*                                                                   */
+/*                     INS1LN - last line written on side 1, 0 if the */
+/*                              side was left empty                   */
+/*                     INS2LN - last line written on side 2, 12 if    */
+/*                              the side was left empty               */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD005S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE STYCRD005S (
+        IN INSKU  VARCHAR(20),
+        IN INS1LN DECIMAL(4, 0),
+        IN INS2LN DECIMAL(4, 0)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE WKS1 DECIMAL(4, 0);
+        DECLARE WKS2 DECIMAL(4, 0);
+
+        -- clamp so a bad argument can never widen what gets blanked
+        SET WKS1 = CASE WHEN INS1LN <  0 THEN  0
+                        WHEN INS1LN > 12 THEN 12
+                        ELSE INS1LN END;
+        SET WKS2 = CASE WHEN INS2LN < 12 THEN 12
+                        WHEN INS2LN > 22 THEN 22
+                        ELSE INS2LN END;
+
+        UPDATE LSCPRDLIB/IVSCBODYP
+           SET SCBTXT = '',
+               SCBSRK = ''
+         WHERE SCBSKU = INSKU
+           AND ( (SCBLNO > WKS1 AND SCBLNO <= 12)
+              OR (SCBLNO > WKS2 AND SCBLNO <= 22) )
+           AND (SCBTXT <> '' OR SCBSRK <> '');
+    END;

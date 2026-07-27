@@ -1,0 +1,55 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD002S                                    */
+/*                                                                   */
+/* Program Narrative - Read one story card.  Returns every body line  */
+/*                     held for the SKU, side 1 and side 2 together,  */
+/*                     in line order.  Replaces the two separate      */
+/*                     SELECTs the Access LoadText routine ran, one   */
+/*                     for scblno <= 12 and one for 13 to 22.         */
+/*                                                                   */
+/*                     Lines outside 1-22 are returned as well, so a  */
+/*                     card carrying stray line numbers from an older */
+/*                     program is visible rather than silently        */
+/*                     dropped.                                       */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD002S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE STYCRD002S (
+        IN INSKU VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT B.SCBLNO           AS SCBLNO,
+                   RTRIM(B.SCBTXT)    AS SCBTXT,
+                   RTRIM(B.SCBSRK)    AS SCBSRK
+              FROM LSCPRDLIB/IVSCBODYP B
+             WHERE B.SCBSKU = INSKU
+             ORDER BY B.SCBLNO;
+
+        OPEN C1;
+    END;

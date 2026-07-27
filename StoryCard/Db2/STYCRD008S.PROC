@@ -1,0 +1,51 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD008S                                    */
+/*                                                                   */
+/* Program Narrative - Delete a whole story card.  Used to back a     */
+/*                     brand new card out again when one of its lines */
+/*                     failed to write, so a half saved card is never */
+/*                     left behind, and by the Delete button on the   */
+/*                     maintenance screen.                            */
+/*                                                                   */
+/*                     The Access screen had no equivalent - a save   */
+/*                     that failed part way through simply stopped    */
+/*                     and left whatever it had already written.      */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD008S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE STYCRD008S (
+        IN INSKU VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        IF INSKU IS NULL OR TRIM(INSKU) = '' THEN
+            SIGNAL SQLSTATE '75003'
+                SET MESSAGE_TEXT = 'A SKU is required to delete a story card';
+        END IF;
+
+        DELETE FROM LSCPRDLIB/IVSCBODYP
+         WHERE SCBSKU = INSKU;
+    END;

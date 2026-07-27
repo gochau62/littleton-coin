@@ -1,0 +1,96 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD001S                                    */
+/*                                                                   */
+/* Program Narrative - Story Card SKU lookup.  Replaces the Access    */
+/*                     Combo1 row source, its CheckSku validation     */
+/*                     and the item description read, which were      */
+/*                     three separate ODBC queries.                   */
+/*                                                                   */
+/*                     CARDS - SKUs that already have a story card    */
+/*                     ITEMS - type ahead over the whole item master  */
+/*                     ONE   - one exact SKU, for validation          */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD001S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE STYCRD001S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        -- CARDS: the list the Access combo box showed - only SKUs that
+        -- already carry body text.  Blank INKEY lists from the top.
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT B.SCBSKU              AS SCSKU,
+                   COALESCE(I.IIDESC,'') AS SCDESC,
+                   'Y'                   AS SCCARD
+              FROM (SELECT DISTINCT SCBSKU
+                      FROM LSCPRDLIB/IVSCBODYP) B
+              LEFT JOIN LSCPRDLIB/ITMMSTP I
+                ON I.IISKU# = B.SCBSKU
+             WHERE UPPER(B.SCBSKU) LIKE UPPER(INKEY) CONCAT '%'
+             ORDER BY B.SCBSKU
+             FETCH FIRST 200 ROWS ONLY;
+
+        -- ITEMS: every item master SKU, flagged with whether it already has
+        -- a card.  The Access screen could not do this - a SKU with no card
+        -- was not in the combo, so you had to know the number by heart.
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT I.IISKU#                            AS SCSKU,
+                   I.IIDESC                            AS SCDESC,
+                   CASE WHEN B.SCBSKU IS NULL
+                        THEN 'N' ELSE 'Y' END          AS SCCARD
+              FROM LSCPRDLIB/ITMMSTP I
+              LEFT JOIN (SELECT DISTINCT SCBSKU
+                           FROM LSCPRDLIB/IVSCBODYP) B
+                ON B.SCBSKU = I.IISKU#
+             WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) CONCAT '%'
+             ORDER BY I.IISKU#
+             FETCH FIRST 200 ROWS ONLY;
+
+        -- ONE: the old CheckSku plus the old description read in one call.
+        -- No row back means the SKU is not on the master file.
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT I.IISKU#                            AS SCSKU,
+                   I.IIDESC                            AS SCDESC,
+                   CASE WHEN B.SCBSKU IS NULL
+                        THEN 'N' ELSE 'Y' END          AS SCCARD
+              FROM LSCPRDLIB/ITMMSTP I
+              LEFT JOIN (SELECT DISTINCT SCBSKU
+                           FROM LSCPRDLIB/IVSCBODYP) B
+                ON B.SCBSKU = I.IISKU#
+             WHERE I.IISKU# = INKEY
+             FETCH FIRST 1 ROW ONLY;
+
+        IF INTYPE = 'ITEMS' THEN
+            OPEN C2;
+        ELSEIF INTYPE = 'ONE' THEN
+            OPEN C3;
+        ELSE
+            OPEN C1;
+        END IF;
+    END;
