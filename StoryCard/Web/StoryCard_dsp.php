@@ -398,7 +398,7 @@ var STC_PRELOAD = <?php echo $stcPreload ? json_encode($stcPreload) : 'null'; ?>
 var STC_MODE = '<?php echo $mode; ?>';
 
 // the printed card. These four numbers are the whole layout, and they match
-// STYCRD004S and StoryCard_model.php - change them in all three or nowhere
+// STYCRD002S and StoryCard_model.php - change them in all three or nowhere
 var S1_FIRST = 1, S1_LAST = 12;
 var S2_FIRST = 13, S2_LAST = 22;
 var LINE_LEN = 50;

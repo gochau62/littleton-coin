@@ -29,8 +29,9 @@ define('STC_LINE_LEN', 50);
 define('STC_SRK_LEN', 15);
 define('STC_SKU_LEN', 10);
 
-// the footer is one shared block; the Access combo could only ever pick key 1
-define('STC_FOOT_KEY', 1);
+// the footer is one shared block on key 1, which is the only key the Access
+// combo could ever pick, so the key is baked into STYCRD001S/002S/003S and no
+// longer travels as an argument
 
 // activity log path in the LCCOnline_logs
 define('STC_ACT_LOG', __DIR__ . '/LCCOnline_logs/storycard_activity.log');
@@ -97,7 +98,7 @@ function stcCleanSku($sku) {
 }
 
 
-// PROGRAM NAME STYCRD001S: the SKU picker, where CARDS lists only SKUs that already have a story card (what the Access combo box showed) and ITEMS searches the whole item master so a card can be started for something that has none yet
+// PROGRAM NAME STYCRD001S type CARDS or ITEMS: the SKU picker, where CARDS lists only SKUs that already have a story card (what the Access combo box showed) and ITEMS searches the whole item master so a card can be started for something that has none yet
 function stcSkuSearch($conn, $type, $key = '') {
     $type = strtoupper(trim($type));
     if (!in_array($type, array('CARDS', 'ITEMS'))) { $type = 'CARDS'; }
@@ -115,62 +116,66 @@ function stcGetSku($conn, $sku) {
 }
 
 
-// PROGRAM NAME STYCRD002S: every body line held for one SKU, in line order
+// PROGRAM NAME STYCRD001S type CARD: every body line held for one SKU, in line order
 function stcGetCard($conn, $sku) {
-    return stcFetchAll($conn, "CALL STYCRD002S(?)", array(stcCleanSku($sku)));
+    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
+                       array('CARD', stcCleanSku($sku)));
 }
 
 
-// PROGRAM NAME STYCRD003S: the shared footer lines
-function stcGetFooter($conn, $sky = STC_FOOT_KEY) {
-    return stcFetchAll($conn, "CALL STYCRD003S(?)", array(intval($sky)));
+// PROGRAM NAME STYCRD001S type FOOT: the shared footer lines
+function stcGetFooter($conn) {
+    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)", array('FOOT', ''));
 }
 
 
-// PROGRAM NAME STYCRD004S: write one body line, inserting or updating as needed
+// PROGRAM NAME STYCRD002S type CARD: write one body line, inserting or updating as needed
 function stcSaveBodyLine($conn, $sku, $lineNo, $text, $searchKey) {
-    return stcExec($conn, "CALL STYCRD004S(?, ?, ?, ?)",
-                   array(stcCleanSku($sku),
+    return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
+                   array('CARD',
+                         stcCleanSku($sku),
                          intval($lineNo),
                          substr((string)$text, 0, STC_LINE_LEN),
                          substr((string)$searchKey, 0, STC_SRK_LEN)),
-                   'STYCRD004S');
+                   'STYCRD002S CARD');
 }
 
 
-// PROGRAM NAME STYCRD005S: blank whatever sits past the end of each side, so a card that got shorter really is shorter
+// PROGRAM NAME STYCRD002S type FOOT: write one footer line, inserting or updating as needed
+function stcSaveFootLine($conn, $lineNo, $text) {
+    return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
+                   array('FOOT', '', intval($lineNo),
+                         substr((string)$text, 0, STC_LINE_LEN), ''),
+                   'STYCRD002S FOOT');
+}
+
+
+// PROGRAM NAME STYCRD003S type CARD: blank whatever sits past the end of each side, so a card that got shorter really is shorter
 function stcTrimCard($conn, $sku, $side1Last, $side2Last) {
-    return stcExec($conn, "CALL STYCRD005S(?, ?, ?)",
-                   array(stcCleanSku($sku), intval($side1Last), intval($side2Last)),
-                   'STYCRD005S');
+    return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
+                   array('CARD', stcCleanSku($sku),
+                         intval($side1Last), intval($side2Last)),
+                   'STYCRD003S CARD');
 }
 
 
-// PROGRAM NAME STYCRD006S: write one footer line, inserting or updating as needed
-function stcSaveFootLine($conn, $lineNo, $text, $sky = STC_FOOT_KEY) {
-    return stcExec($conn, "CALL STYCRD006S(?, ?, ?)",
-                   array(intval($sky), intval($lineNo),
-                         substr((string)$text, 0, STC_LINE_LEN)),
-                   'STYCRD006S');
+// PROGRAM NAME STYCRD003S type FOOT: drop footer lines past the last one written
+function stcTrimFooter($conn, $lastLine) {
+    return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
+                   array('FOOT', '', intval($lastLine), 0),
+                   'STYCRD003S FOOT');
 }
 
 
-// PROGRAM NAME STYCRD007S: drop footer lines past the last one written
-function stcTrimFooter($conn, $lastLine, $sky = STC_FOOT_KEY) {
-    return stcExec($conn, "CALL STYCRD007S(?, ?)",
-                   array(intval($sky), intval($lastLine)),
-                   'STYCRD007S');
-}
-
-
-// PROGRAM NAME STYCRD008S: delete a whole card, used to back out a new card whose save failed part way and by the Delete button
+// PROGRAM NAME STYCRD003S type DROP: delete a whole card, used to back out a new card whose save failed part way and by the Delete button
 function stcDeleteCard($conn, $sku) {
-    return stcExec($conn, "CALL STYCRD008S(?)", array(stcCleanSku($sku)),
-                   'STYCRD008S');
+    return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
+                   array('DROP', stcCleanSku($sku), 0, 0),
+                   'STYCRD003S DROP');
 }
 
 
-// turn the rows STYCRD002S gives back into the shape the screen works in: two arrays of line text indexed from 0, plus the card level search key. Lines the file does not carry come back as empty strings so the screen always has a full set of boxes
+// turn the rows STYCRD001S type CARD gives back into the shape the screen works in: two arrays of line text indexed from 0, plus the card level search key. Lines the file does not carry come back as empty strings so the screen always has a full set of boxes
 function stcCardToSides($rows) {
     $side1 = array_fill(0, STC_S1_LAST - STC_S1_FIRST + 1, '');
     $side2 = array_fill(0, STC_S2_LAST - STC_S2_FIRST + 1, '');
@@ -197,7 +202,7 @@ function stcCardToSides($rows) {
 }
 
 
-// the last line of a side that actually carries text, as a file line number. 0 for side 1 and 12 for side 2 mean the side was left empty, which is what STYCRD005S expects
+// the last line of a side that actually carries text, as a file line number. 0 for side 1 and 12 for side 2 mean the side was left empty, which is what STYCRD003S type CARD expects
 function stcLastUsed($lines, $firstLineNo) {
     $last = $firstLineNo - 1;
     foreach ($lines as $i => $txt) {
@@ -285,8 +290,8 @@ function stcRestoreCard($conn, $sku, $before, $isNew) {
 // write the whole footer: every line in order, then drop anything past the end.
 // Same back out as the card - the footer prints on every story card, so a half
 // saved footer is worse than no save at all
-function stcSaveFooter($conn, $lines, $sky = STC_FOOT_KEY) {
-    $before = stcGetFooter($conn, $sky);
+function stcSaveFooter($conn, $lines) {
+    $before = stcGetFooter($conn);
     if ($before === false) { return false; }
 
     // drop the trailing blanks the user left behind, keeping any gap in the middle
@@ -297,16 +302,16 @@ function stcSaveFooter($conn, $lines, $sky = STC_FOOT_KEY) {
     $lineNo = 0;
     foreach ($keep as $txt) {
         $lineNo++;
-        if (!stcSaveFootLine($conn, $lineNo, $txt, $sky)) {
-            stcRestoreFooter($conn, $before, $sky);
+        if (!stcSaveFootLine($conn, $lineNo, $txt)) {
+            stcRestoreFooter($conn, $before);
             $GLOBALS['stcErr'] = 'Footer line ' . $lineNo . ' failed (' .
                                  $GLOBALS['stcErr'] . ') - the footer was put back the way it was.';
             return false;
         }
     }
 
-    if (!stcTrimFooter($conn, $lineNo, $sky)) {
-        stcRestoreFooter($conn, $before, $sky);
+    if (!stcTrimFooter($conn, $lineNo)) {
+        stcRestoreFooter($conn, $before);
         $GLOBALS['stcErr'] = 'Tidying the footer failed (' . $GLOBALS['stcErr'] .
                              ') - the footer was put back the way it was.';
         return false;
@@ -317,13 +322,13 @@ function stcSaveFooter($conn, $lines, $sky = STC_FOOT_KEY) {
 
 
 // put the footer back to the rows read before the save started
-function stcRestoreFooter($conn, $before, $sky) {
+function stcRestoreFooter($conn, $before) {
     $last = 0;
     foreach ($before as $r) {
         $lno = intval($r['SCFLNO']);
-        stcSaveFootLine($conn, $lno, rtrim((string)$r['SCFTXT']), $sky);
+        stcSaveFootLine($conn, $lno, rtrim((string)$r["SCFTXT"]));
         if ($lno > $last) { $last = $lno; }
     }
-    stcTrimFooter($conn, $last, $sky);
+    stcTrimFooter($conn, $last);
 }
 ?>

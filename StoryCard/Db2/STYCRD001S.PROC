@@ -2,11 +2,21 @@
 /*                                                                   */
 /* Program Name      - STYCRD001S                                    */
 /*                                                                   */
-/* Program Narrative - Story Card SKU lookup, one result set of      */
-/*                     SCSKU, SCDESC and SCCARD.                     */
-/*                     INTYPE CARDS - SKUs that have a story card    */
-/*                     INTYPE ITEMS - the whole item master          */
-/*                     INTYPE ONE   - one exact SKU, for validation  */
+/* Program Narrative - Story Card reads, one result set per type.    */
+/*                                                                   */
+/*                     CARDS - SKUs that have a story card, INKEY    */
+/*                             narrows by leading characters         */
+/*                             SCSKU, SCDESC, SCCARD                 */
+/*                     ITEMS - the whole item master, INKEY narrows  */
+/*                             SCSKU, SCDESC, SCCARD                 */
+/*                     ONE   - one exact SKU, no row means it is not */
+/*                             on the item master                    */
+/*                             SCSKU, SCDESC, SCCARD                 */
+/*                     CARD  - every body line held for INKEY        */
+/*                             SCBLNO, SCBTXT, SCBSRK                */
+/*                     FOOT  - the shared footer, key 1              */
+/*                             SCFLNO, SCFTXT                        */
+/*                                                                   */
 /*                     SCCARD is Y when the SKU already has a card.  */
 /*                                                                   */
 /* Author            - G Chau                                        */
@@ -77,11 +87,33 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
              WHERE I.IISKU# = INKEY
              FETCH FIRST 1 ROW ONLY;
 
-        IF INTYPE = 'ITEMS' THEN
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT B.SCBLNO        AS SCBLNO,
+                   RTRIM(B.SCBTXT) AS SCBTXT,
+                   RTRIM(B.SCBSRK) AS SCBSRK
+              FROM LSCPRDLIB/IVSCBODYP B
+             WHERE B.SCBSKU = INKEY
+             ORDER BY B.SCBLNO;
+
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT F.SCFLNO        AS SCFLNO,
+                   RTRIM(F.SCFTXT) AS SCFTXT
+              FROM LSCPRDLIB/IVSCFOOTP F
+             WHERE F.SCFSKY = 1
+             ORDER BY F.SCFLNO;
+
+        IF INTYPE = 'CARDS' THEN
+            OPEN C1;
+        ELSEIF INTYPE = 'ITEMS' THEN
             OPEN C2;
         ELSEIF INTYPE = 'ONE' THEN
             OPEN C3;
+        ELSEIF INTYPE = 'CARD' THEN
+            OPEN C4;
+        ELSEIF INTYPE = 'FOOT' THEN
+            OPEN C5;
         ELSE
-            OPEN C1;
+            SIGNAL SQLSTATE '75001'
+                SET MESSAGE_TEXT = 'STYCRD001S type must be CARDS ITEMS ONE CARD or FOOT';
         END IF;
     END;

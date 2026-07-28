@@ -2,9 +2,19 @@
 /*                                                                   */
 /* Program Name      - STYCRD002S                                    */
 /*                                                                   */
-/* Program Narrative - Read one story card.  Returns every body line */
-/*                     held for the SKU, side 1 and side 2 together, */
-/*                     in line number order.                         */
+/* Program Narrative - Write one story card line, updating it when   */
+/*                     it is there and inserting it when it is not.  */
+/*                                                                   */
+/*                     CARD - a body line on IVSCBODYP.  INSKU is    */
+/*                            the item, INLNO must be 1 to 22 where  */
+/*                            1 to 12 is side 1 and 13 to 22 is      */
+/*                            side 2, INSRK is the search key.       */
+/*                     FOOT - a footer line on IVSCFOOTP key 1.      */
+/*                            INLNO must be 1 or more.  INSKU and    */
+/*                            INSRK are not used.                    */
+/*                                                                   */
+/*                     Text and search key are trimmed to the file   */
+/*                     widths of 50 and 15.                          */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -27,22 +37,73 @@
 /*-------------------------------------------------------------------*/
 
 CREATE OR REPLACE PROCEDURE STYCRD002S (
-        IN INSKU VARCHAR(20)
+        IN INTYPE VARCHAR(10),
+        IN INSKU  VARCHAR(20),
+        IN INLNO  DECIMAL(4, 0),
+        IN INTXT  VARCHAR(100),
+        IN INSRK  VARCHAR(30)
         )
 
         LANGUAGE SQL
-        READS SQL DATA
-        DYNAMIC RESULT SETS 1
+        MODIFIES SQL DATA
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        DECLARE C1 CURSOR WITH RETURN FOR
-            SELECT B.SCBLNO           AS SCBLNO,
-                   RTRIM(B.SCBTXT)    AS SCBTXT,
-                   RTRIM(B.SCBSRK)    AS SCBSRK
-              FROM LSCPRDLIB/IVSCBODYP B
-             WHERE B.SCBSKU = INSKU
-             ORDER BY B.SCBLNO;
+        DECLARE ROWCNT INTEGER DEFAULT 0;
+        DECLARE WKTXT  CHAR(50);
+        DECLARE WKSRK  CHAR(15);
 
-        OPEN C1;
+        SET WKTXT = LEFT(COALESCE(INTXT, ''), 50);
+        SET WKSRK = LEFT(COALESCE(INSRK, ''), 15);
+
+        IF INTYPE = 'CARD' THEN
+
+            IF INSKU IS NULL OR TRIM(INSKU) = '' THEN
+                SIGNAL SQLSTATE '75002'
+                    SET MESSAGE_TEXT = 'A SKU is required to write a story card line';
+            END IF;
+
+            IF INLNO < 1 OR INLNO > 22 THEN
+                SIGNAL SQLSTATE '75003'
+                    SET MESSAGE_TEXT = 'Story card line number must be 1 to 22';
+            END IF;
+
+            UPDATE LSCPRDLIB/IVSCBODYP
+               SET SCBTXT = WKTXT,
+                   SCBSRK = WKSRK
+             WHERE SCBSKU = INSKU
+               AND SCBLNO = INLNO;
+
+            GET DIAGNOSTICS ROWCNT = ROW_COUNT;
+
+            IF ROWCNT = 0 THEN
+                INSERT INTO LSCPRDLIB/IVSCBODYP
+                    (SCBSKU, SCBLNO, SCBTXT, SCBSRK)
+                VALUES (INSKU, INLNO, WKTXT, WKSRK);
+            END IF;
+
+        ELSEIF INTYPE = 'FOOT' THEN
+
+            IF INLNO < 1 THEN
+                SIGNAL SQLSTATE '75004'
+                    SET MESSAGE_TEXT = 'Footer line number must be 1 or more';
+            END IF;
+
+            UPDATE LSCPRDLIB/IVSCFOOTP
+               SET SCFTXT = WKTXT
+             WHERE SCFSKY = 1
+               AND SCFLNO = INLNO;
+
+            GET DIAGNOSTICS ROWCNT = ROW_COUNT;
+
+            IF ROWCNT = 0 THEN
+                INSERT INTO LSCPRDLIB/IVSCFOOTP
+                    (SCFSKY, SCFLNO, SCFTXT)
+                VALUES (1, INLNO, WKTXT);
+            END IF;
+
+        ELSE
+            SIGNAL SQLSTATE '75005'
+                SET MESSAGE_TEXT = 'STYCRD002S type must be CARD or FOOT';
+        END IF;
     END;
