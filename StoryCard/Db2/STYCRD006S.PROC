@@ -2,15 +2,11 @@
 /*                                                                   */
 /* Program Name      - STYCRD006S                                    */
 /*                                                                   */
-/* Program Narrative - Write one footer line, updating it if it is    */
-/*                     there and inserting it if it is not.           */
-/*                     Replaces the two hand built statements in the  */
-/*                     Access FootMaintenance screen, which wrapped   */
-/*                     the text in single quotes and so fell over on  */
-/*                     any apostrophe.                                */
-/*                                                                   */
-/*                     A footer key of 0 is read as key 1, the only   */
-/*                     key the footer has ever used.                  */
+/* Program Narrative - Write one story card footer line, updating    */
+/*                     the line when it is there and inserting it    */
+/*                     when it is not.                               */
+/*                     A footer key of 0 is read as key 1.           */
+/*                     Text is trimmed to the file width of 50.      */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

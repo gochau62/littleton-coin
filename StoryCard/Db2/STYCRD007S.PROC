@@ -2,21 +2,10 @@
 /*                                                                   */
 /* Program Name      - STYCRD007S                                    */
 /*                                                                   */
-/* Program Narrative - Drop the tail of the footer.  Removes every    */
-/*                     line past the last one written.                */
-/*                                                                   */
-/*                     The Access footer screen had nothing like      */
-/*                     this: it only ever updated line for line, so   */
-/*                     cutting a four line footer down to two left    */
-/*                     lines three and four in the file and they went */
-/*                     on printing on every card.                     */
-/*                                                                   */
-/*                     Footer lines are deleted rather than blanked,  */
-/*                     unlike the body, because the footer is one     */
-/*                     shared block read end to end rather than a     */
-/*                     fixed set of positions on a printed side.      */
-/*                                                                   */
-/*                     A last line of 0 clears the footer completely. */
+/* Program Narrative - Delete every story card footer line past the  */
+/*                     last one written.  A last line of 0 clears    */
+/*                     the footer completely.                        */
+/*                     A footer key of 0 is read as key 1.           */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

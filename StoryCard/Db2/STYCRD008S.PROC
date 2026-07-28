@@ -2,15 +2,10 @@
 /*                                                                   */
 /* Program Name      - STYCRD008S                                    */
 /*                                                                   */
-/* Program Narrative - Delete a whole story card.  Used to back a     */
-/*                     brand new card out again when one of its lines */
-/*                     failed to write, so a half saved card is never */
-/*                     left behind, and by the Delete button on the   */
-/*                     maintenance screen.                            */
-/*                                                                   */
-/*                     The Access screen had no equivalent - a save   */
-/*                     that failed part way through simply stopped    */
-/*                     and left whatever it had already written.      */
+/* Program Narrative - Delete a whole story card, every body line    */
+/*                     held for the SKU.  Backs out a new card whose */
+/*                     save failed part way, and serves the Delete   */
+/*                     button on the maintenance screen.             */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

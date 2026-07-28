@@ -2,11 +2,9 @@
 /*                                                                   */
 /* Program Name      - STYCRD003S                                    */
 /*                                                                   */
-/* Program Narrative - Read the shared story card footer.  The Access */
-/*                     screens only ever used key 1 - the combo box   */
-/*                     was bound to a query that could return nothing */
-/*                     else - so the key defaults to 1 here and the   */
-/*                     caller does not have to know about it.         */
+/* Program Narrative - Read the shared story card footer, in line    */
+/*                     number order.  A footer key of 0 is read as   */
+/*                     key 1, the only key the footer uses.          */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

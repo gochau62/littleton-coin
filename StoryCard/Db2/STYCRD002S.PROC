@@ -2,16 +2,9 @@
 /*                                                                   */
 /* Program Name      - STYCRD002S                                    */
 /*                                                                   */
-/* Program Narrative - Read one story card.  Returns every body line  */
-/*                     held for the SKU, side 1 and side 2 together,  */
-/*                     in line order.  Replaces the two separate      */
-/*                     SELECTs the Access LoadText routine ran, one   */
-/*                     for scblno <= 12 and one for 13 to 22.         */
-/*                                                                   */
-/*                     Lines outside 1-22 are returned as well, so a  */
-/*                     card carrying stray line numbers from an older */
-/*                     program is visible rather than silently        */
-/*                     dropped.                                       */
+/* Program Narrative - Read one story card.  Returns every body line */
+/*                     held for the SKU, side 1 and side 2 together, */
+/*                     in line number order.                         */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

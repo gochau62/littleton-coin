@@ -2,17 +2,13 @@
 /*                                                                   */
 /* Program Name      - STYCRD004S                                    */
 /*                                                                   */
-/* Program Narrative - Write one story card body line.  Updates the   */
-/*                     line if it is there and inserts it if it is    */
-/*                     not, so the caller no longer runs a COUNT(*)   */
-/*                     per line first the way the Access CheckLineMode*/
-/*                     routine did.                                   */
-/*                                                                   */
-/*                     Line numbers are bound to the printed card:    */
-/*                     1-12 is side 1 and 13-22 is side 2.  Anything  */
-/*                     outside that is rejected rather than written,  */
-/*                     which is what the old "<= 11" and "<= 21"      */
-/*                     guards were reaching for and getting wrong.    */
+/* Program Narrative - Write one story card body line, updating the  */
+/*                     line when it is there and inserting it when   */
+/*                     it is not.                                    */
+/*                     Line 1 to 12 is side 1, 13 to 22 is side 2;   */
+/*                     anything outside that is rejected.            */
+/*                     Text and search key are trimmed to the file   */
+/*                     widths of 50 and 15.                          */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -55,8 +51,6 @@ CREATE OR REPLACE PROCEDURE STYCRD004S (
                 SET MESSAGE_TEXT = 'Story card line number must be 1 to 22';
         END IF;
 
-        -- the file columns are fixed CHAR, so trim to width here and the
-        -- caller never has to worry about an over long line failing the bind
         SET WKTXT = LEFT(COALESCE(INTXT, ''), 50);
         SET WKSRK = LEFT(COALESCE(INSRK, ''), 15);
 

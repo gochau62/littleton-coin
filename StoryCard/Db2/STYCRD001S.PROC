@@ -2,14 +2,12 @@
 /*                                                                   */
 /* Program Name      - STYCRD001S                                    */
 /*                                                                   */
-/* Program Narrative - Story Card SKU lookup.  Replaces the Access    */
-/*                     Combo1 row source, its CheckSku validation     */
-/*                     and the item description read, which were      */
-/*                     three separate ODBC queries.                   */
-/*                                                                   */
-/*                     CARDS - SKUs that already have a story card    */
-/*                     ITEMS - type ahead over the whole item master  */
-/*                     ONE   - one exact SKU, for validation          */
+/* Program Narrative - Story Card SKU lookup, one result set of      */
+/*                     SCSKU, SCDESC and SCCARD.                     */
+/*                     INTYPE CARDS - SKUs that have a story card    */
+/*                     INTYPE ITEMS - the whole item master          */
+/*                     INTYPE ONE   - one exact SKU, for validation  */
+/*                     SCCARD is Y when the SKU already has a card.  */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -42,8 +40,6 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        -- CARDS: the list the Access combo box showed - only SKUs that
-        -- already carry body text.  Blank INKEY lists from the top.
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT B.SCBSKU              AS SCSKU,
                    COALESCE(I.IIDESC,'') AS SCDESC,
@@ -56,9 +52,6 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
              ORDER BY B.SCBSKU
              FETCH FIRST 200 ROWS ONLY;
 
-        -- ITEMS: every item master SKU, flagged with whether it already has
-        -- a card.  The Access screen could not do this - a SKU with no card
-        -- was not in the combo, so you had to know the number by heart.
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT I.IISKU#                            AS SCSKU,
                    I.IIDESC                            AS SCDESC,
@@ -72,8 +65,6 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
              ORDER BY I.IISKU#
              FETCH FIRST 200 ROWS ONLY;
 
-        -- ONE: the old CheckSku plus the old description read in one call.
-        -- No row back means the SKU is not on the master file.
         DECLARE C3 CURSOR WITH RETURN FOR
             SELECT I.IISKU#                            AS SCSKU,
                    I.IIDESC                            AS SCDESC,

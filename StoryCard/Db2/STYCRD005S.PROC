@@ -2,25 +2,14 @@
 /*                                                                   */
 /* Program Name      - STYCRD005S                                    */
 /*                                                                   */
-/* Program Narrative - Tidy the tail of a story card.  Blanks every   */
-/*                     line past the end of side 1 and past the end   */
-/*                     of side 2 in one statement.                    */
-/*                                                                   */
-/*                     This is the old UpdateBlank loop, done right.  */
-/*                     That loop only ran over side 2, stopped at 21  */
-/*                     instead of 22, and made one round trip per     */
-/*                     line, so shortening side 1 left the dropped    */
-/*                     lines printing on the card for ever.           */
-/*                                                                   */
-/*                     Lines are blanked and not deleted, which is    */
-/*                     what the Access screen did, so any program     */
-/*                     that reads the card by SKU and line number     */
-/*                     still finds its record.                        */
-/*                                                                   */
-/*                     INS1LN - last line written on side 1, 0 if the */
-/*                              side was left empty                   */
-/*                     INS2LN - last line written on side 2, 12 if    */
-/*                              the side was left empty               */
+/* Program Narrative - Blank every story card body line past the end */
+/*                     of side 1 and past the end of side 2.         */
+/*                     INS1LN is the last line written on side 1,    */
+/*                     0 when the side was left empty.               */
+/*                     INS2LN is the last line written on side 2,    */
+/*                     12 when the side was left empty.              */
+/*                     Lines are blanked and not deleted, so a       */
+/*                     keyed read on SKU and line still finds them.  */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -56,7 +45,6 @@ CREATE OR REPLACE PROCEDURE STYCRD005S (
         DECLARE WKS1 DECIMAL(4, 0);
         DECLARE WKS2 DECIMAL(4, 0);
 
-        -- clamp so a bad argument can never widen what gets blanked
         SET WKS1 = CASE WHEN INS1LN <  0 THEN  0
                         WHEN INS1LN > 12 THEN 12
                         ELSE INS1LN END;
