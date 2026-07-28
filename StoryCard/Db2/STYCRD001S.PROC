@@ -55,7 +55,7 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
                    COALESCE(I.IIDESC,'') AS SCDESC,
                    'Y'                   AS SCCARD
               FROM (SELECT DISTINCT SCBSKU
-                      FROM LSCPRDLIB/IVSCBODYP) B
+                      FROM IVSCBODYP) B
               LEFT JOIN LSCPRDLIB/ITMMSTP I
                 ON I.IISKU# = B.SCBSKU
              WHERE UPPER(B.SCBSKU) LIKE UPPER(INKEY) CONCAT '%'
@@ -69,7 +69,7 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
                         THEN 'N' ELSE 'Y' END          AS SCCARD
               FROM LSCPRDLIB/ITMMSTP I
               LEFT JOIN (SELECT DISTINCT SCBSKU
-                           FROM LSCPRDLIB/IVSCBODYP) B
+                           FROM IVSCBODYP) B
                 ON B.SCBSKU = I.IISKU#
              WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) CONCAT '%'
              ORDER BY I.IISKU#
@@ -82,7 +82,7 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
                         THEN 'N' ELSE 'Y' END          AS SCCARD
               FROM LSCPRDLIB/ITMMSTP I
               LEFT JOIN (SELECT DISTINCT SCBSKU
-                           FROM LSCPRDLIB/IVSCBODYP) B
+                           FROM IVSCBODYP) B
                 ON B.SCBSKU = I.IISKU#
              WHERE I.IISKU# = INKEY
              FETCH FIRST 1 ROW ONLY;
@@ -91,14 +91,14 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
             SELECT B.SCBLNO        AS SCBLNO,
                    RTRIM(B.SCBTXT) AS SCBTXT,
                    RTRIM(B.SCBSRK) AS SCBSRK
-              FROM LSCPRDLIB/IVSCBODYP B
+              FROM IVSCBODYP B
              WHERE B.SCBSKU = INKEY
              ORDER BY B.SCBLNO;
 
         DECLARE C5 CURSOR WITH RETURN FOR
             SELECT F.SCFLNO        AS SCFLNO,
                    RTRIM(F.SCFTXT) AS SCFTXT
-              FROM LSCPRDLIB/IVSCFOOTP F
+              FROM IVSCFOOTP F
              WHERE F.SCFSKY = 1
              ORDER BY F.SCFLNO;
 

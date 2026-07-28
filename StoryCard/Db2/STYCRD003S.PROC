@@ -70,7 +70,7 @@ CREATE OR REPLACE PROCEDURE STYCRD003S (
                             WHEN INLN2 > 22 THEN 22
                             ELSE INLN2 END;
 
-            UPDATE LSCPRDLIB/IVSCBODYP
+            UPDATE IVSCBODYP
                SET SCBTXT = '',
                    SCBSRK = ''
              WHERE SCBSKU = INSKU
@@ -82,13 +82,13 @@ CREATE OR REPLACE PROCEDURE STYCRD003S (
 
             SET WKS1 = CASE WHEN INLN1 < 0 THEN 0 ELSE INLN1 END;
 
-            DELETE FROM LSCPRDLIB/IVSCFOOTP
+            DELETE FROM IVSCFOOTP
              WHERE SCFSKY = 1
                AND SCFLNO > WKS1;
 
         ELSEIF INTYPE = 'DROP' THEN
 
-            DELETE FROM LSCPRDLIB/IVSCBODYP
+            DELETE FROM IVSCBODYP
              WHERE SCBSKU = INSKU;
 
         ELSE

@@ -68,7 +68,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
                     SET MESSAGE_TEXT = 'Story card line number must be 1 to 22';
             END IF;
 
-            UPDATE LSCPRDLIB/IVSCBODYP
+            UPDATE IVSCBODYP
                SET SCBTXT = WKTXT,
                    SCBSRK = WKSRK
              WHERE SCBSKU = INSKU
@@ -77,7 +77,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
             GET DIAGNOSTICS ROWCNT = ROW_COUNT;
 
             IF ROWCNT = 0 THEN
-                INSERT INTO LSCPRDLIB/IVSCBODYP
+                INSERT INTO IVSCBODYP
                     (SCBSKU, SCBLNO, SCBTXT, SCBSRK)
                 VALUES (INSKU, INLNO, WKTXT, WKSRK);
             END IF;
@@ -89,7 +89,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
                     SET MESSAGE_TEXT = 'Footer line number must be 1 or more';
             END IF;
 
-            UPDATE LSCPRDLIB/IVSCFOOTP
+            UPDATE IVSCFOOTP
                SET SCFTXT = WKTXT
              WHERE SCFSKY = 1
                AND SCFLNO = INLNO;
@@ -97,7 +97,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
             GET DIAGNOSTICS ROWCNT = ROW_COUNT;
 
             IF ROWCNT = 0 THEN
-                INSERT INTO LSCPRDLIB/IVSCFOOTP
+                INSERT INTO IVSCFOOTP
                     (SCFSKY, SCFLNO, SCFTXT)
                 VALUES (1, INLNO, WKTXT);
             END IF;
