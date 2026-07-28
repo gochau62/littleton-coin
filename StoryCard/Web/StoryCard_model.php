@@ -18,20 +18,20 @@
 
 $GLOBALS['stcErr'] = '';
 
-// the printed card: side 1 is lines 1 to 12, side 2 is 13 to 22, and every
-// line is 50 characters wide. The Access screen believed all three numbers
-// and then guarded on 11 and 21, which is why lines 12 and 22 were unusable
+// the printed card, taken from the Access save guards and the message text
+// that goes with them, which agree: side 1 holds 11 lines and side 2 holds 9,
+// numbered 1 to 11 and 13 to 21, at 50 characters a line. Line 12 and line 22
+// are read by the old screen but it could never write them
 define('STC_S1_FIRST', 1);
-define('STC_S1_LAST', 12);
+define('STC_S1_LAST', 11);
 define('STC_S2_FIRST', 13);
-define('STC_S2_LAST', 22);
+define('STC_S2_LAST', 21);
 define('STC_LINE_LEN', 50);
 define('STC_SRK_LEN', 15);
 define('STC_SKU_LEN', 10);
 
-// the footer is one shared block on key 1, which is the only key the Access
-// combo could ever pick, so the key is baked into STYCRD001S/002S/003S and no
-// longer travels as an argument
+// the footer is one shared block on key 1, the only key the Access combo could
+// ever pick, so the key is baked into the procedures
 
 // activity log path in the LCCOnline_logs
 define('STC_ACT_LOG', __DIR__ . '/LCCOnline_logs/storycard_activity.log');
@@ -98,12 +98,10 @@ function stcCleanSku($sku) {
 }
 
 
-// PROGRAM NAME STYCRD001S type CARDS or ITEMS: the SKU picker, where CARDS lists only SKUs that already have a story card (what the Access combo box showed) and ITEMS searches the whole item master so a card can be started for something that has none yet
-function stcSkuSearch($conn, $type, $key = '') {
-    $type = strtoupper(trim($type));
-    if (!in_array($type, array('CARDS', 'ITEMS'))) { $type = 'CARDS'; }
+// PROGRAM NAME STYCRD001S type CARDS: the SKU list, which is exactly the row source the Access Combo1 carried - only SKUs that already have a story card, joined to the item master. A SKU with no card is not on this list; the way to start one is to type the number, the same as the old combo
+function stcSkuSearch($conn, $key = '') {
     return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
-                       array($type, stcCleanSku($key)));
+                       array('CARDS', stcCleanSku($key)));
 }
 
 
@@ -116,7 +114,7 @@ function stcGetSku($conn, $sku) {
 }
 
 
-// PROGRAM NAME STYCRD001S type CARD: every body line held for one SKU, in line order
+// PROGRAM NAME STYCRD001S type CARD: the body lines held for one SKU, in line order
 function stcGetCard($conn, $sku) {
     return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
                        array('CARD', stcCleanSku($sku)));
@@ -129,7 +127,7 @@ function stcGetFooter($conn) {
 }
 
 
-// PROGRAM NAME STYCRD002S type CARD: write one body line, inserting or updating as needed
+// PROGRAM NAME STYCRD002S type CARD: write one body line, updating it when it is there and inserting it when it is not, which is what CheckLineMode decided per line in the Access save
 function stcSaveBodyLine($conn, $sku, $lineNo, $text, $searchKey) {
     return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
                    array('CARD',
@@ -141,36 +139,21 @@ function stcSaveBodyLine($conn, $sku, $lineNo, $text, $searchKey) {
 }
 
 
-// PROGRAM NAME STYCRD002S type FOOT: write one footer line, inserting or updating as needed
-function stcSaveFootLine($conn, $lineNo, $text) {
+// PROGRAM NAME STYCRD002S type FOOTI or FOOTU: write one footer line. The Access footer screen picked insert or update once, up front, from whether the footer was empty, and stayed in that mode for every line - update mode never inserted
+function stcSaveFootLine($conn, $lineNo, $text, $mode) {
+    $type = ($mode === 'i') ? 'FOOTI' : 'FOOTU';
     return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
-                   array('FOOT', '', intval($lineNo),
+                   array($type, '', intval($lineNo),
                          substr((string)$text, 0, STC_LINE_LEN), ''),
-                   'STYCRD002S FOOT');
+                   'STYCRD002S ' . $type);
 }
 
 
-// PROGRAM NAME STYCRD003S type CARD: blank whatever sits past the end of each side, so a card that got shorter really is shorter
-function stcTrimCard($conn, $sku, $side1Last, $side2Last) {
-    return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
-                   array('CARD', stcCleanSku($sku),
-                         intval($side1Last), intval($side2Last)),
-                   'STYCRD003S CARD');
-}
-
-
-// PROGRAM NAME STYCRD003S type FOOT: blank footer lines past the last one written
-function stcTrimFooter($conn, $lastLine) {
-    return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
-                   array('FOOT', '', intval($lastLine), 0),
-                   'STYCRD003S FOOT');
-}
-
-
-// blank every line of a card. Used to back out a card that had nothing on file
-// before the save started, since there is nothing to put back
-function stcBlankCard($conn, $sku) {
-    return stcTrimCard($conn, $sku, STC_S1_FIRST - 1, STC_S2_FIRST - 1);
+// PROGRAM NAME STYCRD003S: blank the body lines from $from up to line 21. The Access UpdateBlank loop ran only in update mode, only from wherever side 2 finished, and only as far as 21, so side 1 is never tidied
+function stcTrimCard($conn, $sku, $from) {
+    return stcExec($conn, "CALL STYCRD003S(?, ?)",
+                   array(stcCleanSku($sku), intval($from)),
+                   'STYCRD003S');
 }
 
 
@@ -179,7 +162,6 @@ function stcCardToSides($rows) {
     $side1 = array_fill(0, STC_S1_LAST - STC_S1_FIRST + 1, '');
     $side2 = array_fill(0, STC_S2_LAST - STC_S2_FIRST + 1, '');
     $srk   = '';
-    $stray = array();
 
     foreach ($rows as $r) {
         $lno = intval($r['SCBLNO']);
@@ -190,31 +172,31 @@ function stcCardToSides($rows) {
             $side1[$lno - STC_S1_FIRST] = $txt;
         } elseif ($lno >= STC_S2_FIRST && $lno <= STC_S2_LAST) {
             $side2[$lno - STC_S2_FIRST] = $txt;
-        } else {
-            // a line number no printed side owns. Surfaced rather than hidden
-            $stray[] = array('line' => $lno, 'text' => $txt);
         }
     }
 
-    return array('side1' => $side1, 'side2' => $side2,
-                 'searchKey' => $srk, 'stray' => $stray);
+    return array('side1' => $side1, 'side2' => $side2, 'searchKey' => $srk);
 }
 
 
-// the last line of a side that actually carries text, as a file line number. 0 for side 1 and 12 for side 2 mean the side was left empty, which is what STYCRD003S type CARD expects
-function stcLastUsed($lines, $firstLineNo) {
-    $last = $firstLineNo - 1;
+// the Access save walked the text box a line at a time and kept a running line
+// number that went up for every line it read, whether or not it wrote it. This
+// returns that same counter: where the side finished, one past the last line
+// the user filled in
+function stcNextLine($lines, $firstLineNo) {
+    $used = 0;
     foreach ($lines as $i => $txt) {
-        if (trim((string)$txt) !== '') { $last = $firstLineNo + $i; }
+        if (trim((string)$txt) !== '') { $used = $i + 1; }
     }
-    return $last;
+    return $firstLineNo + $used;
 }
 
 
-// write a whole card in one go, and put it back the way it was if any line fails.
-// A new card backs out by deleting it, an existing one by rewriting the snapshot
-// taken before the first line was touched. The Access screen had neither: a save
-// that died on line 7 of 22 left the card half rewritten with nothing to undo it
+// write a whole card the way the Access save did: every line of side 1 from 1,
+// every line of side 2 from 13, then in update mode blank from wherever side 2
+// finished up to line 21. If any line fails the card is put back the way it
+// was, which the Access screen could not do - a failure there left the card
+// half rewritten
 function stcSaveCard($conn, $sku, $side1, $side2, $searchKey) {
     $sku = stcCleanSku($sku);
 
@@ -222,20 +204,16 @@ function stcSaveCard($conn, $sku, $side1, $side2, $searchKey) {
     if ($before === false) { return false; }
     $isNew = (count($before) === 0);
 
-    $s1Last = stcLastUsed($side1, STC_S1_FIRST);
-    $s2Last = stcLastUsed($side2, STC_S2_FIRST);
-
-    // only write as far as the last line that carries text on each side, so a
-    // three line card stays three rows instead of becoming twenty two mostly
-    // blank ones. Blank lines before that point are still written, since a gap
-    // in the middle of a side is a real part of the layout
     $written = 0;
-    foreach (array(array($side1, STC_S1_FIRST, $s1Last),
-                   array($side2, STC_S2_FIRST, $s2Last)) as $side) {
+    foreach (array(array($side1, STC_S1_FIRST, STC_S1_LAST),
+                   array($side2, STC_S2_FIRST, STC_S2_LAST)) as $side) {
         list($lines, $first, $last) = $side;
+        // the Access save walked a text box, so it only ever wrote as many
+        // lines as the user had actually typed. Stop at the last one filled in
+        $stop = min(stcNextLine($lines, $first) - 1, $last);
         foreach ($lines as $i => $txt) {
             $lineNo = $first + $i;
-            if ($lineNo > $last) { break; }
+            if ($lineNo > $stop) { break; }
             if (!stcSaveBodyLine($conn, $sku, $lineNo, $txt, $searchKey)) {
                 stcRestoreCard($conn, $sku, $before, $isNew);
                 $GLOBALS['stcErr'] = 'Line ' . $lineNo . ' failed (' .
@@ -246,11 +224,13 @@ function stcSaveCard($conn, $sku, $side1, $side2, $searchKey) {
         }
     }
 
-    if (!stcTrimCard($conn, $sku, $s1Last, $s2Last)) {
-        stcRestoreCard($conn, $sku, $before, $isNew);
-        $GLOBALS['stcErr'] = 'Tidying the unused lines failed (' .
-                             $GLOBALS['stcErr'] . ') - the card was put back the way it was.';
-        return false;
+    if (!$isNew) {
+        if (!stcTrimCard($conn, $sku, stcNextLine($side2, STC_S2_FIRST))) {
+            stcRestoreCard($conn, $sku, $before, $isNew);
+            $GLOBALS['stcErr'] = 'Blanking the unused lines failed (' .
+                                 $GLOBALS['stcErr'] . ') - the card was put back the way it was.';
+            return false;
+        }
     }
 
     return $written;
@@ -263,40 +243,29 @@ function stcRestoreCard($conn, $sku, $before, $isNew) {
         // nothing was on file, so the rows the failed save wrote are blanked
         // rather than removed - this screen never deletes a record, the same
         // as the Access screens it replaces
-        stcBlankCard($conn, $sku);
+        stcTrimCard($conn, $sku, STC_S1_FIRST);
         return;
     }
 
-    // a failed save can only have overwritten rows that were already there or
-    // added rows past the end, so rewriting each original row and then blanking
-    // everything past the two originals' last lines restores the card exactly
-    $s1Last = STC_S1_FIRST - 1;
-    $s2Last = STC_S2_FIRST - 1;
     foreach ($before as $r) {
         $lno = intval($r['SCBLNO']);
-        // a stray line number outside the printed card was never touched by the
-        // save, so leave it alone rather than trying to write it back
-        if ($lno < STC_S1_FIRST || $lno > STC_S2_LAST) { continue; }
+        if ($lno < STC_S1_FIRST || $lno > STC_S2_LAST || $lno === STC_S1_LAST + 1) { continue; }
         stcSaveBodyLine($conn, $sku, $lno, rtrim((string)$r['SCBTXT']),
                         rtrim((string)$r['SCBSRK']));
-        if ($lno <= STC_S1_LAST) {
-            if ($lno > $s1Last) { $s1Last = $lno; }
-        } elseif ($lno <= STC_S2_LAST) {
-            if ($lno > $s2Last) { $s2Last = $lno; }
-        }
     }
-    stcTrimCard($conn, $sku, $s1Last, $s2Last);
 }
 
 
-// write the whole footer: every line in order, then drop anything past the end.
-// Same back out as the card - the footer prints on every story card, so a half
-// saved footer is worse than no save at all
+// write the footer the way the Access footer screen did: the mode is picked
+// once from whether anything is on file, and every line goes through that same
+// mode. In update mode a line past the end of the footer updates nothing, so
+// the footer cannot grow once it has rows - that is the old behaviour and it
+// is kept here on purpose
 function stcSaveFooter($conn, $lines) {
     $before = stcGetFooter($conn);
     if ($before === false) { return false; }
+    $mode = (count($before) === 0) ? 'i' : 'u';
 
-    // drop the trailing blanks the user left behind, keeping any gap in the middle
     $keep = array();
     foreach ($lines as $txt) { $keep[] = rtrim((string)$txt); }
     while (count($keep) > 0 && trim(end($keep)) === '') { array_pop($keep); }
@@ -304,19 +273,12 @@ function stcSaveFooter($conn, $lines) {
     $lineNo = 0;
     foreach ($keep as $txt) {
         $lineNo++;
-        if (!stcSaveFootLine($conn, $lineNo, $txt)) {
+        if (!stcSaveFootLine($conn, $lineNo, $txt, $mode)) {
             stcRestoreFooter($conn, $before);
             $GLOBALS['stcErr'] = 'Footer line ' . $lineNo . ' failed (' .
                                  $GLOBALS['stcErr'] . ') - the footer was put back the way it was.';
             return false;
         }
-    }
-
-    if (!stcTrimFooter($conn, $lineNo)) {
-        stcRestoreFooter($conn, $before);
-        $GLOBALS['stcErr'] = 'Tidying the footer failed (' . $GLOBALS['stcErr'] .
-                             ') - the footer was put back the way it was.';
-        return false;
     }
 
     return $lineNo;
@@ -325,12 +287,8 @@ function stcSaveFooter($conn, $lines) {
 
 // put the footer back to the rows read before the save started
 function stcRestoreFooter($conn, $before) {
-    $last = 0;
     foreach ($before as $r) {
-        $lno = intval($r['SCFLNO']);
-        stcSaveFootLine($conn, $lno, rtrim((string)$r["SCFTXT"]));
-        if ($lno > $last) { $last = $lno; }
+        stcSaveFootLine($conn, intval($r['SCFLNO']), rtrim((string)$r['SCFTXT']), 'u');
     }
-    stcTrimFooter($conn, $last);
 }
 ?>

@@ -4,20 +4,20 @@
 /*                                                                   */
 /* Program Narrative - Story Card reads, one result set per type.    */
 /*                                                                   */
-/*                     CARDS - SKUs that have a story card, INKEY    */
-/*                             narrows by leading characters         */
-/*                             SCSKU, SCDESC, SCCARD                 */
-/*                     ITEMS - the whole item master, INKEY narrows  */
-/*                             SCSKU, SCDESC, SCCARD                 */
+/*                     CARDS - the SKU list, which is the row source */
+/*                             the Access Combo1 used: only SKUs     */
+/*                             that already have a story card and    */
+/*                             are on the item master.  INKEY        */
+/*                             narrows by leading characters.        */
+/*                             SCSKU, SCDESC                         */
 /*                     ONE   - one exact SKU, no row means it is not */
-/*                             on the item master                    */
-/*                             SCSKU, SCDESC, SCCARD                 */
-/*                     CARD  - every body line held for INKEY        */
+/*                             on the item master, which is what the */
+/*                             Access CheckSku tested                */
+/*                             SCSKU, SCDESC                         */
+/*                     CARD  - the body lines for INKEY              */
 /*                             SCBLNO, SCBTXT, SCBSRK                */
 /*                     FOOT  - the shared footer, key 1              */
 /*                             SCFLNO, SCFTXT                        */
-/*                                                                   */
-/*                     SCCARD is Y when the SKU already has a card.  */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -51,43 +51,24 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
 
     BEGIN
         DECLARE C1 CURSOR WITH RETURN FOR
-            SELECT B.SCBSKU              AS SCSKU,
-                   COALESCE(I.IIDESC,'') AS SCDESC,
-                   'Y'                   AS SCCARD
+            SELECT B.SCBSKU AS SCSKU,
+                   I.IIDESC AS SCDESC
               FROM (SELECT DISTINCT SCBSKU
                       FROM IVSCBODYP) B
-              LEFT JOIN LSCPRDLIB/ITMMSTP I
+              JOIN LSCPRDLIB/ITMMSTP I
                 ON I.IISKU# = B.SCBSKU
              WHERE UPPER(B.SCBSKU) LIKE UPPER(INKEY) CONCAT '%'
              ORDER BY B.SCBSKU
              FETCH FIRST 200 ROWS ONLY;
 
         DECLARE C2 CURSOR WITH RETURN FOR
-            SELECT I.IISKU#                            AS SCSKU,
-                   I.IIDESC                            AS SCDESC,
-                   CASE WHEN B.SCBSKU IS NULL
-                        THEN 'N' ELSE 'Y' END          AS SCCARD
+            SELECT I.IISKU# AS SCSKU,
+                   I.IIDESC AS SCDESC
               FROM LSCPRDLIB/ITMMSTP I
-              LEFT JOIN (SELECT DISTINCT SCBSKU
-                           FROM IVSCBODYP) B
-                ON B.SCBSKU = I.IISKU#
-             WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) CONCAT '%'
-             ORDER BY I.IISKU#
-             FETCH FIRST 200 ROWS ONLY;
-
-        DECLARE C3 CURSOR WITH RETURN FOR
-            SELECT I.IISKU#                            AS SCSKU,
-                   I.IIDESC                            AS SCDESC,
-                   CASE WHEN B.SCBSKU IS NULL
-                        THEN 'N' ELSE 'Y' END          AS SCCARD
-              FROM LSCPRDLIB/ITMMSTP I
-              LEFT JOIN (SELECT DISTINCT SCBSKU
-                           FROM IVSCBODYP) B
-                ON B.SCBSKU = I.IISKU#
              WHERE I.IISKU# = INKEY
              FETCH FIRST 1 ROW ONLY;
 
-        DECLARE C4 CURSOR WITH RETURN FOR
+        DECLARE C3 CURSOR WITH RETURN FOR
             SELECT B.SCBLNO        AS SCBLNO,
                    RTRIM(B.SCBTXT) AS SCBTXT,
                    RTRIM(B.SCBSRK) AS SCBSRK
@@ -95,25 +76,23 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
              WHERE B.SCBSKU = INKEY
              ORDER BY B.SCBLNO;
 
-        DECLARE C5 CURSOR WITH RETURN FOR
-            SELECT F.SCFLNO        AS SCFLNO,
-                   RTRIM(F.SCFTXT) AS SCFTXT
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT F.SCFLNO AS SCFLNO,
+                   F.SCFTXT AS SCFTXT
               FROM IVSCFOOTP F
              WHERE F.SCFSKY = 1
              ORDER BY F.SCFLNO;
 
         IF INTYPE = 'CARDS' THEN
             OPEN C1;
-        ELSEIF INTYPE = 'ITEMS' THEN
-            OPEN C2;
         ELSEIF INTYPE = 'ONE' THEN
-            OPEN C3;
+            OPEN C2;
         ELSEIF INTYPE = 'CARD' THEN
-            OPEN C4;
+            OPEN C3;
         ELSEIF INTYPE = 'FOOT' THEN
-            OPEN C5;
+            OPEN C4;
         ELSE
             SIGNAL SQLSTATE '75001'
-                SET MESSAGE_TEXT = 'STYCRD001S type must be CARDS ITEMS ONE CARD or FOOT';
+                SET MESSAGE_TEXT = 'STYCRD001S type must be CARDS ONE CARD or FOOT';
         END IF;
     END;

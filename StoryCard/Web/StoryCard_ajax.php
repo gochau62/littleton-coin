@@ -52,12 +52,10 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
 
-    // the SKU picker: list CARDS (SKUs that already have a card) or ITEMS
-    // (the whole item master), narrowed by what has been typed so far
+    // the SKU list the Access combo carried: SKUs that already have a card,
+    // narrowed by what has been typed so far
     case 'skusearch':
-        $rows = stcSkuSearch($conn,
-                             $_POST['type'] ?? $_GET['type'] ?? 'CARDS',
-                             $_POST['q'] ?? $_GET['q'] ?? '');
+        $rows = stcSkuSearch($conn, $_POST['q'] ?? $_GET['q'] ?? '');
         if ($rows === false) { stcOutFail(); }
         stcOut(array("ok" => true, "rows" => $rows));
 
@@ -69,7 +67,7 @@ switch ($action) {
 
         $item = stcGetSku($conn, $sku);
         if ($item === false) { stcOutFail(); }
-        if ($item === null)  { stcOutFail("SKU " . $sku . " is not on the item master file."); }
+        if ($item === null)  { stcOutFail("SKU Not in Master File"); }
 
         $rows = stcGetCard($conn, $sku);
         if ($rows === false) { stcOutFail(); }
@@ -101,7 +99,7 @@ switch ($action) {
 
         $item = stcGetSku($conn, $sku);
         if ($item === false) { stcOutFail(); }
-        if ($item === null)  { stcOutFail("SKU " . $sku . " is not on the item master file."); }
+        if ($item === null)  { stcOutFail("SKU Not in Master File"); }
 
         $side1 = is_array($payload['side1'] ?? null) ? $payload['side1'] : array();
         $side2 = is_array($payload['side2'] ?? null) ? $payload['side2'] : array();
@@ -112,7 +110,9 @@ switch ($action) {
         $side1 = array_slice(array_values($side1), 0, STC_S1_LAST - STC_S1_FIRST + 1);
         $side2 = array_slice(array_values($side2), 0, STC_S2_LAST - STC_S2_FIRST + 1);
 
-        $wasNew = ($item['SCCARD'] !== 'Y');
+        $before = stcGetCard($conn, $sku);
+        if ($before === false) { stcOutFail(); }
+        $wasNew = (count($before) === 0);
 
         $lines = stcSaveCard($conn, $sku, $side1, $side2, $srk);
         if ($lines === false) { stcOutFail(); }

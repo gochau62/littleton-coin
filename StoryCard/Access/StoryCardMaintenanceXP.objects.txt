@@ -117,36 +117,41 @@ HOW A SAVE WORKS TODAY (Form_BodyMaintenance.Command1_Click)
     vs INSERT, so a 22 line card costs 22 extra round trips.
 6.  Afterwards UpdateBlank blanks lines from wherever side 2 stopped up to 21.
 
-Known defects in that code, carried into this note so they are not
-reproduced by accident:
+What that code does, spelled out, because the replacement follows it:
 
-  * Off by one on both sides.  The guards are "intSCBLno <= 11" and
-    "intSCBLno <= 21", but the rulers and the reload query say 12 and 22.
-    Line 12 and line 22 can never be saved.
-  * The tidy-up loop runs "For intLine = intSCBLno To 21", so line 22 is
-    never blanked either.
-  * Only side 2 is tidied.  Shorten side 1 from eight lines to three and
-    lines four to eight keep their old text forever.
-  * The message text disagrees with the code - it says "maximum number of
-    lines (9) for side 2" while the ruler shows 10.
-  * Every value is concatenated into the SQL string, so an apostrophe in the
-    text breaks the statement.  Side 1 and side 2 wrap the text in double
-    quotes, the footer screen wraps it in single quotes, so the two screens
-    fail on different characters.
-  * There is no transaction.  A failure on line 7 of 22 leaves the card half
-    written with no way back.
-  * FootMaintenance never clears lines.  Shorten the footer and the extra
-    lines keep their old text in IVSCFOOTP and go on printing.
-  * DetermineMode is called twice per save and CheckSku twice more, each one
-    a separate ODBC round trip.
+  * Side 1 holds 11 lines, numbered 1 to 11.  The guard is
+    "intSCBLno <= 11" and the message beside it says "(11)".
+  * Side 2 holds 9 lines, numbered 13 to 21.  The guard is
+    "intSCBLno <= 21" and the message beside it says "(9)".
+  * Line 12 and line 22 are read back by LoadText ("scblno <= 12",
+    "scblno > 12 and <= 22") but the save can never write them.  The
+    rulers, filled with 12 and 10 digits in Form_Load, are the only other
+    place suggesting otherwise, and they lose 2 to 1 against the guards
+    and the messages.
+  * The tidy-up after a save runs only in update mode, only from wherever
+    side 2 finished, and only as far as line 21.  Shorten side 1 and the
+    dropped lines keep their old text.
+  * The footer screen picks insert or update once, from whether anything
+    is on file, and stays in that mode for every line.  Update mode never
+    inserts, so a footer that already has rows cannot grow.  Nothing ever
+    clears a footer line, so shortening the footer leaves the tail
+    printing.
+  * Nothing anywhere deletes a record.  Counting the SQL above gives 18
+    INSERT, 17 SELECT and 12 UPDATE and no DELETE of any kind.
 
-The replacement in ../Db2 and ../Web fixes all of the above; the line limits
-are honoured as 1-12 and 13-22, every value is bound as a parameter, and a
-failed save is rolled back to the card as it was.
+The replacement in ../Db2 and ../Web does all of that, the same way.
+Line limits 11 and 9, tidy side 2 only and only up to 21, the footer
+insert-or-update mode picked once, and no delete anywhere.
 
-One thing the replacement deliberately does NOT add: a delete.  Counting the
-SQL in the VBA above gives 18 INSERT, 17 SELECT and 12 UPDATE and no DELETE
-of any kind - the Access screens never removed a record in their life, and
-the only way to retire a card was to blank its lines.  The replacement keeps
-that exactly: STYCRD003S blanks, and there is no procedure, no ajax action
-and no button anywhere that deletes a row from IVSCBODYP or IVSCFOOTP.
+Three things are different, and only three:
+
+  * Every value is bound as a parameter instead of pasted into a string,
+    so an apostrophe in the text no longer breaks the statement.
+  * A save that fails part way puts the card back the way it was.  The
+    Access screen had no error handling at all, so a failure on line 7 of
+    20 left the card half rewritten with nothing to undo it.  This only
+    shows up when Db2 returns an error; a save that works produces the
+    same rows either way.
+  * The per-line boxes hold the field width, 50 characters, so text
+    cannot be silently cut by the ODBC driver on its way to a CHAR(50)
+    column.

@@ -24,7 +24,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 :root {
   --sc-green-dk: #1C4532;
   --sc-green:    #2e8b57;
-  --sc-green-hv: #1e6e43;
   --sc-blue:     #007bff;
   --sc-blue-hv:  #0056b3;
   --sc-accent:   #eaf6ee;
@@ -33,7 +32,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   --sc-text:     #222;
   --sc-muted:    #5f6b62;
   --sc-amber:    #9a6a14;
-  --sc-card:     #fdfbf4;
 }
 
 .sc-app {
@@ -43,131 +41,95 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   padding: 0 0 2rem 0;
 }
 
-/* ----- top bar ----- */
 .sc-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--sc-green-dk);
-  color: #fff;
-  padding: .6rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--sc-green-dk); color: #fff; padding: .6rem 1.25rem;
 }
 .sc-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
 .sc-topbar-right { display: flex; gap: 1rem; font-size: .85rem; opacity: .9; }
 
 /* ----- toolbar ----- */
 .sc-toolbar {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  padding: .75rem 1.25rem;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem 1.25rem; flex-wrap: wrap;
 }
 .sc-skubox { position: relative; display: inline-flex; align-items: center; }
 .sc-sku {
-  width: 190px;
-  padding: .45rem 1.6rem .45rem .7rem;
-  border: 1px solid var(--sc-line);
-  border-radius: 6px;
+  width: 190px; padding: .45rem 1.6rem .45rem .7rem;
+  border: 1px solid var(--sc-line); border-radius: 6px;
   font-family: "Consolas", "Courier New", monospace;
-  font-size: .95rem;
-  text-transform: uppercase;
+  font-size: .95rem; text-transform: uppercase;
 }
-.sc-skudd {
-  position: absolute; right: .45rem;
-  color: var(--sc-muted); cursor: pointer; user-select: none; font-size: .8rem;
-}
-.sc-scope { color: var(--sc-muted); font-size: .85rem; user-select: none; }
-.sc-scopesel { margin-left: .3rem; padding: .35rem .5rem; font-size: .85rem;
-               border: 1px solid var(--sc-line); border-radius: 6px; background: #fff;
-               color: var(--sc-text); }
-.sc-state { margin-left: auto; font-size: .85rem; color: var(--sc-muted); }
-.sc-state.sc-dirty { color: var(--sc-amber); font-weight: 700; }
-.sc-state.sc-new   { color: var(--sc-green); font-weight: 700; }
+.sc-skudd { position: absolute; right: .45rem; color: var(--sc-muted);
+            cursor: pointer; user-select: none; font-size: .8rem; }
 
-/* ----- SKU type-ahead dropdown ----- */
+/* the state chip carries what used to be a sentence: colour, one word */
+.sc-chip {
+  margin-left: auto; padding: .2rem .6rem; border-radius: 50px;
+  font-size: .78rem; font-weight: 700; letter-spacing: .03em;
+  text-transform: uppercase; visibility: hidden;
+}
+.sc-chip.sc-on    { visibility: visible; }
+.sc-chip.sc-new   { background: var(--sc-accent); color: var(--sc-green); }
+.sc-chip.sc-dirty { background: #fbf1dc; color: var(--sc-amber); }
+
+/* ----- SKU type-ahead ----- */
 .sc-suggest {
-  position: fixed;
-  z-index: 200;
-  background: #fff;
-  border: 1px solid #999;
-  border-radius: 4px;
+  position: fixed; z-index: 200; background: #fff;
+  border: 1px solid #999; border-radius: 4px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
-  max-height: 260px;
-  overflow-y: auto;
-  font-size: .85rem;
+  max-height: 260px; overflow-y: auto; font-size: .85rem;
 }
 .sc-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
 .sc-suggest div b { color: var(--sc-blue); }
 .sc-suggest div.active, .sc-suggest div:hover { background: var(--sc-accent); }
 .sc-suggest .sc-sg-sku { font-family: "Consolas", "Courier New", monospace;
                          display: inline-block; min-width: 90px; }
-.sc-suggest .sc-sg-no  { color: var(--sc-muted); font-style: italic; }
 
 /* ----- buttons ----- */
 .sc-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: .45rem 1.1rem;
-  border: 1px solid #b4b4b4;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: .45rem 1.1rem; border: 1px solid #b4b4b4;
   /* house pill buttons */
-  border-radius: 50px;
-  background: #fff;
-  color: var(--sc-text);
-  font-size: .9rem;
-  font-weight: 700;
-  cursor: pointer;
+  border-radius: 50px; background: #fff; color: var(--sc-text);
+  font-size: .9rem; font-weight: 700; cursor: pointer;
 }
 /* ghost hover, same as the Sellbrite buttons */
 .sc-btn:hover { border-color: var(--sc-blue); color: var(--sc-blue); }
 .sc-btn:disabled { opacity: .45; cursor: default; border-color: #b4b4b4; color: var(--sc-text); }
 .sc-btn-primary { background: var(--sc-blue); border-color: var(--sc-blue); color: #fff; }
 .sc-btn-primary:hover { background: var(--sc-blue-hv); border-color: var(--sc-blue-hv); color: #fff; }
-.sc-btn-green { background: var(--sc-green); border-color: var(--sc-green); color: #fff; }
-.sc-btn-green:hover { background: var(--sc-green-hv); border-color: var(--sc-green-hv); color: #fff; }
 
-/* ----- cards ----- */
+/* ----- the one panel ----- */
 .sc-card {
-  background: #fff;
-  border: 1px solid var(--sc-line);
-  border-radius: 8px;
-  margin: 0 1.25rem 1rem;
-  overflow: hidden;
+  background: #fff; border: 1px solid var(--sc-line); border-radius: 8px;
+  margin: 0 1.25rem; padding: 1rem 1.1rem;
 }
-.sc-card-head {
-  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
-  padding: .55rem .9rem;
-  background: var(--sc-accent);
-  border-bottom: 1px solid var(--sc-line);
-  font-weight: 700; font-size: .92rem;
-}
-.sc-card-head .sc-sub { font-weight: 400; color: var(--sc-muted); font-size: .82rem; }
-.sc-card-body { padding: .9rem; }
+.sc-rule { border: 0; border-top: 1px solid var(--sc-line); margin: 1.1rem 0; }
 
-/* ----- item bar ----- */
-.sc-itembar { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap; }
+/* ----- fields ----- */
+.sc-itembar { display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
 .sc-field { display: flex; flex-direction: column; gap: .25rem; }
-.sc-field > span { font-size: .78rem; color: var(--sc-muted); text-transform: uppercase;
-                   letter-spacing: .04em; }
+.sc-field > span { font-size: .72rem; color: var(--sc-muted);
+                   text-transform: uppercase; letter-spacing: .05em; }
 .sc-field input {
-  padding: .45rem .6rem; border: 1px solid var(--sc-line); border-radius: 6px;
-  font-size: .92rem; background: #fff;
+  padding: .45rem .6rem; border: 1px solid var(--sc-line);
+  border-radius: 6px; font-size: .92rem; background: #fff;
 }
-.sc-field input[readonly] { background: #f3f5f4; color: var(--sc-muted); }
-.sc-desc  { width: 340px; }
-.sc-srk   { width: 170px; font-family: "Consolas", "Courier New", monospace;
+.sc-field input[readonly] { border-color: transparent; background: transparent;
+                            padding-left: 0; font-weight: 600; }
+.sc-desc  { width: 330px; }
+.sc-srk   { width: 160px; font-family: "Consolas", "Courier New", monospace;
             text-transform: uppercase; }
-.sc-skuro { width: 130px; font-family: "Consolas", "Courier New", monospace; }
+.sc-skuro { width: 120px; font-family: "Consolas", "Courier New", monospace; }
 
 /* ----- the two printed sides ----- */
-.sc-sides { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
-.sc-side { flex: 1 1 430px; min-width: 400px; }
-.sc-side h3 {
-  margin: 0 0 .35rem 0; font-size: .85rem; color: var(--sc-muted);
-  text-transform: uppercase; letter-spacing: .05em;
+.sc-sides { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; }
+.sc-side  { flex: 1 1 430px; min-width: 400px; }
+.sc-h {
+  margin: 0 0 .3rem 0; font-size: .72rem; color: var(--sc-muted);
+  text-transform: uppercase; letter-spacing: .05em; font-weight: 700;
 }
-.sc-side h3 span { text-transform: none; letter-spacing: 0; font-weight: 400; }
 
 /* the ruler replaces the Access "1234567890" text boxes: a real 50 column
    scale. It only means anything if its glyphs sit exactly over the ones in
@@ -176,67 +138,36 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
    border and padding */
 .sc-ruler {
   font-family: "Consolas", "Courier New", monospace;
-  font-size: .84rem; color: #b3bdb8; white-space: pre;
+  font-size: .84rem; color: #c4ccc8; white-space: pre;
   margin-left: calc(2rem + .35rem + 1px + .45rem);
-  letter-spacing: 0; line-height: 1.2;
-  user-select: none;
+  letter-spacing: 0; line-height: 1.2; user-select: none;
 }
 .sc-lines { display: flex; flex-direction: column; gap: 2px; }
 .sc-lrow  { display: flex; align-items: center; gap: .35rem; }
 .sc-lno {
-  width: 2rem; text-align: right; font-size: .74rem; color: #9aa5a0;
+  width: 2rem; text-align: right; font-size: .74rem; color: #b3bdb8;
   font-variant-numeric: tabular-nums; user-select: none;
 }
 .sc-ltxt {
-  flex: 1;
-  padding: .3rem .45rem;
-  border: 1px solid var(--sc-line);
-  border-radius: 4px;
+  flex: 1; padding: .3rem .45rem;
+  border: 1px solid var(--sc-line); border-radius: 4px;
   font-family: "Consolas", "Courier New", monospace;
-  font-size: .84rem;
-  letter-spacing: 0;
+  font-size: .84rem; letter-spacing: 0;
 }
-.sc-ltxt:focus { outline: 2px solid var(--sc-blue); outline-offset: -1px; border-color: var(--sc-blue); }
+.sc-ltxt:focus { outline: 2px solid var(--sc-blue); outline-offset: -1px;
+                 border-color: var(--sc-blue); }
 .sc-lrow.sc-filled .sc-lno { color: var(--sc-text); font-weight: 700; }
-.sc-lcnt {
-  width: 2.2rem; text-align: right; font-size: .7rem; color: #b3bdb8;
-  font-variant-numeric: tabular-nums; user-select: none;
-}
+.sc-lcnt { width: 2.2rem; text-align: right; font-size: .7rem; color: #c4ccc8;
+           font-variant-numeric: tabular-nums; user-select: none; }
 .sc-lcnt.sc-full { color: var(--sc-amber); font-weight: 700; }
 
-/* a line the file carries that no printed side owns */
-.sc-stray { margin-top: .6rem; padding: .5rem .7rem; border-radius: 6px;
-            background: #fdf4e3; border: 1px solid #e8d6ac; font-size: .82rem;
-            color: var(--sc-amber); }
-.sc-stray code { font-family: "Consolas", "Courier New", monospace; }
-
 /* ----- footer strip ----- */
+.sc-foothead { display: flex; align-items: baseline; gap: .6rem; }
 .sc-footlines {
   font-family: "Consolas", "Courier New", monospace; font-size: .84rem;
   white-space: pre-wrap; color: var(--sc-text); margin: 0;
 }
-.sc-footempty { color: var(--sc-muted); font-style: italic; font-size: .85rem; }
-
-/* ----- printed preview ----- */
-.sc-preview { display: flex; gap: 1rem; flex-wrap: wrap; }
-.sc-pv {
-  flex: 1 1 320px; min-width: 300px;
-  background: var(--sc-card);
-  border: 1px solid #ddd3b8;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
-  padding: .8rem 1rem;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: .84rem;
-  line-height: 1.45;
-  min-height: 150px;
-}
-.sc-pv h4 { margin: 0 0 .4rem 0; font-size: .68rem; letter-spacing: .09em;
-            text-transform: uppercase; color: #a08b52; font-family: "Segoe UI", sans-serif; }
-.sc-pv p  { margin: 0; white-space: pre-wrap; }
-.sc-pv .sc-pv-foot { margin-top: .7rem; padding-top: .5rem; border-top: 1px solid #e2d7bb;
-                     color: #6b6353; font-size: .78rem; white-space: pre-wrap; }
-.sc-pv-blank { color: #b6ab8e; font-style: italic; }
+.sc-footlines:empty::before { content: "\2014"; color: #c4ccc8; }
 
 /* ----- modal ----- */
 .sc-overlay {
@@ -255,7 +186,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-modal-body { padding: 1rem 1.1rem; }
 .sc-modal-foot { display: flex; justify-content: flex-end; gap: .6rem;
                  padding: .8rem 1.1rem; border-top: 1px solid var(--sc-line); }
-.sc-note { color: var(--sc-muted); font-size: .82rem; margin: 0 0 .7rem 0; }
 </style>
 
 <div class="sc-app">
@@ -274,113 +204,65 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
              maxlength="10" autocomplete="off" spellcheck="false">
       <span class="sc-skudd" id="btnSkuDrop" title="Show the list">&#9662;</span>
     </span>
-    <label class="sc-scope">Look in
-      <select id="selScope" class="sc-scopesel">
-        <option value="CARDS" selected>Existing story cards</option>
-        <option value="ITEMS">All items</option>
-      </select>
-    </label>
-    <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save Card</button>
+    <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save</button>
     <button type="button" class="sc-btn" id="btnRevert" disabled>Revert</button>
-    <button type="button" class="sc-btn" id="btnFooter">Footer Text&hellip;</button>
-    <span class="sc-state" id="lblState">Pick a SKU to begin.</span>
+    <button type="button" class="sc-btn" id="btnFooter">Footer</button>
+    <span class="sc-chip" id="lblState"></span>
   </div>
 
-  <!-- ============ the item this card belongs to ============ -->
   <div class="sc-card">
-    <div class="sc-card-head">
-      Item
-      <span class="sc-sub" id="lblCardState"></span>
+
+    <div class="sc-itembar">
+      <label class="sc-field"><span>SKU</span>
+        <input type="text" id="outSku" class="sc-skuro" readonly tabindex="-1">
+      </label>
+      <label class="sc-field"><span>Description</span>
+        <input type="text" id="outDesc" class="sc-desc" readonly tabindex="-1">
+      </label>
+      <label class="sc-field"><span>Search text</span>
+        <input type="text" id="txtSrk" class="sc-srk" maxlength="15"
+               autocomplete="off" spellcheck="false" disabled>
+      </label>
     </div>
-    <div class="sc-card-body">
-      <div class="sc-itembar">
-        <label class="sc-field"><span>SKU</span>
-          <input type="text" id="outSku" class="sc-skuro" readonly tabindex="-1">
-        </label>
-        <label class="sc-field"><span>Description</span>
-          <input type="text" id="outDesc" class="sc-desc" readonly tabindex="-1">
-        </label>
-        <label class="sc-field"><span>Search text</span>
-          <input type="text" id="txtSrk" class="sc-srk" maxlength="15"
-                 autocomplete="off" spellcheck="false" disabled>
-        </label>
+
+    <hr class="sc-rule">
+
+    <div class="sc-sides">
+      <div class="sc-side">
+        <div class="sc-h">Side 1</div>
+        <div class="sc-ruler" id="ruler1"></div>
+        <div class="sc-lines" id="side1Lines"></div>
+      </div>
+      <div class="sc-side">
+        <div class="sc-h">Side 2</div>
+        <div class="sc-ruler" id="ruler2"></div>
+        <div class="sc-lines" id="side2Lines"></div>
       </div>
     </div>
+
+    <hr class="sc-rule">
+
+    <div class="sc-h">Footer</div>
+    <pre class="sc-footlines" id="outFooter"></pre>
+
   </div>
 
-  <!-- ============ the two printed sides ============ -->
-  <div class="sc-card">
-    <div class="sc-card-head">
-      Card text
-      <span class="sc-sub">50 characters a line &middot; side 1 holds 12 lines, side 2 holds 10</span>
-    </div>
-    <div class="sc-card-body">
-      <div class="sc-sides">
-        <div class="sc-side">
-          <h3>Side 1 <span>lines 1&ndash;12</span></h3>
-          <div class="sc-ruler" id="ruler1"></div>
-          <div class="sc-lines" id="side1Lines"></div>
-        </div>
-        <div class="sc-side">
-          <h3>Side 2 <span>lines 13&ndash;22</span></h3>
-          <div class="sc-ruler" id="ruler2"></div>
-          <div class="sc-lines" id="side2Lines"></div>
-        </div>
-      </div>
-      <div class="sc-stray" id="boxStray" hidden></div>
-    </div>
-  </div>
-
-  <!-- ============ the shared footer, read only here ============ -->
-  <div class="sc-card">
-    <div class="sc-card-head">
-      Footer
-      <span class="sc-sub">shared by every story card &middot; edit it with the Footer Text button</span>
-    </div>
-    <div class="sc-card-body">
-      <pre class="sc-footlines" id="outFooter"></pre>
-    </div>
-  </div>
-
-  <!-- ============ how the card reads when it prints ============ -->
-  <div class="sc-card">
-    <div class="sc-card-head">Preview</div>
-    <div class="sc-card-body">
-      <div class="sc-preview">
-        <div class="sc-pv">
-          <h4>Side 1</h4>
-          <p id="pv1"></p>
-        </div>
-        <div class="sc-pv">
-          <h4>Side 2</h4>
-          <p id="pv2"></p>
-          <div class="sc-pv-foot" id="pvFoot"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ footer editor (replaces the FootMaintenance form) ============ -->
+  <!-- ============ footer editor (the FootMaintenance form) ============ -->
   <div class="sc-overlay" id="mdlFooter" hidden>
     <div class="sc-modal">
       <div class="sc-modal-head">
-        <h2>Footer Text</h2>
+        <h2>Footer</h2>
         <button type="button" class="sc-x" data-close="mdlFooter">&times;</button>
       </div>
       <div class="sc-modal-body">
-        <p class="sc-note">
-          These lines print at the bottom of every story card, so a change here
-          changes every card. 50 characters a line. Empty lines at the end are
-          dropped when it saves.
-        </p>
         <div class="sc-ruler" id="rulerF"></div>
         <div class="sc-lines" id="footLines"></div>
         <button type="button" class="sc-btn" id="btnFootAdd"
-                style="margin-top:.6rem">+ Add line</button>
+                style="margin-top:.6rem">+ Line</button>
       </div>
       <div class="sc-modal-foot">
         <button type="button" class="sc-btn" data-close="mdlFooter">Cancel</button>
-        <button type="button" class="sc-btn sc-btn-primary" id="btnFootSave">Save Footer</button>
+        <button type="button" class="sc-btn sc-btn-primary" id="btnFootSave">Save</button>
       </div>
     </div>
   </div>
@@ -393,15 +275,16 @@ var STC_PRELOAD = <?php echo $stcPreload ? json_encode($stcPreload) : 'null'; ?>
 // STC_MODE 'footer' opens straight on the footer editor, the old FootMaintenance form
 var STC_MODE = '<?php echo $mode; ?>';
 
-// the printed card. These four numbers are the whole layout, and they match
-// STYCRD002S and StoryCard_model.php - change them in all three or nowhere
-var S1_FIRST = 1, S1_LAST = 12;
-var S2_FIRST = 13, S2_LAST = 22;
+// the printed card. These four numbers come from the Access save guards and
+// the message text beside them, which agree on 11 lines and 9, and they match
+// StoryCard_model.php and STYCRD002S - change them in all three or nowhere
+var S1_FIRST = 1,  S1_LAST = 11;
+var S2_FIRST = 13, S2_LAST = 21;
 var LINE_LEN = 50;
 
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
-// the footer as loaded, both for the read only strip and for the editor
+// the footer as loaded, for the strip and for the editor
 var footerLines = [];
 var suggestTimer = null;
 
@@ -434,8 +317,7 @@ $(document).ready(function () {
 
     $('#btnSave').on('click', saveCard);
     $('#btnRevert').on('click', function () {
-        if (!loadedCard) { return; }
-        setCard(loadedCard);
+        if (loadedCard) { setCard(loadedCard); }
     });
     $('#btnFooter').on('click', openFooterEditor);
     $('#btnFootAdd').on('click', function () {
@@ -485,14 +367,11 @@ $(document).ready(function () {
             hideSuggest();
         }
     });
-    // scope change re-runs whatever is in the box
-    $('#selScope').on('change', function () { runSkuSearch($('#txtSku')); });
 
     // ----- the line boxes -----
     $('#side1Lines, #side2Lines').on('input', '.sc-ltxt', function () {
         refreshRow($(this));
         markDirty();
-        renderPreview();
     });
     $('#txtSrk').on('input', markDirty);
 
@@ -552,9 +431,7 @@ function buildRuler(sel) {
 
 function buildSide(sel, first, last) {
     var box = $(sel).empty();
-    for (var n = first; n <= last; n++) {
-        box.append(lineRow(n, ''));
-    }
+    for (var n = first; n <= last; n++) { box.append(lineRow(n, '')); }
 }
 
 
@@ -588,35 +465,16 @@ function setCard(card) {
     $('#btnSave').prop('disabled', !card);
     $('#btnRevert').prop('disabled', true);
 
-    // a line the file carries that no printed side owns. The old screen simply
-    // did not read it, so it stayed in the file unseen
-    var stray = (card && card.stray) || [];
-    if (stray.length) {
-        var parts = stray.map(function (s) {
-            return 'line ' + s.line + ' "' + s.text + '"';
-        });
-        var one = (stray.length === 1);
-        $('#boxStray').prop('hidden', false).html(
-            'This card carries ' + stray.length + (one ? ' line' : ' lines') +
-            ' outside the printed sides, ' + (one ? 'left' : 'all left') +
-            ' untouched by this screen: <code>' + escHtml(parts.join(', ')) + '</code>');
-    } else {
-        $('#boxStray').prop('hidden', true).empty();
-    }
-
-    if (!card) {
-        $('#lblCardState').text('');
-        $('#lblState').removeClass('sc-dirty sc-new').text('Pick a SKU to begin.');
-    } else if (card.isNew) {
-        $('#lblCardState').text('no story card yet - saving will create one');
-        $('#lblState').removeClass('sc-dirty').addClass('sc-new').text('New card');
-    } else {
-        $('#lblCardState').text('');
-        $('#lblState').removeClass('sc-dirty sc-new').text('Loaded');
-    }
-
     $('#side1Lines .sc-ltxt, #side2Lines .sc-ltxt').each(function () { refreshRow($(this)); });
-    renderPreview();
+    setChip(card && card.isNew ? 'new' : '');
+}
+
+
+// one word in one colour, in place of a sentence
+function setChip(state) {
+    var chip = $('#lblState').removeClass('sc-on sc-new sc-dirty');
+    if (state === 'new')   { chip.addClass('sc-on sc-new').text('New'); }
+    if (state === 'dirty') { chip.addClass('sc-on sc-dirty').text('Unsaved'); }
 }
 
 
@@ -645,13 +503,7 @@ function markDirty() {
     var dirty = isDirty();
     $('#btnRevert').prop('disabled', !dirty);
     if (!loadedCard) { return; }
-    if (dirty) {
-        $('#lblState').removeClass('sc-new').addClass('sc-dirty').text('Unsaved changes');
-    } else if (loadedCard.isNew) {
-        $('#lblState').removeClass('sc-dirty').addClass('sc-new').text('New card');
-    } else {
-        $('#lblState').removeClass('sc-dirty sc-new').text('Loaded');
-    }
+    setChip(dirty ? 'dirty' : (loadedCard.isNew ? 'new' : ''));
 }
 
 
@@ -671,8 +523,7 @@ function loadCard(sku) {
     if (!isDirty()) { fetchCard(sku); return; }
 
     ask('Unsaved changes',
-        'The card on screen has changes that have not been saved. Load ' + sku +
-        ' and lose them?',
+        'The card on screen has changes that have not been saved.',
         'Load ' + sku, 'Stay here',
         function () { fetchCard(sku); });
 }
@@ -696,29 +547,9 @@ function saveCard() {
         side2: collectSide('#side2Lines')
     };
 
-    // an empty card is almost always a mistake, so it takes a confirmation
-    var any = payload.side1.concat(payload.side2).some(function (t) { return t.trim() !== ''; });
-    if (!any) {
-        ask('Nothing on the card',
-            'Every line is empty. Saving clears the whole story card for ' +
-            payload.sku + '.',
-            'Save it empty', 'Go back',
-            function () { doSaveCard(payload); });
-        return;
-    }
-
-    doSaveCard(payload);
-}
-
-
-function doSaveCard(payload) {
     $('#btnSave').prop('disabled', true);
     postAjax({ action: 'savecard', payload: JSON.stringify(payload) }, function (resp) {
         $('#btnSave').prop('disabled', false);
-        swal('Saved',
-             'Story card ' + resp.sku + ' ' + (resp.isNew ? 'created' : 'updated') +
-             ' with ' + resp.lines + ' line' + (resp.lines === 1 ? '' : 's') + '.',
-             'success');
         // reload rather than trust the screen: what the file holds is the truth
         postAjax({ action: 'card', sku: resp.sku }, function (r2) { setCard(r2.card); });
     }, function () {
@@ -738,17 +569,14 @@ function loadFooter() {
 
 
 function renderFooter() {
-    if (!footerLines.length) {
-        $('#outFooter').html('<span class="sc-footempty">No footer text on file.</span>');
-    } else {
-        $('#outFooter').text(footerLines.join('\n'));
-    }
-    renderPreview();
+    var shown = footerLines.slice();
+    while (shown.length && rtrim(shown[shown.length - 1]) === '') { shown.pop(); }
+    $('#outFooter').text(shown.join('\n'));
 }
 
 
 function openFooterEditor() {
-    var box = $('#footLines').empty();
+    $('#footLines').empty();
     var lines = footerLines.slice();
     // always leave one empty line to type into
     if (!lines.length || rtrim(lines[lines.length - 1]) !== '') { lines.push(''); }
@@ -771,46 +599,19 @@ function saveFooter() {
 
     $('#btnFootSave').prop('disabled', true);
     postAjax({ action: 'savefooter', payload: JSON.stringify({ footer: lines }) },
-        function (resp) {
+        function () {
             $('#btnFootSave').prop('disabled', false);
             $('#mdlFooter').prop('hidden', true);
-            swal('Saved',
-                 'The footer now has ' + resp.lines + ' line' +
-                 (resp.lines === 1 ? '' : 's') + ' and prints on every story card.',
-                 'success');
             loadFooter();
         },
         function () { $('#btnFootSave').prop('disabled', false); });
 }
 
 
-// ---------------------------------------------------------------- preview
-
-function renderPreview() {
-    setPreview('#pv1', collectSide('#side1Lines'));
-    setPreview('#pv2', collectSide('#side2Lines'));
-
-    var foot = footerLines.filter(function (t) { return rtrim(t) !== ''; });
-    $('#pvFoot').text(foot.join('\n'));
-}
-
-
-function setPreview(sel, lines) {
-    var text = lines.map(rtrim).join('\n').replace(/\n+$/, '');
-    if (text === '') {
-        $(sel).html('<span class="sc-pv-blank">(blank)</span>');
-    } else {
-        $(sel).text(text);
-    }
-}
-
-
 // ---------------------------------------------------------------- SKU list
 
 function runSkuSearch(inp) {
-    postAjax({ action: 'skusearch',
-               type: $('#selScope').val(),
-               q: inp.val().trim() },
+    postAjax({ action: 'skusearch', q: inp.val().trim() },
         function (resp) { showSuggest(inp, resp.rows, inp.val().trim()); },
         null, true);
 }
@@ -828,10 +629,9 @@ function showSuggest(inp, rows, typed) {
         var shown = up && sku.toUpperCase().indexOf(up) === 0
             ? '<b>' + escHtml(sku.substr(0, up.length)) + '</b>' + escHtml(sku.substr(up.length))
             : escHtml(sku);
-        var tail = r.SCCARD === 'Y' ? '' : ' <span class="sc-sg-no">no card yet</span>';
         $('<div>').attr('data-sku', sku)
                   .html('<span class="sc-sg-sku">' + shown + '</span>' +
-                        escHtml(rtrim(r.SCDESC)) + tail)
+                        escHtml(rtrim(r.SCDESC)))
                   .appendTo(box);
     });
 
@@ -908,12 +708,10 @@ function spreadPaste(inp, raw) {
     }
 
     markDirty();
-    renderPreview();
 
     if (dropped > 0) {
         swal('Too much text',
-             dropped + ' line' + (dropped === 1 ? '' : 's') +
-             ' would not fit and were not pasted. This side holds ' +
+             dropped + ' line' + (dropped === 1 ? '' : 's') + ' would not fit. This side holds ' +
              boxes.length + ' lines of ' + LINE_LEN + ' characters.',
              'warning');
     }
