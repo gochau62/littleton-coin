@@ -135,15 +135,6 @@ switch ($action) {
         stcActLog($user, 'FOOTER', $lines . ' lines');
         stcOut(array("ok" => true, "lines" => $lines));
 
-    // remove a card completely. Not something the Access screen could do -
-    // the only way to retire a card was to blank every line by hand
-    case 'deletecard':
-        $sku = stcCleanSku($_POST['sku'] ?? '');
-        if ($sku === '') { stcOutFail("Pick a SKU first."); }
-        if (!stcDeleteCard($conn, $sku)) { stcOutFail(); }
-        stcActLog($user, 'DELETE', 'card ' . $sku);
-        stcOut(array("ok" => true, "sku" => $sku));
-
     default:
         stcOutFail("Unknown action.");
 }

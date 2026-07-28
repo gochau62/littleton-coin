@@ -2,22 +2,18 @@
 /*                                                                   */
 /* Program Name      - STYCRD003S                                    */
 /*                                                                   */
-/* Program Narrative - Clear away story card lines that are no       */
-/*                     longer wanted.                                */
+/* Program Narrative - Blank story card lines that are no longer     */
+/*                     wanted.  Nothing here deletes a record, the   */
+/*                     same as the Access screens this replaces.     */
 /*                                                                   */
 /*                     CARD - blank every body line for INSKU past   */
 /*                            the end of each side.  INLN1 is the    */
 /*                            last line kept on side 1, 0 when the   */
 /*                            side is empty.  INLN2 is the last line */
 /*                            kept on side 2, 12 when it is empty.   */
-/*                            Lines are blanked and not deleted, so  */
-/*                            a keyed read on SKU and line still     */
-/*                            finds them.                            */
-/*                     FOOT - delete every footer line past INLN1.   */
+/*                     FOOT - blank every footer line past INLN1.    */
 /*                            0 clears the footer.  INSKU and INLN2  */
 /*                            are not used.                          */
-/*                     DROP - delete every body line for INSKU.      */
-/*                            INLN1 and INLN2 are not used.          */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -54,14 +50,12 @@ CREATE OR REPLACE PROCEDURE STYCRD003S (
         DECLARE WKS1 DECIMAL(4, 0);
         DECLARE WKS2 DECIMAL(4, 0);
 
-        IF INTYPE IN ('CARD', 'DROP') THEN
+        IF INTYPE = 'CARD' THEN
+
             IF INSKU IS NULL OR TRIM(INSKU) = '' THEN
                 SIGNAL SQLSTATE '75006'
-                    SET MESSAGE_TEXT = 'A SKU is required to clear story card lines';
+                    SET MESSAGE_TEXT = 'A SKU is required to blank story card lines';
             END IF;
-        END IF;
-
-        IF INTYPE = 'CARD' THEN
 
             SET WKS1 = CASE WHEN INLN1 <  0 THEN  0
                             WHEN INLN1 > 12 THEN 12
@@ -82,17 +76,14 @@ CREATE OR REPLACE PROCEDURE STYCRD003S (
 
             SET WKS1 = CASE WHEN INLN1 < 0 THEN 0 ELSE INLN1 END;
 
-            DELETE FROM IVSCFOOTP
+            UPDATE IVSCFOOTP
+               SET SCFTXT = ''
              WHERE SCFSKY = 1
-               AND SCFLNO > WKS1;
-
-        ELSEIF INTYPE = 'DROP' THEN
-
-            DELETE FROM IVSCBODYP
-             WHERE SCBSKU = INSKU;
+               AND SCFLNO > WKS1
+               AND SCFTXT <> '';
 
         ELSE
             SIGNAL SQLSTATE '75007'
-                SET MESSAGE_TEXT = 'STYCRD003S type must be CARD FOOT or DROP';
+                SET MESSAGE_TEXT = 'STYCRD003S type must be CARD or FOOT';
         END IF;
     END;

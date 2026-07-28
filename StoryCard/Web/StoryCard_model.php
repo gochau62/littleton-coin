@@ -159,7 +159,7 @@ function stcTrimCard($conn, $sku, $side1Last, $side2Last) {
 }
 
 
-// PROGRAM NAME STYCRD003S type FOOT: drop footer lines past the last one written
+// PROGRAM NAME STYCRD003S type FOOT: blank footer lines past the last one written
 function stcTrimFooter($conn, $lastLine) {
     return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
                    array('FOOT', '', intval($lastLine), 0),
@@ -167,11 +167,10 @@ function stcTrimFooter($conn, $lastLine) {
 }
 
 
-// PROGRAM NAME STYCRD003S type DROP: delete a whole card, used to back out a new card whose save failed part way and by the Delete button
-function stcDeleteCard($conn, $sku) {
-    return stcExec($conn, "CALL STYCRD003S(?, ?, ?, ?)",
-                   array('DROP', stcCleanSku($sku), 0, 0),
-                   'STYCRD003S DROP');
+// blank every line of a card. Used to back out a card that had nothing on file
+// before the save started, since there is nothing to put back
+function stcBlankCard($conn, $sku) {
+    return stcTrimCard($conn, $sku, STC_S1_FIRST - 1, STC_S2_FIRST - 1);
 }
 
 
@@ -261,7 +260,10 @@ function stcSaveCard($conn, $sku, $side1, $side2, $searchKey) {
 // put a card back to the rows read before the save started
 function stcRestoreCard($conn, $sku, $before, $isNew) {
     if ($isNew) {
-        stcDeleteCard($conn, $sku);
+        // nothing was on file, so the rows the failed save wrote are blanked
+        // rather than removed - this screen never deletes a record, the same
+        // as the Access screens it replaces
+        stcBlankCard($conn, $sku);
         return;
     }
 

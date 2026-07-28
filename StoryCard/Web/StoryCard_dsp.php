@@ -33,7 +33,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   --sc-text:     #222;
   --sc-muted:    #5f6b62;
   --sc-amber:    #9a6a14;
-  --sc-red:      #c0392b;
   --sc-card:     #fdfbf4;
 }
 
@@ -127,8 +126,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-btn-primary:hover { background: var(--sc-blue-hv); border-color: var(--sc-blue-hv); color: #fff; }
 .sc-btn-green { background: var(--sc-green); border-color: var(--sc-green); color: #fff; }
 .sc-btn-green:hover { background: var(--sc-green-hv); border-color: var(--sc-green-hv); color: #fff; }
-.sc-btn-danger { color: var(--sc-red); border-color: #e2b6b0; }
-.sc-btn-danger:hover { background: var(--sc-red); border-color: var(--sc-red); color: #fff; }
 
 /* ----- cards ----- */
 .sc-card {
@@ -286,7 +283,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
     <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save Card</button>
     <button type="button" class="sc-btn" id="btnRevert" disabled>Revert</button>
     <button type="button" class="sc-btn" id="btnFooter">Footer Text&hellip;</button>
-    <button type="button" class="sc-btn sc-btn-danger" id="btnDelete" disabled>Delete Card</button>
     <span class="sc-state" id="lblState">Pick a SKU to begin.</span>
   </div>
 
@@ -441,7 +437,6 @@ $(document).ready(function () {
         if (!loadedCard) { return; }
         setCard(loadedCard);
     });
-    $('#btnDelete').on('click', deleteCard);
     $('#btnFooter').on('click', openFooterEditor);
     $('#btnFootAdd').on('click', function () {
         addFooterRow('');
@@ -592,7 +587,6 @@ function setCard(card) {
     $('#side1Lines .sc-ltxt, #side2Lines .sc-ltxt').prop('disabled', !card);
     $('#btnSave').prop('disabled', !card);
     $('#btnRevert').prop('disabled', true);
-    $('#btnDelete').prop('disabled', !card || card.isNew);
 
     // a line the file carries that no printed side owns. The old screen simply
     // did not read it, so it stayed in the file unseen
@@ -730,22 +724,6 @@ function doSaveCard(payload) {
     }, function () {
         $('#btnSave').prop('disabled', false);
     });
-}
-
-
-function deleteCard() {
-    if (!loadedCard || loadedCard.isNew) { return; }
-    var sku = loadedCard.sku;
-
-    ask('Delete story card ' + sku + '?',
-        'Every line of the card goes, and there is no undo.',
-        'Delete it', 'Keep it',
-        function () {
-            postAjax({ action: 'deletecard', sku: sku }, function () {
-                swal('Deleted', 'Story card ' + sku + ' has been removed.', 'success');
-                postAjax({ action: 'card', sku: sku }, function (r2) { setCard(r2.card); });
-            });
-        });
 }
 
 

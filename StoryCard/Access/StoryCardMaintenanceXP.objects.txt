@@ -135,11 +135,18 @@ reproduced by accident:
     fail on different characters.
   * There is no transaction.  A failure on line 7 of 22 leaves the card half
     written with no way back.
-  * FootMaintenance never removes lines.  Shorten the footer and the extra
-    lines stay in IVSCFOOTP and keep printing.
+  * FootMaintenance never clears lines.  Shorten the footer and the extra
+    lines keep their old text in IVSCFOOTP and go on printing.
   * DetermineMode is called twice per save and CheckSku twice more, each one
     a separate ODBC round trip.
 
 The replacement in ../Db2 and ../Web fixes all of the above; the line limits
 are honoured as 1-12 and 13-22, every value is bound as a parameter, and a
 failed save is rolled back to the card as it was.
+
+One thing the replacement deliberately does NOT add: a delete.  Counting the
+SQL in the VBA above gives 18 INSERT, 17 SELECT and 12 UPDATE and no DELETE
+of any kind - the Access screens never removed a record in their life, and
+the only way to retire a card was to blank its lines.  The replacement keeps
+that exactly: STYCRD003S blanks, and there is no procedure, no ajax action
+and no button anywhere that deletes a row from IVSCBODYP or IVSCFOOTP.
