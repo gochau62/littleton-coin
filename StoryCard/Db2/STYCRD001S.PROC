@@ -17,9 +17,11 @@
 /*                             SCSKU, SCDESC                         */
 /*                     CARD  - the body lines for the SKU in INKEY   */
 /*                             SCBLNO, SCBTXT, SCBSRK                */
-/*                     KEYS  - the footer keys, which is the Access  */
-/*                             FooterSelect query and the row source */
-/*                             of the FootMaintenance Combo1         */
+/*                     KEYS  - every footer key on file.  The Access */
+/*                             FooterSelect query showed only key 1, */
+/*                             so a new footer could never be made;  */
+/*                             widened on request so footers can be  */
+/*                             added and managed by key              */
 /*                             SCFSKY                                */
 /*                     FOOT  - the footer lines for the key in INKEY,*/
 /*                             blank meaning key 1                   */
@@ -85,7 +87,6 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
         DECLARE C4 CURSOR WITH RETURN FOR
             SELECT DISTINCT F.SCFSKY AS SCFSKY
               FROM LSCPRDLIB/IVSCFOOTP F
-             WHERE F.SCFSKY = 1
              ORDER BY F.SCFSKY;
 
         DECLARE C5 CURSOR WITH RETURN FOR

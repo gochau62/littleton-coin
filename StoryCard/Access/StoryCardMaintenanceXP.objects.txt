@@ -168,6 +168,15 @@ consequences of a web page not being able to hold an open recordset:
     the typed filter this only shows up on an unfiltered list longer
     than 200.
 
+One deliberate widening, asked for on 07/29: footers are managed BY KEY
+and new ones can be added.  The Access form looked like it allowed this -
+a combo for the key beside the text - but FooterSelect only ever offered
+key 1, and the save ignored the combo anyway: both its INSERT and its
+UPDATE hardcode scfsky = 1, so the combo steered nothing but the load.
+The web editor's key box loads any key, an unknown key opens empty in
+insert mode the way a new SKU starts a new card, and the key list is
+every key on file rather than FooterSelect's fixed 1.
+
 Three things about the saving are different, and only three:
 
   * Every value is bound as a parameter instead of pasted into a string,

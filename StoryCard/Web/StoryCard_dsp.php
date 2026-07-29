@@ -224,9 +224,15 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
         <button type="button" class="sc-x" data-close="mdlFooter">&times;</button>
       </div>
       <div class="sc-modal-body">
-        <label class="sc-field" style="margin-bottom:.8rem"><span>Footer key</span>
-          <select id="mdlFootKey" class="sc-footkey" style="width:90px"></select>
-        </label>
+        <div class="sc-itembar" style="margin-bottom:.8rem">
+          <label class="sc-field"><span>Footer key</span>
+            <input type="text" id="mdlFootKey" class="sc-footkey sc-mono"
+                   list="footKeyList" maxlength="7" inputmode="numeric"
+                   autocomplete="off" style="width:6rem">
+          </label>
+          <datalist id="footKeyList"></datalist>
+          <span class="sc-chip" id="mdlFootNew"></span>
+        </div>
         <div class="sc-lines" id="footLines"></div>
         <button type="button" class="sc-btn" id="btnFootAdd"
                 style="margin-top:.6rem">+ Line</button>
@@ -296,11 +302,17 @@ $(document).ready(function () {
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
-    // both key pickers load that footer: the strip on the card screen and the
-    // one in the editor, which is the FootMaintenance combo
+    // both key pickers load that footer. The editor's key box also ADDS one:
+    // type a key with nothing on file and the footer opens empty in insert
+    // mode, the same way typing a new SKU starts a new card
     $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
     $('#mdlFootKey').on('change', function () {
-        loadFooter($(this).val(), openFooterEditor);
+        var k = parseInt($(this).val(), 10);
+        if (!(k >= 1)) { $(this).val(footerSky); return; }
+        // the same key again is not a change - reloading would re-render the
+        // rows and wipe anything already typed into them
+        if (k === footerSky) { $(this).val(footerSky); return; }
+        loadFooter(k, renderFooterEditor);
     });
 
     $('[data-close]').on('click', function () {
@@ -545,7 +557,8 @@ function loadFooter(sky, then) {
 
 function renderFooter() {
     fillKeys('#selFootKey');
-    fillKeys('#mdlFootKey');
+    var dl = $('#footKeyList').empty();
+    $.each(footerKeys, function (i, k) { dl.append($('<option>').val(k)); });
     var shown = footerLines.slice();
     while (shown.length && rtrim(shown[shown.length - 1]) === '') { shown.pop(); }
     $('#outFooter').text(shown.join('\n'));
@@ -564,19 +577,28 @@ function fillKeys(sel) {
 
 
 function openFooterEditor() {
+    $('#mdlFootKey').val(footerSky);
+    renderFooterEditor();
+    $('#mdlFooter').prop('hidden', false);
+    $('#footLines .sc-ltxt').first().trigger('focus');
+}
+
+
+function renderFooterEditor() {
+    $('#mdlFootKey').val(footerSky);
     $('#footLines').empty();
     var lines = footerLines.slice();
 
-    // the Access rule: an empty footer takes any number of lines, a footer
-    // that has rows can only have those rows rewritten, never grown. The
-    // editor offers exactly what the save can do
+    // the Access rule per key: an empty footer takes any number of lines, a
+    // footer that has rows can only have those rows rewritten, never grown.
+    // The editor offers exactly what the save can do
     var canGrow = lines.length === 0;
     if (canGrow) { lines.push(''); }
     $.each(lines, function (i, t) { addFooterRow(t); });
     $('#btnFootAdd').prop('hidden', !canGrow);
 
-    $('#mdlFooter').prop('hidden', false);
-    $('#footLines .sc-ltxt').first().trigger('focus');
+    var chip = $('#mdlFootNew').removeClass('sc-on sc-new');
+    if (canGrow) { chip.addClass('sc-on sc-new').text('New'); }
 }
 
 

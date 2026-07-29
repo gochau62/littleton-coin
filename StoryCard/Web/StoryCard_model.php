@@ -284,7 +284,15 @@ function stcSaveFooter($conn, $lines, $sky = STC_FOOT_KEY) {
     foreach ($keep as $txt) {
         $lineNo++;
         if (!stcSaveFootLine($conn, $sky, $lineNo, $txt, $mode)) {
-            stcRestoreFooter($conn, $before, $sky);
+            if ($mode === 'i') {
+                // nothing was on file for this key: blank what the failed save
+                // managed to insert, so no partial footer is left behind
+                for ($b = 1; $b < $lineNo; $b++) {
+                    stcSaveFootLine($conn, $sky, $b, '', 'u');
+                }
+            } else {
+                stcRestoreFooter($conn, $before, $sky);
+            }
             $GLOBALS['stcErr'] = 'Footer line ' . $lineNo . ' failed (' .
                                  $GLOBALS['stcErr'] . ') - the footer was put back the way it was.';
             return false;
