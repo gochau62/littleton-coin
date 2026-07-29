@@ -226,11 +226,13 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
       <div class="sc-modal-body">
         <div class="sc-itembar" style="margin-bottom:.8rem">
           <label class="sc-field"><span>Footer key</span>
-            <input type="text" id="mdlFootKey" class="sc-footkey sc-mono"
-                   list="footKeyList" maxlength="7" inputmode="numeric"
-                   autocomplete="off" style="width:6rem">
+            <span class="sc-skubox">
+              <input type="text" id="mdlFootKey" class="sc-footkey sc-mono"
+                     maxlength="7" inputmode="numeric" autocomplete="off"
+                     style="width:6.5rem; padding:.35rem 1.5rem .35rem .5rem">
+              <span class="sc-skudd" id="btnFootKeyDrop" title="Show the list">&#9662;</span>
+            </span>
           </label>
-          <datalist id="footKeyList"></datalist>
           <span class="sc-chip" id="mdlFootNew"></span>
         </div>
         <div class="sc-lines" id="footLines"></div>
@@ -306,6 +308,27 @@ $(document).ready(function () {
     // type a key with nothing on file and the footer opens empty in insert
     // mode, the same way typing a new SKU starts a new card
     $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
+    // the key box opens its list the same way the SKU box does: focus, a
+    // click while focused, or the arrow. Picking a key loads that footer;
+    // typing a number not on the list starts a new one
+    $('#mdlFootKey').on('focus click', function () {
+        if (!$('#scKeySuggest').length) { showKeySuggest(); }
+    });
+    $('#mdlFootKey').on('input', hideKeySuggest);
+    $('#mdlFootKey').on('blur', function () {
+        // wait so a click on the list lands before blur hides it
+        setTimeout(hideKeySuggest, 150);
+    });
+    $('#btnFootKeyDrop').on('mousedown', function (e) {
+        e.preventDefault();
+        if ($('#scKeySuggest').length) { hideKeySuggest(); return; }
+        if (document.activeElement !== $('#mdlFootKey')[0]) { $('#mdlFootKey').trigger('focus'); }
+        else { showKeySuggest(); }
+    });
+    $('#mdlFootKey').on('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); hideKeySuggest(); $(this).trigger('change'); }
+        else if (e.key === 'Escape') { hideKeySuggest(); }
+    });
     $('#mdlFootKey').on('change', function () {
         var k = parseInt($(this).val(), 10);
         if (!(k >= 1)) { $(this).val(footerSky); return; }
@@ -557,8 +580,6 @@ function loadFooter(sky, then) {
 
 function renderFooter() {
     fillKeys('#selFootKey');
-    var dl = $('#footKeyList').empty();
-    $.each(footerKeys, function (i, k) { dl.append($('<option>').val(k)); });
     var shown = footerLines.slice();
     while (shown.length && rtrim(shown[shown.length - 1]) === '') { shown.pop(); }
     $('#outFooter').text(shown.join('\n'));
@@ -705,6 +726,35 @@ function showSuggest(inp, rows, typed) {
 
 
 function hideSuggest() { $('#scSuggest').remove(); }
+
+
+// the footer key list. The keys come back with every footer response, so a
+// key saved a moment ago is already here to grab
+function showKeySuggest() {
+    hideKeySuggest();
+    if (!footerKeys.length) { return; }
+    var inp = $('#mdlFootKey');
+    var box = $('<div class="sc-suggest" id="scKeySuggest">');
+    $.each(footerKeys, function (i, k) {
+        var d = $('<div>').attr('data-key', k).text(k);
+        if (k === footerSky) { d.addClass('active'); }
+        box.append(d);
+    });
+    // mousedown, not click, so the pick lands before the input blurs
+    box.on('mousedown', 'div', function (e) {
+        e.preventDefault();
+        var k = $(this).data('key');
+        hideKeySuggest();
+        $('#mdlFootKey').val(k).trigger('change');
+    });
+    var off = inp.offset();
+    box.css({ left: off.left, top: off.top + inp.outerHeight() + 2,
+              minWidth: Math.max(inp.outerWidth(), 110) });
+    $('body').append(box);
+}
+
+
+function hideKeySuggest() { $('#scKeySuggest').remove(); }
 
 
 function scrollActiveIntoView(box) {
