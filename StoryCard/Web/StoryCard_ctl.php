@@ -81,11 +81,18 @@ if ($authorized != "yes") {
             }
         }
 
-        if ($footer !== false && $footKeys !== false) {
+        if ($footer !== false) {
             $foot = array();
             foreach ($footer as $f) { $foot[] = rtrim($f['SCFTXT']); }
+            // the key list failing must not cost the page its preload
             $keyList = array();
-            foreach ($footKeys as $k) { $keyList[] = intval($k['SCFSKY']); }
+            if ($footKeys === false) {
+                error_log('StoryCard footer keys unavailable (' . $GLOBALS['stcErr'] .
+                          ') - is STYCRD001S built with the KEYS type?');
+                $keyList[] = STC_FOOT_KEY;
+            } else {
+                foreach ($footKeys as $k) { $keyList[] = intval($k['SCFSKY']); }
+            }
             $stcPreload = array("ok" => true, "sky" => STC_FOOT_KEY,
                                 "footer" => $foot, "keys" => $keyList,
                                 "card" => $card);

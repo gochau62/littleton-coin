@@ -85,13 +85,21 @@ switch ($action) {
         $sky  = intval($_POST['sky'] ?? $_GET['sky'] ?? STC_FOOT_KEY);
         $rows = stcGetFooter($conn, $sky);
         if ($rows === false) { stcOutFail(); }
+
+        // a failed key list is logged but does not take the footer down with
+        // it - FooterSelect can only ever return key 1 anyway
         $keys = stcFooterKeys($conn);
-        if ($keys === false) { stcOutFail(); }
+        $keyList = array();
+        if ($keys === false) {
+            error_log('StoryCard footer keys unavailable (' . $GLOBALS['stcErr'] .
+                      ') - is STYCRD001S built with the KEYS type?');
+            $keyList[] = $sky;
+        } else {
+            foreach ($keys as $k) { $keyList[] = intval($k['SCFSKY']); }
+        }
 
         $foot = array();
         foreach ($rows as $r) { $foot[] = rtrim($r['SCFTXT']); }
-        $keyList = array();
-        foreach ($keys as $k) { $keyList[] = intval($k['SCFSKY']); }
 
         stcOut(array("ok" => true, "sky" => $sky,
                      "footer" => $foot, "keys" => $keyList));

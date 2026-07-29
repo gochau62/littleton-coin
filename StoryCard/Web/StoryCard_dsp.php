@@ -51,9 +51,9 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 
 /* buttons down the left, the two sides beside them, the way the Access
    BodyMaintenance form was arranged */
-.sc-work { display: flex; gap: 1.5rem; align-items: flex-start; }
+.sc-work { display: flex; gap: 1.25rem; align-items: flex-start; }
 .sc-rail { display: flex; flex-direction: column; gap: .55rem;
-           flex: 0 0 120px; padding-top: 1.55rem; }
+           flex: 0 0 108px; padding-top: 1.55rem; }
 
 /* ----- fields ----- */
 .sc-itembar { display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
@@ -97,8 +97,11 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-btn-primary:hover { background: var(--sc-blue-hv); border-color: var(--sc-blue-hv); }
 
 /* ----- the two printed sides ----- */
-.sc-sides { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; }
-.sc-side  { flex: 0 0 auto; }
+/* the two sides sit beside each other at every window width, like the form.
+   They split the room; they never wrap into a stack */
+.sc-sides { display: flex; gap: 1rem; flex-wrap: nowrap; align-items: flex-start;
+            flex: 1 1 auto; min-width: 0; }
+.sc-side  { flex: 1 1 50%; min-width: 0; }
 .sc-h { margin: 0 0 .3rem; font-size: .72rem; color: var(--sc-muted); font-weight: 700;
         text-transform: uppercase; letter-spacing: .05em; }
 .sc-lines { display: flex; flex-direction: column; gap: 2px; }
@@ -110,9 +113,10 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           font-variant-numeric: tabular-nums; user-select: none; }
 .sc-lrow.sc-filled .sc-lno { color: var(--sc-text); font-weight: 700; }
 
-/* exactly fifty characters wide, the width of the file column, so a full line
-   fills the box and there is nothing to count or measure against */
-.sc-ltxt { flex: 0 0 auto; width: calc(50ch + .9rem + 2px);
+/* capped at fifty characters, the file column width, but able to shrink with
+   the window - a narrower box scrolls while typing, which is exactly how the
+   Access text boxes behaved. maxlength still holds the limit either way */
+.sc-ltxt { flex: 1 1 auto; min-width: 0; max-width: calc(50ch + .9rem + 2px);
            padding: .3rem .45rem; border: 1px solid var(--sc-line);
            border-radius: 4px; font-size: .84rem; }
 .sc-ltxt:focus { outline: 2px solid var(--sc-blue); outline-offset: -1px;
@@ -136,6 +140,7 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-suggest div b { color: var(--sc-blue); }
 .sc-suggest div.active, .sc-suggest div:hover { background: var(--sc-accent); }
 .sc-sg-sku { display: inline-block; width: calc(10ch + 1rem); }
+.sc-sg-err { color: #a33; cursor: default; white-space: normal; }
 
 /* ----- modal ----- */
 .sc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 150;
@@ -611,7 +616,24 @@ function runSkuSearch(inp) {
             if (seq !== suggestSeq) { return; }
             showSuggest(inp, resp.rows, inp.val().trim());
         },
-        null, true);
+        function (resp) {
+            if (seq !== suggestSeq) { return; }
+            showSuggestError(inp, (resp && resp.msg) ? resp.msg : 'no reply from the server');
+        }, true);
+}
+
+
+// the list could not be fetched: say so in the box where the rows would be,
+// instead of silently showing nothing
+function showSuggestError(inp, msg) {
+    hideSuggest();
+    var box = $('<div class="sc-suggest" id="scSuggest">');
+    $('<div class="sc-sg-err">').text('SKU list unavailable - ' + msg).appendTo(box);
+    var off = inp.offset();
+    box.css({ left: off.left, top: off.top + inp.outerHeight() + 2,
+              minWidth: Math.max(inp.outerWidth(), 360), maxWidth: 560,
+              whiteSpace: 'normal' });
+    $('body').append(box);
 }
 
 
