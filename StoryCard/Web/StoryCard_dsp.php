@@ -324,24 +324,30 @@ $(document).ready(function () {
     $('#txtSku').on('input', function () {
         var inp = $(this);
         clearTimeout(suggestTimer);
-        suggestTimer = setTimeout(function () { runSkuSearch(inp); }, 250);
+        suggestTimer = setTimeout(function () {
+            runSkuSearch(inp, inp.val().trim());
+        }, 250);
     });
     // focus opens the list, and so does a click once the box already has focus:
     // a second click on an already focused input fires no focus event, which is
-    // why clicking it again used to do nothing
+    // why clicking it again used to do nothing. Opening always shows the WHOLE
+    // list, positioned at the current value - the Access combo only filtered
+    // while you typed, never on open
     $('#txtSku').on('focus click', function () {
-        if (!$('#scSuggest').length) { runSkuSearch($(this)); }
+        if (!$('#scSuggest').length) { openSkuList(); }
     });
     $('#txtSku').on('blur', function () {
         // wait so a click on the list lands before blur hides it
         setTimeout(hideSuggest, 150);
     });
-    // the arrow toggles it (mousedown so the input keeps focus)
+    // the arrow toggles it (mousedown so the input keeps focus). Focusing an
+    // unfocused box opens the list through the focus handler; a box that is
+    // already focused fires no event, so open it directly
     $('#btnSkuDrop').on('mousedown', function (e) {
         e.preventDefault();
         if ($('#scSuggest').length) { hideSuggest(); return; }
-        $('#txtSku').trigger('focus');
-        runSkuSearch($('#txtSku'));
+        if (document.activeElement !== $('#txtSku')[0]) { $('#txtSku').trigger('focus'); }
+        else { openSkuList(); }
     });
     $('#txtSku').on('keydown', function (e) {
         var box = $('#scSuggest');
@@ -609,12 +615,18 @@ function saveFooter() {
 
 // ---------------------------------------------------------------- SKU list
 
-function runSkuSearch(inp) {
+// the whole list, regardless of what the box holds
+function openSkuList() {
+    runSkuSearch($('#txtSku'), '');
+}
+
+
+function runSkuSearch(inp, q) {
     var seq = ++suggestSeq;
-    postAjax({ action: 'skusearch', q: inp.val().trim() },
+    postAjax({ action: 'skusearch', q: q },
         function (resp) {
             if (seq !== suggestSeq) { return; }
-            showSuggest(inp, resp.rows, inp.val().trim());
+            showSuggest(inp, resp.rows, q);
         },
         function (resp) {
             if (seq !== suggestSeq) { return; }
@@ -668,6 +680,15 @@ function showSuggest(inp, rows, typed) {
     box.css({ left: off.left, top: off.top + inp.outerHeight() + 2,
               minWidth: Math.max(inp.outerWidth(), 360) });
     $('body').append(box);
+
+    // a full-list open lands on the current value, the way the combo did
+    var cur = inp.val().trim().toUpperCase();
+    if (typed === '' && cur !== '') {
+        box.children().filter(function () {
+            return String($(this).data('sku')).toUpperCase() === cur;
+        }).first().addClass('active');
+        scrollActiveIntoView(box);
+    }
 }
 
 
