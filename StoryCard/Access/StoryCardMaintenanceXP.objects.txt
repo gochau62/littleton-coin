@@ -143,7 +143,24 @@ The replacement in ../Db2 and ../Web does all of that, the same way.
 Line limits 11 and 9, tidy side 2 only and only up to 21, the footer
 insert-or-update mode picked once, and no delete anywhere.
 
-Three things are different, and only three:
+The SKU list is STYCRD001S type CARDS and it is the Combo1 row source
+verbatim: DISTINCT SCBSKU from IVSCBODYP, INNER JOIN ITMMSTL1 on IISKU#,
+ordered by SCBSKU.  It reads ITMMSTL1, the logical the .mdb linked, and
+not the ITMMSTP physical underneath it - a logical can carry select and
+omit criteria, so the two are not guaranteed to hold the same rows.
+
+Two things about that list are not identical to Access, both of them
+consequences of a web page not being able to hold an open recordset:
+
+  * The Access combo loaded every row once and narrowed as you typed,
+    inside the control.  This narrows on the server with
+    UPPER(SCBSKU) LIKE the typed characters || '%', which is the same
+    leading-character match the combo did.
+  * It returns at most 200 rows a call.  The combo had no limit.  With
+    the typed filter this only shows up on an unfiltered list longer
+    than 200.
+
+Three things about the saving are different, and only three:
 
   * Every value is bound as a parameter instead of pasted into a string,
     so an apostrophe in the text no longer breaks the statement.

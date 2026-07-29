@@ -161,11 +161,13 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
            font-variant-numeric: tabular-nums; user-select: none; }
 .sc-lcnt.sc-full { color: var(--sc-amber); font-weight: 700; }
 
-/* ----- footer strip ----- */
-.sc-foothead { display: flex; align-items: baseline; gap: .6rem; }
+/* ----- footer, under side 2 where the Access form put it ----- */
+.sc-footh { margin-top: 1rem; }
 .sc-footlines {
   font-family: "Consolas", "Courier New", monospace; font-size: .84rem;
   white-space: pre-wrap; color: var(--sc-text); margin: 0;
+  /* line up under the boxes above it, past the line number column */
+  margin-left: calc(2rem + .35rem + 1px + .45rem);
 }
 .sc-footlines:empty::before { content: "\2014"; color: #c4ccc8; }
 
@@ -237,13 +239,11 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
         <div class="sc-h">Side 2</div>
         <div class="sc-ruler" id="ruler2"></div>
         <div class="sc-lines" id="side2Lines"></div>
+
+        <div class="sc-h sc-footh">Footer</div>
+        <pre class="sc-footlines" id="outFooter"></pre>
       </div>
     </div>
-
-    <hr class="sc-rule">
-
-    <div class="sc-h">Footer</div>
-    <pre class="sc-footlines" id="outFooter"></pre>
 
   </div>
 
