@@ -37,48 +37,38 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   --sc-mono:     "Consolas", "Courier New", monospace;
 }
 
-.sc-app { font-family: var(--sc-font); color: var(--sc-text);
-          background: #f8f8f8; padding-bottom: 2rem; }
+.sc-app { font-family: var(--sc-font); color: var(--sc-text); background: #f8f8f8; padding-bottom: 2rem; }
 
 .sc-topbar { display: flex; align-items: center; justify-content: space-between;
              background: var(--sc-green-dk); color: #fff; padding: .6rem 1.25rem; }
 .sc-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
 .sc-topbar-right { display: flex; gap: 1rem; font-size: .85rem; opacity: .9; }
 
-.sc-card { background: #fff; border: 1px solid var(--sc-line); border-radius: 8px;
-           margin: 1rem 1.25rem 0; padding: 1rem 1.1rem; }
+.sc-card { background: #fff; border: 1px solid var(--sc-line); border-radius: 8px; margin: 1rem 1.25rem 0; padding: 1rem 1.1rem; }
 .sc-rule { border: 0; border-top: 1px solid var(--sc-line); margin: 1.1rem 0; }
 
-/* ----- fields ----- */
-.sc-itembar { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: nowrap; }
+/* ----- fields ----- */ .sc-itembar { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: nowrap; }
 .sc-itembar .sc-btn { flex: 0 0 auto; }
 .sc-searchrow { margin-top: 1.1rem; }
 .sc-field { display: flex; flex-direction: column; gap: .25rem; }
-.sc-field > span { font-size: .72rem; color: var(--sc-muted);
-                   text-transform: uppercase; letter-spacing: .05em; }
-.sc-field input { padding: .45rem .6rem; border: 1px solid var(--sc-line);
-                  border-radius: 6px; font-size: .92rem; background: #fff; }
-.sc-field input[readonly] { border-color: transparent; background: none;
-                            padding-left: 0; font-weight: 600; }
-/* the description gives way so the buttons keep their place on the row */
-.sc-fgrow { flex: 1 1 160px; min-width: 0; }
+.sc-field > span { font-size: .72rem; color: var(--sc-muted); text-transform: uppercase; letter-spacing: .05em; }
+.sc-field input { padding: .45rem .6rem; border: 1px solid var(--sc-line); border-radius: 6px; font-size: .92rem; background: #fff; }
+.sc-field input[readonly] { border-color: transparent; background: none; padding-left: 0; font-weight: 600; }
+/* the description gives way so the buttons keep their place on the row */ .sc-fgrow { flex: 1 1 160px; min-width: 0; }
 .sc-desc { width: 100%; max-width: 330px; }
-.sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footlines, .sc-footkey, .sc-sg-sku {
-  font-family: var(--sc-mono);
-}
+.sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footlines, .sc-footkey, .sc-sg-sku { font-family: var(--sc-mono); }
 .sc-sku { width: calc(10ch + 2.4rem); padding-right: 1.6rem; text-transform: uppercase; }
 .sc-srk { width: calc(15ch + 1.3rem); text-transform: uppercase; }
 
 .sc-skubox { position: relative; display: inline-flex; align-items: center; }
-.sc-skudd { position: absolute; right: .5rem; color: var(--sc-muted);
-            cursor: pointer; user-select: none; font-size: .8rem; }
+.sc-skudd { position: absolute; right: .5rem; color: var(--sc-muted); cursor: pointer; user-select: none; font-size: .8rem; }
 
 /* one word in one colour, in place of a sentence */
 .sc-chip { margin-left: auto; padding: .2rem .6rem; border-radius: 50px;
            font-size: .78rem; font-weight: 700; text-transform: uppercase;
            visibility: hidden; }
-.sc-chip.sc-on    { visibility: visible; }
-.sc-chip.sc-new   { background: var(--sc-accent); color: var(--sc-green); }
+.sc-chip.sc-on { visibility: visible; }
+.sc-chip.sc-new { background: var(--sc-accent); color: var(--sc-green); }
 .sc-chip.sc-dirty { background: #fbf1dc; color: var(--sc-amber); }
 
 /* ----- buttons: house pill, ghost hover, same as the Sellbrite ones ----- */
@@ -87,46 +77,35 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           background: #fff; color: var(--sc-text); font-size: .9rem;
           font-weight: 700; cursor: pointer; }
 .sc-btn:hover { border-color: var(--sc-blue); color: var(--sc-blue); }
-.sc-btn:disabled { opacity: .45; cursor: default;
-                   border-color: #b4b4b4; color: var(--sc-text); }
-.sc-btn-primary, .sc-btn-primary:hover {
-  background: var(--sc-blue); border-color: var(--sc-blue); color: #fff; }
+.sc-btn:disabled { opacity: .45; cursor: default; border-color: #b4b4b4; color: var(--sc-text); }
+.sc-btn-primary, .sc-btn-primary:hover { background: var(--sc-blue); border-color: var(--sc-blue); color: #fff; }
 .sc-btn-primary:hover { background: var(--sc-blue-hv); border-color: var(--sc-blue-hv); }
 
 /* ----- the two printed sides ----- */
-/* the two sides sit beside each other at every window width, like the form.
-   They split the room; they never wrap into a stack */
+/* the two sides sit beside each other at every window width, like the form. They split the room; they never wrap into a stack */
 .sc-sides { display: flex; gap: 1rem; flex-wrap: nowrap; align-items: flex-start;
             flex: 1 1 auto; min-width: 0; }
-.sc-side  { flex: 1 1 50%; min-width: 0; }
-.sc-h { margin: 0 0 .3rem; font-size: .72rem; color: var(--sc-muted); font-weight: 700;
-        text-transform: uppercase; letter-spacing: .05em; }
+.sc-side { flex: 1 1 50%; min-width: 0; }
+.sc-h { margin: 0 0 .3rem; font-size: .72rem; color: var(--sc-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
 .sc-lines { display: flex; flex-direction: column; gap: 2px; }
-.sc-lrow  { display: flex; align-items: center; gap: .35rem; }
+.sc-lrow { display: flex; align-items: center; gap: .35rem; }
 
-/* the line number gutter. This is the Access "ruler" - Text23 and Text21 were
-   text boxes filled with one digit per line in Form_Load, not a column scale */
+/* the line number gutter. This is the Access "ruler" - Text23 and Text21 were text boxes filled with one digit per line in Form_Load, not a column scale */
 .sc-lno { width: 2rem; text-align: right; font-size: .74rem; color: #b3bdb8;
           font-variant-numeric: tabular-nums; user-select: none; }
 .sc-lrow.sc-filled .sc-lno { color: var(--sc-text); font-weight: 700; }
 
-/* capped at fifty characters, the file column width, but able to shrink with
-   the window - a narrower box scrolls while typing, which is exactly how the
-   Access text boxes behaved. maxlength still holds the limit either way */
+/* capped at fifty characters, the file column width, but able to shrink with the window - a narrower box scrolls while typing, which is exactly how the Access text boxes behaved. maxlength still holds the limit either way */
 .sc-ltxt { flex: 1 1 auto; min-width: 0; max-width: calc(50ch + .9rem + 2px);
            padding: .3rem .45rem; border: 1px solid var(--sc-line);
            border-radius: 4px; font-size: .84rem; }
-.sc-ltxt:focus { outline: 2px solid var(--sc-blue); outline-offset: -1px;
-                 border-color: var(--sc-blue); }
+.sc-ltxt:focus { outline: 2px solid var(--sc-blue); outline-offset: -1px; border-color: var(--sc-blue); }
 
-/* ----- footer, under side 2 where the Access form put it ----- */
-.sc-footh { margin-top: 1rem; display: flex; align-items: center; gap: .5rem; }
+/* ----- footer, under side 2 where the Access form put it ----- */ .sc-footh { margin-top: 1rem; display: flex; align-items: center; gap: .5rem; }
 .sc-footkey { padding: .15rem .4rem; font-size: .75rem; background: #fff;
               border: 1px solid var(--sc-line); border-radius: 4px;
               color: var(--sc-text); text-transform: none; font-weight: 400; }
-.sc-footlines { font-size: .84rem; white-space: pre; margin: 0;
-                margin-left: calc(2rem + .35rem + 1px + .45rem);
-                overflow-x: auto; }
+.sc-footlines { font-size: .84rem; white-space: pre; margin: 0; margin-left: calc(2rem + .35rem + 1px + .45rem); overflow-x: auto; }
 .sc-footlines:empty::before { content: "\2014"; color: #c4ccc8; }
 
 /* ----- SKU type-ahead ----- */
@@ -145,17 +124,13 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
               display: flex; align-items: flex-start; justify-content: center;
               overflow-y: auto; padding: 2rem 1rem; }
 .sc-overlay[hidden] { display: none; }
-.sc-modal { background: #fff; border-radius: 8px; width: 100%; max-width: 620px;
-            box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-.sc-modal-head, .sc-modal-foot { display: flex; align-items: center;
-                                 padding: .8rem 1.1rem; }
+.sc-modal { background: #fff; border-radius: 8px; width: 100%; max-width: 620px; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+.sc-modal-head, .sc-modal-foot { display: flex; align-items: center; padding: .8rem 1.1rem; }
 .sc-modal-head { justify-content: space-between; border-bottom: 1px solid var(--sc-line); }
-.sc-modal-foot { justify-content: flex-end; gap: .6rem;
-                 border-top: 1px solid var(--sc-line); }
+.sc-modal-foot { justify-content: flex-end; gap: .6rem; border-top: 1px solid var(--sc-line); }
 .sc-modal-head h2 { margin: 0; font-size: 1.02rem; }
 .sc-modal-body { padding: 1rem 1.1rem; }
-.sc-x { border: 0; background: none; font-size: 1.4rem; line-height: 1;
-        cursor: pointer; color: var(--sc-muted); }
+.sc-x { border: 0; background: none; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--sc-muted); }
 </style>
 
 <div class="sc-app">
@@ -257,20 +232,17 @@ var STC_MODE = '<?php echo $mode; ?>';
 // the printed card, straight off the model so nothing here can drift from it
 var S1_FIRST = <?php echo STC_S1_FIRST; ?>, S1_LAST = <?php echo STC_S1_LAST; ?>;
 var S2_FIRST = <?php echo STC_S2_FIRST; ?>, S2_LAST = <?php echo STC_S2_LAST; ?>;
-// SCBTXT and SCFTXT are both CHAR(50); no box on this page may take more than
-// the column behind it holds, so the width comes from the model, not from here
+// SCBTXT and SCFTXT are both CHAR(50); no box on this page may take more than the column behind it holds, so the width comes from the model, not from here
 var LINE_LEN = <?php echo STC_LINE_LEN; ?>;
 
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
-// the footer as loaded, for the strip and for the editor, plus the keys the
-// FooterSelect query offers and which one is on screen
+// the footer as loaded, for the strip and for the editor, plus the keys the FooterSelect query offers and which one is on screen
 var footerLines = [];
 var footerKeys = [];
 var footerSky = 1;
 var suggestTimer = null;
 var suggestSeq = 0;
-
 
 $(document).ready(function () {
     buildSide('#side1Lines', S1_FIRST, S1_LAST);
@@ -280,8 +252,7 @@ $(document).ready(function () {
     tickClock();
     setInterval(tickClock, 1000);
 
-    // the controller hands the page its footer, and the card too when the URL
-    // named a SKU, so nothing has to be fetched before the screen is usable
+    // the controller hands the page its footer, and the card too when the URL named a SKU, so nothing has to be fetched before the screen is usable
     if (STC_PRELOAD) {
         footerLines = STC_PRELOAD.footer || [];
         footerKeys  = STC_PRELOAD.keys || [];
@@ -291,9 +262,7 @@ $(document).ready(function () {
             $('#txtSku').val(STC_PRELOAD.card.sku);
             setCard(STC_PRELOAD.card);
         }
-    } else {
-        loadFooter();
-    }
+    } else { loadFooter(); }
 
     if (STC_MODE === 'footer') { openFooterEditor(); }
 
@@ -304,13 +273,9 @@ $(document).ready(function () {
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
-    // both key pickers load that footer. The editor's key box also ADDS one:
-    // type a key with nothing on file and the footer opens empty in insert
-    // mode, the same way typing a new SKU starts a new card
+    // both key pickers load that footer. The editor's key box also ADDS one: type a key with nothing on file and the footer opens empty in insert mode, the same way typing a new SKU starts a new card
     $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
-    // the key box opens its list the same way the SKU box does: focus, a
-    // click while focused, or the arrow. Picking a key loads that footer;
-    // typing a number not on the list starts a new one
+    // the key box opens its list the same way the SKU box does: focus, a click while focused, or the arrow. Picking a key loads that footer; typing a number not on the list starts a new one
     $('#mdlFootKey').on('focus click', function () {
         if (!$('#scKeySuggest').length) { showKeySuggest(); }
     });
@@ -332,8 +297,7 @@ $(document).ready(function () {
     $('#mdlFootKey').on('change', function () {
         var k = parseInt($(this).val(), 10);
         if (!(k >= 1)) { $(this).val(footerSky); return; }
-        // the same key again is not a change - reloading would re-render the
-        // rows and wipe anything already typed into them
+        // the same key again is not a change - reloading would re-render the rows and wipe anything already typed into them
         if (k === footerSky) { $(this).val(footerSky); return; }
         loadFooter(k, renderFooterEditor);
     });
@@ -350,11 +314,7 @@ $(document).ready(function () {
             runSkuSearch(inp, inp.val().trim());
         }, 250);
     });
-    // focus opens the list, and so does a click once the box already has focus:
-    // a second click on an already focused input fires no focus event, which is
-    // why clicking it again used to do nothing. Opening always shows the WHOLE
-    // list, positioned at the current value - the Access combo only filtered
-    // while you typed, never on open
+    // focus opens the list, and so does a click once the box already has focus: a second click on an already focused input fires no focus event, which is why clicking it again used to do nothing. Opening always shows the WHOLE list, positioned at the current value - the Access combo only filtered while you typed, never on open
     $('#txtSku').on('focus click', function () {
         if (!$('#scSuggest').length) { openSkuList(); }
     });
@@ -362,9 +322,7 @@ $(document).ready(function () {
         // wait so a click on the list lands before blur hides it
         setTimeout(hideSuggest, 150);
     });
-    // the arrow toggles it (mousedown so the input keeps focus). Focusing an
-    // unfocused box opens the list through the focus handler; a box that is
-    // already focused fires no event, so open it directly
+    // the arrow toggles it (mousedown so the input keeps focus). Focusing an unfocused box opens the list through the focus handler; a box that is already focused fires no event, so open it directly
     $('#btnSkuDrop').on('mousedown', function (e) {
         e.preventDefault();
         if ($('#scSuggest').length) { hideSuggest(); return; }
@@ -387,9 +345,7 @@ $(document).ready(function () {
             var act = box.children('.active');
             if (act.length) { act.trigger('mousedown'); }
             else { loadCard($(this).val()); hideSuggest(); }
-        } else if (e.key === 'Escape') {
-            hideSuggest();
-        }
+        } else if (e.key === 'Escape') { hideSuggest(); }
     });
 
     // ----- the line boxes -----
@@ -399,8 +355,7 @@ $(document).ready(function () {
     });
     $('#txtSrk').on('input', markDirty);
 
-    // Enter and the arrows walk the lines, the way tabbing through the old
-    // text box felt, without leaving the field on Enter
+    // Enter and the arrows walk the lines, the way tabbing through the old text box felt, without leaving the field on Enter
     $('#side1Lines, #side2Lines, #footLines').on('keydown', '.sc-ltxt', function (e) {
         if (e.key === 'Enter' || e.key === 'ArrowDown') {
             e.preventDefault();
@@ -411,8 +366,7 @@ $(document).ready(function () {
         }
     });
 
-    // pasting a block of text spreads it down the lines instead of stuffing it
-    // all into one box and losing everything past character fifty
+    // pasting a block of text spreads it down the lines instead of stuffing it all into one box and losing everything past character fifty
     $('#side1Lines, #side2Lines, #footLines').on('paste', '.sc-ltxt', function (e) {
         var text = (e.originalEvent || e).clipboardData;
         if (!text) { return; }
@@ -427,9 +381,7 @@ $(document).ready(function () {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
             if (!$('#btnSave').prop('disabled')) { e.preventDefault(); saveCard(); }
         }
-        if (e.key === 'Escape') {
-            $('.sc-overlay').not('[hidden]').last().prop('hidden', true);
-        }
+        if (e.key === 'Escape') { $('.sc-overlay').not('[hidden]').last().prop('hidden', true); }
     });
 
     // leaving with unsaved edits should cost a click, not a card
@@ -438,14 +390,12 @@ $(document).ready(function () {
     });
 });
 
-
 // ---------------------------------------------------------------- building
 
 function buildSide(sel, first, last) {
     var box = $(sel).empty();
     for (var n = first; n <= last; n++) { box.append(lineRow(n, '')); }
 }
-
 
 function lineRow(no, text) {
     return $('<div class="sc-lrow">')
@@ -455,7 +405,6 @@ function lineRow(no, text) {
                     .attr('data-line', no)
                     .val(text));
 }
-
 
 // ---------------------------------------------------------------- the card
 
@@ -479,7 +428,6 @@ function setCard(card) {
     setChip(card && card.isNew ? 'new' : '');
 }
 
-
 // one word in one colour, in place of a sentence
 function setChip(state) {
     var chip = $('#lblState').removeClass('sc-on sc-new sc-dirty');
@@ -487,13 +435,11 @@ function setChip(state) {
     if (state === 'dirty') { chip.addClass('sc-on sc-dirty').text('Unsaved'); }
 }
 
-
 function collectSide(sel) {
     var out = [];
     $(sel + ' .sc-ltxt').each(function () { out.push($(this).val()); });
     return out;
 }
-
 
 // true when the boxes no longer match what was loaded
 function isDirty() {
@@ -508,20 +454,15 @@ function isDirty() {
     return $('#txtSrk').val().trim() !== (loadedCard.searchKey || '').trim();
 }
 
-
 function markDirty() {
     if (!loadedCard) { return; }
     setChip(isDirty() ? 'dirty' : (loadedCard.isNew ? 'new' : ''));
 }
 
-
-// the line number goes bold once the line carries text, which is the only
-// state a line has. The box is exactly the width of the file column, so there
-// is nothing to count
+// the line number goes bold once the line carries text, which is the only state a line has. The box is exactly the width of the file column, so there is nothing to count
 function refreshRow(inp) {
     inp.closest('.sc-lrow').toggleClass('sc-filled', inp.val().trim() !== '');
 }
-
 
 function loadCard(sku) {
     sku = String(sku || '').trim().toUpperCase();
@@ -535,14 +476,12 @@ function loadCard(sku) {
         function () { fetchCard(sku); });
 }
 
-
 function fetchCard(sku) {
     postAjax({ action: 'card', sku: sku }, function (resp) {
         $('#txtSku').val(resp.card.sku);
         setCard(resp.card);
     });
 }
-
 
 function saveCard() {
     if (!loadedCard) { return; }
@@ -559,11 +498,8 @@ function saveCard() {
         $('#btnSave').prop('disabled', false);
         // reload rather than trust the screen: what the file holds is the truth
         postAjax({ action: 'card', sku: resp.sku }, function (r2) { setCard(r2.card); });
-    }, function () {
-        $('#btnSave').prop('disabled', false);
-    });
+    }, function () { $('#btnSave').prop('disabled', false); });
 }
-
 
 // ---------------------------------------------------------------- the footer
 
@@ -577,7 +513,6 @@ function loadFooter(sky, then) {
     });
 }
 
-
 function renderFooter() {
     fillKeys('#selFootKey');
     var shown = footerLines.slice();
@@ -585,17 +520,13 @@ function renderFooter() {
     $('#outFooter').text(shown.join('\n'));
 }
 
-
 // the FooterSelect list. It only ever offers the keys that query returns
 function fillKeys(sel) {
     var box = $(sel).empty();
     var keys = footerKeys.length ? footerKeys : [footerSky];
-    $.each(keys, function (i, k) {
-        box.append($('<option>').val(k).text(k));
-    });
+    $.each(keys, function (i, k) { box.append($('<option>').val(k).text(k)); });
     box.val(String(footerSky));
 }
-
 
 function openFooterEditor() {
     $('#mdlFootKey').val(footerSky);
@@ -604,15 +535,12 @@ function openFooterEditor() {
     $('#footLines .sc-ltxt').first().trigger('focus');
 }
 
-
 function renderFooterEditor() {
     $('#mdlFootKey').val(footerSky);
     $('#footLines').empty();
     var lines = footerLines.slice();
 
-    // the Access rule per key: an empty footer takes any number of lines, a
-    // footer that has rows can only have those rows rewritten, never grown.
-    // The editor offers exactly what the save can do
+    // the Access rule per key: an empty footer takes any number of lines, a footer that has rows can only have those rows rewritten, never grown. The editor offers exactly what the save can do
     var canGrow = lines.length === 0;
     if (canGrow) { lines.push(''); }
     $.each(lines, function (i, t) { addFooterRow(t); });
@@ -622,13 +550,11 @@ function renderFooterEditor() {
     if (canGrow) { chip.addClass('sc-on sc-new').text('New'); }
 }
 
-
 function addFooterRow(text) {
     var no = $('#footLines .sc-lrow').length + 1;
     $('#footLines').append(lineRow(no, text));
     refreshRow($('#footLines .sc-ltxt').last());
 }
-
 
 function saveFooter() {
     var lines = [];
@@ -645,14 +571,10 @@ function saveFooter() {
         function () { $('#btnFootSave').prop('disabled', false); });
 }
 
-
 // ---------------------------------------------------------------- SKU list
 
 // the whole list, regardless of what the box holds
-function openSkuList() {
-    runSkuSearch($('#txtSku'), '');
-}
-
+function openSkuList() { runSkuSearch($('#txtSku'), ''); }
 
 function runSkuSearch(inp, q) {
     var seq = ++suggestSeq;
@@ -667,9 +589,7 @@ function runSkuSearch(inp, q) {
         }, true);
 }
 
-
-// the list could not be fetched: say so in the box where the rows would be,
-// instead of silently showing nothing
+// the list could not be fetched: say so in the box where the rows would be, instead of silently showing nothing
 function showSuggestError(inp, msg) {
     hideSuggest();
     var box = $('<div class="sc-suggest" id="scSuggest">');
@@ -680,7 +600,6 @@ function showSuggestError(inp, msg) {
               whiteSpace: 'normal' });
     $('body').append(box);
 }
-
 
 function showSuggest(inp, rows, typed) {
     hideSuggest();
@@ -724,12 +643,9 @@ function showSuggest(inp, rows, typed) {
     }
 }
 
-
 function hideSuggest() { $('#scSuggest').remove(); }
 
-
-// the footer key list. The keys come back with every footer response, so a
-// key saved a moment ago is already here to grab
+// the footer key list. The keys come back with every footer response, so a key saved a moment ago is already here to grab
 function showKeySuggest() {
     hideKeySuggest();
     if (!footerKeys.length) { return; }
@@ -753,9 +669,7 @@ function showKeySuggest() {
     $('body').append(box);
 }
 
-
 function hideKeySuggest() { $('#scKeySuggest').remove(); }
-
 
 function scrollActiveIntoView(box) {
     var act = box.children('.active');
@@ -766,7 +680,6 @@ function scrollActiveIntoView(box) {
         box.scrollTop(box.scrollTop() + top + act.outerHeight() - box.height());
     }
 }
-
 
 // ---------------------------------------------------------------- helpers
 
@@ -781,10 +694,7 @@ function stepLine(inp, delta) {
     }
 }
 
-
-// spread pasted text down the boxes: each newline starts a new line, and any
-// line longer than fifty characters wraps on a word boundary rather than being
-// chopped. Whatever does not fit is reported instead of vanishing
+// spread pasted text down the boxes: each newline starts a new line, and any line longer than fifty characters wraps on a word boundary rather than being chopped. Whatever does not fit is reported instead of vanishing
 function spreadPaste(inp, raw) {
     var boxes = inp.closest('.sc-lines').find('.sc-ltxt');
     var start = boxes.index(inp);
@@ -820,9 +730,7 @@ function spreadPaste(inp, raw) {
     }
 }
 
-
-// a yes or no the user has to answer before anything happens, in the same swal
-// box as every other message on the page
+// a yes or no the user has to answer before anything happens, in the same swal box as every other message on the page
 function ask(title, text, yes, no, onYes) {
     swal({
         title: title,
@@ -834,7 +742,6 @@ function ask(title, text, yes, no, onYes) {
         closeOnConfirm: true
     }, function (ok) { if (ok) { onYes(); } });
 }
-
 
 function postAjax(data, onOk, onFail, silent) {
     $.post('StoryCard_ajax.php', data, function (resp) {
@@ -851,16 +758,13 @@ function postAjax(data, onOk, onFail, silent) {
     });
 }
 
-
 function rtrim(s) { return String(s === null || s === undefined ? '' : s).replace(/\s+$/, ''); }
-
 
 function escHtml(s) {
     return String(s === null || s === undefined ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 }
-
 
 function tickClock() {
     var d = new Date();

@@ -38,7 +38,6 @@ header('Content-Type: application/json');
 
 function stcOut($arr) { echo json_encode($arr); exit; }
 
-
 function stcOutFail($msg = '') {
     stcOut(array("ok" => false,
                  "msg" => $msg !== '' ? $msg : ($GLOBALS['stcErr'] ?: 'Request failed.')));
