@@ -16,6 +16,8 @@
 <!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
+require_once __DIR__ . '/StoryCard_model.php';
+
 function dspStoryCard($user, $stcPreload = null, $mode = '') {
 ?>
 
@@ -27,92 +29,29 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   --sc-blue:     #007bff;
   --sc-blue-hv:  #0056b3;
   --sc-accent:   #eaf6ee;
-  --sc-bg:       #f8f8f8;
   --sc-line:     #dfe6e1;
   --sc-text:     #222;
   --sc-muted:    #5f6b62;
   --sc-amber:    #9a6a14;
 }
 
-.sc-app {
-  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-  color: var(--sc-text);
-  background: var(--sc-bg);
-  padding: 0 0 2rem 0;
-}
+.sc-app { font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+          color: var(--sc-text); background: #f8f8f8; padding-bottom: 2rem; }
 
-.sc-topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  background: var(--sc-green-dk); color: #fff; padding: .6rem 1.25rem;
-}
+.sc-topbar { display: flex; align-items: center; justify-content: space-between;
+             background: var(--sc-green-dk); color: #fff; padding: .6rem 1.25rem; }
 .sc-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
 .sc-topbar-right { display: flex; gap: 1rem; font-size: .85rem; opacity: .9; }
 
-/* ----- toolbar ----- */
-.sc-toolbar {
-  display: flex; align-items: center; gap: .75rem;
-  padding: .75rem 1.25rem; flex-wrap: wrap;
-}
-.sc-skubox { position: relative; display: inline-flex; align-items: center; }
-.sc-sku {
-  width: 160px; padding: .45rem 1.6rem .45rem .7rem;
-  border: 1px solid var(--sc-line); border-radius: 6px;
-  font-family: "Consolas", "Courier New", monospace;
-  font-size: .95rem; text-transform: uppercase;
-}
-.sc-skudd { position: absolute; right: .45rem; color: var(--sc-muted);
-            cursor: pointer; user-select: none; font-size: .8rem; }
-
-/* the state chip carries what used to be a sentence: colour, one word */
-.sc-chip {
-  margin-left: auto; padding: .2rem .6rem; border-radius: 50px;
-  font-size: .78rem; font-weight: 700; letter-spacing: .03em;
-  text-transform: uppercase; visibility: hidden;
-}
-.sc-chip.sc-on    { visibility: visible; }
-.sc-chip.sc-new   { background: var(--sc-accent); color: var(--sc-green); }
-.sc-chip.sc-dirty { background: #fbf1dc; color: var(--sc-amber); }
-
-/* ----- SKU type-ahead ----- */
-.sc-suggest {
-  position: fixed; z-index: 200; background: #fff;
-  border: 1px solid #999; border-radius: 4px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
-  max-height: 260px; overflow-y: auto; font-size: .85rem;
-}
-.sc-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
-.sc-suggest div b { color: var(--sc-blue); }
-.sc-suggest div.active, .sc-suggest div:hover { background: var(--sc-accent); }
-.sc-suggest .sc-sg-sku { font-family: "Consolas", "Courier New", monospace;
-                         display: inline-block; min-width: 90px; }
-
-/* ----- buttons ----- */
-.sc-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: .45rem 1.1rem; border: 1px solid #b4b4b4;
-  /* house pill buttons */
-  border-radius: 50px; background: #fff; color: var(--sc-text);
-  font-size: .9rem; font-weight: 700; cursor: pointer;
-}
-/* ghost hover, same as the Sellbrite buttons */
-.sc-btn:hover { border-color: var(--sc-blue); color: var(--sc-blue); }
-.sc-btn:disabled { opacity: .45; cursor: default; border-color: #b4b4b4; color: var(--sc-text); }
-.sc-btn-primary { background: var(--sc-blue); border-color: var(--sc-blue); color: #fff; }
-.sc-btn-primary:hover { background: var(--sc-blue-hv); border-color: var(--sc-blue-hv); color: #fff; }
-
-/* ----- the one panel ----- */
-.sc-card {
-  background: #fff; border: 1px solid var(--sc-line); border-radius: 8px;
-  margin: 0 1.25rem; padding: 1rem 1.1rem;
-}
+.sc-card { background: #fff; border: 1px solid var(--sc-line); border-radius: 8px;
+           margin: 1rem 1.25rem 0; padding: 1rem 1.1rem; }
 .sc-rule { border: 0; border-top: 1px solid var(--sc-line); margin: 1.1rem 0; }
 
-/* ----- the working area: buttons on the left, the two sides beside them,
-       laid out the way the Access BodyMaintenance form was ----- */
+/* buttons down the left, the two sides beside them, the way the Access
+   BodyMaintenance form was arranged */
 .sc-work { display: flex; gap: 1.5rem; align-items: flex-start; }
 .sc-rail { display: flex; flex-direction: column; gap: .55rem;
-           flex: 0 0 auto; width: 120px; padding-top: 1.55rem; }
-.sc-rail .sc-btn { justify-content: center; }
+           flex: 0 0 120px; padding-top: 1.55rem; }
 
 /* ----- fields ----- */
 .sc-itembar { display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
@@ -120,90 +59,97 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-field { display: flex; flex-direction: column; gap: .25rem; }
 .sc-field > span { font-size: .72rem; color: var(--sc-muted);
                    text-transform: uppercase; letter-spacing: .05em; }
-.sc-field input {
-  padding: .45rem .6rem; border: 1px solid var(--sc-line);
-  border-radius: 6px; font-size: .92rem; background: #fff;
-}
-.sc-field input[readonly] { border-color: transparent; background: transparent;
+.sc-field input { padding: .45rem .6rem; border: 1px solid var(--sc-line);
+                  border-radius: 6px; font-size: .92rem; background: #fff; }
+.sc-field input[readonly] { border-color: transparent; background: none;
                             padding-left: 0; font-weight: 600; }
-.sc-desc  { width: 330px; }
-.sc-srk   { width: 160px; font-family: "Consolas", "Courier New", monospace;
-            text-transform: uppercase; }
-.sc-skuro { width: 120px; font-family: "Consolas", "Courier New", monospace; }
+.sc-desc { width: 330px; }
+.sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footlines, .sc-footkey, .sc-sg-sku {
+  font-family: "Consolas", "Courier New", monospace;
+}
+.sc-sku { width: calc(10ch + 2.4rem); padding-right: 1.6rem; text-transform: uppercase; }
+.sc-srk { width: calc(15ch + 1.3rem); text-transform: uppercase; }
+
+.sc-skubox { position: relative; display: inline-flex; align-items: center; }
+.sc-skudd { position: absolute; right: .5rem; color: var(--sc-muted);
+            cursor: pointer; user-select: none; font-size: .8rem; }
+
+/* one word in one colour, in place of a sentence */
+.sc-chip { margin-left: auto; padding: .2rem .6rem; border-radius: 50px;
+           font-size: .78rem; font-weight: 700; text-transform: uppercase;
+           visibility: hidden; }
+.sc-chip.sc-on    { visibility: visible; }
+.sc-chip.sc-new   { background: var(--sc-accent); color: var(--sc-green); }
+.sc-chip.sc-dirty { background: #fbf1dc; color: var(--sc-amber); }
+
+/* ----- buttons: house pill, ghost hover, same as the Sellbrite ones ----- */
+.sc-btn { display: inline-flex; align-items: center; justify-content: center;
+          padding: .45rem 1.1rem; border: 1px solid #b4b4b4; border-radius: 50px;
+          background: #fff; color: var(--sc-text); font-size: .9rem;
+          font-weight: 700; cursor: pointer; }
+.sc-btn:hover { border-color: var(--sc-blue); color: var(--sc-blue); }
+.sc-btn:disabled { opacity: .45; cursor: default;
+                   border-color: #b4b4b4; color: var(--sc-text); }
+.sc-btn-primary, .sc-btn-primary:hover {
+  background: var(--sc-blue); border-color: var(--sc-blue); color: #fff; }
+.sc-btn-primary:hover { background: var(--sc-blue-hv); border-color: var(--sc-blue-hv); }
 
 /* ----- the two printed sides ----- */
 .sc-sides { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; }
 .sc-side  { flex: 0 0 auto; }
-.sc-h {
-  margin: 0 0 .3rem 0; font-size: .72rem; color: var(--sc-muted);
-  text-transform: uppercase; letter-spacing: .05em; font-weight: 700;
-}
-
-/* the ruler replaces the Access "1234567890" text boxes: a real 50 column
-   scale. It only means anything if its glyphs sit exactly over the ones in
-   the boxes, so the font, size and letter spacing match .sc-ltxt exactly and
-   the left margin is the line number column plus the gap plus the input's own
-   border and padding */
-.sc-ruler {
-  font-family: "Consolas", "Courier New", monospace;
-  font-size: .84rem; color: #c4ccc8; white-space: pre;
-  margin-left: calc(2rem + .35rem + 1px + .45rem);
-  letter-spacing: 0; line-height: 1.2; user-select: none;
-}
+.sc-h { margin: 0 0 .3rem; font-size: .72rem; color: var(--sc-muted); font-weight: 700;
+        text-transform: uppercase; letter-spacing: .05em; }
 .sc-lines { display: flex; flex-direction: column; gap: 2px; }
 .sc-lrow  { display: flex; align-items: center; gap: .35rem; }
-.sc-lno {
-  width: 2rem; text-align: right; font-size: .74rem; color: #b3bdb8;
-  font-variant-numeric: tabular-nums; user-select: none;
-}
-/* exactly fifty characters wide, so a full line never clips and the ruler
-   above sits column for column over it. ch is the character width in a
-   monospace face, which is what both of them use */
-.sc-ltxt {
-  flex: 0 0 auto; width: calc(50ch + .9rem + 2px);
-  padding: .3rem .45rem;
-  border: 1px solid var(--sc-line); border-radius: 4px;
-  font-family: "Consolas", "Courier New", monospace;
-  font-size: .84rem; letter-spacing: 0;
-}
+
+/* the line number gutter. This is the Access "ruler" - Text23 and Text21 were
+   text boxes filled with one digit per line in Form_Load, not a column scale */
+.sc-lno { width: 2rem; text-align: right; font-size: .74rem; color: #b3bdb8;
+          font-variant-numeric: tabular-nums; user-select: none; }
+.sc-lrow.sc-filled .sc-lno { color: var(--sc-text); font-weight: 700; }
+
+/* exactly fifty characters wide, the width of the file column, so a full line
+   fills the box and there is nothing to count or measure against */
+.sc-ltxt { flex: 0 0 auto; width: calc(50ch + .9rem + 2px);
+           padding: .3rem .45rem; border: 1px solid var(--sc-line);
+           border-radius: 4px; font-size: .84rem; }
 .sc-ltxt:focus { outline: 2px solid var(--sc-blue); outline-offset: -1px;
                  border-color: var(--sc-blue); }
-.sc-lrow.sc-filled .sc-lno { color: var(--sc-text); font-weight: 700; }
-.sc-lcnt { width: 2.2rem; text-align: right; font-size: .7rem; color: #c4ccc8;
-           font-variant-numeric: tabular-nums; user-select: none; }
-.sc-lcnt.sc-full { color: var(--sc-amber); font-weight: 700; }
 
 /* ----- footer, under side 2 where the Access form put it ----- */
 .sc-footh { margin-top: 1rem; display: flex; align-items: center; gap: .5rem; }
-.sc-footkey { padding: .15rem .4rem; font-size: .75rem; border: 1px solid var(--sc-line);
-              border-radius: 4px; background: #fff; color: var(--sc-text);
-              font-family: "Consolas", "Courier New", monospace;
-              text-transform: none; letter-spacing: 0; font-weight: 400; }
-.sc-footlines {
-  font-family: "Consolas", "Courier New", monospace; font-size: .84rem;
-  white-space: pre-wrap; color: var(--sc-text); margin: 0;
-  /* line up under the boxes above it, past the line number column */
-  margin-left: calc(2rem + .35rem + 1px + .45rem);
-}
+.sc-footkey { padding: .15rem .4rem; font-size: .75rem; background: #fff;
+              border: 1px solid var(--sc-line); border-radius: 4px;
+              color: var(--sc-text); text-transform: none; font-weight: 400; }
+.sc-footlines { font-size: .84rem; white-space: pre-wrap; margin: 0;
+                margin-left: calc(2rem + .35rem + 1px + .45rem); }
 .sc-footlines:empty::before { content: "\2014"; color: #c4ccc8; }
 
+/* ----- SKU type-ahead ----- */
+.sc-suggest { position: fixed; z-index: 200; background: #fff; border: 1px solid #999;
+              border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.18);
+              max-height: 260px; overflow-y: auto; font-size: .85rem; }
+.sc-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
+.sc-suggest div b { color: var(--sc-blue); }
+.sc-suggest div.active, .sc-suggest div:hover { background: var(--sc-accent); }
+.sc-sg-sku { display: inline-block; min-width: 90px; }
+
 /* ----- modal ----- */
-.sc-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  display: flex; align-items: flex-start; justify-content: center;
-  overflow-y: auto; z-index: 150; padding: 2rem 1rem;
-}
+.sc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 150;
+              display: flex; align-items: flex-start; justify-content: center;
+              overflow-y: auto; padding: 2rem 1rem; }
 .sc-overlay[hidden] { display: none; }
-.sc-modal { background: #fff; border-radius: 8px; width: 100%; max-width: 640px;
+.sc-modal { background: #fff; border-radius: 8px; width: 100%; max-width: 620px;
             box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-.sc-modal-head { display: flex; align-items: center; justify-content: space-between;
-                 padding: .8rem 1.1rem; border-bottom: 1px solid var(--sc-line); }
+.sc-modal-head, .sc-modal-foot { display: flex; align-items: center;
+                                 padding: .8rem 1.1rem; }
+.sc-modal-head { justify-content: space-between; border-bottom: 1px solid var(--sc-line); }
+.sc-modal-foot { justify-content: flex-end; gap: .6rem;
+                 border-top: 1px solid var(--sc-line); }
 .sc-modal-head h2 { margin: 0; font-size: 1.02rem; }
+.sc-modal-body { padding: 1rem 1.1rem; }
 .sc-x { border: 0; background: none; font-size: 1.4rem; line-height: 1;
         cursor: pointer; color: var(--sc-muted); }
-.sc-modal-body { padding: 1rem 1.1rem; }
-.sc-modal-foot { display: flex; justify-content: flex-end; gap: .6rem;
-                 padding: .8rem 1.1rem; border-top: 1px solid var(--sc-line); }
 </style>
 
 <div class="sc-app">
@@ -221,7 +167,8 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
     <div class="sc-itembar">
       <label class="sc-field"><span>SKU</span>
         <span class="sc-skubox">
-          <input type="text" id="txtSku" class="sc-sku" maxlength="10"
+          <input type="text" id="txtSku" class="sc-sku sc-mono"
+                 maxlength="<?php echo STC_SKU_LEN; ?>"
                  autocomplete="off" spellcheck="false">
           <span class="sc-skudd" id="btnSkuDrop" title="Show the list">&#9662;</span>
         </span>
@@ -245,12 +192,10 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
       <div class="sc-sides">
         <div class="sc-side">
           <div class="sc-h">Side 1</div>
-          <div class="sc-ruler" id="ruler1"></div>
           <div class="sc-lines" id="side1Lines"></div>
         </div>
         <div class="sc-side">
           <div class="sc-h">Side 2</div>
-          <div class="sc-ruler" id="ruler2"></div>
           <div class="sc-lines" id="side2Lines"></div>
 
           <div class="sc-h sc-footh">Footer
@@ -263,7 +208,8 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
     </div>
 
     <label class="sc-field sc-searchrow"><span>Search text</span>
-      <input type="text" id="txtSrk" class="sc-srk" maxlength="15"
+      <input type="text" id="txtSrk" class="sc-srk sc-mono"
+             maxlength="<?php echo STC_SRK_LEN; ?>"
              autocomplete="off" spellcheck="false" disabled>
     </label>
 
@@ -280,7 +226,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
         <label class="sc-field" style="margin-bottom:.8rem"><span>Footer key</span>
           <select id="mdlFootKey" class="sc-footkey" style="width:90px"></select>
         </label>
-        <div class="sc-ruler" id="rulerF"></div>
         <div class="sc-lines" id="footLines"></div>
         <button type="button" class="sc-btn" id="btnFootAdd"
                 style="margin-top:.6rem">+ Line</button>
@@ -300,12 +245,12 @@ var STC_PRELOAD = <?php echo $stcPreload ? json_encode($stcPreload) : 'null'; ?>
 // STC_MODE 'footer' opens straight on the footer editor, the old FootMaintenance form
 var STC_MODE = '<?php echo $mode; ?>';
 
-// the printed card. These four numbers come from the Access save guards and
-// the message text beside them, which agree on 11 lines and 9, and they match
-// StoryCard_model.php and STYCRD002S - change them in all three or nowhere
-var S1_FIRST = 1,  S1_LAST = 11;
-var S2_FIRST = 13, S2_LAST = 21;
-var LINE_LEN = 50;
+// the printed card, straight off the model so nothing here can drift from it
+var S1_FIRST = <?php echo STC_S1_FIRST; ?>, S1_LAST = <?php echo STC_S1_LAST; ?>;
+var S2_FIRST = <?php echo STC_S2_FIRST; ?>, S2_LAST = <?php echo STC_S2_LAST; ?>;
+// SCBTXT and SCFTXT are both CHAR(50); no box on this page may take more than
+// the column behind it holds, so the width comes from the model, not from here
+var LINE_LEN = <?php echo STC_LINE_LEN; ?>;
 
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
@@ -318,9 +263,6 @@ var suggestTimer = null;
 
 
 $(document).ready(function () {
-    buildRuler('#ruler1');
-    buildRuler('#ruler2');
-    buildRuler('#rulerF');
     buildSide('#side1Lines', S1_FIRST, S1_LAST);
     buildSide('#side2Lines', S2_FIRST, S2_LAST);
     setCard(null);
@@ -453,18 +395,6 @@ $(document).ready(function () {
 
 // ---------------------------------------------------------------- building
 
-// the 50 column scale that sits over each side, replacing the Access ruler
-// text boxes that were filled with 1234567890 in Form_Load
-function buildRuler(sel) {
-    var s = '';
-    for (var c = 1; c <= LINE_LEN; c++) {
-        s += (c % 10 === 0) ? String(c / 10 % 10)
-           : (c % 5 === 0)  ? '+' : '.';
-    }
-    $(sel).text(s);
-}
-
-
 function buildSide(sel, first, last) {
     var box = $(sel).empty();
     for (var n = first; n <= last; n++) { box.append(lineRow(n, '')); }
@@ -477,8 +407,7 @@ function lineRow(no, text) {
         .append($('<input type="text" class="sc-ltxt" spellcheck="false">')
                     .attr('maxlength', LINE_LEN)
                     .attr('data-line', no)
-                    .val(text))
-        .append($('<span class="sc-lcnt">'));
+                    .val(text));
 }
 
 
@@ -543,12 +472,11 @@ function markDirty() {
 }
 
 
+// the line number goes bold once the line carries text, which is the only
+// state a line has. The box is exactly the width of the file column, so there
+// is nothing to count
 function refreshRow(inp) {
-    var len = inp.val().length;
-    var row = inp.closest('.sc-lrow');
-    row.toggleClass('sc-filled', inp.val().trim() !== '');
-    row.find('.sc-lcnt').text(len ? len : '')
-                        .toggleClass('sc-full', len >= LINE_LEN);
+    inp.closest('.sc-lrow').toggleClass('sc-filled', inp.val().trim() !== '');
 }
 
 
