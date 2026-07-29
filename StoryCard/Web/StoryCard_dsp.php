@@ -33,10 +33,12 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   --sc-text:     #222;
   --sc-muted:    #5f6b62;
   --sc-amber:    #9a6a14;
+  --sc-font:     "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --sc-mono:     "Consolas", "Courier New", monospace;
 }
 
-.sc-app { font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-          color: var(--sc-text); background: #f8f8f8; padding-bottom: 2rem; }
+.sc-app { font-family: var(--sc-font); color: var(--sc-text);
+          background: #f8f8f8; padding-bottom: 2rem; }
 
 .sc-topbar { display: flex; align-items: center; justify-content: space-between;
              background: var(--sc-green-dk); color: #fff; padding: .6rem 1.25rem; }
@@ -65,7 +67,7 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
                             padding-left: 0; font-weight: 600; }
 .sc-desc { width: 330px; }
 .sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footlines, .sc-footkey, .sc-sg-sku {
-  font-family: "Consolas", "Courier New", monospace;
+  font-family: var(--sc-mono);
 }
 .sc-sku { width: calc(10ch + 2.4rem); padding-right: 1.6rem; text-transform: uppercase; }
 .sc-srk { width: calc(15ch + 1.3rem); text-transform: uppercase; }
@@ -128,11 +130,12 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 /* ----- SKU type-ahead ----- */
 .sc-suggest { position: fixed; z-index: 200; background: #fff; border: 1px solid #999;
               border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,.18);
-              max-height: 260px; overflow-y: auto; font-size: .85rem; }
+              max-height: 260px; overflow-y: auto;
+              font-family: var(--sc-font); font-size: .85rem; color: var(--sc-text); }
 .sc-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
 .sc-suggest div b { color: var(--sc-blue); }
 .sc-suggest div.active, .sc-suggest div:hover { background: var(--sc-accent); }
-.sc-sg-sku { display: inline-block; min-width: 90px; }
+.sc-sg-sku { display: inline-block; width: calc(10ch + 1rem); }
 
 /* ----- modal ----- */
 .sc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 150;
@@ -165,14 +168,17 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   <div class="sc-card">
 
     <div class="sc-itembar">
-      <label class="sc-field"><span>SKU</span>
+      <!-- a div and not a label: a label forwards a click anywhere inside it
+           to its control, so clicking the arrow would fire the input's own
+           click handler as well and the toggle would reopen immediately -->
+      <div class="sc-field"><span>SKU</span>
         <span class="sc-skubox">
           <input type="text" id="txtSku" class="sc-sku sc-mono"
                  maxlength="<?php echo STC_SKU_LEN; ?>"
                  autocomplete="off" spellcheck="false">
           <span class="sc-skudd" id="btnSkuDrop" title="Show the list">&#9662;</span>
         </span>
-      </label>
+      </div>
       <label class="sc-field"><span>Description</span>
         <input type="text" id="outDesc" class="sc-desc" readonly tabindex="-1">
       </label>
@@ -260,6 +266,7 @@ var footerLines = [];
 var footerKeys = [];
 var footerSky = 1;
 var suggestTimer = null;
+var suggestSeq = 0;
 
 
 $(document).ready(function () {
@@ -314,16 +321,22 @@ $(document).ready(function () {
         clearTimeout(suggestTimer);
         suggestTimer = setTimeout(function () { runSkuSearch(inp); }, 250);
     });
-    $('#txtSku').on('focus', function () { runSkuSearch($(this)); });
+    // focus opens the list, and so does a click once the box already has focus:
+    // a second click on an already focused input fires no focus event, which is
+    // why clicking it again used to do nothing
+    $('#txtSku').on('focus click', function () {
+        if (!$('#scSuggest').length) { runSkuSearch($(this)); }
+    });
     $('#txtSku').on('blur', function () {
         // wait so a click on the list lands before blur hides it
         setTimeout(hideSuggest, 150);
     });
-    // the arrow toggles the list (mousedown so the input keeps focus)
+    // the arrow toggles it (mousedown so the input keeps focus)
     $('#btnSkuDrop').on('mousedown', function (e) {
         e.preventDefault();
-        if ($('#scSuggest').length) { hideSuggest(); }
-        else { $('#txtSku').trigger('focus'); }
+        if ($('#scSuggest').length) { hideSuggest(); return; }
+        $('#txtSku').trigger('focus');
+        runSkuSearch($('#txtSku'));
     });
     $('#txtSku').on('keydown', function (e) {
         var box = $('#scSuggest');
@@ -592,8 +605,12 @@ function saveFooter() {
 // ---------------------------------------------------------------- SKU list
 
 function runSkuSearch(inp) {
+    var seq = ++suggestSeq;
     postAjax({ action: 'skusearch', q: inp.val().trim() },
-        function (resp) { showSuggest(inp, resp.rows, inp.val().trim()); },
+        function (resp) {
+            if (seq !== suggestSeq) { return; }
+            showSuggest(inp, resp.rows, inp.val().trim());
+        },
         null, true);
 }
 
