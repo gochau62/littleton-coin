@@ -49,14 +49,9 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
            margin: 1rem 1.25rem 0; padding: 1rem 1.1rem; }
 .sc-rule { border: 0; border-top: 1px solid var(--sc-line); margin: 1.1rem 0; }
 
-/* buttons down the left, the two sides beside them, the way the Access
-   BodyMaintenance form was arranged */
-.sc-work { display: flex; gap: 1.25rem; align-items: flex-start; }
-.sc-rail { display: flex; flex-direction: column; gap: .55rem;
-           flex: 0 0 108px; padding-top: 1.55rem; }
-
 /* ----- fields ----- */
-.sc-itembar { display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
+.sc-itembar { display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: nowrap; }
+.sc-itembar .sc-btn { flex: 0 0 auto; }
 .sc-searchrow { margin-top: 1.1rem; }
 .sc-field { display: flex; flex-direction: column; gap: .25rem; }
 .sc-field > span { font-size: .72rem; color: var(--sc-muted);
@@ -65,7 +60,9 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
                   border-radius: 6px; font-size: .92rem; background: #fff; }
 .sc-field input[readonly] { border-color: transparent; background: none;
                             padding-left: 0; font-weight: 600; }
-.sc-desc { width: 330px; }
+/* the description gives way so the buttons keep their place on the row */
+.sc-fgrow { flex: 1 1 160px; min-width: 0; }
+.sc-desc { width: 100%; max-width: 330px; }
 .sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footlines, .sc-footkey, .sc-sg-sku {
   font-family: var(--sc-mono);
 }
@@ -127,8 +124,9 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-footkey { padding: .15rem .4rem; font-size: .75rem; background: #fff;
               border: 1px solid var(--sc-line); border-radius: 4px;
               color: var(--sc-text); text-transform: none; font-weight: 400; }
-.sc-footlines { font-size: .84rem; white-space: pre-wrap; margin: 0;
-                margin-left: calc(2rem + .35rem + 1px + .45rem); }
+.sc-footlines { font-size: .84rem; white-space: pre; margin: 0;
+                margin-left: calc(2rem + .35rem + 1px + .45rem);
+                overflow-x: auto; }
 .sc-footlines:empty::before { content: "\2014"; color: #c4ccc8; }
 
 /* ----- SKU type-ahead ----- */
@@ -184,23 +182,17 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           <span class="sc-skudd" id="btnSkuDrop" title="Show the list">&#9662;</span>
         </span>
       </div>
-      <label class="sc-field"><span>Description</span>
+      <label class="sc-field sc-fgrow"><span>Description</span>
         <input type="text" id="outDesc" class="sc-desc" readonly tabindex="-1">
       </label>
+      <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save</button>
+      <button type="button" class="sc-btn" id="btnFooter">Footer</button>
       <span class="sc-chip" id="lblState"></span>
     </div>
 
     <hr class="sc-rule">
 
-    <div class="sc-work">
-
-      <div class="sc-rail">
-        <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save</button>
-        <button type="button" class="sc-btn" id="btnRevert" disabled>Revert</button>
-        <button type="button" class="sc-btn" id="btnFooter">Footer</button>
-      </div>
-
-      <div class="sc-sides">
+    <div class="sc-sides">
         <div class="sc-side">
           <div class="sc-h">Side 1</div>
           <div class="sc-lines" id="side1Lines"></div>
@@ -215,8 +207,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           <pre class="sc-footlines" id="outFooter"></pre>
         </div>
       </div>
-
-    </div>
 
     <label class="sc-field sc-searchrow"><span>Search text</span>
       <input type="text" id="txtSrk" class="sc-srk sc-mono"
@@ -300,9 +290,6 @@ $(document).ready(function () {
     if (STC_MODE === 'footer') { openFooterEditor(); }
 
     $('#btnSave').on('click', saveCard);
-    $('#btnRevert').on('click', function () {
-        if (loadedCard) { setCard(loadedCard); }
-    });
     $('#btnFooter').on('click', openFooterEditor);
     $('#btnFootAdd').on('click', function () {
         addFooterRow('');
@@ -452,7 +439,6 @@ function setCard(card) {
 
     $('#side1Lines .sc-ltxt, #side2Lines .sc-ltxt').prop('disabled', !card);
     $('#btnSave').prop('disabled', !card);
-    $('#btnRevert').prop('disabled', true);
 
     $('#side1Lines .sc-ltxt, #side2Lines .sc-ltxt').each(function () { refreshRow($(this)); });
     setChip(card && card.isNew ? 'new' : '');
@@ -489,10 +475,8 @@ function isDirty() {
 
 
 function markDirty() {
-    var dirty = isDirty();
-    $('#btnRevert').prop('disabled', !dirty);
     if (!loadedCard) { return; }
-    setChip(dirty ? 'dirty' : (loadedCard.isNew ? 'new' : ''));
+    setChip(isDirty() ? 'dirty' : (loadedCard.isNew ? 'new' : ''));
 }
 
 
@@ -582,9 +566,15 @@ function fillKeys(sel) {
 function openFooterEditor() {
     $('#footLines').empty();
     var lines = footerLines.slice();
-    // always leave one empty line to type into
-    if (!lines.length || rtrim(lines[lines.length - 1]) !== '') { lines.push(''); }
+
+    // the Access rule: an empty footer takes any number of lines, a footer
+    // that has rows can only have those rows rewritten, never grown. The
+    // editor offers exactly what the save can do
+    var canGrow = lines.length === 0;
+    if (canGrow) { lines.push(''); }
     $.each(lines, function (i, t) { addFooterRow(t); });
+    $('#btnFootAdd').prop('hidden', !canGrow);
+
     $('#mdlFooter').prop('hidden', false);
     $('#footLines .sc-ltxt').first().trigger('focus');
 }
