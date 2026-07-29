@@ -63,8 +63,9 @@ if ($authorized != "yes") {
     // card and footer actions are the fallback
     $stcPreload = null;
     if (isset($authConn) && $authConn) {
-        $sku    = stcCleanSku($_GET['sku'] ?? '');
-        $footer = stcGetFooter($authConn);
+        $sku      = stcCleanSku($_GET['sku'] ?? '');
+        $footer   = stcGetFooter($authConn);
+        $footKeys = stcFooterKeys($authConn);
 
         $card = null;
         if ($sku !== '') {
@@ -80,10 +81,14 @@ if ($authorized != "yes") {
             }
         }
 
-        if ($footer !== false) {
+        if ($footer !== false && $footKeys !== false) {
             $foot = array();
             foreach ($footer as $f) { $foot[] = rtrim($f['SCFTXT']); }
-            $stcPreload = array("ok" => true, "footer" => $foot, "card" => $card);
+            $keyList = array();
+            foreach ($footKeys as $k) { $keyList[] = intval($k['SCFSKY']); }
+            $stcPreload = array("ok" => true, "sky" => STC_FOOT_KEY,
+                                "footer" => $foot, "keys" => $keyList,
+                                "card" => $card);
         }
     }
 

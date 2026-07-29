@@ -30,8 +30,11 @@ define('STC_LINE_LEN', 50);
 define('STC_SRK_LEN', 15);
 define('STC_SKU_LEN', 10);
 
-// the footer is one shared block on key 1, the only key the Access combo could
-// ever pick, so the key is baked into the procedures
+// the footer key. The Access FootMaintenance combo was bound to the FooterSelect
+// query and read with "scfsky=" & whatever it held, so the key is a real choice
+// and travels with every footer call. BodyMaintenance's read-only strip always
+// asked for key 1, and still does
+define('STC_FOOT_KEY', 1);
 
 // activity log path in the LCCOnline_logs
 define('STC_ACT_LOG', __DIR__ . '/LCCOnline_logs/storycard_activity.log');
@@ -121,9 +124,16 @@ function stcGetCard($conn, $sku) {
 }
 
 
-// PROGRAM NAME STYCRD001S type FOOT: the shared footer lines
-function stcGetFooter($conn) {
-    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)", array('FOOT', ''));
+// PROGRAM NAME STYCRD001S type KEYS: the footer keys to choose from, which is the Access FooterSelect query the FootMaintenance combo was bound to
+function stcFooterKeys($conn) {
+    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)", array('KEYS', ''));
+}
+
+
+// PROGRAM NAME STYCRD001S type FOOT: the footer lines for one key
+function stcGetFooter($conn, $sky = STC_FOOT_KEY) {
+    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
+                       array('FOOT', (string)intval($sky)));
 }
 
 
@@ -140,10 +150,10 @@ function stcSaveBodyLine($conn, $sku, $lineNo, $text, $searchKey) {
 
 
 // PROGRAM NAME STYCRD002S type FOOTI or FOOTU: write one footer line. The Access footer screen picked insert or update once, up front, from whether the footer was empty, and stayed in that mode for every line - update mode never inserted
-function stcSaveFootLine($conn, $lineNo, $text, $mode) {
+function stcSaveFootLine($conn, $sky, $lineNo, $text, $mode) {
     $type = ($mode === 'i') ? 'FOOTI' : 'FOOTU';
     return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
-                   array($type, '', intval($lineNo),
+                   array($type, (string)intval($sky), intval($lineNo),
                          substr((string)$text, 0, STC_LINE_LEN), ''),
                    'STYCRD002S ' . $type);
 }
@@ -261,8 +271,8 @@ function stcRestoreCard($conn, $sku, $before, $isNew) {
 // mode. In update mode a line past the end of the footer updates nothing, so
 // the footer cannot grow once it has rows - that is the old behaviour and it
 // is kept here on purpose
-function stcSaveFooter($conn, $lines) {
-    $before = stcGetFooter($conn);
+function stcSaveFooter($conn, $lines, $sky = STC_FOOT_KEY) {
+    $before = stcGetFooter($conn, $sky);
     if ($before === false) { return false; }
     $mode = (count($before) === 0) ? 'i' : 'u';
 
@@ -273,8 +283,8 @@ function stcSaveFooter($conn, $lines) {
     $lineNo = 0;
     foreach ($keep as $txt) {
         $lineNo++;
-        if (!stcSaveFootLine($conn, $lineNo, $txt, $mode)) {
-            stcRestoreFooter($conn, $before);
+        if (!stcSaveFootLine($conn, $sky, $lineNo, $txt, $mode)) {
+            stcRestoreFooter($conn, $before, $sky);
             $GLOBALS['stcErr'] = 'Footer line ' . $lineNo . ' failed (' .
                                  $GLOBALS['stcErr'] . ') - the footer was put back the way it was.';
             return false;
@@ -286,9 +296,10 @@ function stcSaveFooter($conn, $lines) {
 
 
 // put the footer back to the rows read before the save started
-function stcRestoreFooter($conn, $before) {
+function stcRestoreFooter($conn, $before, $sky = STC_FOOT_KEY) {
     foreach ($before as $r) {
-        stcSaveFootLine($conn, intval($r['SCFLNO']), rtrim((string)$r['SCFTXT']), 'u');
+        stcSaveFootLine($conn, $sky, intval($r['SCFLNO']),
+                        rtrim((string)$r['SCFTXT']), 'u');
     }
 }
 ?>

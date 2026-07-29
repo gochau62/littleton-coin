@@ -22,6 +22,9 @@
 /*                             past the end of the footer updates    */
 /*                             nothing.                              */
 /*                                                                   */
+/*                     INKEY is the SKU for CARD and the footer key  */
+/*                     for FOOTI and FOOTU, where blank means key 1. */
+/*                                                                   */
 /*                     Text and search key are trimmed to the file   */
 /*                     widths of 50 and 15.                          */
 /*                                                                   */
@@ -47,7 +50,7 @@
 
 CREATE OR REPLACE PROCEDURE STYCRD002S (
         IN INTYPE VARCHAR(10),
-        IN INSKU  VARCHAR(20),
+        IN INKEY  VARCHAR(20),
         IN INLNO  DECIMAL(4, 0),
         IN INTXT  VARCHAR(100),
         IN INSRK  VARCHAR(30)
@@ -61,13 +64,14 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
         DECLARE ROWCNT INTEGER DEFAULT 0;
         DECLARE WKTXT  CHAR(50);
         DECLARE WKSRK  CHAR(15);
+        DECLARE WKSKY  DECIMAL(7, 0);
 
         SET WKTXT = LEFT(COALESCE(INTXT, ''), 50);
         SET WKSRK = LEFT(COALESCE(INSRK, ''), 15);
 
         IF INTYPE = 'CARD' THEN
 
-            IF INSKU IS NULL OR TRIM(INSKU) = '' THEN
+            IF INKEY IS NULL OR TRIM(INKEY) = '' THEN
                 SIGNAL SQLSTATE '75002'
                     SET MESSAGE_TEXT = 'A SKU is required to write a story card line';
             END IF;
@@ -80,7 +84,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
             UPDATE IVSCBODYP
                SET SCBTXT = WKTXT,
                    SCBSRK = WKSRK
-             WHERE SCBSKU = INSKU
+             WHERE SCBSKU = INKEY
                AND SCBLNO = INLNO;
 
             GET DIAGNOSTICS ROWCNT = ROW_COUNT;
@@ -88,31 +92,28 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
             IF ROWCNT = 0 THEN
                 INSERT INTO IVSCBODYP
                     (SCBSKU, SCBLNO, SCBTXT, SCBSRK)
-                VALUES (INSKU, INLNO, WKTXT, WKSRK);
+                VALUES (INKEY, INLNO, WKTXT, WKSRK);
             END IF;
 
-        ELSEIF INTYPE = 'FOOTI' THEN
+        ELSEIF INTYPE = 'FOOTI' OR INTYPE = 'FOOTU' THEN
 
             IF INLNO < 1 THEN
                 SIGNAL SQLSTATE '75004'
                     SET MESSAGE_TEXT = 'Footer line number must be 1 or more';
             END IF;
 
-            INSERT INTO IVSCFOOTP
-                (SCFSKY, SCFLNO, SCFTXT)
-            VALUES (1, INLNO, WKTXT);
+            SET WKSKY = DECIMAL(COALESCE(NULLIF(TRIM(INKEY), ''), '1'), 7, 0);
 
-        ELSEIF INTYPE = 'FOOTU' THEN
-
-            IF INLNO < 1 THEN
-                SIGNAL SQLSTATE '75004'
-                    SET MESSAGE_TEXT = 'Footer line number must be 1 or more';
+            IF INTYPE = 'FOOTI' THEN
+                INSERT INTO IVSCFOOTP
+                    (SCFSKY, SCFLNO, SCFTXT)
+                VALUES (WKSKY, INLNO, WKTXT);
+            ELSE
+                UPDATE IVSCFOOTP
+                   SET SCFTXT = WKTXT
+                 WHERE SCFSKY = WKSKY
+                   AND SCFLNO = INLNO;
             END IF;
-
-            UPDATE IVSCFOOTP
-               SET SCFTXT = WKTXT
-             WHERE SCFSKY = 1
-               AND SCFLNO = INLNO;
 
         ELSE
             SIGNAL SQLSTATE '75005'

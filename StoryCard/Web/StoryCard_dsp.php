@@ -55,7 +55,7 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 }
 .sc-skubox { position: relative; display: inline-flex; align-items: center; }
 .sc-sku {
-  width: 190px; padding: .45rem 1.6rem .45rem .7rem;
+  width: 160px; padding: .45rem 1.6rem .45rem .7rem;
   border: 1px solid var(--sc-line); border-radius: 6px;
   font-family: "Consolas", "Courier New", monospace;
   font-size: .95rem; text-transform: uppercase;
@@ -107,8 +107,16 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 }
 .sc-rule { border: 0; border-top: 1px solid var(--sc-line); margin: 1.1rem 0; }
 
+/* ----- the working area: buttons on the left, the two sides beside them,
+       laid out the way the Access BodyMaintenance form was ----- */
+.sc-work { display: flex; gap: 1.5rem; align-items: flex-start; }
+.sc-rail { display: flex; flex-direction: column; gap: .55rem;
+           flex: 0 0 auto; width: 120px; padding-top: 1.55rem; }
+.sc-rail .sc-btn { justify-content: center; }
+
 /* ----- fields ----- */
 .sc-itembar { display: flex; gap: 1.5rem; align-items: flex-end; flex-wrap: wrap; }
+.sc-searchrow { margin-top: 1.1rem; }
 .sc-field { display: flex; flex-direction: column; gap: .25rem; }
 .sc-field > span { font-size: .72rem; color: var(--sc-muted);
                    text-transform: uppercase; letter-spacing: .05em; }
@@ -125,7 +133,7 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 
 /* ----- the two printed sides ----- */
 .sc-sides { display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; }
-.sc-side  { flex: 1 1 430px; min-width: 400px; }
+.sc-side  { flex: 0 0 auto; }
 .sc-h {
   margin: 0 0 .3rem 0; font-size: .72rem; color: var(--sc-muted);
   text-transform: uppercase; letter-spacing: .05em; font-weight: 700;
@@ -148,8 +156,12 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   width: 2rem; text-align: right; font-size: .74rem; color: #b3bdb8;
   font-variant-numeric: tabular-nums; user-select: none;
 }
+/* exactly fifty characters wide, so a full line never clips and the ruler
+   above sits column for column over it. ch is the character width in a
+   monospace face, which is what both of them use */
 .sc-ltxt {
-  flex: 1; padding: .3rem .45rem;
+  flex: 0 0 auto; width: calc(50ch + .9rem + 2px);
+  padding: .3rem .45rem;
   border: 1px solid var(--sc-line); border-radius: 4px;
   font-family: "Consolas", "Courier New", monospace;
   font-size: .84rem; letter-spacing: 0;
@@ -162,7 +174,11 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-lcnt.sc-full { color: var(--sc-amber); font-weight: 700; }
 
 /* ----- footer, under side 2 where the Access form put it ----- */
-.sc-footh { margin-top: 1rem; }
+.sc-footh { margin-top: 1rem; display: flex; align-items: center; gap: .5rem; }
+.sc-footkey { padding: .15rem .4rem; font-size: .75rem; border: 1px solid var(--sc-line);
+              border-radius: 4px; background: #fff; color: var(--sc-text);
+              font-family: "Consolas", "Courier New", monospace;
+              text-transform: none; letter-spacing: 0; font-weight: 400; }
 .sc-footlines {
   font-family: "Consolas", "Courier New", monospace; font-size: .84rem;
   white-space: pre-wrap; color: var(--sc-text); margin: 0;
@@ -200,50 +216,56 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
     </div>
   </header>
 
-  <div class="sc-toolbar">
-    <span class="sc-skubox">
-      <input type="text" id="txtSku" class="sc-sku" placeholder="SKU"
-             maxlength="10" autocomplete="off" spellcheck="false">
-      <span class="sc-skudd" id="btnSkuDrop" title="Show the list">&#9662;</span>
-    </span>
-    <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save</button>
-    <button type="button" class="sc-btn" id="btnRevert" disabled>Revert</button>
-    <button type="button" class="sc-btn" id="btnFooter">Footer</button>
-    <span class="sc-chip" id="lblState"></span>
-  </div>
-
   <div class="sc-card">
 
     <div class="sc-itembar">
       <label class="sc-field"><span>SKU</span>
-        <input type="text" id="outSku" class="sc-skuro" readonly tabindex="-1">
+        <span class="sc-skubox">
+          <input type="text" id="txtSku" class="sc-sku" maxlength="10"
+                 autocomplete="off" spellcheck="false">
+          <span class="sc-skudd" id="btnSkuDrop" title="Show the list">&#9662;</span>
+        </span>
       </label>
       <label class="sc-field"><span>Description</span>
         <input type="text" id="outDesc" class="sc-desc" readonly tabindex="-1">
       </label>
-      <label class="sc-field"><span>Search text</span>
-        <input type="text" id="txtSrk" class="sc-srk" maxlength="15"
-               autocomplete="off" spellcheck="false" disabled>
-      </label>
+      <span class="sc-chip" id="lblState"></span>
     </div>
 
     <hr class="sc-rule">
 
-    <div class="sc-sides">
-      <div class="sc-side">
-        <div class="sc-h">Side 1</div>
-        <div class="sc-ruler" id="ruler1"></div>
-        <div class="sc-lines" id="side1Lines"></div>
-      </div>
-      <div class="sc-side">
-        <div class="sc-h">Side 2</div>
-        <div class="sc-ruler" id="ruler2"></div>
-        <div class="sc-lines" id="side2Lines"></div>
+    <div class="sc-work">
 
-        <div class="sc-h sc-footh">Footer</div>
-        <pre class="sc-footlines" id="outFooter"></pre>
+      <div class="sc-rail">
+        <button type="button" class="sc-btn sc-btn-primary" id="btnSave" disabled>Save</button>
+        <button type="button" class="sc-btn" id="btnRevert" disabled>Revert</button>
+        <button type="button" class="sc-btn" id="btnFooter">Footer</button>
       </div>
+
+      <div class="sc-sides">
+        <div class="sc-side">
+          <div class="sc-h">Side 1</div>
+          <div class="sc-ruler" id="ruler1"></div>
+          <div class="sc-lines" id="side1Lines"></div>
+        </div>
+        <div class="sc-side">
+          <div class="sc-h">Side 2</div>
+          <div class="sc-ruler" id="ruler2"></div>
+          <div class="sc-lines" id="side2Lines"></div>
+
+          <div class="sc-h sc-footh">Footer
+            <select class="sc-footkey" id="selFootKey"></select>
+          </div>
+          <pre class="sc-footlines" id="outFooter"></pre>
+        </div>
+      </div>
+
     </div>
+
+    <label class="sc-field sc-searchrow"><span>Search text</span>
+      <input type="text" id="txtSrk" class="sc-srk" maxlength="15"
+             autocomplete="off" spellcheck="false" disabled>
+    </label>
 
   </div>
 
@@ -255,6 +277,9 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
         <button type="button" class="sc-x" data-close="mdlFooter">&times;</button>
       </div>
       <div class="sc-modal-body">
+        <label class="sc-field" style="margin-bottom:.8rem"><span>Footer key</span>
+          <select id="mdlFootKey" class="sc-footkey" style="width:90px"></select>
+        </label>
         <div class="sc-ruler" id="rulerF"></div>
         <div class="sc-lines" id="footLines"></div>
         <button type="button" class="sc-btn" id="btnFootAdd"
@@ -284,8 +309,11 @@ var LINE_LEN = 50;
 
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
-// the footer as loaded, for the strip and for the editor
+// the footer as loaded, for the strip and for the editor, plus the keys the
+// FooterSelect query offers and which one is on screen
 var footerLines = [];
+var footerKeys = [];
+var footerSky = 1;
 var suggestTimer = null;
 
 
@@ -304,6 +332,8 @@ $(document).ready(function () {
     // named a SKU, so nothing has to be fetched before the screen is usable
     if (STC_PRELOAD) {
         footerLines = STC_PRELOAD.footer || [];
+        footerKeys  = STC_PRELOAD.keys || [];
+        footerSky   = STC_PRELOAD.sky || 1;
         renderFooter();
         if (STC_PRELOAD.card) {
             $('#txtSku').val(STC_PRELOAD.card.sku);
@@ -325,6 +355,12 @@ $(document).ready(function () {
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
+    // both key pickers load that footer: the strip on the card screen and the
+    // one in the editor, which is the FootMaintenance combo
+    $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
+    $('#mdlFootKey').on('change', function () {
+        loadFooter($(this).val(), openFooterEditor);
+    });
 
     $('[data-close]').on('click', function () {
         $('#' + $(this).data('close')).prop('hidden', true);
@@ -560,18 +596,34 @@ function saveCard() {
 
 // ---------------------------------------------------------------- the footer
 
-function loadFooter() {
-    postAjax({ action: 'footer' }, function (resp) {
+function loadFooter(sky, then) {
+    postAjax({ action: 'footer', sky: sky || footerSky }, function (resp) {
         footerLines = resp.footer || [];
+        footerKeys  = resp.keys || [];
+        footerSky   = resp.sky;
         renderFooter();
+        if (then) { then(); }
     });
 }
 
 
 function renderFooter() {
+    fillKeys('#selFootKey');
+    fillKeys('#mdlFootKey');
     var shown = footerLines.slice();
     while (shown.length && rtrim(shown[shown.length - 1]) === '') { shown.pop(); }
     $('#outFooter').text(shown.join('\n'));
+}
+
+
+// the FooterSelect list. It only ever offers the keys that query returns
+function fillKeys(sel) {
+    var box = $(sel).empty();
+    var keys = footerKeys.length ? footerKeys : [footerSky];
+    $.each(keys, function (i, k) {
+        box.append($('<option>').val(k).text(k));
+    });
+    box.val(String(footerSky));
 }
 
 
@@ -598,7 +650,8 @@ function saveFooter() {
     $('#footLines .sc-ltxt').each(function () { lines.push($(this).val()); });
 
     $('#btnFootSave').prop('disabled', true);
-    postAjax({ action: 'savefooter', payload: JSON.stringify({ footer: lines }) },
+    postAjax({ action: 'savefooter',
+               payload: JSON.stringify({ sky: footerSky, footer: lines }) },
         function () {
             $('#btnFootSave').prop('disabled', false);
             $('#mdlFooter').prop('hidden', true);

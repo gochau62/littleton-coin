@@ -5,18 +5,24 @@
 /* Program Narrative - Story Card reads, one result set per type.    */
 /*                                                                   */
 /*                     CARDS - the SKU list, which is the row source */
-/*                             the Access Combo1 used: only SKUs     */
-/*                             that already have a story card and    */
-/*                             are on the item master.  INKEY        */
-/*                             narrows by leading characters.        */
+/*                             the Access BodyMaintenance Combo1     */
+/*                             used: only SKUs that already have a   */
+/*                             story card and are on the item        */
+/*                             master.  INKEY narrows by leading     */
+/*                             characters.                           */
 /*                             SCSKU, SCDESC                         */
 /*                     ONE   - one exact SKU, no row means it is not */
 /*                             on the item master, which is what the */
 /*                             Access CheckSku tested                */
 /*                             SCSKU, SCDESC                         */
-/*                     CARD  - the body lines for INKEY              */
+/*                     CARD  - the body lines for the SKU in INKEY   */
 /*                             SCBLNO, SCBTXT, SCBSRK                */
-/*                     FOOT  - the shared footer, key 1              */
+/*                     KEYS  - the footer keys, which is the Access  */
+/*                             FooterSelect query and the row source */
+/*                             of the FootMaintenance Combo1         */
+/*                             SCFSKY                                */
+/*                     FOOT  - the footer lines for the key in INKEY,*/
+/*                             blank meaning key 1                   */
 /*                             SCFLNO, SCFTXT                        */
 /*                                                                   */
 /* Author            - G Chau                                        */
@@ -77,10 +83,16 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
              ORDER BY B.SCBLNO;
 
         DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT DISTINCT F.SCFSKY AS SCFSKY
+              FROM IVSCFOOTP F
+             WHERE F.SCFSKY = 1
+             ORDER BY F.SCFSKY;
+
+        DECLARE C5 CURSOR WITH RETURN FOR
             SELECT F.SCFLNO AS SCFLNO,
                    F.SCFTXT AS SCFTXT
               FROM IVSCFOOTP F
-             WHERE F.SCFSKY = 1
+             WHERE F.SCFSKY = DECIMAL(COALESCE(NULLIF(TRIM(INKEY), ''), '1'), 7, 0)
              ORDER BY F.SCFLNO;
 
         IF INTYPE = 'CARDS' THEN
@@ -89,10 +101,12 @@ CREATE OR REPLACE PROCEDURE STYCRD001S (
             OPEN C2;
         ELSEIF INTYPE = 'CARD' THEN
             OPEN C3;
-        ELSEIF INTYPE = 'FOOT' THEN
+        ELSEIF INTYPE = 'KEYS' THEN
             OPEN C4;
+        ELSEIF INTYPE = 'FOOT' THEN
+            OPEN C5;
         ELSE
             SIGNAL SQLSTATE '75001'
-                SET MESSAGE_TEXT = 'STYCRD001S type must be CARDS ONE CARD or FOOT';
+                SET MESSAGE_TEXT = 'STYCRD001S type must be CARDS ONE CARD KEYS or FOOT';
         END IF;
     END;

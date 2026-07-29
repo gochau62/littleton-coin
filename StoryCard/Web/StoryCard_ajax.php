@@ -79,14 +79,22 @@ switch ($action) {
 
         stcOut(array("ok" => true, "card" => $card));
 
-    // the shared footer text, the read only strip on the card screen and the
-    // thing the footer editor works on
+    // the footer for one key, plus the keys there are to choose from. The key
+    // list is the Access FooterSelect query the FootMaintenance combo used
     case 'footer':
-        $rows = stcGetFooter($conn);
+        $sky  = intval($_POST['sky'] ?? $_GET['sky'] ?? STC_FOOT_KEY);
+        $rows = stcGetFooter($conn, $sky);
         if ($rows === false) { stcOutFail(); }
+        $keys = stcFooterKeys($conn);
+        if ($keys === false) { stcOutFail(); }
+
         $foot = array();
         foreach ($rows as $r) { $foot[] = rtrim($r['SCFTXT']); }
-        stcOut(array("ok" => true, "footer" => $foot));
+        $keyList = array();
+        foreach ($keys as $k) { $keyList[] = intval($k['SCFSKY']); }
+
+        stcOut(array("ok" => true, "sky" => $sky,
+                     "footer" => $foot, "keys" => $keyList));
 
     // save a whole card in one call: both sides plus the search key. Any line
     // that fails puts the card back the way it was and reports which one
@@ -129,11 +137,12 @@ switch ($action) {
             stcOutFail("Nothing to save.");
         }
 
-        $lines = stcSaveFooter($conn, array_values($payload['footer']));
+        $sky   = intval($payload['sky'] ?? STC_FOOT_KEY);
+        $lines = stcSaveFooter($conn, array_values($payload['footer']), $sky);
         if ($lines === false) { stcOutFail(); }
 
-        stcActLog($user, 'FOOTER', $lines . ' lines');
-        stcOut(array("ok" => true, "lines" => $lines));
+        stcActLog($user, 'FOOTER', 'key ' . $sky . ' (' . $lines . ' lines)');
+        stcOut(array("ok" => true, "sky" => $sky, "lines" => $lines));
 
     default:
         stcOutFail("Unknown action.");
