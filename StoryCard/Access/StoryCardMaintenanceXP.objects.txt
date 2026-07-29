@@ -143,6 +143,14 @@ The replacement in ../Db2 and ../Web does all of that, the same way.
 Line limits 11 and 9, tidy side 2 only and only up to 21, the footer
 insert-or-update mode picked once, and no delete anywhere.
 
+Every table the procedures touch is qualified LSCPRDLIB/, because that
+is where every linked-table globe in the .mdb points: the dropdown is
+filled from IVSCBODYP joined to ITMMSTL1, the footer from IVSCFOOTP,
+the description and CheckSku from ITMMSTL1.  Reads and writes both go
+to those files, exactly as the Access screens' did - there is no
+development copy in between.  ITMEXPDSCP is linked in the .mdb but no
+form reads it, so no procedure does either.
+
 The SKU list is STYCRD001S type CARDS and it is the Combo1 row source
 verbatim: DISTINCT SCBSKU from IVSCBODYP, INNER JOIN ITMMSTL1 on IISKU#,
 ordered by SCBSKU.  It reads ITMMSTL1, the logical the .mdb linked, and
