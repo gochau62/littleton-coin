@@ -46,6 +46,9 @@ var loadedCard = null;
 var footerLines = [];
 var footerKeys = [];
 var footerSky = 1;
+// the editor works on its own copy of a footer, so the strip on the page only changes when a save lands or its own selector is used
+var edLines = [];
+var edSky = 1;
 var suggestTimer = null;
 var suggestSeq = 0;
 
@@ -80,11 +83,11 @@ $(document).ready(function () {
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
-    // both key pickers load that footer. The editor's key box also ADDS one: type a key with nothing on file and the footer opens empty in insert mode, the
-    // same way typing a new SKU starts a new card
+    // the page's selector swaps which saved footer the strip shows
     $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
-    // the key box opens its list the same way the SKU box does: focus, a click while focused, or the arrow. Picking a key loads that footer; typing a number
-    // not on the list starts a new one
+    // the editor's key box works on its own copy, so nothing on the page moves until Save. It also ADDS a key: type one with nothing on file and the footer
+    // opens empty in insert mode, the same way typing a new SKU starts a new card. Its list opens the same way the SKU box does: focus, a click while
+    // focused, or the arrow
     $('#mdlFootKey').on('focus click', function () {
         if (!$('#scKeySuggest').length) { showKeySuggest(); }
     });
@@ -105,10 +108,10 @@ $(document).ready(function () {
     });
     $('#mdlFootKey').on('change', function () {
         var k = parseInt($(this).val(), 10);
-        if (!(k >= 1)) { $(this).val(footerSky); return; }
+        if (!(k >= 1)) { $(this).val(edSky); return; }
         // the same key again is not a change - reloading would re-render the rows and wipe anything already typed into them
-        if (k === footerSky) { $(this).val(footerSky); return; }
-        loadFooter(k, renderFooterEditor);
+        if (k === edSky) { $(this).val(edSky); return; }
+        loadEditorFooter(k);
     });
 
     $('[data-close]').on('click', function () {
@@ -320,13 +323,22 @@ function saveCard() {
 
 // ---------------------------------------------------------------- the footer
 
-function loadFooter(sky, then) {
+function loadFooter(sky) {
     postAjax({ action: 'footer', sky: sky || footerSky }, function (resp) {
         footerLines = resp.footer || [];
         footerKeys  = resp.keys || [];
         footerSky   = resp.sky;
         renderFooter();
-        if (then) { then(); }
+    });
+}
+
+// the editor's own load - it never touches what the page is showing
+function loadEditorFooter(sky) {
+    postAjax({ action: 'footer', sky: sky }, function (resp) {
+        edLines    = resp.footer || [];
+        footerKeys = resp.keys || [];
+        edSky      = resp.sky;
+        renderFooterEditor();
     });
 }
 
@@ -356,16 +368,18 @@ function fillKeys(sel) {
 }
 
 function openFooterEditor() {
-    $('#mdlFootKey').val(footerSky);
+    // start from the key and rows the page is showing - saved state only
+    edSky   = footerSky;
+    edLines = footerLines.slice();
     renderFooterEditor();
     $('#mdlFooter').prop('hidden', false);
     $('#footLines .sc-ltxt').first().trigger('focus');
 }
 
 function renderFooterEditor() {
-    $('#mdlFootKey').val(footerSky);
+    $('#mdlFootKey').val(edSky);
     $('#footLines').empty();
-    var lines = footerLines.slice();
+    var lines = edLines.slice();
 
     // the Access rule per key: an empty footer takes new lines, up to the two the footer box holds, and a footer that has rows can only have those rows
     // rewritten, never grown. The editor offers exactly what the save can do
@@ -390,7 +404,7 @@ function saveFooter() {
 
     $('#btnFootSave').prop('disabled', true);
     postAjax({ action: 'savefooter',
-               payload: JSON.stringify({ sky: footerSky, footer: lines }) },
+               payload: JSON.stringify({ sky: edSky, footer: lines }) },
         function () {
             $('#btnFootSave').prop('disabled', false);
             $('#mdlFooter').prop('hidden', true);
@@ -481,7 +495,7 @@ function showKeySuggest() {
     var box = $('<div class="sc-suggest" id="scKeySuggest">');
     $.each(footerKeys, function (i, k) {
         var d = $('<div>').attr('data-key', k).text(k);
-        if (k === footerSky) { d.addClass('active'); }
+        if (k === edSky) { d.addClass('active'); }
         box.append(d);
     });
     // mousedown, not click, so the pick lands before the input blurs
