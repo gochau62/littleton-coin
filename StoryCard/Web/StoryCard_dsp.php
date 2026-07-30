@@ -95,7 +95,8 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           font-variant-numeric: tabular-nums; user-select: none; }
 .sc-lrow.sc-filled .sc-lno { color: var(--sc-text); font-weight: 700; }
 
-/* capped at fifty characters, the file column width, but able to shrink with the window - a narrower box scrolls while typing, which is exactly how the Access text boxes behaved. maxlength still holds the limit either way */
+/* capped at fifty characters, the file column width, but able to shrink with the window - a narrower box scrolls while typing, which is exactly how the
+   Access text boxes behaved. maxlength still holds the limit either way */
 .sc-ltxt { flex: 1 1 auto; min-width: 0; max-width: calc(50ch + .9rem + 2px);
            padding: .3rem .45rem; border: 1px solid var(--sc-line);
            border-radius: 4px; font-size: .84rem; }
@@ -273,9 +274,11 @@ $(document).ready(function () {
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
-    // both key pickers load that footer. The editor's key box also ADDS one: type a key with nothing on file and the footer opens empty in insert mode, the same way typing a new SKU starts a new card
+    // both key pickers load that footer. The editor's key box also ADDS one: type a key with nothing on file and the footer opens empty in insert mode, the
+    // same way typing a new SKU starts a new card
     $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
-    // the key box opens its list the same way the SKU box does: focus, a click while focused, or the arrow. Picking a key loads that footer; typing a number not on the list starts a new one
+    // the key box opens its list the same way the SKU box does: focus, a click while focused, or the arrow. Picking a key loads that footer; typing a number
+    // not on the list starts a new one
     $('#mdlFootKey').on('focus click', function () {
         if (!$('#scKeySuggest').length) { showKeySuggest(); }
     });
@@ -314,7 +317,9 @@ $(document).ready(function () {
             runSkuSearch(inp, inp.val().trim());
         }, 250);
     });
-    // focus opens the list, and so does a click once the box already has focus: a second click on an already focused input fires no focus event, which is why clicking it again used to do nothing. Opening always shows the WHOLE list, positioned at the current value - the Access combo only filtered while you typed, never on open
+    // focus opens the list, and so does a click once the box already has focus: a second click on an already focused input fires no focus event, which is why
+    // clicking it again used to do nothing. Opening always shows the WHOLE list, positioned at the current value - the Access combo only filtered while you
+    // typed, never on open
     $('#txtSku').on('focus click', function () {
         if (!$('#scSuggest').length) { openSkuList(); }
     });
@@ -322,7 +327,8 @@ $(document).ready(function () {
         // wait so a click on the list lands before blur hides it
         setTimeout(hideSuggest, 150);
     });
-    // the arrow toggles it (mousedown so the input keeps focus). Focusing an unfocused box opens the list through the focus handler; a box that is already focused fires no event, so open it directly
+    // the arrow toggles it (mousedown so the input keeps focus). Focusing an unfocused box opens the list through the focus handler; a box that is already
+    // focused fires no event, so open it directly
     $('#btnSkuDrop').on('mousedown', function (e) {
         e.preventDefault();
         if ($('#scSuggest').length) { hideSuggest(); return; }
@@ -459,7 +465,8 @@ function markDirty() {
     setChip(isDirty() ? 'dirty' : (loadedCard.isNew ? 'new' : ''));
 }
 
-// the line number goes bold once the line carries text, which is the only state a line has. The box is exactly the width of the file column, so there is nothing to count
+// the line number goes bold once the line carries text, which is the only state a line has. The box is exactly the width of the file column, so there is
+// nothing to count
 function refreshRow(inp) {
     inp.closest('.sc-lrow').toggleClass('sc-filled', inp.val().trim() !== '');
 }
@@ -540,7 +547,8 @@ function renderFooterEditor() {
     $('#footLines').empty();
     var lines = footerLines.slice();
 
-    // the Access rule per key: an empty footer takes any number of lines, a footer that has rows can only have those rows rewritten, never grown. The editor offers exactly what the save can do
+    // the Access rule per key: an empty footer takes any number of lines, a footer that has rows can only have those rows rewritten, never grown. The editor
+    // offers exactly what the save can do
     var canGrow = lines.length === 0;
     if (canGrow) { lines.push(''); }
     $.each(lines, function (i, t) { addFooterRow(t); });
@@ -694,7 +702,8 @@ function stepLine(inp, delta) {
     }
 }
 
-// spread pasted text down the boxes: each newline starts a new line, and any line longer than fifty characters wraps on a word boundary rather than being chopped. Whatever does not fit is reported instead of vanishing
+// spread pasted text down the boxes: each newline starts a new line, and any line longer than fifty characters wraps on a word boundary rather than being
+// chopped. Whatever does not fit is reported instead of vanishing
 function spreadPaste(inp, raw) {
     var boxes = inp.closest('.sc-lines').find('.sc-ltxt');
     var start = boxes.index(inp);
