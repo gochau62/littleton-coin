@@ -41,9 +41,8 @@
 // Story Card Maintenance frontend logic (SKU picker, both sides, footer editor)
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
-// the strip under side 2 always shows footer key 1, the way the Access body form hardcoded scfsky=1 - the editor switching keys never changes it
-var stripLines = [];
-// the footer as loaded for the editor, plus the keys there are to choose from and which one is on screen
+// the footer as loaded, for the strip and for the editor, plus the keys there are to choose from and which one is on screen. Key 1 is the default,
+// the one the Access body form always read, and the strip only fills once a SKU is picked - LoadText read the footer right after the item description
 var footerLines = [];
 var footerKeys = [];
 var footerSky = 1;
@@ -63,7 +62,6 @@ $(document).ready(function () {
         footerLines = STC_PRELOAD.footer || [];
         footerKeys  = STC_PRELOAD.keys || [];
         footerSky   = STC_PRELOAD.sky || 1;
-        stripLines  = footerLines.slice();
         renderFooter();
         if (STC_PRELOAD.card) {
             $('#txtSku').val(STC_PRELOAD.card.sku);
@@ -80,8 +78,11 @@ $(document).ready(function () {
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
-    // the editor's key box loads that footer, and ADDS one: type a key with nothing on file and the footer opens empty in insert mode, the same way typing a
-    // new SKU starts a new card. It opens its list the same way the SKU box does: focus, a click while focused, or the arrow
+    // both key pickers load that footer. The editor's key box also ADDS one: type a key with nothing on file and the footer opens empty in insert mode, the
+    // same way typing a new SKU starts a new card
+    $('#selFootKey').on('change', function () { loadFooter($(this).val()); });
+    // the key box opens its list the same way the SKU box does: focus, a click while focused, or the arrow. Picking a key loads that footer; typing a number
+    // not on the list starts a new one
     $('#mdlFootKey').on('focus click', function () {
         if (!$('#scKeySuggest').length) { showKeySuggest(); }
     });
@@ -235,6 +236,10 @@ function setCard(card) {
 
     $('#side1Lines .sc-ltxt, #side2Lines .sc-ltxt').each(function () { refreshRow($(this)); });
     setChip(card && card.isNew ? 'new' : '');
+
+    // the footer strip follows the card, the way LoadText filled Text13 right
+    // after the item description
+    renderFooter();
 }
 
 // one word in one colour, in place of a sentence
@@ -318,17 +323,35 @@ function loadFooter(sky, then) {
         footerLines = resp.footer || [];
         footerKeys  = resp.keys || [];
         footerSky   = resp.sky;
-        // only key 1 refreshes the strip, since that is the only key it shows
-        if (footerSky === 1) { stripLines = footerLines.slice(); }
         renderFooter();
         if (then) { then(); }
     });
 }
 
 function renderFooter() {
-    var shown = stripLines.slice();
+    fillKeys('#selFootKey');
+
+    // the same numbered boxes the sides use, read only, and empty until a SKU
+    // is picked - the Access box sat blank until LoadText ran
+    var shown = loadedCard ? footerLines.slice() : [];
     while (shown.length && rtrim(shown[shown.length - 1]) === '') { shown.pop(); }
-    $('#outFooter').text(shown.join('\n'));
+    var box = $('#outFooter').empty();
+    var rows = Math.max(shown.length, 2);
+    for (var i = 0; i < rows; i++) {
+        var t = shown[i] || '';
+        $('<div class="sc-lrow">').toggleClass('sc-filled', rtrim(t) !== '')
+            .append($('<span class="sc-lno">').text(i + 1))
+            .append($('<input type="text" class="sc-ltxt" readonly tabindex="-1">').val(t))
+            .appendTo(box);
+    }
+}
+
+// the FooterSelect list. It only ever offers the keys that query returns
+function fillKeys(sel) {
+    var box = $(sel).empty();
+    var keys = footerKeys.length ? footerKeys : [footerSky];
+    $.each(keys, function (i, k) { box.append($('<option>').val(k).text(k)); });
+    box.val(String(footerSky));
 }
 
 function openFooterEditor() {

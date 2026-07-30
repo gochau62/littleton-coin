@@ -56,7 +56,7 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-field input[readonly] { border-color: transparent; background: none; padding-left: 0; font-weight: 600; }
 /* the description gives way so the buttons keep their place on the row */ .sc-fgrow { flex: 1 1 160px; min-width: 0; }
 .sc-desc { width: 100%; max-width: 330px; }
-.sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footlines, .sc-footkey, .sc-sg-sku { font-family: var(--sc-mono); }
+.sc-mono, .sc-sku, .sc-srk, .sc-ltxt, .sc-footkey, .sc-sg-sku { font-family: var(--sc-mono); }
 .sc-sku { width: calc(10ch + 2.4rem); padding-right: 1.6rem; text-transform: uppercase; }
 .sc-srk { width: calc(15ch + 1.3rem); text-transform: uppercase; }
 
@@ -106,8 +106,8 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-footkey { padding: .15rem .4rem; font-size: .75rem; background: #fff;
               border: 1px solid var(--sc-line); border-radius: 4px;
               color: var(--sc-text); text-transform: none; font-weight: 400; }
-.sc-footlines { font-size: .84rem; white-space: pre; margin: 0; margin-left: calc(2rem + .35rem + 1px + .45rem); overflow-x: auto; }
-.sc-footlines:empty::before { content: "\2014"; color: #c4ccc8; }
+/* the strip rows are the same numbered boxes the sides use, just read only */
+#outFooter .sc-ltxt[readonly] { background: #fdfdfd; }
 
 /* ----- SKU type-ahead ----- */
 .sc-suggest { position: fixed; z-index: 200; background: #fff; border: 1px solid #999;
@@ -177,8 +177,10 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           <div class="sc-h">Side 2</div>
           <div class="sc-lines" id="side2Lines"></div>
 
-          <div class="sc-h sc-footh">Footer</div>
-          <pre class="sc-footlines" id="outFooter"></pre>
+          <div class="sc-h sc-footh">Footer
+            <select class="sc-footkey" id="selFootKey"></select>
+          </div>
+          <div class="sc-lines" id="outFooter"></div>
         </div>
       </div>
 
