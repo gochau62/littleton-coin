@@ -30,12 +30,14 @@ if (isset($_GET['shimtest'])) {
     exit;
 }
 
-// 302 and not 301 on purpose: a browser remembers a 301 forever, so a permanent code would keep sending people to the new screen even after this file was put back
+// 302 and not 301 on purpose: a browser remembers a 301 forever, so a permanent code would keep sending people to the new screen even after this file was put
+// back
 if (!headers_sent()) {
     header('Location: ' . $target, true, 302);
 }
 
-// the header above is the normal path, but if anything printed before this point the header is ignored, so the page also carries a meta refresh and a script that move the browser anyway
+// the header above is the normal path, but if anything printed before this point the header is ignored, so the page also carries a meta refresh and a script
+// that move the browser anyway
 $safe = htmlspecialchars($target, ENT_QUOTES);
 echo '<html><head><meta http-equiv="refresh" content="0;url=' . $safe . '">' .
      '<script>window.location.replace(' . json_encode($target) . ');</script></head>' .

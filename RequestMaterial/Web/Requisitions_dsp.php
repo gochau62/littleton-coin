@@ -413,7 +413,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rpt-totv .rpt-ital { margin-right: .3rem; }
 .rpt-nametot { background: #f2f5fc; border-top-color: #4a5c93; }
 .rpt-grand { margin-top: 5px; border-top: 2px solid #17306e; background: #eaeff9; }
-/* the report modal lives inside the LCCOnline framework page, whose global table styling draws a gridline on every cell; these id scoped rules outrank it so the on screen preview matches the clean printed layout exactly */
+/* the report modal lives inside the LCCOnline framework page, whose global table styling draws a gridline on every cell; these id scoped rules outrank it
+   so the on screen preview matches the clean printed layout exactly */
 #rptBody .rpt-mu th, #rptBody .rpt-mu td { border: 0; background: none; }
 #rptBody .rpt-mu thead th { border-bottom: 1.5px solid #4a5c93; }
 #rptBody .rpt-mu tr.rpt-line td { border-bottom: 1px solid #dce1ea; }
@@ -455,7 +456,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
   <div class="rq-card">
     <div class="rq-tablewrap">
-      <!-- two-line records like Access frmMain: fields on line 1; description and the Return Item checkbox on line 2. Columns are compact fixed pixels (like the Access form) with the leftover width going to Requestor, so nothing gets crushed. -->
+      <!-- two-line records like Access frmMain: fields on line 1; description and the Return Item checkbox on line 2. Columns are compact fixed pixels
+           (like the Access form) with the leftover width going to Requestor, so nothing gets crushed. -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
           <col style="width:22px"><col style="width:58px"><col style="width:88px">
@@ -608,7 +610,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <div class="rq-modal-head">
         <h2>Monthly Update: Requisitioned Product</h2>
         <div>
-          <!-- real dropdowns, not input type=month - Firefox renders that as a bare text box, which is what the floor runs. Picking a month or year re-runs the report on its own, so there is no Run button. -->
+          <!-- real dropdowns, not input type=month - Firefox renders that as a bare text box, which is what the floor runs. Picking a month or year
+               re-runs the report on its own, so there is no Run button. -->
           <select id="rptMonthSel" title="Month"></select>
           <select id="rptYearSel" title="Year"></select>
           <button type="button" class="rq-btn rq-btn-primary" id="btnPrintReport">&#128424; Print</button>

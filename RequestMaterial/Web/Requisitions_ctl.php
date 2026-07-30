@@ -170,7 +170,8 @@ $(document).ready(function () {
         var inp = $(this);
         var reqNum = String(inp.data('req'));
         var val = inp.val().trim();
-        // only a real badge number saves: a blank clears it, a value on the employee list, or a plain number typed by hand. Typed name text (from filtering the dropdown) never becomes the badge; it reverts to the stored value, like the Access combo
+        // only a real badge number saves: a blank clears it, a value on the employee list, or a plain number typed by hand. Typed name text (from filtering
+        // the dropdown) never becomes the badge; it reverts to the stored value, like the Access combo
         var codes = badgeCodeSet();
         if (val !== '' && !codes[val] && !/^\d+$/.test(val)) {
             inp.val(reqBadge(reqNum));
@@ -548,7 +549,8 @@ function renderGrid() {
     $.each(rows, function (i, r) {
         shown++;
 
-        // any real authorizer name is green; only the None / In Process placeholders stay yellow (legacy rows carry the stored flag inconsistently, so the name text decides)
+        // any real authorizer name is green; only the None / In Process placeholders stay yellow (legacy rows carry the stored flag inconsistently, so the
+        // name text decides)
         var authName = r.RHAUTB || 'Authorization = None';
         var isReal = authName !== 'Authorization = None' &&
                      authName !== 'Authorization In Process';
@@ -1037,7 +1039,8 @@ function rptReturned(r) {
 }
 
 
-// one compact totals line (a thin rule plus the three figures inline), where cls marks the name subtotal or the grand report total so a long report stays to few pages
+// one compact totals line (a thin rule plus the three figures inline), where cls marks the name subtotal or the grand report total so a long report stays to
+// few pages
 function muTotals(label, t, cls) {
     return '<tr><td colspan="11"><div class="rpt-totblk ' + (cls || '') + '">' +
         '<span class="rpt-totlbl rpt-ital">' + label + '</span>' +
@@ -1048,7 +1051,8 @@ function muTotals(label, t, cls) {
 }
 
 
-// the Monthly Update grouped by name then requisition, each item line ending in the Returned column, with compact per req, per name and grand totals so a busy month stays to few pages
+// the Monthly Update grouped by name then requisition, each item line ending in the Returned column, with compact per req, per name and grand totals so a
+// busy month stays to few pages
 function renderMonthlyReport(rows, label) {
     if (!rows.length) {
         $('#rptBody').html('<div class="rq-empty">No requisitioned product in ' + esc(label) + '.</div>');
@@ -1150,7 +1154,8 @@ function fmtDateTime(d8, t6) {
 }
 
 
-// the per requisition rptRequest, a four field header block over a boxed line grid, now listing every line with a Returned column so a printed copy shows what came back and when
+// the per requisition rptRequest, a four field header block over a boxed line grid, now listing every line with a Returned column so a printed copy shows
+// what came back and when
 function reqPrintHtml(rows) {
     var h = rows[0];
     var head =
