@@ -587,7 +587,7 @@ function ask(title, text, yes, no, onYes) {
 }
 
 function postAjax(data, onOk, onFail, silent) {
-    $.post('StoryCard_ajax.php', data, function (resp) {
+    $.post(AJAX_URL, data, function (resp) {
         if (resp && resp.ok) { onOk(resp); }
         else {
             if (onFail) { onFail(resp); }

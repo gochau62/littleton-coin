@@ -1,0 +1,113 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD001S                                    */
+/*                                                                   */
+/* Program Narrative - Story Card reads, one result set per type.    */
+/*                                                                   */
+/*                     CARDS - the SKU list, which is the row source */
+/*                             the Access BodyMaintenance Combo1     */
+/*                             used: only SKUs that already have a   */
+/*                             story card and are on the item        */
+/*                             master.  INKEY narrows by leading     */
+/*                             characters.                           */
+/*                             SCSKU, SCDESC                         */
+/*                     ONE   - one exact SKU, no row means it is not */
+/*                             on the item master, which is what the */
+/*                             Access CheckSku tested                */
+/*                             SCSKU, SCDESC                         */
+/*                     CARD  - the body lines for the SKU in INKEY   */
+/*                             SCBLNO, SCBTXT, SCBSRK                */
+/*                     KEYS  - every footer key on file.  The Access */
+/*                             FooterSelect query showed only key 1, */
+/*                             so a new footer could never be made;  */
+/*                             widened on request so footers can be  */
+/*                             added and managed by key              */
+/*                             SCFSKY                                */
+/*                     FOOT  - the footer lines for the key in INKEY,*/
+/*                             blank meaning key 1                   */
+/*                             SCFLNO, SCFTXT                        */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD001S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/STYCRD001S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT B.SCBSKU AS SCSKU,
+                   I.IIDESC AS SCDESC
+              FROM (SELECT DISTINCT SCBSKU
+                      FROM LSCDEVLIBP/IVSCBODYP) B
+              JOIN LSCPRDLIB/ITMMSTL1 I
+                ON I.IISKU# = B.SCBSKU
+             WHERE UPPER(B.SCBSKU) LIKE UPPER(INKEY) CONCAT '%'
+             ORDER BY B.SCBSKU
+             FETCH FIRST 200 ROWS ONLY;
+
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT I.IISKU# AS SCSKU,
+                   I.IIDESC AS SCDESC
+              FROM LSCPRDLIB/ITMMSTL1 I
+             WHERE I.IISKU# = INKEY
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT B.SCBLNO        AS SCBLNO,
+                   RTRIM(B.SCBTXT) AS SCBTXT,
+                   RTRIM(B.SCBSRK) AS SCBSRK
+              FROM LSCDEVLIBP/IVSCBODYP B
+             WHERE B.SCBSKU = INKEY
+             ORDER BY B.SCBLNO;
+
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT DISTINCT F.SCFSKY AS SCFSKY
+              FROM LSCDEVLIBP/IVSCFOOTP F
+             ORDER BY F.SCFSKY;
+
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT F.SCFLNO AS SCFLNO,
+                   F.SCFTXT AS SCFTXT
+              FROM LSCDEVLIBP/IVSCFOOTP F
+             WHERE F.SCFSKY = DECIMAL(COALESCE(NULLIF(TRIM(INKEY), ''), '1'), 7, 0)
+             ORDER BY F.SCFLNO;
+
+        IF INTYPE = 'CARDS' THEN
+            OPEN C1;
+        ELSEIF INTYPE = 'ONE' THEN
+            OPEN C2;
+        ELSEIF INTYPE = 'CARD' THEN
+            OPEN C3;
+        ELSEIF INTYPE = 'KEYS' THEN
+            OPEN C4;
+        ELSEIF INTYPE = 'FOOT' THEN
+            OPEN C5;
+        ELSE
+            SIGNAL SQLSTATE '75001'
+                SET MESSAGE_TEXT = 'STYCRD001S type must be CARDS ONE CARD KEYS or FOOT';
+        END IF;
+    END;

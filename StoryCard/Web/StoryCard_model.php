@@ -35,6 +35,10 @@ define('STC_FOOT_KEY', 1);
 // a footer is two lines, the size of the footer box on both Access forms
 define('STC_FOOT_MAX', 2);
 
+// production calls are unqualified and resolve through the library list. The StoryCardTest pages define STC_LIB first ('LSCDEVLIBP/'), which points every
+// call at the sandbox procedures instead, so nothing a tester saves can reach the real story cards
+if (!defined('STC_LIB')) { define('STC_LIB', ''); }
+
 // activity log path in the LCCOnline_logs
 define('STC_ACT_LOG', __DIR__ . '/LCCOnline_logs/storycard_activity.log');
 
@@ -97,13 +101,13 @@ function stcCleanSku($sku) {
 // PROGRAM NAME STYCRD001S type CARDS: the SKU list, which is exactly the row source the Access Combo1 carried - only SKUs that already have a story card,
 // joined to the item master. A SKU with no card is not on this list; the way to start one is to type the number, the same as the old combo
 function stcSkuSearch($conn, $key = '') {
-    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
+    return stcFetchAll($conn, "CALL " . STC_LIB . "STYCRD001S(?, ?)",
                        array('CARDS', stcCleanSku($key)));
 }
 
 // PROGRAM NAME STYCRD001S type ONE: the old CheckSku and the item description read in a single call. No row back means the SKU is not on the item master
 function stcGetSku($conn, $sku) {
-    $rows = stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
+    $rows = stcFetchAll($conn, "CALL " . STC_LIB . "STYCRD001S(?, ?)",
                         array('ONE', stcCleanSku($sku)));
     if ($rows === false) { return false; }
     return $rows ? $rows[0] : null;
@@ -111,25 +115,25 @@ function stcGetSku($conn, $sku) {
 
 // PROGRAM NAME STYCRD001S type CARD: the body lines held for one SKU, in line order
 function stcGetCard($conn, $sku) {
-    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
+    return stcFetchAll($conn, "CALL " . STC_LIB . "STYCRD001S(?, ?)",
                        array('CARD', stcCleanSku($sku)));
 }
 
 // PROGRAM NAME STYCRD001S type KEYS: the footer keys to choose from, which is the Access FooterSelect query the FootMaintenance combo was bound to
 function stcFooterKeys($conn) {
-    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)", array('KEYS', ''));
+    return stcFetchAll($conn, "CALL " . STC_LIB . "STYCRD001S(?, ?)", array('KEYS', ''));
 }
 
 // PROGRAM NAME STYCRD001S type FOOT: the footer lines for one key
 function stcGetFooter($conn, $sky = STC_FOOT_KEY) {
-    return stcFetchAll($conn, "CALL STYCRD001S(?, ?)",
+    return stcFetchAll($conn, "CALL " . STC_LIB . "STYCRD001S(?, ?)",
                        array('FOOT', (string)intval($sky)));
 }
 
 // PROGRAM NAME STYCRD002S type CARD: write one body line, updating it when it is there and inserting it when it is not, which is what CheckLineMode decided
 // per line in the Access save
 function stcSaveBodyLine($conn, $sku, $lineNo, $text, $searchKey) {
-    return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
+    return stcExec($conn, "CALL " . STC_LIB . "STYCRD002S(?, ?, ?, ?, ?)",
                    array('CARD',
                          stcCleanSku($sku),
                          intval($lineNo),
@@ -142,7 +146,7 @@ function stcSaveBodyLine($conn, $sku, $lineNo, $text, $searchKey) {
 // footer was empty, and stayed in that mode for every line - update mode never inserted
 function stcSaveFootLine($conn, $sky, $lineNo, $text, $mode) {
     $type = ($mode === 'i') ? 'FOOTI' : 'FOOTU';
-    return stcExec($conn, "CALL STYCRD002S(?, ?, ?, ?, ?)",
+    return stcExec($conn, "CALL " . STC_LIB . "STYCRD002S(?, ?, ?, ?, ?)",
                    array($type, (string)intval($sky), intval($lineNo),
                          substr((string)$text, 0, STC_LINE_LEN), ''),
                    'STYCRD002S ' . $type);
@@ -151,7 +155,7 @@ function stcSaveFootLine($conn, $sky, $lineNo, $text, $mode) {
 // PROGRAM NAME STYCRD003S: blank the body lines from $from up to line 21. The Access UpdateBlank loop ran only in update mode, only from wherever side 2
 // finished, and only as far as 21, so side 1 is never tidied
 function stcTrimCard($conn, $sku, $from) {
-    return stcExec($conn, "CALL STYCRD003S(?, ?)",
+    return stcExec($conn, "CALL " . STC_LIB . "STYCRD003S(?, ?)",
                    array(stcCleanSku($sku), intval($from)),
                    'STYCRD003S');
 }
