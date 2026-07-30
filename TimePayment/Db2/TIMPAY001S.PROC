@@ -1,0 +1,163 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - TIMPAY001S                                    */
+/*                                                                   */
+/* Program Narrative - Item Time Payment reads, one result set per   */
+/*                     type.  These are the validation lookups the   */
+/*                     spreadsheet upload runs before it writes a    */
+/*                     record to TPITEMSP, in the order the project  */
+/*                     write-up lays them out:                       */
+/*                                                                   */
+/*                     ITEM - one exact item from the item master.   */
+/*                            No row back means the item is not on   */
+/*                            file and the upload row goes to the    */
+/*                            exception report.                      */
+/*                            TPITEM, TPDESC                         */
+/*                     SRC  - one exact source code from OEPSRCE.    */
+/*                            No row back means the source code is   */
+/*                            not valid.                             */
+/*                            TPSRCE                                 */
+/*                     PLAN - one exact plan from TPPLANSP, for the  */
+/*                            rows where Marketing filled in the     */
+/*                            plan column.  No row back means the    */
+/*                            plan is not valid - a plan that was    */
+/*                            typed must exist (per Dennis), so the  */
+/*                            row errors rather than being guessed   */
+/*                            at.                                    */
+/*                            TPPLAN, TPPLDS                         */
+/*                     TIER - the plan whose TPTIERSP price range    */
+/*                            covers the item price carried in       */
+/*                            INKEY1, for the rows where the plan    */
+/*                            column was left blank.  No row back    */
+/*                            means the price falls outside every    */
+/*                            range (under $99.00), and per Josh     */
+/*                            the row is skipped onto the exception  */
+/*                            report instead of defaulted into a     */
+/*                            plan.                                  */
+/*                            TPPLAN                                 */
+/*                     ONE  - the TPITEMSP record for the item in    */
+/*                            INKEY1 and the source code in INKEY2,  */
+/*                            so the upload knows whether it is      */
+/*                            about to add or update.                */
+/*                            TIITEM, TISRCE, TIPLAN, TIEXPD         */
+/*                     LIST - the records on file for the review     */
+/*                            grid, joined to the item master and    */
+/*                            plan descriptions.  INKEY1 narrows by  */
+/*                            item or source code and blank returns  */
+/*                            everything, capped at 500 rows so the  */
+/*                            browser never draws the whole file.    */
+/*                            TIITEM, TIDESC, TISRCE, TIPLAN,        */
+/*                            TIPLDS, TIEXPD                         */
+/*                                                                   */
+/*                     NOTE: ITMMSTL1 (IISKU#, IIDESC) is the same   */
+/*                     logical the other LCCOnline tools read.  The  */
+/*                     TPITEMSP, TPPLANSP, TPTIERSP and OEPSRCE      */
+/*                     field names here follow the house prefix      */
+/*                     convention and must be tied out to each       */
+/*                     file's DDS before compiling.                  */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/30/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(TIMPAY001S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE TIMPAY001S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY1 VARCHAR(20),
+        IN INKEY2 VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE SRCH   VARCHAR(20)   DEFAULT '';
+        DECLARE WKPRIC DECIMAL(9, 2) DEFAULT 0;
+
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT I.IISKU# AS TPITEM,
+                   RTRIM(I.IIDESC) AS TPDESC
+              FROM LSCPRDLIB/ITMMSTL1 I
+             WHERE I.IISKU# = INKEY1
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT S.PSSRCE AS TPSRCE
+              FROM LSCPRDLIB/OEPSRCE S
+             WHERE S.PSSRCE = INKEY1
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT P.TPPLAN AS TPPLAN,
+                   RTRIM(P.TPDESC) AS TPPLDS
+              FROM LSCPRDLIB/TPPLANSP P
+             WHERE P.TPPLAN = INKEY1
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT T.TTPLAN AS TPPLAN
+              FROM LSCPRDLIB/TPTIERSP T
+             WHERE WKPRIC BETWEEN T.TTLOWR AND T.TTHIGH
+             ORDER BY T.TTLOWR
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT T.TIITEM, T.TISRCE, T.TIPLAN, T.TIEXPD
+              FROM LSCPRDLIB/TPITEMSP T
+             WHERE T.TIITEM = INKEY1
+               AND T.TISRCE = INKEY2
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C6 CURSOR WITH RETURN FOR
+            SELECT T.TIITEM,
+                   COALESCE(RTRIM(I.IIDESC), '') AS TIDESC,
+                   T.TISRCE, T.TIPLAN,
+                   COALESCE(RTRIM(P.TPDESC), '') AS TIPLDS,
+                   T.TIEXPD
+              FROM LSCPRDLIB/TPITEMSP T
+              LEFT JOIN LSCPRDLIB/ITMMSTL1 I
+                ON I.IISKU# = T.TIITEM
+              LEFT JOIN LSCPRDLIB/TPPLANSP P
+                ON P.TPPLAN = T.TIPLAN
+             WHERE SRCH = ''
+                OR UPPER(T.TIITEM) LIKE '%' || SRCH || '%'
+                OR UPPER(T.TISRCE) LIKE '%' || SRCH || '%'
+             ORDER BY T.TIITEM, T.TISRCE
+             FETCH FIRST 500 ROWS ONLY;
+
+        IF INTYPE = 'ITEM' THEN
+            OPEN C1;
+        ELSEIF INTYPE = 'SRC' THEN
+            OPEN C2;
+        ELSEIF INTYPE = 'PLAN' THEN
+            OPEN C3;
+        ELSEIF INTYPE = 'TIER' THEN
+            SET WKPRIC = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 9, 2);
+            OPEN C4;
+        ELSEIF INTYPE = 'ONE' THEN
+            OPEN C5;
+        ELSEIF INTYPE = 'LIST' THEN
+            SET SRCH = UPPER(TRIM(COALESCE(INKEY1, '')));
+            OPEN C6;
+        ELSE
+            SIGNAL SQLSTATE '75011'
+                SET MESSAGE_TEXT = 'TIMPAY001S type must be ITEM SRC PLAN TIER ONE or LIST';
+        END IF;
+    END;

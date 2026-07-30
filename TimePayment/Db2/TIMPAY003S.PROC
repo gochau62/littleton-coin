@@ -1,0 +1,96 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - TIMPAY003S                                    */
+/*                                                                   */
+/* Program Narrative - Write one Item Time Payment record, doing     */
+/*                     what the AS400 entry screen (menu 007,        */
+/*                     option 05 - Item Time Payment Maintenance)    */
+/*                     does by hand today.                           */
+/*                                                                   */
+/*                     The record is keyed by item number and        */
+/*                     source code: when it is already on TPITEMSP   */
+/*                     the plan and expiration date are updated,     */
+/*                     and when it is not the record is inserted -   */
+/*                     the same update-first, insert-on-no-rows      */
+/*                     shape STYCRD002S uses.                        */
+/*                                                                   */
+/*                     The caller (TimePayment_ajax.php) has         */
+/*                     already validated the item, source code and   */
+/*                     plan against their files, so the guards here  */
+/*                     only catch what would corrupt the file: a     */
+/*                     blank key, a blank plan, or an expiration     */
+/*                     date that is not a YYYYMMDD date on or after  */
+/*                     today.                                        */
+/*                                                                   */
+/*                     NOTE: the TPITEMSP field names follow the     */
+/*                     house prefix convention and must be tied out  */
+/*                     to the file's DDS before compiling.  If the   */
+/*                     file carries audit fields beyond the four     */
+/*                     written here, their defaults are left to      */
+/*                     cover them.                                   */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/30/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(TIMPAY003S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE TIMPAY003S (
+        IN INITEM CHAR(10),
+        IN INSRCE CHAR(10),
+        IN INPLAN CHAR(2),
+        IN INEXPD DECIMAL(8, 0)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE ROWCNT INTEGER DEFAULT 0;
+
+        IF INITEM IS NULL OR TRIM(INITEM) = ''
+        OR INSRCE IS NULL OR TRIM(INSRCE) = '' THEN
+            SIGNAL SQLSTATE '75012'
+                SET MESSAGE_TEXT = 'An item number and source code are required to write a time payment record';
+        END IF;
+
+        IF INPLAN IS NULL OR TRIM(INPLAN) = '' THEN
+            SIGNAL SQLSTATE '75013'
+                SET MESSAGE_TEXT = 'A time payment plan is required to write a time payment record';
+        END IF;
+
+        IF INEXPD IS NULL
+        OR INEXPD < DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0) THEN
+            SIGNAL SQLSTATE '75014'
+                SET MESSAGE_TEXT = 'The expiration date must be a YYYYMMDD date on or after today';
+        END IF;
+
+        UPDATE LSCPRDLIB/TPITEMSP
+           SET TIPLAN = INPLAN,
+               TIEXPD = INEXPD
+         WHERE TIITEM = INITEM
+           AND TISRCE = INSRCE;
+
+        GET DIAGNOSTICS ROWCNT = ROW_COUNT;
+
+        IF ROWCNT = 0 THEN
+            INSERT INTO LSCPRDLIB/TPITEMSP
+                (TIITEM, TISRCE, TIPLAN, TIEXPD)
+            VALUES (INITEM, INSRCE, INPLAN, INEXPD);
+        END IF;
+    END;
