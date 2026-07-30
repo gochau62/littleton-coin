@@ -177,9 +177,7 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
           <div class="sc-h">Side 2</div>
           <div class="sc-lines" id="side2Lines"></div>
 
-          <div class="sc-h sc-footh">Footer
-            <select class="sc-footkey" id="selFootKey"></select>
-          </div>
+          <div class="sc-h sc-footh">Footer</div>
           <pre class="sc-footlines" id="outFooter"></pre>
         </div>
       </div>
