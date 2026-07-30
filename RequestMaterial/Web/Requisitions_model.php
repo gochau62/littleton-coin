@@ -64,8 +64,7 @@ function rqsFetchAll($conn, $sql, $params = array()) {
 }
 
 
-// PROGRAM NAME REQSTN003S: grid rows where show O gives open lines (the default), R gives returned lines, A gives all, the search narrows by req number name
-// item or badge (blank means everything), and returned or all come back capped to the 500 most recent
+// PROGRAM NAME REQSTN003S: grid rows where show O gives open lines (the default), R gives returned lines, A gives all, the search narrows by req number name item or badge (blank means everything), and returned or all come back capped to the 500 most recent
 function rqsGetOpen($conn, $show = 'O', $search = '') {
     $show = strtoupper(substr(trim($show), 0, 1));
     if (!in_array($show, array('O', 'R', 'A'))) { $show = 'O'; }
