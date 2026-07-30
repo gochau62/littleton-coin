@@ -19,11 +19,11 @@
 $GLOBALS['rqsErr'] = '';
 
 
-// activity log path in the LCCOnline_logs
+// activity log path: the LCCOnline_logs folder beside the PHP is writable by the web profile while the docroot itself is not, so this is where the file actually appears, and keeping it relative to __DIR__ means it stays correct on every instance
 define('RQS_ACT_LOG', __DIR__ . '/LCCOnline_logs/requisition_activity.log');
 
 
-// append one activity line
+// append one line to the activity log, with the write suppressed so a bad one never takes the app down, and if it still fails (usually the web profile lacking authority to the folder) the reason and the line fall to php.log so nothing is lost
 function rqsActLog($user, $action, $detail = '') {
     $line = date('Y-m-d H:i:s') . ' ' .
             ($user !== '' ? $user : 'unknown') . ' ' .
