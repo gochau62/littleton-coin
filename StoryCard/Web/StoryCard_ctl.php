@@ -74,7 +74,9 @@ $(document).ready(function () {
     $('#btnSave').on('click', saveCard);
     $('#btnFooter').on('click', openFooterEditor);
     $('#btnFootAdd').on('click', function () {
+        if ($('#footLines .sc-lrow').length >= FOOT_MAX) { return; }
         addFooterRow('');
+        $('#btnFootAdd').prop('hidden', $('#footLines .sc-lrow').length >= FOOT_MAX);
         $('#footLines .sc-ltxt').last().trigger('focus');
     });
     $('#btnFootSave').on('click', saveFooter);
@@ -336,8 +338,7 @@ function renderFooter() {
     var shown = loadedCard ? footerLines.slice() : [];
     while (shown.length && rtrim(shown[shown.length - 1]) === '') { shown.pop(); }
     var box = $('#outFooter').empty();
-    var rows = Math.max(shown.length, 2);
-    for (var i = 0; i < rows; i++) {
+    for (var i = 0; i < FOOT_MAX; i++) {
         var t = shown[i] || '';
         $('<div class="sc-lrow">').toggleClass('sc-filled', rtrim(t) !== '')
             .append($('<span class="sc-lno">').text(i + 1))
@@ -366,12 +367,12 @@ function renderFooterEditor() {
     $('#footLines').empty();
     var lines = footerLines.slice();
 
-    // the Access rule per key: an empty footer takes any number of lines, a footer that has rows can only have those rows rewritten, never grown. The editor
-    // offers exactly what the save can do
+    // the Access rule per key: an empty footer takes new lines, up to the two the footer box holds, and a footer that has rows can only have those rows
+    // rewritten, never grown. The editor offers exactly what the save can do
     var canGrow = lines.length === 0;
     if (canGrow) { lines.push(''); }
     $.each(lines, function (i, t) { addFooterRow(t); });
-    $('#btnFootAdd').prop('hidden', !canGrow);
+    $('#btnFootAdd').prop('hidden', !canGrow || lines.length >= FOOT_MAX);
 
     var chip = $('#mdlFootNew').removeClass('sc-on sc-new');
     if (canGrow) { chip.addClass('sc-on sc-new').text('New'); }

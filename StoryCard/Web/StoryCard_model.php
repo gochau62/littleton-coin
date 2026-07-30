@@ -32,6 +32,9 @@ define('STC_SKU_LEN', 10);
 // choice and travels with every footer call. BodyMaintenance's read-only strip always asked for key 1, and still does
 define('STC_FOOT_KEY', 1);
 
+// a footer is two lines, the size of the footer box on both Access forms
+define('STC_FOOT_MAX', 2);
+
 // activity log path in the LCCOnline_logs
 define('STC_ACT_LOG', __DIR__ . '/LCCOnline_logs/storycard_activity.log');
 

@@ -145,7 +145,10 @@ switch ($action) {
         }
 
         $sky   = intval($payload['sky'] ?? STC_FOOT_KEY);
-        $lines = stcSaveFooter($conn, array_values($payload['footer']), $sky);
+        // a footer holds two lines; anything past them is dropped here rather
+        // than trusted, the same as the card sides
+        $foot  = array_slice(array_values($payload['footer']), 0, STC_FOOT_MAX);
+        $lines = stcSaveFooter($conn, $foot, $sky);
         if ($lines === false) { stcOutFail(); }
 
         stcActLog($user, 'FOOTER', 'key ' . $sky . ' (' . $lines . ' lines)');

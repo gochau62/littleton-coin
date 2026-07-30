@@ -234,6 +234,8 @@ var S1_FIRST = <?php echo STC_S1_FIRST; ?>, S1_LAST = <?php echo STC_S1_LAST; ?>
 var S2_FIRST = <?php echo STC_S2_FIRST; ?>, S2_LAST = <?php echo STC_S2_LAST; ?>;
 // SCBTXT and SCFTXT are both CHAR(50); no box on this page may take more than the column behind it holds, so the width comes from the model, not from here
 var LINE_LEN = <?php echo STC_LINE_LEN; ?>;
+// a footer is two lines, the size of the footer box on both Access forms
+var FOOT_MAX = <?php echo STC_FOOT_MAX; ?>;
 </script>
 
 <?php
