@@ -70,8 +70,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
 .sc-chip.sc-on { visibility: visible; }
 .sc-chip.sc-new { background: var(--sc-accent); color: var(--sc-green); }
 .sc-chip.sc-dirty { background: #fbf1dc; color: var(--sc-amber); }
-/* the sandbox pages carry a banner so nobody mistakes them for the real screen */
-.sc-testchip { background: #fbf1dc; color: var(--sc-amber); padding: .1rem .55rem; border-radius: 50px; font-weight: 700; font-size: .75rem; }
 
 /* ----- buttons: house pill, ghost hover, same as the Sellbrite ones ----- */
 .sc-btn { display: inline-flex; align-items: center; justify-content: center;
@@ -141,7 +139,6 @@ function dspStoryCard($user, $stcPreload = null, $mode = '') {
   <header class="sc-topbar">
     <h1>Story Card Maintenance</h1>
     <div class="sc-topbar-right">
-      <?php if (STC_LIB !== '') { echo '<span class="sc-testchip">TEST - ' . htmlspecialchars(rtrim(STC_LIB, '/')) . '</span>'; } ?>
       <span id="scUser"><?php echo htmlspecialchars($user); ?></span>
       <span id="scClock"></span>
     </div>
@@ -239,8 +236,6 @@ var S2_FIRST = <?php echo STC_S2_FIRST; ?>, S2_LAST = <?php echo STC_S2_LAST; ?>
 var LINE_LEN = <?php echo STC_LINE_LEN; ?>;
 // a footer is two lines, the size of the footer box on both Access forms
 var FOOT_MAX = <?php echo STC_FOOT_MAX; ?>;
-// the sandbox pages post to their own ajax, which carries the STC_LIB switch
-var AJAX_URL = '<?php echo STC_LIB === '' ? 'StoryCard_ajax.php' : 'StoryCardTest_ajax.php'; ?>';
 </script>
 
 <?php

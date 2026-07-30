@@ -81,7 +81,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
                     SET MESSAGE_TEXT = 'Story card line must be 1 to 11 or 13 to 21';
             END IF;
 
-            UPDATE LSCPRDLIB/IVSCBODYP
+            UPDATE LSCDEVLIBP/IVSCBODYP
                SET SCBTXT = WKTXT,
                    SCBSRK = WKSRK
              WHERE SCBSKU = INKEY
@@ -90,7 +90,7 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
             GET DIAGNOSTICS ROWCNT = ROW_COUNT;
 
             IF ROWCNT = 0 THEN
-                INSERT INTO LSCPRDLIB/IVSCBODYP
+                INSERT INTO LSCDEVLIBP/IVSCBODYP
                     (SCBSKU, SCBLNO, SCBTXT, SCBSRK)
                 VALUES (INKEY, INLNO, WKTXT, WKSRK);
             END IF;
@@ -105,11 +105,11 @@ CREATE OR REPLACE PROCEDURE STYCRD002S (
             SET WKSKY = DECIMAL(COALESCE(NULLIF(TRIM(INKEY), ''), '1'), 7, 0);
 
             IF INTYPE = 'FOOTI' THEN
-                INSERT INTO LSCPRDLIB/IVSCFOOTP
+                INSERT INTO LSCDEVLIBP/IVSCFOOTP
                     (SCFSKY, SCFLNO, SCFTXT)
                 VALUES (WKSKY, INLNO, WKTXT);
             ELSE
-                UPDATE LSCPRDLIB/IVSCFOOTP
+                UPDATE LSCDEVLIBP/IVSCFOOTP
                    SET SCFTXT = WKTXT
                  WHERE SCFSKY = WKSKY
                    AND SCFLNO = INLNO;
