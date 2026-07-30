@@ -1,0 +1,191 @@
+Story Card Maintenance - contents of StoryCardMaintenanceXP.mdb
+================================================================
+
+Access file format JET4 (Access 2000/XP .mdb), 940 KB.
+Database title "Story Card Maintenance", company "Littleton Coin Company",
+author "Network Administrator".  VBA project name "Story Card Maintenance".
+
+
+LINKED TABLES (ODBC, Connect string "DSN=AS400;")
+-------------------------------------------------
+Every table except side1 is a link to the iSeries.  Nothing is stored in the
+.mdb itself - the file is only a front end.
+
+LSCPRDLIB/IVSCBODYP        story card body text, one row per printed line
+    SCBSKU   CHAR(10)      item number (= ITMMSTP.IISKU#)
+    SCBLNO   DECIMAL(4,0)  line number, 1-12 side 1, 13-22 side 2
+    SCBTXT   CHAR(50)      the printed line
+    SCBSRK   CHAR(15)      search key, the same value on every line of a card
+    unique key (SCBSKU, SCBLNO)
+
+LSCPRDLIB/IVSCFOOTP        the shared footer that prints on every story card
+    SCFSKY   DECIMAL(7,0)  footer key, only key 1 is ever used
+    SCFLNO   DECIMAL(4,0)  line number
+    SCFTXT   CHAR(50)      the printed line
+    unique key (SCFSKY, SCFLNO)
+
+LSCPRDLIB/ITMMSTL1         item master logical, 80 columns, read only here.
+                           Only IISKU# and IIDESC are used - to prove a SKU
+                           exists and to show its description.
+
+LSCPRDLIB/ITMEXPDSCP       extended item description.  Linked but never read
+                           by any form; only Query1 below touches it.
+
+(Column widths above are the real Db2 widths, read back out of the link's
+ RmtInfoLong blob.  Access stores JET4 text lengths in bytes, so the schema
+ it reports - 20/100/30 - is twice the character count.)
+
+
+LOCAL TABLE
+-----------
+side1      SCBSKU / SCBLNO / SCBTXT.  Empty, no code refers to it.  A leftover
+           scratch table from whoever built the original screen.
+
+
+FORMS
+-----
+Main               opening switchboard.  Frame1 option group with Option6
+                   "Story Card Maintenance" and Option8 "Story Card Footer",
+                   a Select button (Command12) and an Exit button (Command1,
+                   runs the CloseMain macro).  Command12 still has a Case 1
+                   that opens a form named HeadMaintenance, which no longer
+                   exists in the file.
+
+BodyMaintenance    the working screen.
+    Image0         C:\Story Card Maintenance\LCC_Logo.bmp
+    Label1         "Story Card Maintenance"
+    Combo1         SKU picker, row source
+                   SELECT DISTINCT IVSCBODYP.SCBSKU, ITMMSTL1.IIDESC
+                     FROM IVSCBODYP INNER JOIN ITMMSTL1
+                       ON IVSCBODYP.SCBSKU = ITMMSTL1.IISKU#
+                    ORDER BY IVSCBODYP.SCBSKU
+                   (so only SKUs that already have a card are listed)
+    Text31         item description, filled from IIDESC
+    Text9          side 1 body text, one line per newline
+    Text11         side 2 body text
+    Text13         footer text, read only preview
+    Text23/21/25   the "rulers" - text boxes filled with 1234567890...
+                   in Form_Load to number the lines of Text9 (12),
+                   Text11 (10) and Text13 (2)
+    Text36         "Search text" - SCBSRK
+    Command1       Save
+    Command31      Close Form, runs the CloseBodyMaintenance macro
+
+FootMaintenance    the shared footer screen.
+    Combo1         bound to the FooterSelect query, which can only return 1
+    Text1          the footer text, one line per newline
+    Label5         "Footer Text Maintenance"
+    Command1       Save
+    Command2       Close Form, runs the CloseFootMaintenance macro
+
+
+MODULES
+-------
+Module1            a standard module holding a stale copy of the whole
+                   BodyMaintenance code-behind.  It references Combo1, Text9
+                   and friends, which do not exist outside the form, so it
+                   cannot compile or run.  Dead code.
+
+
+MACROS
+------
+autoexec               opens Main on startup
+CloseBodyMaintenance   close BodyMaintenance
+CloseFootMaintenance   close FootMaintenance
+CloseMain              close Main
+
+
+QUERIES
+-------
+FooterSelect                      SELECT DISTINCT SCFSKY FROM IVSCFOOTP
+                                  WHERE SCFSKY = 1
+~sq_cBodyMaintenance~sq_cCombo1   the saved row source of Combo1, above
+Query1                            a pass-through against ITMMSTP/ITMEXPDSCP
+                                  hard coded to SKU "A1557VBH".  Somebody's
+                                  scratch query; no form uses it.
+
+
+HOW A SAVE WORKS TODAY (Form_BodyMaintenance.Command1_Click)
+-------------------------------------------------------------
+1.  Read Text9, Text11, Text36 and Combo1 straight off the form.
+2.  CheckSku - SELECT COUNT(*) FROM ITMMSTL1 WHERE IISKU# = the SKU.
+3.  DetermineMode - COUNT(*) on IVSCBODYP for the SKU decides insert or update.
+4.  Walk the text a character at a time looking for Chr(13), and for each
+    chunk build an INSERT or an UPDATE by string concatenation and run it
+    through dbHead.Execute.  Side 1 numbers from 1, side 2 from 13.
+5.  In update mode, CheckLineMode runs a COUNT(*) per line to decide UPDATE
+    vs INSERT, so a 22 line card costs 22 extra round trips.
+6.  Afterwards UpdateBlank blanks lines from wherever side 2 stopped up to 21.
+
+What that code does, spelled out, because the replacement follows it:
+
+  * Side 1 holds 11 lines, numbered 1 to 11.  The guard is
+    "intSCBLno <= 11" and the message beside it says "(11)".
+  * Side 2 holds 9 lines, numbered 13 to 21.  The guard is
+    "intSCBLno <= 21" and the message beside it says "(9)".
+  * Line 12 and line 22 are read back by LoadText ("scblno <= 12",
+    "scblno > 12 and <= 22") but the save can never write them.  The
+    rulers, filled with 12 and 10 digits in Form_Load, are the only other
+    place suggesting otherwise, and they lose 2 to 1 against the guards
+    and the messages.
+  * The tidy-up after a save runs only in update mode, only from wherever
+    side 2 finished, and only as far as line 21.  Shorten side 1 and the
+    dropped lines keep their old text.
+  * The footer screen picks insert or update once, from whether anything
+    is on file, and stays in that mode for every line.  Update mode never
+    inserts, so a footer that already has rows cannot grow.  Nothing ever
+    clears a footer line, so shortening the footer leaves the tail
+    printing.
+  * Nothing anywhere deletes a record.  Counting the SQL above gives 18
+    INSERT, 17 SELECT and 12 UPDATE and no DELETE of any kind.
+
+The replacement in ../Db2 and ../Web does all of that, the same way.
+Line limits 11 and 9, tidy side 2 only and only up to 21, the footer
+insert-or-update mode picked once, and no delete anywhere.
+
+Every table the procedures touch is qualified LSCPRDLIB/, because that
+is where every linked-table globe in the .mdb points: the dropdown is
+filled from IVSCBODYP joined to ITMMSTL1, the footer from IVSCFOOTP,
+the description and CheckSku from ITMMSTL1.  Reads and writes both go
+to those files, exactly as the Access screens' did - there is no
+development copy in between.  ITMEXPDSCP is linked in the .mdb but no
+form reads it, so no procedure does either.
+
+The SKU list is STYCRD001S type CARDS and it is the Combo1 row source
+verbatim: DISTINCT SCBSKU from IVSCBODYP, INNER JOIN ITMMSTL1 on IISKU#,
+ordered by SCBSKU.  It reads ITMMSTL1, the logical the .mdb linked, and
+not the ITMMSTP physical underneath it - a logical can carry select and
+omit criteria, so the two are not guaranteed to hold the same rows.
+
+Two things about that list are not identical to Access, both of them
+consequences of a web page not being able to hold an open recordset:
+
+  * The Access combo loaded every row once and narrowed as you typed,
+    inside the control.  This narrows on the server with
+    UPPER(SCBSKU) LIKE the typed characters || '%', which is the same
+    leading-character match the combo did.
+  * It returns at most 200 rows a call.  The combo had no limit.  With
+    the typed filter this only shows up on an unfiltered list longer
+    than 200.
+
+One deliberate widening, asked for on 07/29: footers are managed BY KEY
+and new ones can be added.  The Access form looked like it allowed this -
+a combo for the key beside the text - but FooterSelect only ever offered
+key 1, and the save ignored the combo anyway: both its INSERT and its
+UPDATE hardcode scfsky = 1, so the combo steered nothing but the load.
+The web editor's key box loads any key, an unknown key opens empty in
+insert mode the way a new SKU starts a new card, and the key list is
+every key on file rather than FooterSelect's fixed 1.
+
+Three things about the saving are different, and only three:
+
+  * Every value is bound as a parameter instead of pasted into a string,
+    so an apostrophe in the text no longer breaks the statement.
+  * A save that fails part way puts the card back the way it was.  The
+    Access screen had no error handling at all, so a failure on line 7 of
+    20 left the card half rewritten with nothing to undo it.  This only
+    shows up when Db2 returns an error; a save that works produces the
+    same rows either way.
+  * The per-line boxes hold the field width, 50 characters, so text
+    cannot be silently cut by the ODBC driver on its way to a CHAR(50)
+    column.
