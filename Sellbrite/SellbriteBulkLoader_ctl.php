@@ -684,7 +684,13 @@
        Autofill clears the form and GreySheet may leave these blank. */
     function sblLccApply(){
         if (!sblLccData) return;
-        var fill = { year: sblLccData.year, condition_note: sblLccData.comment };
+        var fill = { year:               sblLccData.year,               // IICDAT
+                     condition_note:     sblLccData.comment,            // IIICMT
+                     original_retail:    sblLccData.retail,             // IIPRCE
+                     cost:               sblLccData.cost,               // IIAVGC
+                     quantity:           sblLccData.quantity,           // IIQTOH
+                     single_coin_or_set: sblLccData.single_coin_or_set, // IIROLL > 1
+                     set_count:          sblLccData.set_count };        // IIROLL
         $.each(fill, function(name, val){
             if (!val) return;
             var el = document.getElementById('f_' + name);

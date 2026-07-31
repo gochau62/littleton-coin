@@ -1000,6 +1000,16 @@ function lccLookup(string $sku): array
     // so they ride along as a hint for the operator rather than filling the Grade box
     $hint = trim(trim((string) ($row['item_grade'] ?? '')) . ' ' . trim((string) ($row['item_grade2'] ?? '')));
     $note = trim((string) ($row['item_comment'] ?? ''));
+    // money and counts come back raw from DB2; blank a zero so it never fills a box
+    $money = function ($v) { $n = (float) $v; return $n > 0 ? number_format($n, 2, '.', '') : ''; };
+    $count = function ($v) { $n = (int) $v; return $n > 0 ? (string) $n : ''; };
+    $retail = $money($row['item_retail'] ?? 0);
+    $cost   = $money($row['item_cost'] ?? 0);
+    $qoh    = $count($row['item_qoh'] ?? 0);
+    // a roll quantity above 1 means the SKU is a set, and that count is the set count
+    $roll   = (int) ($row['item_roll'] ?? 0);
+    $setYN  = $roll > 1 ? 'Set' : '';
+    $setCnt = $roll > 1 ? (string) $roll : '';
     // the description is LCC's own wording, so search memory on it the same way the coin box does
     $matches = $desc !== '' ? gsMemSearch($desc) : [];
     // nothing matched the whole description - retry on its first few words
@@ -1010,7 +1020,10 @@ function lccLookup(string $sku): array
     return ['ok' => true, 'error' => '',
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
                        'grade_hint' => $hint, 'comment' => $note,
-                       'root' => trim((string) ($row['item_root'] ?? ''))],
+                       'root' => trim((string) ($row['item_root'] ?? '')),
+                       'link' => trim((string) ($row['item_link'] ?? '')),
+                       'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh,
+                       'single_coin_or_set' => $setYN, 'set_count' => $setCnt],
             'matches' => $matches];
 }
 

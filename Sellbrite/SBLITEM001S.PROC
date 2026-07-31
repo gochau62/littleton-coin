@@ -8,15 +8,17 @@
 /*                       SEARCH - type-ahead list for the SKU box,   */
 /*                                SKU prefix match, capped at 50     */
 /*                                                                   */
-/*                     Given an LCC SKU, ITEM returns the            */
-/*                     description, coin date, grades, comment and   */
-/*                     root item from the production item master so  */
-/*                     the loader can prefill the coin finder        */
-/*                     instead of the operator retyping what LCC     */
-/*                     already knows.  Prices, costs and on-hand     */
-/*                     quantities are deliberately not returned:     */
-/*                     those are LCC's internal figures, and the     */
-/*                     listing takes its price from GreySheet.       */
+/*                     Given an LCC SKU, ITEM returns every column   */
+/*                     the loader can turn into a form value, so     */
+/*                     the operator does not retype what LCC         */
+/*                     already knows.  Selling price stays out of    */
+/*                     it - the listing takes its price from         */
+/*                     GreySheet - but retail, cost, on hand and     */
+/*                     roll quantity come back, because GreySheet    */
+/*                     cannot know those about our piece.  Coded     */
+/*                     columns (category, type, variety, brand) are  */
+/*                     still left out until their code tables are    */
+/*                     known - a raw code fills no dropdown.         */
 /*                     Read only - the loader never writes to the    */
 /*                     item master.                                  */
 /*                                                                   */
@@ -57,9 +59,7 @@ CREATE OR REPLACE PROCEDURE SBLITEM001S (
 
     BEGIN
         -- One row when the SKU is on the master, none when it is not.
-        -- Every column here is CHAR, so nothing needs converting; the coded
-        -- numeric columns (category, type, variety) are left out until their
-        -- code tables are known - a raw code helps nobody.
+        -- The numeric columns come back raw; PHP decides how to show them.
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT TRIM(I.IISKU#) AS ITEM_SKU,
                    TRIM(I.IIDESC) AS ITEM_DESC,
@@ -67,7 +67,12 @@ CREATE OR REPLACE PROCEDURE SBLITEM001S (
                    TRIM(I.IIGRAD) AS ITEM_GRADE,
                    TRIM(I.IIGRD2) AS ITEM_GRADE2,
                    TRIM(I.IIICMT) AS ITEM_COMMENT,
-                   TRIM(I.IIROOT) AS ITEM_ROOT
+                   TRIM(I.IIROOT) AS ITEM_ROOT,
+                   TRIM(I.IISLNK) AS ITEM_LINK,
+                   I.IIPRCE       AS ITEM_RETAIL,
+                   I.IIAVGC       AS ITEM_COST,
+                   I.IIQTOH       AS ITEM_QOH,
+                   I.IIROLL       AS ITEM_ROLL
               FROM LSCPRDLIB/ITMMSTP I
              WHERE I.IISKU# = INKEY
              FETCH FIRST 1 ROW ONLY;
