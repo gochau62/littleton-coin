@@ -5,6 +5,15 @@
 <!--  * Author    - G CHAU                              *  -->
 <!--  *             Littleton Coin Company              *  -->
 <!--  *             Littleton NH                        *  -->
+<!--  * Date Written 07/01/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 
 // AJAX endpoint - buffer from byte 0, one stray byte corrupts an .xlsx download
@@ -166,6 +175,13 @@ switch ($action) {
         // Dynamic Year dropdown: only the years this series exists for.
         $years = gsYearsFor((string) ($_POST['category'] ?? ''));
         echo json_encode(['returnClass' => 'success', 'years' => $years]);
+        break;
+
+    case 'lccLookup':
+        // LCC SKU -> item master description/date + the GreySheet coins it matches
+        $lcc = lccLookup((string) ($_POST['sku'] ?? ''));
+        echo json_encode(['returnClass' => $lcc['ok'] ? 'success' : 'error', 'item' => $lcc['item'],
+                          'matches' => $lcc['matches'], 'message' => $lcc['error']]);
         break;
 
     case 'gsImport':

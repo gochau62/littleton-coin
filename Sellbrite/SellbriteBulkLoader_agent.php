@@ -990,6 +990,30 @@ function gsSearch(string $q): array
     return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
 }
 
+// LCC SKU lookup: read the item master, then offer the GreySheet coins its description matches
+function lccLookup(string $sku): array
+{
+    $sku = trim($sku);
+    if ($sku === '') { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'Type an LCC SKU.']; }
+    $row = function_exists('sblLccItem') ? sblLccItem($sku) : [];
+    if (!$row) { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'SKU ' . $sku . ' is not on the LCC item master.']; }
+
+    $desc = trim((string) ($row['item_desc'] ?? ''));
+    $year = '';
+    if (preg_match('/\d{4}/', (string) ($row['item_date'] ?? ''), $m)) { $year = $m[0]; }
+    // the description is LCC's own wording, so search memory on it the same way the coin box does
+    $matches = $desc !== '' ? gsMemSearch($desc) : [];
+    // nothing matched the whole description - retry on its first few words
+    if (!$matches && $desc !== '') {
+        $short = implode(' ', array_slice(preg_split('/\s+/', $desc), 0, 4));
+        if ($short !== $desc) { $matches = gsMemSearch($short); }
+    }
+    return ['ok' => true, 'error' => '',
+            'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year],
+            'matches' => $matches];
+}
+
+
 // last step of any import: run the computed fields, then the validator
 function gs_finalize(array $row, $source, string $via, array $calls = []): array
 {
