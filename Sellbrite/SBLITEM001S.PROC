@@ -4,10 +4,14 @@
 /*                                                                   */
 /* Program Narrative - LCC item master lookup for the Sellbrite      */
 /*                     Bulk Loader.  Given an LCC SKU, returns the   */
-/*                     item's description and coin date from the     */
-/*                     production item master so the loader can      */
-/*                     prefill the coin finder instead of the        */
-/*                     operator retyping what LCC already knows.     */
+/*                     description, coin date, grades, comment and   */
+/*                     root item from the production item master so  */
+/*                     the loader can prefill the coin finder        */
+/*                     instead of the operator retyping what LCC     */
+/*                     already knows.  Prices, costs and on-hand     */
+/*                     quantities are deliberately not returned:     */
+/*                     those are LCC's internal figures, and the     */
+/*                     listing takes its price from GreySheet.       */
 /*                     Read only - the loader never writes to the    */
 /*                     item master.                                  */
 /*                                                                   */
@@ -47,11 +51,17 @@ CREATE OR REPLACE PROCEDURE SBLITEM001S (
 
     BEGIN
         -- One row when the SKU is on the master, none when it is not.
-        -- IICDAT is numeric; 0 means no date, so it comes back blank.
+        -- Every column here is CHAR, so nothing needs converting; the coded
+        -- numeric columns (category, type, variety) are left out until their
+        -- code tables are known - a raw code helps nobody.
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT TRIM(I.IISKU#) AS ITEM_SKU,
                    TRIM(I.IIDESC) AS ITEM_DESC,
-                   COALESCE(TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))), '') AS ITEM_DATE
+                   TRIM(I.IICDAT) AS ITEM_DATE,
+                   TRIM(I.IIGRAD) AS ITEM_GRADE,
+                   TRIM(I.IIGRD2) AS ITEM_GRADE2,
+                   TRIM(I.IIICMT) AS ITEM_COMMENT,
+                   TRIM(I.IIROOT) AS ITEM_ROOT
               FROM LSCPRDLIB/ITMMSTP I
              WHERE I.IISKU# = INSKU
              FETCH FIRST 1 ROW ONLY;

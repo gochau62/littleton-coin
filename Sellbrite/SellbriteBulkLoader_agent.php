@@ -999,7 +999,12 @@ function lccLookup(string $sku): array
 
     $desc = trim((string) ($row['item_desc'] ?? ''));
     $year = '';
+    // IICDAT is free text ("1943", "1943-D", "1878 7TF") - take the first 4-digit year
     if (preg_match('/\d{4}/', (string) ($row['item_date'] ?? ''), $m)) { $year = $m[0]; }
+    // LCC's own grade codes are 2 characters and do not match the Sellbrite grade list,
+    // so they ride along as a hint for the operator rather than filling the Grade box
+    $hint = trim(trim((string) ($row['item_grade'] ?? '')) . ' ' . trim((string) ($row['item_grade2'] ?? '')));
+    $note = trim((string) ($row['item_comment'] ?? ''));
     // the description is LCC's own wording, so search memory on it the same way the coin box does
     $matches = $desc !== '' ? gsMemSearch($desc) : [];
     // nothing matched the whole description - retry on its first few words
@@ -1008,7 +1013,9 @@ function lccLookup(string $sku): array
         if ($short !== $desc) { $matches = gsMemSearch($short); }
     }
     return ['ok' => true, 'error' => '',
-            'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year],
+            'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
+                       'grade_hint' => $hint, 'comment' => $note,
+                       'root' => trim((string) ($row['item_root'] ?? ''))],
             'matches' => $matches];
 }
 
