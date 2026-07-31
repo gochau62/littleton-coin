@@ -216,9 +216,9 @@ function sblLccItem($sku)
 // PROGRAM NAME SBLITEM001S type SEARCH: item numbers starting with what has been typed, for the SKU box menu
 function sblLccSearch($prefix)
 {
-    $prefix = strtoupper(trim((string) $prefix));
-    if ($prefix === '') { return []; }
-    $rows = sbl_lcc_call('SEARCH', $prefix);
+    // an empty prefix is allowed: the procedure's LIKE '%' lists the first items,
+    // which is what the box shows when it is clicked before anything is typed
+    $rows = sbl_lcc_call('SEARCH', strtoupper(trim((string) $prefix)));
     return $rows === false ? false : $rows;
 }
 

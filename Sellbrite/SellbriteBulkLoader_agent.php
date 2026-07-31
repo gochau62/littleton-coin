@@ -1018,9 +1018,8 @@ function lccLookup(string $sku): array
 // type-ahead over the LCC item master: what the SKU box lists as the operator types
 function lccSearch(string $q): array
 {
-    $q = trim($q);
-    if ($q === '' || !function_exists('sblLccSearch')) { return []; }
-    $rows = sblLccSearch($q);
+    if (!function_exists('sblLccSearch')) { return []; }
+    $rows = sblLccSearch(trim($q));
     if ($rows === false) { return []; }
     $out = [];
     foreach ($rows as $r) {

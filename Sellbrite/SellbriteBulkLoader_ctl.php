@@ -695,7 +695,7 @@
     // SKU box type-ahead: item numbers straight from the LCC item master
     function sblLccAutocomplete(){
         $('#lcc-sku').autocomplete({
-            minLength: 1, delay: 250,
+            minLength: 0, delay: 250,
             source: function(req, resp){
                 $.post('SellbriteBulkLoader_ajax.php', { action:'lccSearch', q:req.term }, function(res){
                     // swallow a late answer so the menu cannot reopen after a pick
@@ -718,6 +718,11 @@
         };
         $('#lcc-sku').autocomplete('widget').addClass('sbl-combo');
         $('#lcc-sku').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
+        // clicking the box opens the list, empty or not
+        $('#lcc-sku').on('mousedown focus', function(){
+            if ($(this).autocomplete('widget').is(':visible')) return;
+            $(this).autocomplete('search', $(this).val());
+        });
     }
 
     function sblLccLookup(){

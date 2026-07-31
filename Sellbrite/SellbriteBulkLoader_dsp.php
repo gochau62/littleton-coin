@@ -84,7 +84,14 @@ function dspBulkLoader(&$screenData)
            padding:10px 14px; margin-bottom:10px; box-shadow:0 4px 8px rgba(0,0,0,.06); }
 .lcc-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                  color:#1C4532; white-space:nowrap; margin-right:2px; }
-.lcc-bar .lcc-grow { flex:0 0 260px; width:260px; min-width:0; }
+.lcc-bar .lcc-grow { flex:0 0 300px; width:300px; min-width:0; }
+
+/* same caret the valid-value combos use, so the box reads as a menu.
+   background-image only - the shorthand would erase it on focus. */
+.lcc-bar input.has-menu { padding-right:34px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235f6b62'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center; }
+.lcc-bar input.has-menu:focus { background-color:#fff; }
 .ui-autocomplete .lcc-desc { color:#5f6b62; font-size:11px; display:block; }
 .gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
@@ -299,8 +306,8 @@ details.group summary::-webkit-details-marker { display:none; }
 
         <div class="lcc-bar">
             <span class="lcc-bar-label">LCC item</span>
-            <input type="text" id="lcc-sku" class="sbl-search lcc-grow" autocomplete="off"
-                   placeholder="Enter or search for LCC Sku">
+            <input type="text" id="lcc-sku" class="sbl-search lcc-grow has-menu" autocomplete="off"
+                   placeholder="SKU">
         </div>
 
         <div class="gs-bar" title="Pick 1-4 in order, then Autofill fills the form from GreySheet">
