@@ -25,6 +25,11 @@ if (!defined('SBL_TABLE')) {
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
 
+if (!defined('SBL_ITEM_PROC')) {
+    // Qualified for the same reason: an unqualified CALL depends on the job's library list.
+    define('SBL_ITEM_PROC', 'LSCDEVLIBP.SBLITEM001S');
+}
+
 // open one DB2 connection from the session credentials and reuse it
 function sbl_conn()
 {
@@ -189,7 +194,7 @@ function sbl_lcc_call($type, $key)
 {
     $conn = sbl_conn();
     if (!$conn) { return false; }
-    $stmt = db2_prepare($conn, 'CALL SBLITEM001S(?, ?)');
+    $stmt = db2_prepare($conn, 'CALL ' . SBL_ITEM_PROC . '(?, ?)');
     if (!$stmt) { sbl_db_err('SBLITEM001S prepare'); return false; }
     if (!db2_execute($stmt, [$type, $key])) { sbl_db_err('SBLITEM001S execute'); return false; }
     $rows = [];
