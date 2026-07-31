@@ -569,6 +569,14 @@
         $('#gs-coin').autocomplete({
             minLength: 0, delay: 200,
             source: function(req, resp){
+                // an LCC lookup already picked the candidates - offer those instead of the tree's coins
+                if (sblLccMatches.length){
+                    var t = (req.term || '').toLowerCase();
+                    resp(sblCoinDisplays($.map(sblLccMatches, function(c){
+                        return { label: c.label, value: c.label, gs_id: c.gs_id };
+                    })).filter(function(it){ return !t || it.label.toLowerCase().indexOf(t) !== -1; }));
+                    return;
+                }
                 if (!sblCurPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php',
                     { action:'gsCoins', path:sblCurPath, year:sblCurYear, q:req.term }, function(res){
@@ -592,7 +600,7 @@
             return $('<li>').append('<div>' + sblEsc(item.display || item.label) + '</div>').appendTo(ul);
         };
         $('#gs-coin').on('focus', function(){
-            if (sblCurPath && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
+            if ((sblCurPath || sblLccMatches.length) && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
         });
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
@@ -655,12 +663,45 @@
         });
     }
     function sblResetBelowSeries(){
-        sblCurYear = ''; sblPendingGsId = 0; sblYearList = [];
+        sblCurYear = ''; sblPendingGsId = 0; sblYearList = []; sblLccMatches = [];
         $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
     }
+    /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
+    var sblLccMatches = [];
+
+    function sblLccMsg(text){ $('#gs-coin').attr('title', text || ''); $('#lcc-msg').text(text || ''); }
+
+    function sblLccLookup(){
+        var sku = String($('#lcc-sku').val() || '').trim();
+        sblLccMatches = [];
+        if (!sku){ sblLccMsg(''); return; }
+        $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
+            if (res.returnClass !== 'success'){ sblLccMsg(res.message || 'Lookup failed.'); return; }
+            var it = res.item || {};
+            sblLccMatches = res.matches || [];
+            // the LCC description is the operator's confirmation that this is the coin in hand
+            if (!sblLccMatches.length){
+                sblLccMsg(it.description + ' - no catalog match, use the tree below');
+                return;
+            }
+            $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
+            if (sblLccMatches.length === 1){
+                // exactly one coin fits: pick it and arm Autofill
+                sblPendingGsId = sblLccMatches[0].gs_id;
+                $('#gs-coin').data('sblPicked', 1).val(sblLccMatches[0].label);
+                $('#gs-autofill').prop('disabled', false);
+                sblMarkGsFields(true);
+                sblLccMsg(it.description);
+            } else {
+                sblLccMsg(it.description + ' - ' + sblLccMatches.length + ' catalog matches, pick one');
+                setTimeout(function(){ $('#gs-coin').focus(); }, 0);
+            }
+        }, 'json').fail(function(){ sblLccMsg('Lookup failed - server error.'); });
+    }
+
     // Autofill: pull collectible + pricing from GreySheet and fill the form
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
@@ -788,6 +829,10 @@
         $('#sku-form').on('change', '#f_certification', function(){ sblCertNumGate(true); });
         $('#sku-form').on('input',  '#f_certification', function(){ sblCertNumGate(false); });
         sblCertNumGate(false);
+
+        // LCC SKU box: Enter or leaving the box runs the lookup
+        $('#lcc-sku').on('change', sblLccLookup)
+                     .on('keydown', function(e){ if (e.which === 13){ e.preventDefault(); sblLccLookup(); } });
 
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();
