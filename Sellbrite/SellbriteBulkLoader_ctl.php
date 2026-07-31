@@ -677,10 +677,7 @@
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
     var sblLccMatches = [];
 
-    function sblLccMsg(text, dim){
-        $('#gs-coin').attr('title', text || '');
-        $('#lcc-msg').text(text || '').toggleClass('dim', !!dim);
-    }
+    function sblLccMsg(text){ $('#gs-coin').attr('title', text || ''); $('#lcc-msg').text(text || ''); }
 
     // SKU box type-ahead: item numbers straight from the LCC item master
     function sblLccAutocomplete(){
@@ -713,7 +710,7 @@
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
         sblLccMatches = [];
-        if (!sku){ sblLccMsg('Optional - finds the coin from our own inventory.', true); return; }
+        if (!sku){ sblLccMsg(''); return; }
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success'){ sblLccMsg(res.message || 'Lookup failed.'); return; }
             var it = res.item || {};
