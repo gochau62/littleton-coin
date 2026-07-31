@@ -1017,7 +1017,11 @@ function lccLookup(string $sku): array
         $short = implode(' ', array_slice(preg_split('/\s+/', $desc), 0, 4));
         if ($short !== $desc) { $matches = gsMemSearch($short); }
     }
-    return ['ok' => true, 'error' => '',
+    // let the AI read the description into fields; year from IICDAT still wins
+    $parsed = lccParse($desc, trim((string) ($row['item_grade'] ?? '')));
+    if ($year !== '') { $parsed['year'] = $year; }
+
+    return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
                        'grade_hint' => $hint, 'comment' => $note,
                        'root' => trim((string) ($row['item_root'] ?? '')),
@@ -1027,6 +1031,57 @@ function lccLookup(string $sku): array
             'matches' => $matches];
 }
 
+
+// the fields an inventory description can honestly support - the rest of the
+// listing still comes from GreySheet, so the AI is never asked to invent them
+const LCC_PARSE_FIELDS = ['year', 'coin_type', 'denomination', 'country_of_manufacture',
+                          'composition', 'fineness', 'grade', 'mint_mark', 'mint_location',
+                          'coin_variety_1', 'coin_variety_2', 'circulated_or_uncirculated',
+                          'strike_type', 'single_coin_or_set', 'paper_money_type'];
+
+// Read an LCC inventory description into form fields.  "1868 Austria Silver 10
+// Kreuzer VG" carries the year, country, metal, denomination and grade; a person
+// reads that at a glance, so the AI does the same rather than a lookup table.
+// The grade code rides along because it is the Sheldon number ("08" = VG-8).
+function lccParse(string $desc, string $gradeCode = ''): array
+{
+    $desc = trim($desc);
+    if ($desc === '' || !geminiConfigured()) { return []; }
+
+    // one AI call per description per session; the master does not change under us
+    $key = md5($desc . '|' . $gradeCode);
+    if (isset($_SESSION['sbl_lcc_parse'][$key])) { return $_SESSION['sbl_lcc_parse'][$key]; }
+
+    // only the fields the description can speak to, so the prompt stays small
+    $spec = [];
+    foreach (explode("\n", sbl_field_spec()) as $line) {
+        foreach (LCC_PARSE_FIELDS as $f) {
+            if (strpos($line, '- ' . $f . ' (') === 0) { $spec[] = $line; break; }
+        }
+    }
+
+    $sys = 'You read Littleton Coin Company inventory descriptions and turn them into Sellbrite '
+         . 'listing fields. These are terse dealer descriptions: they normally run year, country, '
+         . 'metal, denomination, then an abbreviated grade. Fill ONLY what the description actually '
+         . 'states. Never infer, never guess, and leave a field out entirely rather than filling it '
+         . 'from general knowledge of the series. For fields with "options:", use one of those exact '
+         . 'options. Return ONLY a JSON object keyed by field machine-name.';
+    $user = "TARGET FIELDS:\n" . implode("\n", $spec) . "\n\nINVENTORY DESCRIPTION:\n" . $desc;
+    if ($gradeCode !== '' && ltrim($gradeCode, '0') !== '') {
+        $user .= "\n\nGRADE CODE: " . $gradeCode . ' (the numeric Sheldon grade, e.g. 08 is VG-8, '
+               . '40 is XF-40, 65 is MS-65). Use it to pick the grade option that matches the '
+               . 'abbreviation in the description.';
+    }
+
+    $row = sbl_snap_row(sbl_clean_ai_row(geminiJson($sys, $user, $m)));
+    // keep only the whitelist - a stray field would fill a box the description never mentioned
+    $out = [];
+    foreach (LCC_PARSE_FIELDS as $f) {
+        if (isset($row[$f]) && trim((string) $row[$f]) !== '') { $out[$f] = trim((string) $row[$f]); }
+    }
+    $_SESSION['sbl_lcc_parse'][$key] = $out;
+    return $out;
+}
 
 // type-ahead over the LCC item master: what the SKU box lists as the operator types
 function lccSearch(string $q): array

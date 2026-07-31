@@ -295,8 +295,8 @@
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
 
-            // Country is set ONCE by the tree - autofill never overwrites it.
-            if (k === 'country_of_manufacture' && el && String(el.value || '').trim() !== '') return;
+            // anything already filled is left alone - typed, LCC or a previous import
+            if (el && String(el.value || '').trim() !== '') return;
             if (el && v !== null && v !== '') {
 
                  // selects: add missing options so unmatched names still land
@@ -676,7 +676,7 @@
     }
 
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
-    var sblLccMatches = [], sblLccData = null;
+    var sblLccMatches = [], sblLccData = null, sblLccFields = {};
 
     /* The item master fills EMPTY boxes only - it never edits the LCC SKU box,
        never touches the PCC SKU, and never overwrites anything already typed or
@@ -692,10 +692,17 @@
                      quantity:           sblLccData.quantity,           // IIQTOH
                      single_coin_or_set: sblLccData.single_coin_or_set, // IIROLL > 1
                      set_count:          sblLccData.set_count };        // IIROLL
+        // whatever the AI read out of the inventory description, under the same rule
+        $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
         $.each(fill, function(name, val){
             if (!val) return;
             var el = document.getElementById('f_' + name);
-            if (el && String(el.value || '').trim() === '') { el.value = val; }
+            if (!el || String(el.value || '').trim() !== '') return;
+            // a select needs the option to exist before the value will take
+            if (el.tagName === 'SELECT' && !el.querySelector('option[value="' + CSS.escape(String(val)) + '"]')){
+                var o = document.createElement('option'); o.value = o.textContent = val; el.appendChild(o);
+            }
+            el.value = val;
         });
     }
 
@@ -738,11 +745,12 @@
 
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
-        sblLccMatches = []; sblLccData = null;
+        sblLccMatches = []; sblLccData = null; sblLccFields = {};
         if (!sku) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success') return;
             sblLccData = res.item || {};
+            sblLccFields = res.fields || {};
             sblLccMatches = res.matches || [];
             sblLccApply();
             sblRecompute();
@@ -763,13 +771,9 @@
     // Autofill: pull collectible + pricing from GreySheet and fill the form
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
-        // start CLEAN: wipe everything except the operator-owned fields
+        // Autofill ADDS, it never removes: anything already in a box stays put,
+        // so an LCC lookup or a typed correction survives the import.
         var grade = $('#f_grade').val() || '';
-        var keep = ['sku', 'marketplace', 'quantity', 'category_name', 'country_of_manufacture', 'condition',
-                    'certification', 'certification_number'];
-        $('#sku-form [data-name]').each(function(){
-            if (keep.indexOf(this.getAttribute('data-name')) < 0) this.value = '';
-        });
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
         sblResetAutoBadges();
