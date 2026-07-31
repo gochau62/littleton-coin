@@ -870,9 +870,7 @@ function gsAiMap(array $coin): array
          . "8. Paper money: the note facts (FriedbergNumber, Printer, BnbSignatureName1/2 - the Treasury "
          . "signature pair, Watermark, NotePaperType, NoteDimension in mm, PickNumber) are real catalog data - "
          . "work them into the description and extended_description. For U.S. notes coin_variety_2 may carry "
-         . "the Friedberg number (\"FR2307\") when it is otherwise empty. PcgsNumber / Ngc / NgcId are CATALOG "
-         . "numbers, NEVER a certification - do not treat them as grading. FeaturedImageAttribution is only "
-         . "the PHOTO credit - never the brand.\n"
+         . "the Friedberg number (\"FR2307\") when it is otherwise empty.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     // Pool root: path root name, else the reply's RootNode_Id (live replies carry no CatalogPath).
     $ctRoot = strtolower((string) ($coin['CatalogPath'][0]['Name'] ?? ''));
@@ -910,10 +908,8 @@ function gsAiMap(array $coin): array
         if ($src !== '') { $row['extended_description'] = mb_substr($src, 0, 1900); }
     }
     if (trim((string) ($row['feature_4'] ?? '')) === '') {
-        // never reuse the extended description - a duplicate reads worse than an empty box
-        if ($gsDesign !== '' && $gsDesign !== trim((string) ($row['extended_description'] ?? ''))) {
-            $row['feature_4'] = mb_substr($gsDesign, 0, 1400);
-        }
+        $src = $gsDesign !== '' ? $gsDesign : trim((string) ($row['extended_description'] ?? ''));
+        if ($src !== '') { $row['feature_4'] = mb_substr($src, 0, 1400); }
     }
     return sbl_snap_row($row);
 }
@@ -955,18 +951,12 @@ function gsListingFill(array $post): array
              . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level. "
              . "Write it in YOUR OWN words: it must not repeat or lightly rephrase any sentence from the "
              . "extended_description - pick a different angle (series history, design lineage, collecting "
-             . "appeal). If the facts give nothing beyond what extended_description already says, return "
-             . "feature_4 as \"\" - never copy or lightly rephrase it. Do NOT add the \"COLLECTOR'S NOTE:\" "
-             . "label - the system adds it.\n"
+             . "appeal). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
              . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.";
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
-        // drop a collector's note that merely copies the extended description
-        $norm = static fn($s) => preg_replace('/\s+/', ' ', strtolower(trim((string) $s)));
-        if (isset($ai['feature_4']) && ($norm($ai['feature_4']) === $norm($post['extended_description'] ?? '')
-            || $norm($ai['feature_4']) === $norm($ai['extended_description'] ?? ''))) { $ai['feature_4'] = ''; }
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
         }
