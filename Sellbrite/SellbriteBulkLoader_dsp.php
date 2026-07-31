@@ -75,20 +75,20 @@ function dspBulkLoader(&$screenData)
 
 /* GreySheet drill-down bar on the SKU form: one aligned row, steps in order. */
 .gs-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#fff;
-          border:1px solid #a9e2a9; border-left:4px solid #1e6e43; border-radius:12px;
-          padding:10px 14px; margin-bottom:16px; box-shadow:0 4px 8px rgba(0,0,0,.06); }
+          border:1px solid #a9e2a9; border-radius:12px; padding:10px 14px; margin-bottom:16px;
+          box-shadow:0 4px 8px rgba(0,0,0,.06); }
 /* LCC item bar: the blue shortcut above the green GreySheet finder. Start from
    the coin's own tag and the finder fills itself in; skip it and nothing changes. */
 .lcc-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff;
-           border:1px solid #a9c8e2; border-left:4px solid #0056b3; border-radius:12px;
+           border:1px solid #a9e2a9; border-radius:12px;
            padding:10px 14px; margin-bottom:10px; box-shadow:0 4px 8px rgba(0,0,0,.06); }
 .lcc-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
-                 color:#0056b3; white-space:nowrap; margin-right:2px; }
+                 color:#1C4532; white-space:nowrap; margin-right:2px; }
 .lcc-bar .lcc-grow { flex:0 0 260px; width:260px; min-width:0; }
 .lcc-msg { font-size:12px; color:#33413a; flex:1 1 220px; }
 .ui-autocomplete .lcc-desc { color:#5f6b62; font-size:11px; display:block; }
 .gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
-                color:#1e6e43; white-space:nowrap; margin-right:2px; }
+                color:#1C4532; white-space:nowrap; margin-right:2px; }
 .gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
 .gs-bar .gs-year { flex:0 0 110px; width:110px; min-width:0; }
 
@@ -298,7 +298,7 @@ details.group summary::-webkit-details-marker { display:none; }
             <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
 
-        <div class="lcc-bar" title="Optional shortcut: start from the coin's own LCC tag instead of the catalog tree">
+        <div class="lcc-bar">
             <span class="lcc-bar-label">LCC item</span>
             <input type="text" id="lcc-sku" class="sbl-search lcc-grow" autocomplete="off"
                    placeholder="Enter or search for LCC Sku">

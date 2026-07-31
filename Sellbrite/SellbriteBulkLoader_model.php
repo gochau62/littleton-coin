@@ -183,12 +183,28 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
-// PROGRAM NAME SBLITEM001S type ITEM: one LCC item master row for an exact SKU, [] when not found
+// run the item master procedure; false when the call itself fails (not created, wrong
+// signature, no authority), [] when it ran and matched nothing - the caller needs both
+function sbl_lcc_call($type, $key)
+{
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    $stmt = db2_prepare($conn, 'CALL SBLITEM001S(?, ?)');
+    if (!$stmt) { sbl_db_err('SBLITEM001S prepare'); return false; }
+    if (!db2_execute($stmt, [$type, $key])) { sbl_db_err('SBLITEM001S execute'); return false; }
+    $rows = [];
+    while ($r = db2_fetch_assoc($stmt)) { $rows[] = array_change_key_case($r, CASE_LOWER); }
+    return $rows;
+}
+
+
+// PROGRAM NAME SBLITEM001S type ITEM: one LCC item master row for an exact SKU
 function sblLccItem($sku)
 {
     $sku = strtoupper(trim((string) $sku));
     if ($sku === '') { return []; }
-    return sbl_select('CALL SBLITEM001S(?, ?)', ['ITEM', $sku])[0] ?? [];
+    $rows = sbl_lcc_call('ITEM', $sku);
+    return $rows === false ? false : ($rows[0] ?? []);
 }
 
 
@@ -197,7 +213,8 @@ function sblLccSearch($prefix)
 {
     $prefix = strtoupper(trim((string) $prefix));
     if ($prefix === '') { return []; }
-    return sbl_select('CALL SBLITEM001S(?, ?)', ['SEARCH', $prefix]);
+    $rows = sbl_lcc_call('SEARCH', $prefix);
+    return $rows === false ? false : $rows;
 }
 
 

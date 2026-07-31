@@ -984,7 +984,12 @@ function lccLookup(string $sku): array
 {
     $sku = trim($sku);
     if ($sku === '') { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'Type an LCC SKU.']; }
-    $row = function_exists('sblLccItem') ? sblLccItem($sku) : [];
+    $row = function_exists('sblLccItem') ? sblLccItem($sku) : false;
+    // false = the CALL failed; [] = it ran and the SKU is not there
+    if ($row === false) {
+        return ['ok' => false, 'item' => [], 'matches' => [],
+                'error' => 'Item lookup unavailable - check that SBLITEM001S is created on this system.'];
+    }
     if (!$row) { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'SKU ' . $sku . ' is not on the LCC item master.']; }
 
     $desc = trim((string) ($row['item_desc'] ?? ''));
@@ -1015,8 +1020,10 @@ function lccSearch(string $q): array
 {
     $q = trim($q);
     if ($q === '' || !function_exists('sblLccSearch')) { return []; }
+    $rows = sblLccSearch($q);
+    if ($rows === false) { return []; }
     $out = [];
-    foreach (sblLccSearch($q) as $r) {
+    foreach ($rows as $r) {
         $out[] = ['sku' => trim((string) ($r['item_sku'] ?? '')),
                   'description' => trim((string) ($r['item_desc'] ?? '')),
                   'date' => trim((string) ($r['item_date'] ?? ''))];
