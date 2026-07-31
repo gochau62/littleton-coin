@@ -723,11 +723,15 @@
                      + '</div>').appendTo(ul);
         };
         $('#lcc-sku').autocomplete('widget').addClass('sbl-combo');
-        $('#lcc-sku').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
-        // clicking the box opens the list, empty or not
-        $('#lcc-sku').on('mousedown focus', function(){
-            if ($(this).autocomplete('widget').is(':visible')) return;
-            $(this).autocomplete('search', $(this).val());
+        $('#lcc-sku').on('input', function(){ $(this).data('sblPicked', 0); });
+        // clicking or tabbing into the box opens the list, empty or not.
+        // click, not mousedown - the widget closes the menu on a document
+        // mousedown, which would shut a menu opened in the same event.
+        $('#lcc-sku').on('click focus', function(){
+            var $i = $(this);
+            if ($i.autocomplete('widget').is(':visible')) return;
+            $i.data('sblPicked', 0);
+            $i.autocomplete('search', $i.val());
         });
     }
 
