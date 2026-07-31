@@ -177,6 +177,11 @@ switch ($action) {
         echo json_encode(['returnClass' => 'success', 'years' => $years]);
         break;
 
+    case 'lccSearch':
+        // type-ahead list for the LCC SKU box
+        echo json_encode(['returnClass' => 'success', 'matches' => lccSearch((string) ($_POST['q'] ?? ''))]);
+        break;
+
     case 'lccLookup':
         // LCC SKU -> item master description/date + the GreySheet coins it matches
         $lcc = lccLookup((string) ($_POST['sku'] ?? ''));

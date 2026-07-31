@@ -1020,6 +1020,21 @@ function lccLookup(string $sku): array
 }
 
 
+// type-ahead over the LCC item master: what the SKU box lists as the operator types
+function lccSearch(string $q): array
+{
+    $q = trim($q);
+    if ($q === '' || !function_exists('sblLccSearch')) { return []; }
+    $out = [];
+    foreach (sblLccSearch($q) as $r) {
+        $out[] = ['sku' => trim((string) ($r['item_sku'] ?? '')),
+                  'description' => trim((string) ($r['item_desc'] ?? '')),
+                  'date' => trim((string) ($r['item_date'] ?? ''))];
+    }
+    return $out;
+}
+
+
 // last step of any import: run the computed fields, then the validator
 function gs_finalize(array $row, $source, string $via, array $calls = []): array
 {

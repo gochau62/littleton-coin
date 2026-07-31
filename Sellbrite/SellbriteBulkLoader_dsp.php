@@ -77,7 +77,17 @@ function dspBulkLoader(&$screenData)
 .gs-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#fff;
           border:1px solid #a9e2a9; border-radius:12px; padding:10px 14px; margin-bottom:16px;
           box-shadow:0 4px 8px rgba(0,0,0,.06); }
-.lcc-msg { font-size:12px; color:#5f6b62; font-style:italic; flex:1 1 100%; }
+/* LCC item bar: the blue shortcut above the green GreySheet finder. Start from
+   the coin's own tag and the finder fills itself in; skip it and nothing changes. */
+.lcc-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff;
+           border:1px solid #a9c8e2; border-left:4px solid #0056b3; border-radius:12px;
+           padding:10px 14px; margin-bottom:10px; box-shadow:0 4px 8px rgba(0,0,0,.06); }
+.lcc-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+                 color:#0056b3; white-space:nowrap; margin-right:2px; }
+.lcc-bar .lcc-grow { flex:0 0 260px; width:260px; min-width:0; }
+.lcc-msg { font-size:12px; color:#33413a; flex:1 1 220px; }
+.lcc-msg.dim { color:#8a948d; font-style:italic; }
+.ui-autocomplete .lcc-desc { color:#5f6b62; font-size:11px; display:block; }
 .gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
 .gs-bar .gs-grow { flex:1 1 190px; width:auto; min-width:150px; }
@@ -289,10 +299,15 @@ details.group summary::-webkit-details-marker { display:none; }
             <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
 
+        <div class="lcc-bar" title="Optional shortcut: start from the coin's own LCC tag instead of the catalog tree">
+            <span class="lcc-bar-label">LCC item</span>
+            <input type="text" id="lcc-sku" class="sbl-search lcc-grow" autocomplete="off"
+                   placeholder="Type or scan an LCC SKU&hellip;">
+            <span id="lcc-msg" class="lcc-msg">Optional - finds the coin from our own inventory.</span>
+        </div>
+
         <div class="gs-bar" title="Pick 1-4 in order, then Autofill fills the form from GreySheet">
             <span class="gs-bar-label">GreySheet lookup</span>
-            <input type="text" id="lcc-sku" class="sbl-search gs-year" autocomplete="off"
-                   placeholder="LCC SKU" title="Type or scan an LCC SKU to find the coin from our own inventory">
             <select id="gs-root" class="gs-dd"><option value="">1. Tree</option></select>
             <input type="text" id="gs-series" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="2. Series" disabled>
@@ -302,7 +317,6 @@ details.group summary::-webkit-details-marker { display:none; }
                    placeholder="4. Coin" disabled>
             <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
                     title="Fill the highlighted fields from GreySheet">Autofill</button>
-            <span id="lcc-msg" class="lcc-msg"></span>
         </div>
 
         <div class="editor">

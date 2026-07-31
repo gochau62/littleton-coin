@@ -677,12 +677,43 @@
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
     var sblLccMatches = [];
 
-    function sblLccMsg(text){ $('#gs-coin').attr('title', text || ''); $('#lcc-msg').text(text || ''); }
+    function sblLccMsg(text, dim){
+        $('#gs-coin').attr('title', text || '');
+        $('#lcc-msg').text(text || '').toggleClass('dim', !!dim);
+    }
+
+    // SKU box type-ahead: item numbers straight from the LCC item master
+    function sblLccAutocomplete(){
+        $('#lcc-sku').autocomplete({
+            minLength: 1, delay: 250,
+            source: function(req, resp){
+                $.post('SellbriteBulkLoader_ajax.php', { action:'lccSearch', q:req.term }, function(res){
+                    // swallow a late answer so the menu cannot reopen after a pick
+                    if ($('#lcc-sku').data('sblPicked')){ resp([]); return; }
+                    resp($.map(res.matches || [], function(r){
+                        return { label: r.sku, value: r.sku, desc: r.description, date: r.date };
+                    }));
+                }, 'json');
+            },
+            select: function(e, ui){
+                $('#lcc-sku').data('sblPicked', 1).val(ui.item.value).autocomplete('close');
+                sblLccLookup();
+                return false;
+            }
+        }).autocomplete('instance')._renderItem = function(ul, item){
+            return $('<li>').append('<div>' + sblEsc(item.label)
+                     + (item.desc ? '<span class="lcc-desc">' + sblEsc(item.desc)
+                                  + (item.date ? '  &middot; ' + sblEsc(item.date) : '') + '</span>' : '')
+                     + '</div>').appendTo(ul);
+        };
+        $('#lcc-sku').autocomplete('widget').addClass('sbl-combo');
+        $('#lcc-sku').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
+    }
 
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
         sblLccMatches = [];
-        if (!sku){ sblLccMsg(''); return; }
+        if (!sku){ sblLccMsg('Optional - finds the coin from our own inventory.', true); return; }
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success'){ sblLccMsg(res.message || 'Lookup failed.'); return; }
             var it = res.item || {};
@@ -845,7 +876,8 @@
 
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();
-        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
+        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete();
+                                sblLccAutocomplete(); sblFieldCombos(); }
     });
 </script>
 

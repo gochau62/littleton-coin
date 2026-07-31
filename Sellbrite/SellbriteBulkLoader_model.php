@@ -183,12 +183,21 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
-// PROGRAM NAME SBLITEM001S: one LCC item master row (description + coin date) for a SKU, [] when not found
+// PROGRAM NAME SBLITEM001S type ITEM: one LCC item master row for an exact SKU, [] when not found
 function sblLccItem($sku)
 {
     $sku = strtoupper(trim((string) $sku));
     if ($sku === '') { return []; }
-    return sbl_select('CALL SBLITEM001S(?)', [$sku])[0] ?? [];
+    return sbl_select('CALL SBLITEM001S(?, ?)', ['ITEM', $sku])[0] ?? [];
+}
+
+
+// PROGRAM NAME SBLITEM001S type SEARCH: item numbers starting with what has been typed, for the SKU box menu
+function sblLccSearch($prefix)
+{
+    $prefix = strtoupper(trim((string) $prefix));
+    if ($prefix === '') { return []; }
+    return sbl_select('CALL SBLITEM001S(?, ?)', ['SEARCH', $prefix]);
 }
 
 

@@ -3,7 +3,12 @@
 /* Program Name      - SBLITEM001S                                   */
 /*                                                                   */
 /* Program Narrative - LCC item master lookup for the Sellbrite      */
-/*                     Bulk Loader.  Given an LCC SKU, returns the   */
+/*                     Bulk Loader.  INTYPE picks the mode:          */
+/*                       ITEM   - one exact SKU, everything below    */
+/*                       SEARCH - type-ahead list for the SKU box,   */
+/*                                SKU prefix match, capped at 50     */
+/*                                                                   */
+/*                     Given an LCC SKU, ITEM returns the            */
 /*                     description, coin date, grades, comment and   */
 /*                     root item from the production item master so  */
 /*                     the loader can prefill the coin finder        */
@@ -41,7 +46,8 @@
 /*-------------------------------------------------------------------*/
 
 CREATE OR REPLACE PROCEDURE SBLITEM001S (
-        IN INSKU VARCHAR(16)
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(16)
         )
 
         LANGUAGE SQL
@@ -63,8 +69,24 @@ CREATE OR REPLACE PROCEDURE SBLITEM001S (
                    TRIM(I.IIICMT) AS ITEM_COMMENT,
                    TRIM(I.IIROOT) AS ITEM_ROOT
               FROM LSCPRDLIB/ITMMSTP I
-             WHERE I.IISKU# = INSKU
+             WHERE I.IISKU# = INKEY
              FETCH FIRST 1 ROW ONLY;
 
-        OPEN C1;
+        -- SEARCH feeds the SKU box's type-ahead list.  Prefix match on the
+        -- item number only, the way the requisition screen searches it: the
+        -- item number is the indexed key, so the production file stays fast.
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT TRIM(I.IISKU#) AS ITEM_SKU,
+                   TRIM(I.IIDESC) AS ITEM_DESC,
+                   TRIM(I.IICDAT) AS ITEM_DATE
+              FROM LSCPRDLIB/ITMMSTP I
+             WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) || '%'
+             ORDER BY I.IISKU#
+             FETCH FIRST 50 ROWS ONLY;
+
+        IF INTYPE = 'SEARCH' THEN
+            OPEN C2;
+        ELSE
+            OPEN C1;
+        END IF;
     END;
