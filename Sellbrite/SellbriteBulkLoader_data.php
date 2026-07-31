@@ -255,7 +255,7 @@ return [
         // Paper Money Grade Designation (Valid Values tab): EPQ/PPQ = original paper, Apparent/Net = problem notes.
         'paper_money_grade_designation' => ['EPQ', 'PPQ', 'Apparent', 'Net'],
     ],
-
+ 
     // one row per Sellbrite column, workbook order; 'dropdown' names the values list
     'schema' => [
         ['name' => 'sku', 'label' => 'SKU', 'required' => true, 'auto' => false],
@@ -360,7 +360,7 @@ return [
                 'Legacy Currency Grading' => 0.065,
             ],
 
-            // paper money base (sleeved note): raw note = 0.035 + 0.015 wrap = 0.05 lb, certified = 0.1 lb (Des's example)
+            // paper money base (sleeved note): raw note = 0.035 + 0.015 wrap = 0.05 lb, certified = 0.1 lb
             'paper_base' => 0.035,
             
             'gsa' => [
