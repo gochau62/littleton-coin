@@ -692,8 +692,6 @@
         });
     }
 
-    function sblLccMsg(text){ $('#gs-coin').attr('title', text || ''); $('#lcc-msg').text(text || ''); }
-
     // SKU box type-ahead: item numbers straight from the LCC item master
     function sblLccAutocomplete(){
         $('#lcc-sku').autocomplete({
@@ -725,23 +723,14 @@
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
         sblLccMatches = []; sblLccData = null;
-        if (!sku){ sblLccMsg(''); return; }
+        if (!sku) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
-            if (res.returnClass !== 'success'){ sblLccMsg(res.message || 'Lookup failed.'); return; }
-            var it = res.item || {};
-            sblLccData = it;
+            if (res.returnClass !== 'success') return;
+            sblLccData = res.item || {};
             sblLccMatches = res.matches || [];
             sblLccApply();
             sblRecompute();
-            // LCC's own grade code and item comment are shown, never auto-filled:
-            // the codes are 2 characters and do not match the Sellbrite grade list
-            var extra = (it.grade_hint ? '  [LCC grade ' + it.grade_hint + ']' : '')
-                      + (it.comment ? '  [' + it.comment + ']' : '');
-            // the LCC description is the operator's confirmation that this is the coin in hand
-            if (!sblLccMatches.length){
-                sblLccMsg(it.description + extra + ' - no catalog match, use the tree below');
-                return;
-            }
+            if (!sblLccMatches.length) return;
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
             if (sblLccMatches.length === 1){
                 // exactly one coin fits: pick it and arm Autofill
@@ -749,12 +738,10 @@
                 $('#gs-coin').data('sblPicked', 1).val(sblLccMatches[0].label);
                 $('#gs-autofill').prop('disabled', false);
                 sblMarkGsFields(true);
-                sblLccMsg(it.description + extra);
             } else {
-                sblLccMsg(it.description + extra + ' - ' + sblLccMatches.length + ' catalog matches, pick one');
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
             }
-        }, 'json').fail(function(){ sblLccMsg('Lookup failed - server error.'); });
+        }, 'json');
     }
 
     // Autofill: pull collectible + pricing from GreySheet and fill the form

@@ -85,7 +85,6 @@ function dspBulkLoader(&$screenData)
 .lcc-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                  color:#1C4532; white-space:nowrap; margin-right:2px; }
 .lcc-bar .lcc-grow { flex:0 0 260px; width:260px; min-width:0; }
-.lcc-msg { font-size:12px; color:#33413a; flex:1 1 220px; }
 .ui-autocomplete .lcc-desc { color:#5f6b62; font-size:11px; display:block; }
 .gs-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                 color:#1C4532; white-space:nowrap; margin-right:2px; }
@@ -302,7 +301,6 @@ details.group summary::-webkit-details-marker { display:none; }
             <span class="lcc-bar-label">LCC item</span>
             <input type="text" id="lcc-sku" class="sbl-search lcc-grow" autocomplete="off"
                    placeholder="Enter or search for LCC Sku">
-            <span id="lcc-msg" class="lcc-msg"></span>
         </div>
 
         <div class="gs-bar" title="Pick 1-4 in order, then Autofill fills the form from GreySheet">
