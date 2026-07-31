@@ -310,6 +310,7 @@
         sblFieldVisibility();              // show only this category's boxes
         sblMarketApply();                  // and only the chosen market's boxes
         sblCertNumGate(false);             // lock/unlock Cert Number for this row
+        sblLccApply();                     // LCC values fill only what GreySheet left blank
         sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
     }
@@ -667,7 +668,7 @@
     }
 
     function sblResetBelowSeries(){
-        sblCurYear = ''; sblPendingGsId = 0; sblYearList = []; sblLccMatches = [];
+        sblCurYear = ''; sblPendingGsId = 0; sblYearList = []; sblLccMatches = []; sblLccData = null;
         $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
@@ -675,7 +676,21 @@
     }
 
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
-    var sblLccMatches = [];
+    var sblLccMatches = [], sblLccData = null;
+
+    /* The item master fills EMPTY boxes only - it never edits the LCC SKU box,
+       never touches the PCC SKU, and never overwrites anything already typed or
+       filled by GreySheet. Runs once at lookup and again after Autofill, since
+       Autofill clears the form and GreySheet may leave these blank. */
+    function sblLccApply(){
+        if (!sblLccData) return;
+        var fill = { year: sblLccData.year, condition_note: sblLccData.comment };
+        $.each(fill, function(name, val){
+            if (!val) return;
+            var el = document.getElementById('f_' + name);
+            if (el && String(el.value || '').trim() === '') { el.value = val; }
+        });
+    }
 
     function sblLccMsg(text){ $('#gs-coin').attr('title', text || ''); $('#lcc-msg').text(text || ''); }
 
@@ -709,12 +724,15 @@
 
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
-        sblLccMatches = [];
+        sblLccMatches = []; sblLccData = null;
         if (!sku){ sblLccMsg(''); return; }
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success'){ sblLccMsg(res.message || 'Lookup failed.'); return; }
             var it = res.item || {};
+            sblLccData = it;
             sblLccMatches = res.matches || [];
+            sblLccApply();
+            sblRecompute();
             // LCC's own grade code and item comment are shown, never auto-filled:
             // the codes are 2 characters and do not match the Sellbrite grade list
             var extra = (it.grade_hint ? '  [LCC grade ' + it.grade_hint + ']' : '')
