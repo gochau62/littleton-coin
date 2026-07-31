@@ -20,7 +20,6 @@
 if (!defined('SBL_CDN_PREFIX')) {
     define('SBL_CDN_PREFIX', 'https://cdn.shopify.com/s/files/1/0198/0799/3956/files/');
 }
-// Constant listing copy (Des): feature 5 is a brief PCC company blurb applied
 // to every listing; the exact-image line is the default for feature 3.
 if (!defined('SBL_ABOUT_SELLER')) { define('SBL_ABOUT_SELLER',
     'ABOUT PROFILE COINS & COLLECTIBLES: Selling collectible coins and currency online for more than a '
@@ -248,7 +247,7 @@ final class Computer
         // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        // money boxes: strip thousands commas ("6,250.00" -> "6250.00") so validation and DB2 see numbers
+        // money boxes: strip thousands commas ("6,250.00" -> "6250.00")
         foreach (['price', 'cost', 'original_retail'] as $pf) {
             if (strpos($g($pf), ',') !== false) { $row[$pf] = str_replace(',', '', $g($pf)); }
         }

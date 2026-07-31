@@ -183,15 +183,6 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
-// PROGRAM NAME SBLITEM001S: one LCC item master row (description + coin date) for a SKU, [] when not found
-function sblLccItem($sku)
-{
-    $sku = strtoupper(trim((string) $sku));
-    if ($sku === '') { return []; }
-    return sbl_select('CALL SBLITEM001S(?)', [$sku])[0] ?? [];
-}
-
-
 // most recent saved listing in a category (currently unused)
 function sblCategoryExample($category)
 {

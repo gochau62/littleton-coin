@@ -2,9 +2,9 @@
 /*    ***************************************************  -->
 <!--  * Program Name - SellbriteBulkLoader_agent.php    *  -->
 <!--  *                                                 *  -->
-<!--  * Author    - G CHAU                              *  -->
-<!--  *             Littleton Coin Company              *  -->
-<!--  *             Littleton NH                        *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
 <!--  * Date Written 07/01/2026                         *  -->
 <!--  ***************************************************  -->
 <!--  * Maintenance History                             *  -->
@@ -185,7 +185,7 @@ function geminiJson($system, $user, &$meta = [])
     // return token usage data, search through json response for generated description
     $meta['tokens'] = (int) ($resp['usageMetadata']['totalTokenCount'] ?? 0);
     // model response answer sits inside $text
-    $fin = (string) ($resp['candidates'][0]['finishReason'] ?? '');
+      $fin = (string) ($resp['candidates'][0]['finishReason'] ?? '');
     if ($fin !== '' && $fin !== 'STOP') { gsLog('gemini finishReason=' . $fin . ' (answer truncated - raise maxOutputTokens?)'); }
     $text = $resp['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
@@ -556,7 +556,7 @@ function sbl_field_guide(): array
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
         'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
         'denomination'   => ['src' => 'DenominationShort (US) / DenominationLong (world)', 'desc' => 'face value, e.g. 1C, 50C, $1 for US; "5 Euros" spoken form for world coins'],
-         'coin_variety_1' => ['src' => 'Variety', 'desc' => 'REWRITE so it keeps ONLY what category_name does not already say, judged by MEANING not spelling - "Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver" adds nothing, return ""; never add words that were not in the original'],
+        'coin_variety_1' => ['src' => 'Variety', 'desc' => 'REWRITE so it keeps ONLY what category_name does not already say, judged by MEANING not spelling - "Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver" adds nothing, return ""; never add words that were not in the original'],
         'coin_variety_2' => ['src' => 'Variety2', 'desc' => 'same rule: keep only the new part - "1oz Silver, 35th Anniversary" next to "\$1 Kookaburra, 1 Ounce Silver" -> "35th Anniversary" ("1oz Silver" = "1 Ounce Silver")'],
         'designation_abbrivation' => ['src' => 'Other (NOT Desg)', 'desc' => 'the SPECIAL strike/color designation only - color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH. GreySheet puts it in "Other". "Desg" (MS/PR) is the grade TYPE, NOT this - leave blank when the coin has no special designation'],
         'grade'          => ['src' => 'pricing GradeLabel', 'desc' => 'autofilled from the pricing call\'s GradeLabel; the operator can override'],
@@ -632,7 +632,7 @@ function gsMapToProduct(array $c): array
         $row['mint_location'] = sbl_mint_location($mm);
     }
     if ($isPaper) {
-        // Des's sheet: notes are Composition "Paper"; the letter after the year is the Series Designation ("1934A" -> "A")
+        // the letter after the year is the Series Designation ("1934A" -> "A")
         $row['composition'] = 'Paper';
         if (preg_match('/^\s*\d{4}\s*-?\s*([A-Za-z])\b/', $g('CoinDate'), $m)) { $row['paper_money_series_designation'] = strtoupper($m[1]); }
     }
@@ -749,15 +749,13 @@ function gs_coin_facts(array $c): array
 {
     $keys = ['Name','CoinDate','MintMark','DenominationShort','DenominationLong','Variety','Variety2',
              'Desg','Other','Prefix','Composition','Fineness','StrikeType','WeightOunces','WeightGrams','Diameter',
-             'Designer','Edge','Mintage','Rarity','CoinShape','PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
-             'FriedbergNumber','BnBNumber','PickNumber','NoteColor','NoteDimension','Watermark','Printer',
-             'NotePaperType','BnbSignatureName1','BnbSignatureName2',
-             'ObsoleteStateName','ObsoleteCityName','ObsoleteBankName',
+             'Designer','Edge','Mintage','Rarity','CoinShape', 'FeaturedImageAttribution', 'PcgsNumber','IsSet','IsType','CpgVal','GreyVal',
+            'FriedbergNumber','BnBNumber','PickNumber','NoteColor','NoteDimension','Watermark','Printer',
+             'NotePaperType','BnbSignatureName1','BnbSignatureName2','ObsoleteStateName','ObsoleteCityName','ObsoleteBankName',
              'GeneralNotes','ObverseDescription','ReverseDescription','ObverseLettering','ReverseLettering',
              'PriceLow','PriceHigh'];
     $out = [];
     foreach ($keys as $k) {
-        // trim strings - GreySheet ships stray \r ("Morgenthau\r"); blanks/zeros stay out of the prompt
         $v = isset($c[$k]) && is_string($c[$k]) ? trim($c[$k]) : ($c[$k] ?? null);
         if ($v !== '' && $v !== null && $v !== 0 && $v !== '0') { $out[$k] = $v; }
     }
@@ -872,8 +870,7 @@ function gsAiMap(array $coin): array
          . "8. Paper money: the note facts (FriedbergNumber, Printer, BnbSignatureName1/2 - the Treasury "
          . "signature pair, Watermark, NotePaperType, NoteDimension in mm, PickNumber) are real catalog data - "
          . "work them into the description and extended_description. For U.S. notes coin_variety_2 may carry "
-         . "the Friedberg number (\"FR2307\") when it is otherwise empty. PcgsNumber / Ngc / NgcId are CATALOG "
-         . "numbers, NEVER a certification - do not treat them as grading.\n"
+         . "the Friedberg number (\"FR2307\") when it is otherwise empty.\n"
          . "Return ONLY a JSON object keyed by field machine-name.";
     // Pool root: path root name, else the reply's RootNode_Id (live replies carry no CatalogPath).
     $ctRoot = strtolower((string) ($coin['CatalogPath'][0]['Name'] ?? ''));
@@ -911,10 +908,8 @@ function gsAiMap(array $coin): array
         if ($src !== '') { $row['extended_description'] = mb_substr($src, 0, 1900); }
     }
     if (trim((string) ($row['feature_4'] ?? '')) === '') {
-        // never reuse the extended description - a duplicate reads worse than an empty box
-        if ($gsDesign !== '' && $gsDesign !== trim((string) ($row['extended_description'] ?? ''))) {
-            $row['feature_4'] = mb_substr($gsDesign, 0, 1400);
-        }
+        $src = $gsDesign !== '' ? $gsDesign : trim((string) ($row['extended_description'] ?? ''));
+        if ($src !== '') { $row['feature_4'] = mb_substr($src, 0, 1400); }
     }
     return sbl_snap_row($row);
 }
@@ -956,18 +951,12 @@ function gsListingFill(array $post): array
              . "4. feature_4 is a COLLECTOR'S NOTE about the series (why collectors want it), category-level. "
              . "Write it in YOUR OWN words: it must not repeat or lightly rephrase any sentence from the "
              . "extended_description - pick a different angle (series history, design lineage, collecting "
-             . "appeal). If the facts give nothing beyond what extended_description already says, return "
-             . "feature_4 as \"\" - never copy or lightly rephrase it. Do NOT add the \"COLLECTOR'S NOTE:\" "
-             . "label - the system adds it.\n"
+             . "appeal). Do NOT add the \"COLLECTOR'S NOTE:\" label - the system adds it.\n"
              . "5. Return ONLY a JSON object with EXACTLY the requested field names - no other fields.";
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
-        // drop a collector's note that merely copies the extended description
-        $norm = static fn($s) => preg_replace('/\s+/', ' ', strtolower(trim((string) $s)));
-        if (isset($ai['feature_4']) && ($norm($ai['feature_4']) === $norm($post['extended_description'] ?? '')
-            || $norm($ai['feature_4']) === $norm($ai['extended_description'] ?? ''))) { $ai['feature_4'] = ''; }
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
         }
@@ -989,30 +978,6 @@ function gsSearch(string $q): array
     if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Type something to search for.']; }
     return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
 }
-
-// LCC SKU lookup: read the item master, then offer the GreySheet coins its description matches
-function lccLookup(string $sku): array
-{
-    $sku = trim($sku);
-    if ($sku === '') { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'Type an LCC SKU.']; }
-    $row = function_exists('sblLccItem') ? sblLccItem($sku) : [];
-    if (!$row) { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'SKU ' . $sku . ' is not on the LCC item master.']; }
-
-    $desc = trim((string) ($row['item_desc'] ?? ''));
-    $year = '';
-    if (preg_match('/\d{4}/', (string) ($row['item_date'] ?? ''), $m)) { $year = $m[0]; }
-    // the description is LCC's own wording, so search memory on it the same way the coin box does
-    $matches = $desc !== '' ? gsMemSearch($desc) : [];
-    // nothing matched the whole description - retry on its first few words
-    if (!$matches && $desc !== '') {
-        $short = implode(' ', array_slice(preg_split('/\s+/', $desc), 0, 4));
-        if ($short !== $desc) { $matches = gsMemSearch($short); }
-    }
-    return ['ok' => true, 'error' => '',
-            'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year],
-            'matches' => $matches];
-}
-
 
 // last step of any import: run the computed fields, then the validator
 function gs_finalize(array $row, $source, string $via, array $calls = []): array
@@ -1065,7 +1030,7 @@ function gsImport(array $params): array
     // Gemini writes the category-level copy fresh from the GreySheet notes
     $row = gsAiMap($coin);
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
-    // strip commas etc. from whatever landed in price/cost (the AI echoes "5,000.00" from the facts)
+    // strip commas etc. from whatever landed in price/cost
     foreach (['price', 'cost'] as $pf) { if (($row[$pf] ?? '') !== '') { $row[$pf] = gsPriceNum($row[$pf]); } }
     if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
