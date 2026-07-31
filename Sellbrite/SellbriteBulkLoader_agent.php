@@ -1039,6 +1039,29 @@ const LCC_PARSE_FIELDS = ['year', 'coin_type', 'denomination', 'country_of_manuf
                           'coin_variety_1', 'coin_variety_2', 'circulated_or_uncirculated',
                           'strike_type', 'single_coin_or_set', 'paper_money_type'];
 
+// Grade and Coin Type carry hundreds of options - too many for a prompt, and
+// sending none leaves the AI guessing.  Score them against the words in the
+// description (and the Sheldon code for grade) and show only what could fit.
+function lcc_shortlist(string $field, string $desc, string $gradeCode = '', int $cap = 40): array
+{
+    $opts = sbl_field_options($field);
+    if (count($opts) <= $cap) { return $opts; }
+    $words = array_filter(preg_split('/[^a-z0-9]+/i', strtolower($desc)),
+                          static fn($w) => strlen($w) > 2 && !ctype_digit($w));
+    $code  = ltrim($gradeCode, '0');
+    $hits  = [];
+    foreach ($opts as $o) {
+        $lo = strtolower((string) $o);
+        $score = 0;
+        foreach ($words as $w) { if (strpos($lo, $w) !== false) { $score += 2; } }
+        // "12" has to match as its own number so it cannot hit "120"
+        if ($code !== '' && preg_match('/(?<!\d)' . preg_quote($code, '/') . '(?!\d)/', $lo)) { $score += 3; }
+        if ($score > 0) { $hits[(string) $o] = $score; }
+    }
+    arsort($hits);
+    return array_slice(array_keys($hits), 0, $cap);
+}
+
 // Read an LCC inventory description into form fields.  "1868 Austria Silver 10
 // Kreuzer VG" carries the year, country, metal, denomination and grade; a person
 // reads that at a glance, so the AI does the same rather than a lookup table.
@@ -1052,12 +1075,26 @@ function lccParse(string $desc, string $gradeCode = ''): array
     $key = md5($desc . '|' . $gradeCode);
     if (isset($_SESSION['sbl_lcc_parse'][$key])) { return $_SESSION['sbl_lcc_parse'][$key]; }
 
-    // only the fields the description can speak to, so the prompt stays small
-    $spec = [];
-    foreach (explode("\n", sbl_field_spec()) as $line) {
-        foreach (LCC_PARSE_FIELDS as $f) {
-            if (strpos($line, '- ' . $f . ' (') === 0) { $spec[] = $line; break; }
-        }
+    // Build the field list for THIS description.  The house field guide is written
+    // for the GreySheet import ("from GreySheet CoinDate"), which means nothing when
+    // the source is a line of dealer shorthand, so the guidance is written here.
+    $notes = [
+        'year'                       => '4-digit issue year',
+        'country_of_manufacture'     => 'the country named in the description',
+        'composition'                => 'the metal named in the description',
+        'denomination'               => 'face value as written, e.g. "10 Kreuzer"',
+        'coin_type'                  => 'the series, ONLY if one option genuinely matches; otherwise leave it out',
+        'grade'                      => 'match the grade abbreviation at the end of the description',
+        'circulated_or_uncirculated' => 'Uncirculated only for a mint-state grade',
+    ];
+    $byName = Schema::byName();
+    $spec   = [];
+    foreach (LCC_PARSE_FIELDS as $f) {
+        $line = '- ' . $f . ' (' . ($byName[$f]['label'] ?? $f) . ')';
+        if (isset($notes[$f])) { $line .= ': ' . $notes[$f]; }
+        $opts = lcc_shortlist($f, $desc, $gradeCode);
+        if ($opts) { $line .= '  MUST be one of: ' . implode(' | ', $opts); }
+        $spec[] = $line;
     }
 
     $sys = 'You read Littleton Coin Company inventory descriptions and turn them into Sellbrite '
