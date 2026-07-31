@@ -684,7 +684,8 @@
        Autofill clears the form and GreySheet may leave these blank. */
     function sblLccApply(){
         if (!sblLccData) return;
-        var fill = { year:               sblLccData.year,               // IICDAT
+        var fill = { name:               sblLccData.description,        // IIDESC
+                     year:               sblLccData.year,               // IICDAT
                      condition_note:     sblLccData.comment,            // IIICMT
                      original_retail:    sblLccData.retail,             // IIPRCE
                      cost:               sblLccData.cost,               // IIAVGC

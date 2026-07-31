@@ -316,7 +316,10 @@ final class Computer
         }
         if (stripos($sku, '.WS') !== false && $g('price') !== '') { $row['original_retail'] = $g('price'); }
 
-        $row['name'] = self::buildTitle($row);
+        // keep whatever is in the box when there is not enough yet to compose a title,
+        // so the LCC inventory description stands in until the parts arrive
+        $builtTitle = self::buildTitle($row);
+        if ($builtTitle !== '') { $row['name'] = $builtTitle; }
         // The description REBUILDS while it still has the standard house shape
 
         $curDesc = trim((string) ($row['description'] ?? ''));
