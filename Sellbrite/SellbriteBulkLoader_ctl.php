@@ -765,6 +765,52 @@
         });
     }
 
+    // Walk the GreySheet drill-down to where the matched coin lives, so the
+    // operator is not left to find the tree, series and year by hand.  Skipped
+    // when a series is already picked, and the form boxes (category, country)
+    // fill only when empty - nothing the LCC item set is overwritten.
+    function sblLccDrill(m){
+        var path = m.path || '';
+        if (!path || String($('#gs-series').val() || '').trim() !== '') return;
+        var seg = path.split(' > ');
+
+        // tree: the root option the path starts with
+        $('#gs-root option').each(function(){
+            if (this.value && path.indexOf(this.value) === 0){
+                $('#gs-root').val(this.value); sblRootPath = this.value; return false;
+            }
+        });
+
+        // series: the node the coin lives under
+        sblCurPath = path;
+        $('#gs-series').prop('disabled', false)
+                       .data('sblPicked', 1).data('sblHad', true)
+                       .val(seg[seg.length - 1] || '');
+        var cat = sblCleanCategory(seg[seg.length - 1] || '');
+        var cel = document.getElementById('f_category_name');
+        if (cat && cel && String(cel.value || '').trim() === ''){
+            if (cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(cat) + '"]')){
+                var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
+            }
+            $('#f_category_name').val(cat).trigger('change');
+        }
+
+        // country from the path, into an empty box only
+        var country = '';
+        if (/^world/i.test(seg[0] || '')) country = (seg[1] || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+        else if (/^u\.?s\.?/i.test(seg[0] || '')) country = 'United States';
+        var uel = document.getElementById('f_country_of_manufacture');
+        if (country && uel && String(uel.value || '').trim() === '') $(uel).val(country);
+
+        sblLoadYears();
+        $('#gs-year, #gs-coin').prop('disabled', false);
+        // the LCC coin date is the year the pricing call should use
+        var y = (sblLccData && sblLccData.year) || '';
+        if (y){ sblCurYear = y; $('#gs-year').data('sblPicked', 1).val(y); }
+        sblFieldVisibility();
+        sblMarketApply();
+    }
+
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
         sblLccMatches = []; sblLccData = null; sblLccFields = {};
@@ -777,6 +823,7 @@
             sblLccApply();
             sblRecompute();
             if (!sblLccMatches.length) return;
+            sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
             if (sblLccMatches.length === 1){
                 // exactly one coin fits: pick it and arm Autofill
