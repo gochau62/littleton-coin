@@ -824,6 +824,14 @@
         sblLccMatches = []; sblLccData = null; sblLccFields = {};
         $('#lcc-item-info').empty();
         if (!sku) return;
+        // a DIFFERENT SKU is a new entry: the form clears first, so the lookup
+        // and the Autofill after it land on clean boxes and nothing from the
+        // last coin bleeds in.  The same SKU again keeps the work so far.
+        if (sku !== sblLccSku){
+            var id = $('#f_id').val(), title = $('#formTitle').text();
+            sblClearForm();
+            if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
+        }
         // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
         // and say when the server itself failed, instead of looking frozen
         $('#lcc-item-info').text('Looking up ' + sku + '\u2026');
