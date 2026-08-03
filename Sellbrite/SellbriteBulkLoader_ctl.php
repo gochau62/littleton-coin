@@ -148,6 +148,7 @@
         sblClearForm();
         if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
         $('#lcc-sku').val('');
+        $('#lcc-item-info').empty();
         sblLccData = null; sblLccFields = {};
         $('#lcc-sku, #gs-series').data('sblHad', false);
         sblRecompute();
@@ -811,13 +812,29 @@
         sblMarketApply();
     }
 
+    // the item master's record, word for word, beside the SKU box - what the coin
+    // originally was, for review against whatever GreySheet fills in
+    function sblLccShowItem(it){
+        var el = $('#lcc-item-info').empty();
+        if (!it || !it.description) return;
+        el.append($('<b>').text(it.description));
+        var bits = [];
+        if (it.date)       bits.push(it.date);
+        if (it.grade_hint) bits.push('grade ' + it.grade_hint);
+        if (it.comment)    bits.push(it.comment);
+        if (it.quantity)   bits.push('qty ' + it.quantity);
+        if (bits.length) el.append(document.createTextNode('  ·  ' + bits.join('  ·  ')));
+    }
+
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
         sblLccMatches = []; sblLccData = null; sblLccFields = {};
+        $('#lcc-item-info').empty();
         if (!sku) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success') return;
             sblLccData = res.item || {};
+            sblLccShowItem(sblLccData);
             sblLccFields = res.fields || {};
             sblLccMatches = res.matches || [];
             sblLccApply();

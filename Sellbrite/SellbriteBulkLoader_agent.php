@@ -1205,6 +1205,7 @@ function lccLookup(string $sku): array
 
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
+                       'date' => trim((string) ($row['item_date'] ?? '')),
                        'grade_hint' => $hint, 'comment' => $note,
                        'root' => trim((string) ($row['item_root'] ?? '')),
                        'link' => trim((string) ($row['item_link'] ?? '')),

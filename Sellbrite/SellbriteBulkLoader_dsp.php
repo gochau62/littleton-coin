@@ -82,6 +82,10 @@ function dspBulkLoader(&$screenData)
 .lcc-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff;
            border:1px solid #a9e2a9; border-radius:12px;
            padding:10px 14px; margin-bottom:10px; box-shadow:0 4px 8px rgba(0,0,0,.06); }
+/* the item master's own record, shown beside the box for review before autofill */
+.lcc-bar .lcc-item-info { font-size:12px; color:#374151; min-width:0;
+                          overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lcc-bar .lcc-item-info b { font-weight:700; color:#1C4532; }
 .lcc-bar-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
                  color:#1C4532; white-space:nowrap; margin-right:2px; }
 .lcc-bar .lcc-grow { flex:0 0 300px; width:300px; min-width:0; }
@@ -308,6 +312,7 @@ details.group summary::-webkit-details-marker { display:none; }
             <span class="lcc-bar-label">LCC item</span>
             <input type="text" id="lcc-sku" class="sbl-search lcc-grow has-menu" autocomplete="off"
                    placeholder="SKU">
+            <span id="lcc-item-info" class="lcc-item-info"></span>
         </div>
 
         <div class="gs-bar" title="Pick 1-4 in order, then Autofill fills the form from GreySheet">
