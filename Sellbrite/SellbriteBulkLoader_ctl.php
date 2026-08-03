@@ -840,9 +840,10 @@
             sblLccApply();
             sblRecompute();
             if (!sblLccMatches.length) return;
-            sblLccDrill(sblLccMatches[0]);
+            // suggestions are shown, never steered: no drill, no category fill
+            if (res.via !== 'suggest') sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
-            if (sblLccMatches.length === 1 || res.picked){
+            if ((sblLccMatches.length === 1 || res.picked) && res.via !== 'suggest'){
                 // one coin fits, or the judge named one: pick it and arm Autofill.
                 // The agent only
                 // finishes the entry ITSELF when the coin agrees with the item

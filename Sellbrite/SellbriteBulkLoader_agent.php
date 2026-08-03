@@ -1223,10 +1223,12 @@ function lccLookup(string $sku): array
             $picked = true;
             gsLog('lccJudge picked "' . $one[0]['label'] . '" of ' . count($matches));
         } elseif ($j === 0) {
-            // the agent says none of these IS the coin - wrong coins offered are
-            // worse than none, so fall through to learning and the walk instead
+            // the agent says none of these IS the coin: try learning and the walk,
+            // but keep the pool - closest suggestions beat an empty screen, they
+            // just never auto-import
             gsLog('lccJudge: none of ' . count($matches) . ' candidates is this coin');
-            $matches = [];
+            $rejected = $matches;
+            $matches  = [];
         }
     }
     // Still nothing: memory does not know the series yet.  First the cheap learn -
@@ -1249,6 +1251,10 @@ function lccLookup(string $sku): array
             }
         }
     }
+    // nothing certain anywhere: offer the closest candidates as SUGGESTIONS - the
+    // operator picks, nothing fills or imports on its own
+    $via = '';
+    if (!$matches && !empty($rejected)) { $matches = $rejected; $via = 'suggest'; }
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
         . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
 
@@ -1259,7 +1265,7 @@ function lccLookup(string $sku): array
                        'root' => trim((string) ($row['item_root'] ?? '')),
                        'link' => trim((string) ($row['item_link'] ?? '')),
                        'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh],
-            'matches' => $matches, 'picked' => $picked];
+            'matches' => $matches, 'picked' => $picked, 'via' => $via];
 }
 
 
