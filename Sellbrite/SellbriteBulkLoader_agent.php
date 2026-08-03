@@ -54,14 +54,19 @@ if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
  * ========================================================================= */
 
 // helpful for when trying to find greysheet error messages in debug log
+if (!defined('SBL_LOG_FILE')) {
+    // the loader's own log, next to its code - not the shared dated log
+    define('SBL_LOG_FILE', __DIR__ . '/sellbrite_activity.log');
+}
+
 function gsLog($msg)
 {
-    // prefix every entry so Sellbrite lines are easy to spot in the shared log
-    $line = 'Greysheet ' . $msg;
-    // Use LCCOnline logger 
-    if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec($line); }
-    // otherwise use PHP error log
-    else { error_log($line); }
+    $line = date('Y-m-d H:i:s') . '  ' . $msg . "\r\n";
+    // @ - a full disk or a permission problem must never break a lookup
+    if (@file_put_contents(SBL_LOG_FILE, $line, FILE_APPEND | LOCK_EX) !== false) { return; }
+    // could not write the file: fall back to the LCCOnline logger, then PHP's
+    if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec('Greysheet ' . $msg); }
+    else { error_log('Greysheet ' . $msg); }
 }
 
 // connection setup for GreySheet: adds the keys, enforces the timeout, records the call.

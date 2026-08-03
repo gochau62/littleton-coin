@@ -3,3 +3,6 @@ Sellbrite/SellbriteBulkLoader_secrets.php
 
 # Local dev memory file written by the standalone test/seed off the IBM i.
 Sellbrite/SellbriteBulkLoader_memory.dev.json
+
+# The loader's own activity log, written at runtime.
+Sellbrite/sellbrite_activity.log
