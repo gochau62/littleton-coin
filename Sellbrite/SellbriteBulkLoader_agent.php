@@ -1004,9 +1004,7 @@ function lccLookup(string $sku): array
     if (!$row) { return ['ok' => false, 'item' => [], 'matches' => [], 'error' => 'SKU ' . $sku . ' is not on the LCC item master.']; }
 
     $desc = trim((string) ($row['item_desc'] ?? ''));
-    $year = '';
-    // IICDAT is free text ("1943", "1943-D", "1878 7TF") - take the first 4-digit year
-    if (preg_match('/\d{4}/', (string) ($row['item_date'] ?? ''), $m)) { $year = $m[0]; }
+    [$year, $dateMint] = lccDate((string) ($row['item_date'] ?? ''));
     // LCC's own grade codes are 2 characters and do not match the Sellbrite grade list,
     // so they ride along as a hint for the operator rather than filling the Grade box
     $hint = trim(trim((string) ($row['item_grade'] ?? '')) . ' ' . trim((string) ($row['item_grade2'] ?? '')));
@@ -1017,10 +1015,6 @@ function lccLookup(string $sku): array
     $retail = $money($row['item_retail'] ?? 0);
     $cost   = $money($row['item_cost'] ?? 0);
     $qoh    = $count($row['item_qoh'] ?? 0);
-    // a roll quantity above 1 means the SKU is a set, and that count is the set count
-    $roll   = (int) ($row['item_roll'] ?? 0);
-    $setYN  = $roll > 1 ? 'Set' : '';
-    $setCnt = $roll > 1 ? (string) $roll : '';
     // the description is LCC's own wording, so search memory on it the same way the coin box does
     $matches = $desc !== '' ? gsMemSearch($desc) : [];
     // nothing matched the whole description - retry on its first few words
@@ -1028,17 +1022,17 @@ function lccLookup(string $sku): array
         $short = implode(' ', array_slice(preg_split('/\s+/', $desc), 0, 4));
         if ($short !== $desc) { $matches = gsMemSearch($short); }
     }
-    // let the AI read the description into fields; year from IICDAT still wins
+    // let the AI read the description into fields; IICDAT outranks it on both
     $parsed = lccParse($desc, trim((string) ($row['item_grade'] ?? '')));
-    if ($year !== '') { $parsed['year'] = $year; }
+    if ($year !== '')     { $parsed['year'] = $year; }
+    if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
 
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
                        'grade_hint' => $hint, 'comment' => $note,
                        'root' => trim((string) ($row['item_root'] ?? '')),
                        'link' => trim((string) ($row['item_link'] ?? '')),
-                       'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh,
-                       'single_coin_or_set' => $setYN, 'set_count' => $setCnt],
+                       'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh],
             'matches' => $matches];
 }
 
@@ -1049,6 +1043,23 @@ const LCC_PARSE_FIELDS = ['year', 'coin_type', 'denomination', 'country_of_manuf
                           'composition', 'fineness', 'grade', 'mint_mark', 'mint_location',
                           'coin_variety_1', 'coin_variety_2', 'circulated_or_uncirculated',
                           'strike_type', 'single_coin_or_set', 'paper_money_type'];
+
+// IICDAT is free text and holds several shapes: "1868", "1940-S" (year and mint
+// mark), "1863B", "ND(1919)", and ranges like "1892-1907" or "247-145BC".  Only
+// a single issue year may fill the Year box - a range is not a year, so it is
+// left for the operator.  Returns [year, mint mark].
+function lccDate(string $raw): array
+{
+    $d = strtoupper(trim($raw));
+    if ($d === '') { return ['', '']; }
+    // no-date issues carry the real year in brackets
+    if (preg_match('/^ND\s*\((\d{4})\)$/', $d, $m))      { return [$m[1], '']; }
+    if (preg_match('/^(\d{4})$/', $d, $m))               { return [$m[1], '']; }
+    // "1940-S" is a year and a mint mark; "1892-1907" is a range and is not
+    if (preg_match('/^(\d{4})-([A-Z]{1,2})$/', $d, $m))  { return [$m[1], $m[2]]; }
+    if (preg_match('/^(\d{4})([A-Z])$/', $d, $m))        { return [$m[1], $m[2]]; }
+    return ['', ''];
+}
 
 // Grade and Coin Type carry hundreds of options - too many for a prompt, and
 // sending none leaves the AI guessing.  Score them against the words in the
@@ -1109,16 +1120,25 @@ function lccParse(string $desc, string $gradeCode = ''): array
     }
 
     $sys = 'You read Littleton Coin Company inventory descriptions and turn them into Sellbrite '
-         . 'listing fields. These are terse dealer descriptions: they normally run year, country, '
-         . 'metal, denomination, then an abbreviated grade. Fill ONLY what the description actually '
-         . 'states. Never infer, never guess, and leave a field out entirely rather than filling it '
-         . 'from general knowledge of the series. For fields with "options:", use one of those exact '
+         . 'listing fields. These are terse dealer lines, normally year, country, metal, '
+         . 'denomination, then an abbreviated grade, and they are heavily abbreviated: Slv=Silver, '
+         . 'Cu=Copper, Clrzd=Colorized, Cmpct=Compact, "St(7)"=a set of 7, "w/Orig Bag Frag"=with '
+         . 'original bag fragment. Expand an abbreviation only when it is unambiguous. Not every '
+         . 'item is a coin - bars, notes, ornaments and gift items appear too; when the line is not '
+         . 'a coin, return only the fields that still apply. Fill ONLY what the description states. '
+         . 'Never infer, never guess, and leave a field out entirely rather than filling it from '
+         . 'general knowledge of the series. For fields with "options:", use one of those exact '
          . 'options. Return ONLY a JSON object keyed by field machine-name.';
     $user = "TARGET FIELDS:\n" . implode("\n", $spec) . "\n\nINVENTORY DESCRIPTION:\n" . $desc;
     if ($gradeCode !== '' && ltrim($gradeCode, '0') !== '') {
-        $user .= "\n\nGRADE CODE: " . $gradeCode . ' (the numeric Sheldon grade, e.g. 08 is VG-8, '
-               . '40 is XF-40, 65 is MS-65). Use it to pick the grade option that matches the '
-               . 'abbreviation in the description.';
+        // 04-70 are Sheldon numbers; anything higher, or with a letter, is an LCC
+        // house condition code, and only the description says what it means
+        $n = ctype_digit($gradeCode) ? (int) $gradeCode : 0;
+        $user .= "\n\nGRADE CODE: " . $gradeCode . ($n >= 1 && $n <= 70
+               ? ' - the numeric Sheldon grade (08 is VG-8, 40 is XF-40, 65 is MS-65). Use it with '
+                 . 'the abbreviation in the description to pick the grade option.'
+               : ' - an LCC house condition code, NOT a Sheldon number. Ignore the code and go by '
+                 . 'the abbreviation at the end of the description.');
     }
 
     $row = sbl_snap_row(sbl_clean_ai_row(geminiJson($sys, $user, $m)));

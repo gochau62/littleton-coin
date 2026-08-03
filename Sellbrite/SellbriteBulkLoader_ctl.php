@@ -689,9 +689,7 @@
                      condition_note:     sblLccData.comment,            // IIICMT
                      original_retail:    sblLccData.retail,             // IIPRCE
                      cost:               sblLccData.cost,               // IIAVGC
-                     quantity:           sblLccData.quantity,           // IIQTOH
-                     single_coin_or_set: sblLccData.single_coin_or_set, // IIROLL > 1
-                     set_count:          sblLccData.set_count };        // IIROLL
+                     quantity:           sblLccData.quantity };         // IIQTOH
         // whatever the AI read out of the inventory description, under the same rule
         $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
         $.each(fill, function(name, val){
