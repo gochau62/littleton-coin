@@ -826,11 +826,13 @@
             sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
             if (sblLccMatches.length === 1){
-                // exactly one coin fits: pick it and arm Autofill
+                // exactly one coin fits: the agent finishes the entry itself.
+                // The import fills empty boxes only, so nothing the SKU set is lost.
                 sblPendingGsId = sblLccMatches[0].gs_id;
                 $('#gs-coin').data('sblPicked', 1).val(sblLccMatches[0].label);
                 $('#gs-autofill').prop('disabled', false);
                 sblMarkGsFields(true);
+                sblGsAutofill();
             } else {
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
             }
