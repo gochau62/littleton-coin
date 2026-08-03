@@ -676,7 +676,7 @@
     }
 
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
-    var sblLccMatches = [], sblLccData = null, sblLccFields = {};
+    var sblLccMatches = [], sblLccData = null, sblLccFields = {}, sblLccSku = '', sblLccRoot = '';
 
     /* The item master fills EMPTY boxes only - it never edits the LCC SKU box,
        never touches the PCC SKU, and never overwrites anything already typed or
