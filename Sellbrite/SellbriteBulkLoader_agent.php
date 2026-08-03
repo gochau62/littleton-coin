@@ -328,6 +328,41 @@ function gsMemSearch(string $q, int $limit = 40): array
 
 
 // replace %, _, \, inside of search name strings
+// Closest coins rather than only exact ones.  gsMemSearch demands EVERY word, so
+// "Austria Silver 20 Corona" finds nothing when the catalog calls it "Corona,
+// Gold" under a path that never says Austria.  Here each word that appears scores
+// a point - a word matching the coin's own name counts double, since the path is
+// mostly country and series - and the best scoring coins come back first.
+// Rows scoring one lone word are dropped: one shared word is a coincidence.
+function gsMemBest(string $q, int $limit = 40): array
+{
+    $words = array_slice(array_unique(array_filter(explode(' ', gsNorm($q)),
+                         static fn($w) => strlen($w) > 1)), 0, 8);
+    if (!$words) { return []; }
+
+    $score = []; $params = [];
+    foreach ($words as $w) {
+        $like = '%' . strtoupper(gsLikeEsc($w)) . '%';
+        $score[] = "(CASE WHEN UPPER(name) LIKE ? ESCAPE '\\' THEN 2 ELSE 0 END)";
+        $params[] = $like;
+        $score[] = "(CASE WHEN UPPER(COALESCE(path, '')) LIKE ? ESCAPE '\\' THEN 1 ELSE 0 END)";
+        $params[] = $like;
+    }
+    // ordering by the alias keeps the scoring expression - and its parameters - single
+    $sql = 'SELECT ref_id, name, path, ' . implode(' + ', $score) . ' AS hits FROM ' . SBL_GSMEM_TABLE
+         . " WHERE kind = 'C'"
+         . ' ORDER BY hits DESC, LENGTH(name), name'
+         . ' FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+
+    $out = [];
+    foreach (gsMemRows($sql, $params) as $r) {
+        if ((int) ($r['hits'] ?? 0) < 2) { continue; }
+        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'],
+                  'path' => (string) ($r['path'] ?? '')];
+    }
+    return $out;
+}
+
 function gsLikeEsc(string $s): string
 {
     return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
@@ -987,7 +1022,10 @@ function gsSearch(string $q): array
 {
     $q = trim($q);
     if ($q === '') { return ['ok' => false, 'matches' => [], 'error' => 'Type something to search for.']; }
-    return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
+    // exact first - every word present is the best answer there is - then closest
+    $m = gsMemSearch($q);
+    if (!$m) { $m = gsMemBest($q); }
+    return ['ok' => true, 'matches' => $m, 'error' => ''];
 }
 
 // LCC SKU lookup: read the item master, then offer the GreySheet coins its description matches
@@ -1023,13 +1061,12 @@ function lccLookup(string $sku): array
     if ($year !== '')     { $parsed['year'] = $year; }
     if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
 
+    // exact on the spelt-out phrase, then on the raw line, then closest-match on
+    // both - the catalog rarely words a coin the way the item master does
     $matches = $read['search'] !== '' ? gsMemSearch($read['search']) : [];
-    if (!$matches && $desc !== '') { $matches = gsMemSearch($desc); }
-    // still nothing - retry on the first few words of the raw line
-    if (!$matches && $desc !== '') {
-        $short = implode(' ', array_slice(preg_split('/\s+/', $desc), 0, 4));
-        if ($short !== $desc) { $matches = gsMemSearch($short); }
-    }
+    if (!$matches && $desc !== '')          { $matches = gsMemSearch($desc); }
+    if (!$matches && $read['search'] !== '') { $matches = gsMemBest($read['search']); }
+    if (!$matches && $desc !== '')          { $matches = gsMemBest($desc); }
 
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
