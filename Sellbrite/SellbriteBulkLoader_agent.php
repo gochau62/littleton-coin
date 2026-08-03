@@ -1067,6 +1067,8 @@ function lccLookup(string $sku): array
     if (!$matches && $desc !== '')          { $matches = gsMemSearch($desc); }
     if (!$matches && $read['search'] !== '') { $matches = gsMemBest($read['search']); }
     if (!$matches && $desc !== '')          { $matches = gsMemBest($desc); }
+    gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
+        . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
 
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
@@ -1136,11 +1138,20 @@ function lcc_shortlist(string $field, string $desc, string $gradeCode = '', int 
 function lccParse(string $desc, string $gradeCode = ''): array
 {
     $desc = trim($desc);
-    if ($desc === '' || !geminiConfigured()) { return ['fields' => [], 'search' => '']; }
+    if ($desc === '') { return ['fields' => [], 'search' => '']; }
+    if (!geminiConfigured()) {
+        gsLog('lccParse skipped - GEMINI_API_KEY not set');
+        return ['fields' => [], 'search' => ''];
+    }
 
-    // one AI call per description per session; the master does not change under us
+    // one AI call per description per session; the master does not change under us.
+    // an entry without 'fields' is from an older session format - re-read it
     $key = md5($desc . '|' . $gradeCode);
-    if (isset($_SESSION['sbl_lcc_parse'][$key])) { return $_SESSION['sbl_lcc_parse'][$key]; }
+    $hit = $_SESSION['sbl_lcc_parse'][$key] ?? null;
+    if (is_array($hit) && isset($hit['fields'])) {
+        gsLog('lccParse "' . $desc . '" (cached) -> search "' . ($hit['search'] ?? '') . '"');
+        return $hit;
+    }
 
     // Build the field list for THIS description.  The house field guide is written
     // for the GreySheet import ("from GreySheet CoinDate"), which means nothing when
