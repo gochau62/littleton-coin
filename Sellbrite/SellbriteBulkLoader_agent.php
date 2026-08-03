@@ -1240,11 +1240,19 @@ function lccLookup(string $sku): array
     // Last resort: the agent walks the catalog tree from the SKU's own facts, and
     // wherever it lands, that series' coins ARE the candidates - narrowed by the
     // coin date when there is one, no matter how differently LCC words the coin.
+    $via = '';
     if (!$matches) {
         $wpath = lccAiWalk($desc, $read['fields']);
         if ($wpath !== '') {
             $rows = gsMemCoins($wpath, '', $year);
-            if (!$rows && $year !== '') { $rows = gsMemCoins($wpath); }
+            if (!$rows && $year !== '') {
+                // the shelf is right but no coin there carries this year: the
+                // catalog likely does not hold the coin, so what IS there shows
+                // as suggestions only - no drill, nothing automatic
+                $rows = gsMemCoins($wpath);
+                $via  = 'suggest';
+                gsLog('lccLookup ' . $sku . ': no ' . $year . ' coin under "' . $wpath . '"');
+            }
             foreach (array_slice($rows, 0, 40) as $r) {
                 $matches[] = ['gs_id' => $r['gs_id'], 'label' => $r['label'], 'path' => $wpath,
                               'coin_date' => (string) ($r['coin_date'] ?? '')];
@@ -1253,7 +1261,6 @@ function lccLookup(string $sku): array
     }
     // nothing certain anywhere: offer the closest candidates as SUGGESTIONS - the
     // operator picks, nothing fills or imports on its own
-    $via = '';
     if (!$matches && !empty($rejected)) { $matches = $rejected; $via = 'suggest'; }
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
         . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
