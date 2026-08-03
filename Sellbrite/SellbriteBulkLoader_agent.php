@@ -368,6 +368,45 @@ function gsMemBest(string $q, int $limit = 40): array
     return $out;
 }
 
+// The closest series NODE whose coins memory has not learned yet (done = 'N').
+// Same scoring as gsMemBest; used to decide which series a miss should fetch live.
+function gsMemBestNode(string $q): array
+{
+    $words = array_slice(array_unique(array_filter(explode(' ', gsNorm($q)),
+                         static fn($w) => strlen($w) > 1)), 0, 8);
+    if (!$words) { return []; }
+    $score = []; $params = [];
+    foreach ($words as $w) {
+        $like = '%' . strtoupper(gsLikeEsc($w)) . '%';
+        $score[] = "(CASE WHEN UPPER(name) LIKE ? ESCAPE '\\' THEN 2 ELSE 0 END)";
+        $params[] = $like;
+        $score[] = "(CASE WHEN UPPER(COALESCE(path, '')) LIKE ? ESCAPE '\\' THEN 1 ELSE 0 END)";
+        $params[] = $like;
+    }
+    $sql = 'SELECT ref_id, name, path, ' . implode(' + ', $score) . ' AS hits FROM ' . SBL_GSMEM_TABLE
+         . " WHERE kind = 'N' AND coin_count > 0 AND done <> 'Y'"
+         . ' ORDER BY hits DESC, LENGTH(name), name FETCH FIRST 1 ROW ONLY';
+    $r = gsMemRows($sql, $params)[0] ?? [];
+    return ((int) ($r['hits'] ?? 0) >= 2) ? $r : [];
+}
+
+// A miss teaches the table: fetch the closest unlearned series live and store its
+// coins, exactly as the seeder would have.  One API call per miss, and the node is
+// marked done either way, so the same gap is never fetched twice.
+function lccLearnSeries(string $q): int
+{
+    $node = gsMemBestNode($q);
+    if (!$node) { return 0; }
+    $id   = (int) $node['ref_id'];
+    $resp = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $id], $m);
+    if ($resp === null) { return 0; }   // API failure already logged; node stays fetchable
+    $coins = gsData($resp);
+    gsMemLearnCoins($coins, (string) ($node['path'] ?? ''), $id);
+    gsMemMarkDone($id);
+    gsLog('lccLearn node ' . $id . ' "' . ($node['name'] ?? '') . '" +' . count($coins) . ' coins');
+    return count($coins);
+}
+
 function gsLikeEsc(string $s): string
 {
     return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $s);
@@ -1072,6 +1111,11 @@ function lccLookup(string $sku): array
     if (!$matches && $desc !== '')          { $matches = gsMemSearch($desc); }
     if (!$matches && $read['search'] !== '') { $matches = gsMemBest($read['search']); }
     if (!$matches && $desc !== '')          { $matches = gsMemBest($desc); }
+    // still nothing: memory may simply not know the series yet - learn it live and retry
+    if (!$matches && lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc) > 0) {
+        $matches = $read['search'] !== '' ? gsMemBest($read['search']) : [];
+        if (!$matches && $desc !== '') { $matches = gsMemBest($desc); }
+    }
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
         . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
 
