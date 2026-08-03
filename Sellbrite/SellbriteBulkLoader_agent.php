@@ -1258,6 +1258,17 @@ function lccLookup(string $sku): array
                 $matches[] = ['gs_id' => $r['gs_id'], 'label' => $r['label'], 'path' => $wpath,
                               'coin_date' => (string) ($r['coin_date'] ?? '')];
             }
+            // the shelf is right but the exact coin still needs choosing - the
+            // judge puts it first, so the right denomination leads the list
+            if ($via === '' && count($matches) > 1) {
+                $j = lccJudge($desc, $read['fields'], $matches);
+                if ($j !== null && $j > 0) {
+                    $one = array_splice($matches, $j - 1, 1);
+                    array_unshift($matches, $one[0]);
+                    $picked = true;
+                    gsLog('lccJudge picked "' . $one[0]['label'] . '" from the landed shelf');
+                }
+            }
         }
     }
     // nothing certain anywhere: offer the closest candidates as SUGGESTIONS - the
