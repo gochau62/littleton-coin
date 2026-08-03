@@ -139,6 +139,21 @@
         sblMarketApply();
         sblCertNumGate(false);
     }
+    // Empty every box and start this entry over. Editing an existing SKU keeps its
+    // id and title, so Save still updates that record rather than adding a new one.
+    function sblClearEntry(){
+        swal({ title:'Clear this entry?', text:'Every box is emptied. Nothing already saved is touched.',
+               type:'warning', showCancelButton:true,
+               confirmButtonText:'Clear', cancelButtonText:'Cancel', closeOnConfirm:true },
+        function(ok){
+            if (!ok) return;
+            var id = $('#f_id').val(), title = $('#formTitle').text();
+            sblClearForm();
+            if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
+            sblRecompute();
+        });
+    }
+
     function sblNew(){
         sblClearForm();
         // market starts as All; picked with the form's own Market picker
