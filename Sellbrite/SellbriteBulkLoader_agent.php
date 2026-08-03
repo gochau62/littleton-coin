@@ -1015,17 +1015,21 @@ function lccLookup(string $sku): array
     $retail = $money($row['item_retail'] ?? 0);
     $cost   = $money($row['item_cost'] ?? 0);
     $qoh    = $count($row['item_qoh'] ?? 0);
-    // the description is LCC's own wording, so search memory on it the same way the coin box does
-    $matches = $desc !== '' ? gsMemSearch($desc) : [];
-    // nothing matched the whole description - retry on its first few words
+    // Read the description first: gsMemSearch needs EVERY word to appear, and the
+    // catalog writes "Silver" where the master writes "Slv", so the AI's spelt-out
+    // phrase is the one worth searching. The raw line is only the fallback.
+    $read   = lccParse($desc, trim((string) ($row['item_grade'] ?? '')));
+    $parsed = $read['fields'];
+    if ($year !== '')     { $parsed['year'] = $year; }
+    if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
+
+    $matches = $read['search'] !== '' ? gsMemSearch($read['search']) : [];
+    if (!$matches && $desc !== '') { $matches = gsMemSearch($desc); }
+    // still nothing - retry on the first few words of the raw line
     if (!$matches && $desc !== '') {
         $short = implode(' ', array_slice(preg_split('/\s+/', $desc), 0, 4));
         if ($short !== $desc) { $matches = gsMemSearch($short); }
     }
-    // let the AI read the description into fields; IICDAT outranks it on both
-    $parsed = lccParse($desc, trim((string) ($row['item_grade'] ?? '')));
-    if ($year !== '')     { $parsed['year'] = $year; }
-    if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
 
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
@@ -1095,7 +1099,7 @@ function lcc_shortlist(string $field, string $desc, string $gradeCode = '', int 
 function lccParse(string $desc, string $gradeCode = ''): array
 {
     $desc = trim($desc);
-    if ($desc === '' || !geminiConfigured()) { return []; }
+    if ($desc === '' || !geminiConfigured()) { return ['fields' => [], 'search' => '']; }
 
     // one AI call per description per session; the master does not change under us
     $key = md5($desc . '|' . $gradeCode);
@@ -1145,17 +1149,26 @@ function lccParse(string $desc, string $gradeCode = ''): array
                  . 'the abbreviation at the end of the description.');
     }
 
-    $row = sbl_snap_row(sbl_clean_ai_row(geminiJson($sys, $user, $m)));
+    $user .= "\n\nALSO RETURN \"search_phrase\": the coin written out the way a catalog would "
+           . 'name it - country, denomination and series in full words, abbreviations expanded, '
+           . 'no year, no grade, no packaging. Keep it short; every word in it is required to '
+           . 'match, so include only words a catalog would certainly use.';
+
+    $ai  = geminiJson($sys, $user, $m);
+    $row = sbl_snap_row(sbl_clean_ai_row($ai));
     // keep only the whitelist - a stray field would fill a box the description never mentioned
     $out = [];
     foreach (LCC_PARSE_FIELDS as $f) {
         if (isset($row[$f]) && trim((string) $row[$f]) !== '') { $out[$f] = trim((string) $row[$f]); }
     }
+    // search_phrase is not a form field, so it is read before the schema clean drops it
+    $res = ['fields' => $out, 'search' => trim((string) (is_array($ai) ? ($ai['search_phrase'] ?? '') : ''))];
     // only a real answer is worth keeping - caching an empty one would make a
     // single failed call permanent for the rest of the session
-    if ($out) { $_SESSION['sbl_lcc_parse'][$key] = $out; }
-    gsLog('lccParse "' . $desc . '" -> ' . ($out ? implode(', ', array_keys($out)) : 'nothing'));
-    return $out;
+    if ($out || $res['search'] !== '') { $_SESSION['sbl_lcc_parse'][$key] = $res; }
+    gsLog('lccParse "' . $desc . '" -> ' . ($out ? implode(', ', array_keys($out)) : 'no fields')
+        . ($res['search'] !== '' ? ' | search "' . $res['search'] . '"' : ''));
+    return $res;
 }
 
 // type-ahead over the LCC item master: what the SKU box lists as the operator types
