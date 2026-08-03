@@ -831,8 +831,11 @@
         sblLccMatches = []; sblLccData = null; sblLccFields = {};
         $('#lcc-item-info').empty();
         if (!sku) return;
+        // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
+        // and say when the server itself failed, instead of looking frozen
+        $('#lcc-item-info').text('Looking up ' + sku + '\u2026');
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
-            if (res.returnClass !== 'success') return;
+            if (res.returnClass !== 'success'){ $('#lcc-item-info').empty(); return; }
             sblLccData = res.item || {};
             sblLccShowItem(sblLccData);
             sblLccFields = res.fields || {};
@@ -861,7 +864,9 @@
             } else {
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
             }
-        }, 'json');
+        }, 'json').fail(function(){
+            $('#lcc-item-info').text('Lookup failed - the server returned an error (check the agent file).');
+        });
     }
 
     // Autofill: pull collectible + pricing from GreySheet and fill the form
