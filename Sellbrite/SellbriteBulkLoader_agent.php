@@ -1246,6 +1246,18 @@ function lccLookup(string $sku): array
         $wpath = lccAiWalk($desc, $read['fields']);
         if ($wpath !== '') {
             $rows = gsMemCoins($wpath, '', $year);
+            // a ranged coin date (1892-1907, 1966-72) is still a filter: keep the
+            // shelf's coins whose own year falls inside it
+            $rawDate = strtoupper(trim((string) ($row['item_date'] ?? '')));
+            if (!$rows && $year === '' && preg_match('/^(\d{4})\s*-\s*(\d{2,4})$/', $rawDate, $rm)) {
+                $y1 = (int) $rm[1];
+                $y2 = (int) $rm[2];
+                if ($y2 < 100) { $y2 += (int) (floor($y1 / 100) * 100); }
+                foreach (gsMemCoins($wpath) as $c) {
+                    if (preg_match('/\d{4}/', $c['coin_date'] . ' ' . $c['label'], $ym)
+                        && (int) $ym[0] >= $y1 && (int) $ym[0] <= $y2) { $rows[] = $c; }
+                }
+            }
             if (!$rows && $year !== '') {
                 // the shelf is right but no coin there carries this year: the
                 // catalog likely does not hold the coin, so what IS there shows
