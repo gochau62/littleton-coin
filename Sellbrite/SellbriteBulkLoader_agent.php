@@ -448,10 +448,11 @@ function lcc_fetch_coins(int $nodeId, string $name, string $path): int
 function lccAiWalk(string $desc, array $facts = []): string
 {
     if ($desc === '' || !geminiConfigured()) { return ''; }
-    // remember where this description landed - repeating a walk buys nothing
+    // remember only where a walk LANDED.  A failure is never cached: the tree
+    // keeps getting learned and the walker keeps improving, so a description
+    // that found nothing an hour ago deserves a fresh walk now.
     $wk = md5($desc);
-    if (isset($_SESSION['sbl_lcc_walk'][$wk])) { return $_SESSION['sbl_lcc_walk'][$wk]; }
-    $_SESSION['sbl_lcc_walk'][$wk] = '';
+    if (!empty($_SESSION['sbl_lcc_walk'][$wk])) { return $_SESSION['sbl_lcc_walk'][$wk]; }
 
     $nodes = array_map(static fn($r) => ['id' => (int) $r['node_id'], 'name' => $r['name'],
                                          'path' => $r['path'], 'coins' => 0, 'done' => 'N'],
