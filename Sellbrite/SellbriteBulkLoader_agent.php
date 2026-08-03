@@ -397,14 +397,83 @@ function lccLearnSeries(string $q): int
 {
     $node = gsMemBestNode($q);
     if (!$node) { return 0; }
-    $id   = (int) $node['ref_id'];
-    $resp = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $id], $m);
-    if ($resp === null) { return 0; }   // API failure already logged; node stays fetchable
+    return lcc_fetch_coins((int) $node['ref_id'], (string) ($node['name'] ?? ''),
+                           (string) ($node['path'] ?? ''));
+}
+
+// fetch one series' coins live and remember them - the shared last step of a learn
+function lcc_fetch_coins(int $nodeId, string $name, string $path): int
+{
+    $resp = gsApiGet('GetCollectibleByNodeRequest', ['NodeId' => $nodeId], $m);
+    if ($resp === null) { return 0; }
     $coins = gsData($resp);
-    gsMemLearnCoins($coins, (string) ($node['path'] ?? ''), $id);
-    gsMemMarkDone($id);
-    gsLog('lccLearn node ' . $id . ' "' . ($node['name'] ?? '') . '" +' . count($coins) . ' coins');
+    gsMemLearnCoins($coins, $path, $nodeId);
+    gsMemMarkDone($nodeId);
+    gsLog('lccLearn node ' . $nodeId . ' "' . $name . '" +' . count($coins) . ' coins');
     return count($coins);
+}
+
+// The agent walks the catalog tree the way a person would: at each level it sees
+// the branches and the item's own facts, picks where the item belongs, and
+// descends.  Children come from memory when known and from the live API when not,
+// and everything fetched is remembered - each walk makes the next one cheaper.
+function lccAiWalk(string $desc, array $facts = []): int
+{
+    if ($desc === '' || !geminiConfigured()) { return 0; }
+    // one walk per description per session - a walk that failed once will fail again
+    $wk = md5($desc);
+    if (isset($_SESSION['sbl_lcc_walk'][$wk])) { return 0; }
+    $_SESSION['sbl_lcc_walk'][$wk] = 1;
+
+    $nodes = array_map(static fn($r) => ['id' => (int) $r['node_id'], 'name' => $r['name'],
+                                         'path' => $r['path'], 'coins' => 0, 'done' => 'N'],
+                       gsMemRoots());
+    $sys = 'You are placing an item in the GreySheet coin catalog tree. Given the item and a '
+         . 'numbered list of branches, return ONLY JSON {"pick": n} for the branch the item '
+         . 'belongs under, or {"pick": 0} if none fits or the item is not a collectible.';
+
+    for ($depth = 0; $depth < 6 && $nodes; $depth++) {
+        $list = [];
+        foreach ($nodes as $i => $n) { $list[] = ($i + 1) . '. ' . $n['name']; }
+        $user = "ITEM:\n" . $desc
+              . ($facts ? "\nKNOWN FACTS: " . json_encode($facts, JSON_UNESCAPED_SLASHES) : '')
+              . "\n\nBRANCHES:\n" . implode("\n", $list);
+        $a    = geminiJson($sys, $user, $m);
+        $pick = is_array($a) ? (int) ($a['pick'] ?? 0) : 0;
+        if ($pick < 1 || $pick > count($nodes)) {
+            gsLog('lccWalk "' . $desc . '" stopped at depth ' . $depth . ' - no branch fits');
+            return 0;
+        }
+        $cur = $nodes[$pick - 1];
+
+        // a series with coins: fetch and remember them, unless already learned
+        if ((int) $cur['coins'] > 0) {
+            if (($cur['done'] ?? 'N') === 'Y') {
+                gsLog('lccWalk "' . $desc . '" landed on already-learned "' . $cur['name'] . '"');
+                return 0;
+            }
+            return lcc_fetch_coins((int) $cur['id'], $cur['name'], $cur['path']);
+        }
+
+        // a folder: children from memory, or fetched live and remembered
+        $kids = gsMemNodeChildren((int) $cur['id']);
+        if (!$kids) {
+            $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => (int) $cur['id']], $mm);
+            if ($resp === null) { return 0; }
+            foreach (gsData($resp) as $c) {
+                gsMemLearnNode((int) ($c['Id'] ?? 0), (string) ($c['Name'] ?? ''),
+                               $cur['path'] . ' > ' . (string) ($c['Name'] ?? ''), (int) $cur['id'],
+                               (int) ($c['CollectibleChildrenCountLive'] ?? 0));
+            }
+            $kids = gsMemNodeChildren((int) $cur['id']);
+            gsLog('lccWalk learned ' . count($kids) . ' branches under "' . $cur['name'] . '"');
+        }
+        $nodes = array_map(static fn($r) => ['id' => (int) $r['ref_id'], 'name' => (string) $r['name'],
+                                             'path' => (string) ($r['path'] ?? ''),
+                                             'coins' => (int) ($r['coin_count'] ?? 0),
+                                             'done' => (string) ($r['done'] ?? 'N')], $kids);
+    }
+    return 0;
 }
 
 function gsLikeEsc(string $s): string
@@ -1111,10 +1180,17 @@ function lccLookup(string $sku): array
     if (!$matches && $desc !== '')          { $matches = gsMemSearch($desc); }
     if (!$matches && $read['search'] !== '') { $matches = gsMemBest($read['search']); }
     if (!$matches && $desc !== '')          { $matches = gsMemBest($desc); }
-    // still nothing: memory may simply not know the series yet - learn it live and retry
-    if (!$matches && lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc) > 0) {
-        $matches = $read['search'] !== '' ? gsMemBest($read['search']) : [];
-        if (!$matches && $desc !== '') { $matches = gsMemBest($desc); }
+    // Still nothing: memory does not know the series yet.  Learn it live and retry -
+    // first the cheap way (an unlearned node whose name overlaps the search), then
+    // the agent walks the catalog tree from the SKU's own facts to find where the
+    // item belongs, remembering every branch and coin it fetches on the way.
+    if (!$matches) {
+        $learned = lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc);
+        if ($learned === 0) { $learned = lccAiWalk($desc, $read['fields']); }
+        if ($learned > 0) {
+            $matches = $read['search'] !== '' ? gsMemBest($read['search']) : [];
+            if (!$matches && $desc !== '') { $matches = gsMemBest($desc); }
+        }
     }
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
         . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
