@@ -402,6 +402,32 @@ function lccLearnSeries(string $q): int
                            (string) ($node['path'] ?? ''));
 }
 
+// The crude word scores only gather candidates - the agent makes the call.  It
+// knows Thaler and Taler are one coin, Slv means Silver and Austria is not
+// Hungary, so spelling never decides a match.  Returns the 1-based pick, 0 for
+// "none of these is the coin", null when the AI could not answer.
+function lccJudge(string $desc, array $facts, array $cands): ?int
+{
+    if (!geminiConfigured() || !$cands) { return null; }
+    $list = [];
+    foreach (array_slice($cands, 0, 25) as $i => $c) {
+        $list[] = ($i + 1) . '. ' . $c['label']
+                . (($c['coin_date'] ?? '') !== '' ? ' (' . $c['coin_date'] . ')' : '')
+                . (($c['path'] ?? '') !== '' ? '  [' . $c['path'] . ']' : '');
+    }
+    $sys = 'You match a dealer inventory line to its exact catalog coin. The two sides spell and '
+         . 'abbreviate differently - judge by what the coin IS, never by the letters matching. '
+         . 'The same coin must agree on country, denomination, metal and date. Return ONLY JSON '
+         . '{"pick": n} for the entry that is this exact coin, or {"pick": 0} if none of them is.';
+    $user = "ITEM:\n" . $desc
+          . ($facts ? "\nKNOWN FACTS: " . json_encode($facts, JSON_UNESCAPED_SLASHES) : '')
+          . "\n\nCANDIDATES:\n" . implode("\n", $list);
+    $a = geminiJson($sys, $user, $m);
+    if (!is_array($a) || !isset($a['pick'])) { return null; }
+    $p = (int) $a['pick'];
+    return ($p >= 0 && $p <= min(count($cands), 25)) ? $p : null;
+}
+
 // fetch one series' coins live and remember them - the shared last step of a learn
 function lcc_fetch_coins(int $nodeId, string $name, string $path): int
 {
@@ -1176,12 +1202,33 @@ function lccLookup(string $sku): array
     if ($year !== '')     { $parsed['year'] = $year; }
     if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
 
-    // exact on the spelt-out phrase, then on the raw line, then closest-match on
-    // both - the catalog rarely words a coin the way the item master does
-    $matches = $read['search'] !== '' ? gsMemSearch($read['search']) : [];
-    if (!$matches && $desc !== '')          { $matches = gsMemSearch($desc); }
-    if (!$matches && $read['search'] !== '') { $matches = gsMemBest($read['search']); }
-    if (!$matches && $desc !== '')          { $matches = gsMemBest($desc); }
+    // Cast a wide net: the exact and closest passes only GATHER candidates.  The
+    // words never decide the match - the agent judges the pool, because spelling
+    // and abbreviations differ between the master and the catalog on every coin.
+    $pool = [];
+    $add  = static function (array $rows) use (&$pool) {
+        foreach ($rows as $r) { $pool[(int) $r['gs_id']] = $r; }
+    };
+    if ($read['search'] !== '') { $add(gsMemSearch($read['search'])); }
+    if ($desc !== '')           { $add(gsMemSearch($desc)); }
+    if (count($pool) < 8 && $read['search'] !== '') { $add(gsMemBest($read['search'])); }
+    if (count($pool) < 8 && $desc !== '')           { $add(gsMemBest($desc)); }
+    $matches = array_values($pool);
+    $picked  = false;
+    if (count($matches) > 1) {
+        $j = lccJudge($desc, $read['fields'], $matches);
+        if ($j !== null && $j > 0) {
+            $one = array_splice($matches, $j - 1, 1);
+            array_unshift($matches, $one[0]);
+            $picked = true;
+            gsLog('lccJudge picked "' . $one[0]['label'] . '" of ' . count($matches));
+        } elseif ($j === 0) {
+            // the agent says none of these IS the coin - wrong coins offered are
+            // worse than none, so fall through to learning and the walk instead
+            gsLog('lccJudge: none of ' . count($matches) . ' candidates is this coin');
+            $matches = [];
+        }
+    }
     // Still nothing: memory does not know the series yet.  First the cheap learn -
     // an unlearned node whose name overlaps the search - then retry the scoring.
     if (!$matches && lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc) > 0) {
@@ -1212,7 +1259,7 @@ function lccLookup(string $sku): array
                        'root' => trim((string) ($row['item_root'] ?? '')),
                        'link' => trim((string) ($row['item_link'] ?? '')),
                        'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh],
-            'matches' => $matches];
+            'matches' => $matches, 'picked' => $picked];
 }
 
 

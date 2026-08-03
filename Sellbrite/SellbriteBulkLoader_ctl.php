@@ -842,8 +842,9 @@
             if (!sblLccMatches.length) return;
             sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
-            if (sblLccMatches.length === 1){
-                // exactly one coin fits: pick it and arm Autofill.  The agent only
+            if (sblLccMatches.length === 1 || res.picked){
+                // one coin fits, or the judge named one: pick it and arm Autofill.
+                // The agent only
                 // finishes the entry ITSELF when the coin agrees with the item
                 // master's year - a lone candidate is not proof it is the right coin.
                 var m0 = sblLccMatches[0];
