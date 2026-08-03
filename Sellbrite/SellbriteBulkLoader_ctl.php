@@ -138,6 +138,8 @@
         sblFieldVisibility();
         sblMarketApply();
         sblCertNumGate(false);
+        sblLccSku = ''; sblLccRoot = ''; sblLccData = null; sblLccFields = {};
+        $('#lcc-sku').val('');
     }
     function sblNew(){
         sblClearForm();
@@ -215,7 +217,9 @@
     /* ---- save / delete (AJAX, no page reload) ---- */
     // form fields + the toolbar marketplace picker
     function sblFormSerialize(){
-        return $('#sku-form').serialize() + '&marketplace=' + encodeURIComponent($('#f_marketplace').val() || '');
+        return $('#sku-form').serialize() + '&marketplace=' + encodeURIComponent($('#f_marketplace').val() || '')
+             + '&lcc_sku=' + encodeURIComponent(sblLccSku || '')
+             + '&lcc_root=' + encodeURIComponent(sblLccRoot || '');
     }
 
     function sblSave(){
@@ -676,7 +680,7 @@
     }
 
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
-    var sblLccMatches = [], sblLccData = null, sblLccFields = {};
+    var sblLccMatches = [], sblLccData = null, sblLccFields = {}, sblLccSku = '', sblLccRoot = '';
 
     /* The item master fills EMPTY boxes only - it never edits the LCC SKU box,
        never touches the PCC SKU, and never overwrites anything already typed or
@@ -743,12 +747,14 @@
 
     function sblLccLookup(){
         var sku = String($('#lcc-sku').val() || '').trim();
-        sblLccMatches = []; sblLccData = null; sblLccFields = {};
+        sblLccMatches = []; sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         if (!sku) return;
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success') return;
             sblLccData = res.item || {};
             sblLccFields = res.fields || {};
+            sblLccSku = sku;
+            sblLccRoot = (res.item && res.item.root) || '';
             sblLccMatches = res.matches || [];
             sblLccApply();
             sblRecompute();

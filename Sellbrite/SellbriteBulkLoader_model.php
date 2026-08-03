@@ -142,6 +142,8 @@ function sbl_writable_columns()
     $cols  = sbl_columns();
     $cols[] = 'marketplace';   // per-SKU market; not a Sellbrite header, so not in the schema
     $cols[] = 'created_by';    // row owner (signed-on user); not a Sellbrite header
+    $cols[] = 'lcc_sku';       // the LCC item this row came from
+    $cols[] = 'lcc_root';      // its IIROOT - the same coin in another condition shares it
     $tcols = sbl_table_columns();
     if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
@@ -186,6 +188,25 @@ function sblGetAll($q = '')
     if ($where) { $sql .= ' WHERE ' . implode(' AND ', $where); }
     $sql .= ' ORDER BY updated_at DESC';
     return sbl_select($sql, $params);
+}
+
+// Rows already saved for other conditions of the same coin, newest first.
+// An LCC SKU is its root plus a condition code - AAP19.80 and AAP19.81 are the
+// same 1915 Austria 10 Kronen note, circulated and uncirculated - and IIROOT
+// carries that root, so it is read from the item master rather than guessed.
+//
+// Matched on the WHOLE root, never as a prefix: roots overlap.  AAK2882 is a
+// prefix of AAK2882A, and those are different coins (1966-72 vs 1957 10
+// Schilling); AAK2889 and AAK2889A80 are not even the same metal.
+//
+// [] when the column has not been added yet, so nothing changes until the ALTER runs.
+function sblLccSiblings($root, $sku, $limit = 3)
+{
+    $root = strtoupper(trim((string) $root));
+    if ($root === '' || !isset(sbl_table_columns()['lcc_root'])) { return []; }
+    $sql = 'SELECT * FROM ' . SBL_TABLE . ' WHERE UPPER(lcc_root) = ? AND UPPER(lcc_sku) <> ?'
+         . ' ORDER BY id DESC FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
+    return sbl_select($sql, [$root, strtoupper(trim((string) $sku))]);
 }
 
 // run the item master procedure; false when the call itself fails (not created, wrong
@@ -285,6 +306,13 @@ function sblUpdate($id, array $row)
     if (!$conn) { return false; }
     $cols = sbl_writable_columns();
     $row['created_by'] = sbl_current_user();   // saving claims unowned pre-ALTER rows
+    // an edit does not carry the LCC SKU back up, so keep the stored one rather
+    // than blanking the link this row's siblings are found by
+    if (trim((string) ($row['lcc_sku'] ?? '')) === '' && isset(sbl_table_columns()['lcc_sku'])) {
+        $cur = sbl_select('SELECT lcc_sku, lcc_root FROM ' . SBL_TABLE . ' WHERE id = ?', [(int) $id]);
+        $row['lcc_sku']  = $cur[0]['lcc_sku'] ?? null;
+        $row['lcc_root'] = $cur[0]['lcc_root'] ?? null;
+    }
     $set  = implode(', ', array_map(static fn($c) => '"' . strtoupper($c) . '" = ?', $cols));
     $sql  = 'UPDATE ' . SBL_TABLE . ' SET ' . $set . ' WHERE id = ?';
     if (sbl_own_filter()) { $sql .= " AND (created_by = ? OR created_by IS NULL)"; }
