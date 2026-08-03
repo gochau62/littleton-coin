@@ -139,28 +139,21 @@
         sblMarketApply();
         sblCertNumGate(false);
     }
-    // Emptying the LCC SKU or the Series box by hand means "start this one over".
-    // Only a box that HELD something and was cleared counts, so the ordinary path -
-    // look up an LCC SKU, then Autofill from GreySheet - never triggers it.
-    // Editing an existing SKU keeps its id and title so Save still updates that row.
+    // Empty every box and start this entry over.  Editing an existing SKU keeps
+    // its id and title, so Save still updates that record.
     function sblClearEntry(){
-        var id = $('#f_id').val(), title = $('#formTitle').text();
-        sblClearForm();
-        if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
-        $('#lcc-sku').val('');
-        $('#lcc-item-info').empty();
-        sblLccData = null; sblLccFields = {};
-        $('#lcc-sku, #gs-series').data('sblHad', false);
-        sblRecompute();
-    }
-
-    // clearing is driven by the box going empty, so remember what was in it
-    function sblClearOnEmpty(sel){
-        $(sel).each(function(){ $(this).data('sblHad', String(this.value || '').trim() !== ''); });
-        $(sel).on('input change', function(){
-            var has = String(this.value || '').trim() !== '';
-            if (!has && $(this).data('sblHad')) { sblClearEntry(); }
-            $(this).data('sblHad', has);
+        swal({ title:'Clear this entry?', text:'Every box is emptied. Nothing already saved is touched.',
+               type:'warning', showCancelButton:true,
+               confirmButtonText:'Clear', cancelButtonText:'Cancel', closeOnConfirm:true },
+        function(ok){
+            if (!ok) return;
+            var id = $('#f_id').val(), title = $('#formTitle').text();
+            sblClearForm();
+            if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
+            $('#lcc-sku').val('');
+            $('#lcc-item-info').empty();
+            sblLccData = null; sblLccFields = {};
+            sblRecompute();
         });
     }
 
@@ -518,7 +511,7 @@
             },
             select: function(e, ui){
                 sblCurPath = ui.item.path || '';
-                $('#gs-series').data('sblPicked', 1).data('sblHad', true).val(ui.item.value).autocomplete('close').blur();
+                $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
                 
                 // strip date ranges from the series name right at pick time
                 var cat = sblCleanCategory(ui.item.value);
@@ -743,7 +736,7 @@
                 }, 'json');
             },
             select: function(e, ui){
-                $('#lcc-sku').data('sblPicked', 1).data('sblHad', true).val(ui.item.value).autocomplete('close');
+                $('#lcc-sku').data('sblPicked', 1).val(ui.item.value).autocomplete('close');
                 sblLccLookup();
                 return false;
             }
@@ -785,7 +778,7 @@
         // series: the node the coin lives under
         sblCurPath = path;
         $('#gs-series').prop('disabled', false)
-                       .data('sblPicked', 1).data('sblHad', true)
+                       .data('sblPicked', 1)
                        .val(seg[seg.length - 1] || '');
         var cat = sblCleanCategory(seg[seg.length - 1] || '');
         var cel = document.getElementById('f_category_name');
@@ -991,8 +984,6 @@
         if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete();
                                 sblLccAutocomplete(); sblFieldCombos(); }
 
-        // emptying either starting box means the operator is re-entering this SKU
-        sblClearOnEmpty('#lcc-sku, #gs-series');
     });
 </script>
 
