@@ -1068,7 +1068,11 @@ function lcc_shortlist(string $field, string $desc, string $gradeCode = '', int 
 {
     $opts = sbl_field_options($field);
     if (count($opts) <= $cap) { return $opts; }
-    $words = array_filter(preg_split('/[^a-z0-9]+/i', strtolower($desc)),
+    // The grade abbreviation sits after a run of spaces at the end. Only Grade
+    // should score against it - otherwise "UNC" drags in every "Uncirculated
+    // Coin Set" and buries the series the description actually names.
+    $text  = $field === 'grade' ? $desc : preg_split('/\s{2,}/', trim($desc))[0];
+    $words = array_filter(preg_split('/[^a-z0-9]+/i', strtolower($text)),
                           static fn($w) => strlen($w) > 2 && !ctype_digit($w));
     $code  = ltrim($gradeCode, '0');
     $hits  = [];
@@ -1147,7 +1151,10 @@ function lccParse(string $desc, string $gradeCode = ''): array
     foreach (LCC_PARSE_FIELDS as $f) {
         if (isset($row[$f]) && trim((string) $row[$f]) !== '') { $out[$f] = trim((string) $row[$f]); }
     }
-    $_SESSION['sbl_lcc_parse'][$key] = $out;
+    // only a real answer is worth keeping - caching an empty one would make a
+    // single failed call permanent for the rest of the session
+    if ($out) { $_SESSION['sbl_lcc_parse'][$key] = $out; }
+    gsLog('lccParse "' . $desc . '" -> ' . ($out ? implode(', ', array_keys($out)) : 'nothing'));
     return $out;
 }
 

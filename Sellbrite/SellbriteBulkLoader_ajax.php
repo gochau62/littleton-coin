@@ -186,6 +186,7 @@ switch ($action) {
         // LCC SKU -> item master description/date + the GreySheet coins it matches
         $lcc = lccLookup((string) ($_POST['sku'] ?? ''));
         echo json_encode(['returnClass' => $lcc['ok'] ? 'success' : 'error', 'item' => $lcc['item'],
+                          'fields' => $lcc['fields'] ?? [],
                           'matches' => $lcc['matches'], 'message' => $lcc['error']]);
         break;
 
