@@ -315,7 +315,7 @@ function gsMemSearch(string $q, int $limit = 40): array
     $words = array_filter(explode(' ', gsNorm($q)));
     if (!$words) { return []; }
     // Start from all coins ('C' rows)...
-    $sql = 'SELECT ref_id, name, path FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'C'";
+    $sql = 'SELECT ref_id, name, path, coin_date FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'C'";
     $params = [];
     foreach ($words as $w) {
         // require each word, case-insensitively
@@ -326,7 +326,8 @@ function gsMemSearch(string $q, int $limit = 40): array
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
     foreach (gsMemRows($sql, $params) as $r) {
-        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? '')];
+        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? ''),
+                  'coin_date' => (string) ($r['coin_date'] ?? '')];
     }
     return $out;
 }
@@ -354,7 +355,7 @@ function gsMemBest(string $q, int $limit = 40): array
         $params[] = $like;
     }
     // ordering by the alias keeps the scoring expression - and its parameters - single
-    $sql = 'SELECT ref_id, name, path, ' . implode(' + ', $score) . ' AS hits FROM ' . SBL_GSMEM_TABLE
+    $sql = 'SELECT ref_id, name, path, coin_date, ' . implode(' + ', $score) . ' AS hits FROM ' . SBL_GSMEM_TABLE
          . " WHERE kind = 'C'"
          . ' ORDER BY hits DESC, LENGTH(name), name'
          . ' FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
@@ -363,7 +364,7 @@ function gsMemBest(string $q, int $limit = 40): array
     foreach (gsMemRows($sql, $params) as $r) {
         if ((int) ($r['hits'] ?? 0) < 2) { continue; }
         $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'],
-                  'path' => (string) ($r['path'] ?? '')];
+                  'path' => (string) ($r['path'] ?? ''), 'coin_date' => (string) ($r['coin_date'] ?? '')];
     }
     return $out;
 }
@@ -1196,7 +1197,8 @@ function lccLookup(string $sku): array
             $rows = gsMemCoins($wpath, '', $year);
             if (!$rows && $year !== '') { $rows = gsMemCoins($wpath); }
             foreach (array_slice($rows, 0, 40) as $r) {
-                $matches[] = ['gs_id' => $r['gs_id'], 'label' => $r['label'], 'path' => $wpath];
+                $matches[] = ['gs_id' => $r['gs_id'], 'label' => $r['label'], 'path' => $wpath,
+                              'coin_date' => (string) ($r['coin_date'] ?? '')];
             }
         }
     }
