@@ -803,12 +803,10 @@
     }
 
     function sblGsHandle(res, hint){
+        // no catalog entry: say so and stop. The AI is not asked to invent a
+        // listing for a coin nothing has been read about.
         if (res.returnClass === 'notfound'){
-            swal({ title:"GreySheet doesn't have this coin",
-                   text:'Would you like the AI to generate this listing?',
-                   type:'info', showCancelButton:true,
-                   confirmButtonText:'Generate with AI', cancelButtonText:'Cancel', closeOnConfirm:true },
-            function(go){ if (go) sblGsGenerate(hint); });
+            swal("GreySheet doesn't have this coin", 'Fill the listing in by hand.', 'info');
             return;
         }
         if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
@@ -816,15 +814,6 @@
         sblFillFromRow(res.row);
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
-    }
-
-    function sblGsGenerate(hint){
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
-            if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
-            sblFillFromRow(res.row);
-            swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
-                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
-        }, 'json');
     }
 
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */

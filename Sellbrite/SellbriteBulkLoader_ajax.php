@@ -207,15 +207,6 @@ switch ($action) {
                           'row' => $r['row'], 'message' => $r['error']]);
         break;
 
-    case 'gsGenerate':
-        // Coin GreySheet doesn't carry: Gemini drafts the whole listing.
-        $gen = gsGenerate($_POST);
-        echo json_encode(['returnClass' => !$gen['ok'] ? 'error' : ($gen['valid'] ? 'success' : 'warning'),
-                          'row' => $gen['row'], 'statuses' => $gen['statuses'],
-                          'messages' => $gen['messages'], 'valid' => $gen['valid'],
-                          'via' => $gen['via'], 'message' => $gen['error']]);
-        break;
-
     default:
         echo json_encode(['returnClass' => 'error', 'message' => 'Unknown action']);
 }
