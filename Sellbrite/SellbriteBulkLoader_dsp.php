@@ -301,8 +301,6 @@ details.group summary::-webkit-details-marker { display:none; }
             </label>
             <span class="spacer"></span>
             <span id="valid-pill" class="pill ok">Ready</span>
-            <button type="button" class="btn btn-grey" onclick="sblClearEntry()"
-                    title="Empty every box and start this entry again">Clear Entry</button>
             <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
 
