@@ -129,6 +129,17 @@ function gsApiGet($path, array $params = [], &$meta = [])
     return $data;
 }
 
+// gsApiGet knows exactly why a call came back empty - say so in the API log
+// instead of the bare "nothing returned" that covers every failure alike
+function gs_why(array $meta): string
+{
+    $bits = [];
+    if (!empty($meta['error']))  { $bits[] = $meta['error']; }
+    if (!empty($meta['status'])) { $bits[] = 'HTTP ' . $meta['status']; }
+    if (!empty($meta['note']))   { $bits[] = $meta['note']; }
+    return $bits ? '  (' . implode('; ', $bits) . ')' : '  (empty response)';
+}
+
 // take greysheet json response and read it to get the actual data.
 function gsData($resp): array
 {
@@ -1159,7 +1170,8 @@ function gsImport(array $params): array
     if ($gsId <= 0) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
     $coin = gsCollectible($gsId, $mCol);
     $calls[] = ['call' => 'GetCollectibleRequest?GsId=' . $gsId, 'ms' => (int) ($mCol['ms'] ?? 0),
-                'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)') : 'nothing returned'];
+                'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)')
+                              : ('nothing returned' . gs_why($mCol))];
     if (!$coin) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
 
     // picked from stores the full path ("World Coins > Austria > ...").
@@ -1177,7 +1189,7 @@ function gsImport(array $params): array
                 'ms' => (int) ($mPr['ms'] ?? 0),
                 'got' => $price ? ('CpgVal=' . ($price['CpgVal'] ?? '-') . '  GreyVal=' . ($price['GreyVal'] ?? '-')
                                    . ($price['GradeLabel'] ?? '' ? '  (' . $price['GradeLabel'] . ')' : ''))
-                                : 'no pricing (basic tier or none)'];
+                                : ('no pricing' . gs_why($mPr))];
     if ($price) {
         $coin['CpgVal']     = $price['CpgVal'] ?? '';
         $coin['GreyVal']    = $price['GreyVal'] ?? '';
