@@ -417,13 +417,14 @@ function lcc_fetch_coins(int $nodeId, string $name, string $path): int
 // the branches and the item's own facts, picks where the item belongs, and
 // descends.  Children come from memory when known and from the live API when not,
 // and everything fetched is remembered - each walk makes the next one cheaper.
-function lccAiWalk(string $desc, array $facts = []): int
+// Returns the path of the series it lands on, '' when nothing in the tree fits.
+function lccAiWalk(string $desc, array $facts = []): string
 {
-    if ($desc === '' || !geminiConfigured()) { return 0; }
-    // one walk per description per session - a walk that failed once will fail again
+    if ($desc === '' || !geminiConfigured()) { return ''; }
+    // remember where this description landed - repeating a walk buys nothing
     $wk = md5($desc);
-    if (isset($_SESSION['sbl_lcc_walk'][$wk])) { return 0; }
-    $_SESSION['sbl_lcc_walk'][$wk] = 1;
+    if (isset($_SESSION['sbl_lcc_walk'][$wk])) { return $_SESSION['sbl_lcc_walk'][$wk]; }
+    $_SESSION['sbl_lcc_walk'][$wk] = '';
 
     $nodes = array_map(static fn($r) => ['id' => (int) $r['node_id'], 'name' => $r['name'],
                                          'path' => $r['path'], 'coins' => 0, 'done' => 'N'],
@@ -442,24 +443,24 @@ function lccAiWalk(string $desc, array $facts = []): int
         $pick = is_array($a) ? (int) ($a['pick'] ?? 0) : 0;
         if ($pick < 1 || $pick > count($nodes)) {
             gsLog('lccWalk "' . $desc . '" stopped at depth ' . $depth . ' - no branch fits');
-            return 0;
+            return '';
         }
         $cur = $nodes[$pick - 1];
 
-        // a series with coins: fetch and remember them, unless already learned
+        // a series with coins: make sure they are remembered, then land here
         if ((int) $cur['coins'] > 0) {
-            if (($cur['done'] ?? 'N') === 'Y') {
-                gsLog('lccWalk "' . $desc . '" landed on already-learned "' . $cur['name'] . '"');
-                return 0;
+            if (($cur['done'] ?? 'N') !== 'Y') {
+                lcc_fetch_coins((int) $cur['id'], $cur['name'], $cur['path']);
             }
-            return lcc_fetch_coins((int) $cur['id'], $cur['name'], $cur['path']);
+            gsLog('lccWalk "' . $desc . '" landed on "' . $cur['path'] . '"');
+            return $_SESSION['sbl_lcc_walk'][$wk] = (string) $cur['path'];
         }
 
         // a folder: children from memory, or fetched live and remembered
         $kids = gsMemNodeChildren((int) $cur['id']);
         if (!$kids) {
             $resp = gsApiGet('GetNodeChildrenRequest', ['NodeId' => (int) $cur['id']], $mm);
-            if ($resp === null) { return 0; }
+            if ($resp === null) { return ''; }
             foreach (gsData($resp) as $c) {
                 gsMemLearnNode((int) ($c['Id'] ?? 0), (string) ($c['Name'] ?? ''),
                                $cur['path'] . ' > ' . (string) ($c['Name'] ?? ''), (int) $cur['id'],
@@ -473,7 +474,7 @@ function lccAiWalk(string $desc, array $facts = []): int
                                              'coins' => (int) ($r['coin_count'] ?? 0),
                                              'done' => (string) ($r['done'] ?? 'N')], $kids);
     }
-    return 0;
+    return '';
 }
 
 function gsLikeEsc(string $s): string
@@ -1180,16 +1181,23 @@ function lccLookup(string $sku): array
     if (!$matches && $desc !== '')          { $matches = gsMemSearch($desc); }
     if (!$matches && $read['search'] !== '') { $matches = gsMemBest($read['search']); }
     if (!$matches && $desc !== '')          { $matches = gsMemBest($desc); }
-    // Still nothing: memory does not know the series yet.  Learn it live and retry -
-    // first the cheap way (an unlearned node whose name overlaps the search), then
-    // the agent walks the catalog tree from the SKU's own facts to find where the
-    // item belongs, remembering every branch and coin it fetches on the way.
+    // Still nothing: memory does not know the series yet.  First the cheap learn -
+    // an unlearned node whose name overlaps the search - then retry the scoring.
+    if (!$matches && lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc) > 0) {
+        $matches = $read['search'] !== '' ? gsMemBest($read['search']) : [];
+        if (!$matches && $desc !== '') { $matches = gsMemBest($desc); }
+    }
+    // Last resort: the agent walks the catalog tree from the SKU's own facts, and
+    // wherever it lands, that series' coins ARE the candidates - narrowed by the
+    // coin date when there is one, no matter how differently LCC words the coin.
     if (!$matches) {
-        $learned = lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc);
-        if ($learned === 0) { $learned = lccAiWalk($desc, $read['fields']); }
-        if ($learned > 0) {
-            $matches = $read['search'] !== '' ? gsMemBest($read['search']) : [];
-            if (!$matches && $desc !== '') { $matches = gsMemBest($desc); }
+        $wpath = lccAiWalk($desc, $read['fields']);
+        if ($wpath !== '') {
+            $rows = gsMemCoins($wpath, '', $year);
+            if (!$rows && $year !== '') { $rows = gsMemCoins($wpath); }
+            foreach (array_slice($rows, 0, 40) as $r) {
+                $matches[] = ['gs_id' => $r['gs_id'], 'label' => $r['label'], 'path' => $wpath];
+            }
         }
     }
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
