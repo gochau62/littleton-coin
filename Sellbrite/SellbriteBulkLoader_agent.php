@@ -1023,21 +1023,6 @@ function lccLookup(string $sku): array
     if ($year !== '')     { $parsed['year'] = $year; }
     if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
 
-    // A sibling is the same coin in another condition, already filled in and checked
-    // by a person, so its answers beat anything read off the description.
-    $from = '';
-    if (function_exists('sblLccSiblings')) {
-        foreach (sblLccSiblings(trim((string) ($row['item_root'] ?? '')), $sku) as $sib) {
-            foreach (LCC_SIBLING_FIELDS as $f) {
-                $v = trim((string) ($sib[$f] ?? ''));
-                if ($v !== '') { $parsed[$f] = $v; }
-            }
-            $from = trim((string) ($sib['lcc_sku'] ?? ''));
-            break;   // newest sibling only; older ones would just overwrite it
-        }
-    }
-    if ($from !== '') { gsLog('lccLookup ' . $sku . ' reused ' . $from); }
-
     $matches = $read['search'] !== '' ? gsMemSearch($read['search']) : [];
     if (!$matches && $desc !== '') { $matches = gsMemSearch($desc); }
     // still nothing - retry on the first few words of the raw line
@@ -1046,7 +1031,7 @@ function lccLookup(string $sku): array
         if ($short !== $desc) { $matches = gsMemSearch($short); }
     }
 
-    return ['ok' => true, 'error' => '', 'fields' => $parsed, 'reused' => $from,
+    return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
                        'grade_hint' => $hint, 'comment' => $note,
                        'root' => trim((string) ($row['item_root'] ?? '')),
@@ -1055,16 +1040,6 @@ function lccLookup(string $sku): array
             'matches' => $matches];
 }
 
-
-// What a saved sibling can lend a new row: the facts about the coin itself, which
-// do not change with condition.  Grade, price, cost, quantity, certification and
-// the condition wording are all specific to the piece in hand, so they are not
-// copied - nor is the listing copy, which describes the grade it was written for.
-const LCC_SIBLING_FIELDS = ['coin_type', 'denomination', 'country_of_manufacture', 'composition',
-                            'fineness', 'precious_metal_content', 'coin_variety_1', 'coin_variety_2',
-                            'coin_design', 'mint_mark', 'mint_location', 'strike_type', 'brand',
-                            'category_name', 'bullion_shape', 'paper_money_type', 'year',
-                            'single_coin_or_set', 'set_count', 'diameter', 'weight'];
 
 // the fields an inventory description can honestly support - the rest of the
 // listing still comes from GreySheet, so the AI is never asked to invent them
