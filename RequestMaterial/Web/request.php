@@ -10,7 +10,8 @@
 <!--  ***************************************************   */
 
 // this file replaces the old requisition entry page in place, so every saved bookmark and desktop shortcut keeps working and simply lands on the new screen
-define('RQS_NEW_APP', 'http://lcc1:8068/LCCOnline');
+// the address below is the only line that changes between the two servers: port 10088 is production and port 8068 is development, so switch it to 8068 to test the redirect before promoting
+define('RQS_NEW_APP', 'http://lcc1:10088/LCCOnline');
 
 // a requisition number on the old link opens that same requisition on the new screen, anything else goes to the work floor entry form
 $id = 0;
