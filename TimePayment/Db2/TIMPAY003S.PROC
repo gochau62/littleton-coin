@@ -39,22 +39,24 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY003S (
 
     BEGIN
         DECLARE ROWCNT INTEGER DEFAULT 0;
+        DECLARE WKTODY DECIMAL(8, 0) DEFAULT 0;
+
+        SET WKTODY = DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0);
 
         IF INITEM IS NULL OR TRIM(INITEM) = ''
         OR INSRCE IS NULL OR TRIM(INSRCE) = '' THEN
             SIGNAL SQLSTATE '75012'
-                SET MESSAGE_TEXT = 'An item number and source code are required to write a time payment record';
+                SET MESSAGE_TEXT = 'Item number and source code are required';
         END IF;
 
         IF INPLAN IS NULL OR TRIM(INPLAN) = '' THEN
             SIGNAL SQLSTATE '75013'
-                SET MESSAGE_TEXT = 'A time payment plan is required to write a time payment record';
+                SET MESSAGE_TEXT = 'A time payment plan is required';
         END IF;
 
-        IF INEXPD IS NULL
-        OR INEXPD < DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP, 'YYYYMMDD'), 8, 0) THEN
+        IF INEXPD IS NULL OR INEXPD < WKTODY THEN
             SIGNAL SQLSTATE '75014'
-                SET MESSAGE_TEXT = 'The expiration date must be a YYYYMMDD date on or after today';
+                SET MESSAGE_TEXT = 'Expiration date must be today or later';
         END IF;
 
         UPDATE LSCPRDLIB/TPITEMSP

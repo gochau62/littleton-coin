@@ -109,6 +109,6 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
             OPEN C6;
         ELSE
             SIGNAL SQLSTATE '75011'
-                SET MESSAGE_TEXT = 'TIMPAY001S type must be ITEM SRC PLAN TIER ONE or LIST';
+                SET MESSAGE_TEXT = 'Type must be ITEM SRC PLAN TIER ONE LIST';
         END IF;
     END;
