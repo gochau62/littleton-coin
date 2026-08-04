@@ -420,14 +420,16 @@ function lccJudge(string $desc, array $facts, array $cands): ?int
          . 'The same coin must agree on country, denomination, metal, date AND mint mark - '
          . '1925-S is not 1925 plain. Prefer the plain business-strike issue over die varieties '
          . '(DDO, overdates, VAMs) unless the description itself names one. Return ONLY JSON '
-         . '{"pick": n} for the entry that is this exact coin, or {"pick": 0} if none of them is.';
+         . '{"pick": n, "sure": true|false} - "sure" is true ONLY when that entry certainly IS '
+         . 'this exact coin, false when it is merely the closest. {"pick": 0} if none fits.';
     $user = "ITEM:\n" . $desc
           . ($facts ? "\nKNOWN FACTS: " . json_encode($facts, JSON_UNESCAPED_SLASHES) : '')
           . "\n\nCANDIDATES:\n" . implode("\n", $list);
     $a = geminiJson($sys, $user, $m);
     if (!is_array($a) || !isset($a['pick'])) { return null; }
     $p = (int) $a['pick'];
-    return ($p >= 0 && $p <= min(count($cands), 25)) ? $p : null;
+    if ($p < 0 || $p > min(count($cands), 25)) { return null; }
+    return ['pick' => $p, 'sure' => !empty($a['sure'])];
 }
 
 // fetch one series' coins live and remember them - the shared last step of a learn
@@ -1223,14 +1225,17 @@ function lccLookup(string $sku): array
     if (count($pool) < 8 && $desc !== '')           { $add(gsMemBest($desc)); }
     $matches = array_values($pool);
     $picked  = false;
+    $sure    = false;
     if (count($matches) > 1) {
         $j = lccJudge($desc, $facts, $matches);
-        if ($j !== null && $j > 0) {
-            $one = array_splice($matches, $j - 1, 1);
+        if ($j !== null && $j['pick'] > 0) {
+            $one = array_splice($matches, $j['pick'] - 1, 1);
             array_unshift($matches, $one[0]);
             $picked = true;
-            gsLog('lccJudge picked "' . $one[0]['label'] . '" of ' . count($matches));
-        } elseif ($j === 0) {
+            $sure   = $j['sure'];
+            gsLog('lccJudge picked "' . $one[0]['label'] . '" of ' . count($matches)
+                . ($j['sure'] ? ' (sure)' : ' (closest only)'));
+        } elseif ($j !== null && $j['pick'] === 0) {
             // the agent says none of these IS the coin: try learning and the walk,
             // but keep the pool - closest suggestions beat an empty screen, they
             // just never auto-import
@@ -1281,11 +1286,13 @@ function lccLookup(string $sku): array
             // judge puts it first, so the right denomination leads the list
             if ($via === '' && count($matches) > 1) {
                 $j = lccJudge($desc, $facts, $matches);
-                if ($j !== null && $j > 0) {
-                    $one = array_splice($matches, $j - 1, 1);
+                if ($j !== null && $j['pick'] > 0) {
+                    $one = array_splice($matches, $j['pick'] - 1, 1);
                     array_unshift($matches, $one[0]);
                     $picked = true;
-                    gsLog('lccJudge picked "' . $one[0]['label'] . '" from the landed shelf');
+                    $sure   = $j['sure'];
+                    gsLog('lccJudge picked "' . $one[0]['label'] . '" from the landed shelf'
+                        . ($j['sure'] ? ' (sure)' : ' (closest only)'));
                 }
             }
         }
@@ -1303,7 +1310,7 @@ function lccLookup(string $sku): array
                        'root' => trim((string) ($row['item_root'] ?? '')),
                        'link' => trim((string) ($row['item_link'] ?? '')),
                        'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh],
-            'matches' => $matches, 'picked' => $picked, 'via' => $via];
+            'matches' => $matches, 'picked' => $picked, 'sure' => $sure, 'via' => $via];
 }
 
 
