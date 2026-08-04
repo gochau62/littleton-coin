@@ -18,10 +18,10 @@
 
 $GLOBALS['tpyErr'] = '';
 
-// the file widths the keys are written against: the item master key is CHAR(10), the source code is CHAR(10) on OEPSRCE, and the plan is a two digit
-// code like '01' or '02'
+// the file widths the keys are written against: the item master key is CHAR(10), the source code (SRCCOD) is CHAR(6) on OEPSRCE, and the plan is a
+// two digit code like '01' or '02'
 define('TPY_ITEM_LEN', 10);
-define('TPY_SRC_LEN', 10);
+define('TPY_SRC_LEN', 6);
 define('TPY_PLAN_LEN', 2);
 
 // activity log path in the LCCOnline_logs folder beside the PHP, which is writable by the web profile while the docroot itself is not
