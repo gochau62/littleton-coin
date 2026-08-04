@@ -830,10 +830,8 @@
             if (res.via !== 'suggest') sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
             if ((sblLccMatches.length === 1 || res.picked) && res.via !== 'suggest'){
-                // one coin fits, or the judge named one: pick it and arm Autofill.
-                // The agent only
-                // finishes the entry ITSELF when the coin agrees with the item
-                // master's year - a lone candidate is not proof it is the right coin.
+                // one coin fits, or the judge named one: pick it and light up
+                // Autofill - the operator always presses it, nothing runs itself
                 var m0 = sblLccMatches[0];
                 sblPendingGsId = m0.gs_id;
                 $('#gs-coin').data('sblPicked', 1).val(m0.label);
