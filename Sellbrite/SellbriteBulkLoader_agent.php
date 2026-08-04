@@ -55,8 +55,12 @@ if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
 // helpful for when trying to find greysheet error messages in debug log
 if (!defined('SBL_LOG_FILE')) {
-    // the loader's own log, next to its code - not the shared dated log
-    define('SBL_LOG_FILE', __DIR__ . '/sellbrite_activity.log');
+    // the loader's own log, beside the other *_activity logs in the house
+    // LCCOnline_logs folder; falls back to the code folder, then /tmp
+    $sblLogDir = is_dir(__DIR__ . '/LCCOnline_logs') && is_writable(__DIR__ . '/LCCOnline_logs')
+               ? __DIR__ . '/LCCOnline_logs'
+               : (is_writable(__DIR__) ? __DIR__ : '/tmp');
+    define('SBL_LOG_FILE', $sblLogDir . '/sellbrite_activity.log');
 }
 
 function gsLog($msg)
