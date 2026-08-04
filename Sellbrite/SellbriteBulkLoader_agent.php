@@ -228,6 +228,16 @@ function gsNorm($s): string
 }
 
 // rerun db2 connection to ensure valid user to be able to read and write
+// "Austrian" finds Austria and "Thalers" finds Thaler: search on the word's
+// stem so a grammatical ending never breaks the match.  Short words stay whole.
+function gsStem(string $w): string
+{
+    $n = strlen($w);
+    if ($n >= 7) { return substr($w, 0, $n - 2); }
+    if ($n >= 5) { return substr($w, 0, $n - 1); }
+    return $w;
+}
+
 function gsMemExec(string $sql, array $params): bool
 {
     // reuse the model layer DB connection, without report failure
@@ -320,7 +330,7 @@ function gsMemSearch(string $q, int $limit = 40): array
     foreach ($words as $w) {
         // require each word, case-insensitively
         $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
-        $params[] = '%' . strtoupper($w) . '%';
+        $params[] = '%' . strtoupper(gsStem($w)) . '%';
     }
     // alphabetical, capped at limit
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
@@ -348,7 +358,7 @@ function gsMemBest(string $q, int $limit = 40): array
 
     $score = []; $params = [];
     foreach ($words as $w) {
-        $like = '%' . strtoupper(gsLikeEsc($w)) . '%';
+        $like = '%' . strtoupper(gsLikeEsc(gsStem($w))) . '%';
         $score[] = "(CASE WHEN UPPER(name) LIKE ? ESCAPE '\\' THEN 2 ELSE 0 END)";
         $params[] = $like;
         $score[] = "(CASE WHEN UPPER(COALESCE(path, '')) LIKE ? ESCAPE '\\' THEN 1 ELSE 0 END)";
@@ -378,7 +388,7 @@ function gsMemBestNode(string $q): array
     if (!$words) { return []; }
     $score = []; $params = [];
     foreach ($words as $w) {
-        $like = '%' . strtoupper(gsLikeEsc($w)) . '%';
+        $like = '%' . strtoupper(gsLikeEsc(gsStem($w))) . '%';
         $score[] = "(CASE WHEN UPPER(name) LIKE ? ESCAPE '\\' THEN 2 ELSE 0 END)";
         $params[] = $like;
         $score[] = "(CASE WHEN UPPER(COALESCE(path, '')) LIKE ? ESCAPE '\\' THEN 1 ELSE 0 END)";
@@ -542,10 +552,10 @@ function gsMemSeries(string $rootPath, string $q = '', int $limit = 10000): arra
         $params[] = $rootPath;
         $params[] = gsLikeEsc($rootPath) . ' > %';
     }
-    // words must appear in the series name or in its path
+    // each word's STEM must appear in the series name or its path
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
-        $params[] = '%' . strtoupper($w) . '%';
+        $params[] = '%' . strtoupper(gsStem($w)) . '%';
     }
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
@@ -597,10 +607,10 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
         $params[] = '%' . strtoupper(gsLikeEsc($year)) . '%';
     }
 
-    // search narrows by words in the coin name
+    // search narrows by word stems in the coin name
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name) LIKE ?";
-        $params[] = '%' . strtoupper($w) . '%';
+        $params[] = '%' . strtoupper(gsStem($w)) . '%';
     }
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
