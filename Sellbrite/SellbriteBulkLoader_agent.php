@@ -416,7 +416,7 @@ function lccLearnSeries(string $q): int
 // knows Thaler and Taler are one coin, Slv means Silver and Austria is not
 // Hungary, so spelling never decides a match.  Returns the 1-based pick, 0 for
 // "none of these is the coin", null when the AI could not answer.
-function lccJudge(string $desc, array $facts, array $cands): ?int
+function lccJudge(string $desc, array $facts, array $cands): ?array
 {
     if (!geminiConfigured() || !$cands) { return null; }
     $list = [];
