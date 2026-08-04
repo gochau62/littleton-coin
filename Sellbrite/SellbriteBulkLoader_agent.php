@@ -156,7 +156,10 @@ function gsData($resp): array
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 
 // asks for a JSON answer, retries on the backup model when busy.
-function geminiJson($system, $user, &$meta = [])
+// $think caps Gemini's internal reasoning tokens.  2.5 Flash deliberates by
+// default and that deliberation IS most of the latency - pick-from-a-list calls
+// run with 0, the listing-writing calls keep a small budget for quality.
+function geminiJson($system, $user, &$meta = [], int $think = 0)
 {
     // if not key set return error 
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
@@ -169,7 +172,9 @@ function geminiJson($system, $user, &$meta = [])
     $body = json_encode([
         'systemInstruction' => ['parts' => [['text' => (string) $system]]],
         'contents'          => [['role' => 'user', 'parts' => [['text' => (string) $user]]]],
-        'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 8192],
+        'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json',
+                                'maxOutputTokens' => 8192,
+                                'thinkingConfig' => ['thinkingBudget' => $think]],
     ], JSON_UNESCAPED_SLASHES);
 
     $ch = curl_init($url);
@@ -1085,7 +1090,7 @@ function gsAiMap(array $coin): array
           . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
           . ($ctOpts ? "\n\nCOIN TYPE OPTIONS (pick ONE exactly, or leave coin_type empty):\n" . implode(' | ', $ctOpts) : '');
     // Ask Gemini; keep only real schema fields from the answer.
-    $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
+    $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 512));
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
     // The guard only accepts words already in the original, so the AI can remove but never invent.
@@ -1158,7 +1163,7 @@ function gsListingFill(array $post): array
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
+        $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 512));
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
         }
@@ -1567,7 +1572,7 @@ function gsGenerate(array $params): array
          . '"options:", use one of those exact options. Write accurate professional copy for description, '
          . 'features and search terms. Leave uncertain facts empty rather than guessing. '
          . 'Return ONLY a JSON object keyed by field machine-name.';
-    $row = sbl_clean_ai_row(geminiJson($sys, "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nCOIN TO LIST:\n" . $hint, $m));
+    $row = sbl_clean_ai_row(geminiJson($sys, "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nCOIN TO LIST:\n" . $hint, $m, 512));
     if (!$row) { return array_merge($base, ['error' => 'The AI did not return a usable listing.']); }
     return gs_finalize($row, null, 'ai-generated');
 }
