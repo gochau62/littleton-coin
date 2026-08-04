@@ -344,6 +344,7 @@
         $('#sku-form').on('change', '#f_single_coin_or_set', sblFieldVisibility);
         sblFieldVisibility();
     });
+
     /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
     var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
 
@@ -370,8 +371,7 @@
      // category-specific boxes: only show the fields that apply to the picked tree/series
     var SBL_CAT_FIELDS = {
         paper:   ['paper_money_grade_designation','paper_money_type','paper_money_series_designation'],
-        // truly coin-only boxes hide for Currency trees - Des's example notes fill year, denomination,
-        // varieties, grade, certification, composition and the eBay fields, so those show everywhere
+        // the coin block hides for Currency trees; coin_type is NOT here (shows for every tree)
         coin:    ['mint_mark','mint_location','designation_abbrivation','strike_type',
                   'fineness','precious_metal_content','total_precious_metal_content',
                   'diameter','weight'],
@@ -388,6 +388,7 @@
         stamp:   ['stamp_color','stamp_quality','stamp_type'],
         nativity:['nativity_item_type']
     };
+
     function sblFieldVisibility(){
         var cat  = (($('#f_category_name').val() || '') + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
         var paper = /currency|paper money|banknote|\bnote\b/.test(cat);
@@ -563,6 +564,7 @@
             sblYearPicked(this.value.trim());
         });
     }
+
     /* Level 4 - coins under the series (optionally one year). Labels are trimmed
        to just the distinguishing part. Opens on focus. 0 API calls. */
     function sblCoinAutocomplete(){
@@ -596,6 +598,7 @@
         });
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
+
     /* The valid-value form fields (Grade, Brand, Designation...) use the same
        compact jQuery UI menu as Series/Coin instead of the browser's native
        datalist popup (which can't be styled and renders huge). The operator
@@ -654,6 +657,7 @@
             });
         });
     }
+
     function sblResetBelowSeries(){
         sblCurYear = ''; sblPendingGsId = 0; sblYearList = [];
         $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
@@ -661,6 +665,7 @@
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
     }
+
     // Autofill: pull collectible + pricing from GreySheet and fill the form
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
@@ -803,7 +808,7 @@ if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
 }
 
 if ($authorized != "yes") {
