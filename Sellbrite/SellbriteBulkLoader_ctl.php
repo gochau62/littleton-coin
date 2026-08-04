@@ -839,15 +839,7 @@
                 $('#gs-coin').data('sblPicked', 1).val(m0.label);
                 $('#gs-autofill').prop('disabled', false);
                 sblMarkGsFields(true);
-                // the entry completes ITSELF only when the judge was CERTAIN (or
-                // the match was the lone exact hit) and the year agrees - a
-                // closest-only pick is offered armed, never entered
-                var yr = String((sblLccData && sblLccData.year) || '');
-                var yrOk = !yr || String(m0.label || '').indexOf(yr) !== -1
-                        || String(m0.coin_date || '').indexOf(yr) !== -1;
-                if (yrOk && (sblLccMatches.length === 1 || res.sure)){
-                    sblGsAutofill();
-                }
+
             } else {
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
             }
