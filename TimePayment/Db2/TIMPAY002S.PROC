@@ -2,26 +2,9 @@
 /*                                                                   */
 /* Program Name      - TIMPAY002S                                    */
 /*                                                                   */
-/* Program Narrative - Registers the item price retrieval module     */
-/*                     OE0337R as a stored procedure, so the upload  */
-/*                     can price an item the same way OP0800R does.  */
-/*                                                                   */
-/*                     When the plan column of the spreadsheet is    */
-/*                     left blank, the upload calls this with the    */
-/*                     item number and source code as the only       */
-/*                     non-blank (or non-zero) parameters, and the   */
-/*                     module passes the item price back out in      */
-/*                     PRPRIC.  That price is then tied out to the   */
-/*                     TPTIERSP ranges (TIMPAY001S type TIER) to     */
-/*                     find the plan the item falls into.            */
-/*                                                                   */
-/*                     NOTE: the parameter list below mirrors how    */
-/*                     OP0800R calls OE0337R and must be tied out    */
-/*                     to the program's entry parameters before      */
-/*                     compiling - the names here are only labels,   */
-/*                     but the order, types and sizes have to match  */
-/*                     the *PGM exactly or the call will blow up at  */
-/*                     run time.                                     */
+/* Program Narrative - Registers the OE0337R item price retrieval    */
+/*                     module as a stored procedure, for pricing     */
+/*                     items whose plan column was left blank.       */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

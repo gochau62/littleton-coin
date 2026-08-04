@@ -2,32 +2,9 @@
 /*                                                                   */
 /* Program Name      - TIMPAY003S                                    */
 /*                                                                   */
-/* Program Narrative - Write one Item Time Payment record, doing     */
-/*                     what the AS400 entry screen (menu 007,        */
-/*                     option 05 - Item Time Payment Maintenance)    */
-/*                     does by hand today.                           */
-/*                                                                   */
-/*                     The record is keyed by item number and        */
-/*                     source code: when it is already on TPITEMSP   */
-/*                     the plan and expiration date are updated,     */
-/*                     and when it is not the record is inserted -   */
-/*                     the same update-first, insert-on-no-rows      */
-/*                     shape STYCRD002S uses.                        */
-/*                                                                   */
-/*                     The caller (TimePayment_ajax.php) has         */
-/*                     already validated the item, source code and   */
-/*                     plan against their files, so the guards here  */
-/*                     only catch what would corrupt the file: a     */
-/*                     blank key, a blank plan, or an expiration     */
-/*                     date that is not a YYYYMMDD date on or after  */
-/*                     today.                                        */
-/*                                                                   */
-/*                     NOTE: the TPITEMSP field names follow the     */
-/*                     house prefix convention and must be tied out  */
-/*                     to the file's DDS before compiling.  If the   */
-/*                     file carries audit fields beyond the four     */
-/*                     written here, their defaults are left to      */
-/*                     cover them.                                   */
+/* Program Narrative - Write one Item Time Payment record to         */
+/*                     TPITEMSP - update when the item/source key    */
+/*                     is on file, insert when it is not.            */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */

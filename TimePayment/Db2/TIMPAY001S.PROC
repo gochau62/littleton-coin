@@ -2,59 +2,9 @@
 /*                                                                   */
 /* Program Name      - TIMPAY001S                                    */
 /*                                                                   */
-/* Program Narrative - Item Time Payment reads, one result set per   */
-/*                     type.  These are the validation lookups the   */
-/*                     spreadsheet upload runs before it writes a    */
-/*                     record to TPITEMSP, in the order the project  */
-/*                     write-up lays them out:                       */
-/*                                                                   */
-/*                     ITEM - one exact item from the item master.   */
-/*                            No row back means the item is not on   */
-/*                            file and the upload row goes to the    */
-/*                            exception report.                      */
-/*                            TPITEM, TPDESC                         */
-/*                     SRC  - one exact source code from OEPSRCE.    */
-/*                            No row back means the source code is   */
-/*                            not valid.                             */
-/*                            TPSRCE                                 */
-/*                     PLAN - one exact plan from TPPLANSP, for the  */
-/*                            rows where Marketing filled in the     */
-/*                            plan column.  No row back means the    */
-/*                            plan is not valid - a plan that was    */
-/*                            typed must exist (per Dennis), so the  */
-/*                            row errors rather than being guessed   */
-/*                            at.                                    */
-/*                            TPPLAN, TPPLDS                         */
-/*                     TIER - the plan whose TPTIERSP price range    */
-/*                            covers the item price carried in       */
-/*                            INKEY1, for the rows where the plan    */
-/*                            column was left blank.  No row back    */
-/*                            means the price falls outside every    */
-/*                            range (under $99.00), and per Josh     */
-/*                            the row is skipped onto the exception  */
-/*                            report instead of defaulted into a     */
-/*                            plan.                                  */
-/*                            TPPLAN                                 */
-/*                     ONE  - the TPITEMSP record for the item in    */
-/*                            INKEY1 and the source code in INKEY2,  */
-/*                            so the upload knows whether it is      */
-/*                            about to add or update.                */
-/*                            TIITEM, TISRCE, TIPLAN, TIEXPD         */
-/*                     LIST - the records on file for the review     */
-/*                            grid, joined to the item master and    */
-/*                            plan descriptions.  INKEY1 narrows by  */
-/*                            item or source code and blank returns  */
-/*                            everything, capped at 500 rows so the  */
-/*                            browser never draws the whole file.    */
-/*                            TIITEM, TIDESC, TISRCE, TIPLAN,        */
-/*                            TIPLDS, TIEXPD                         */
-/*                                                                   */
-/*                     NOTE: ITMMSTL1 (IISKU#, IIDESC) is the same   */
-/*                     logical the other LCCOnline tools read.  The  */
-/*                     TPITEMSP, TPPLANSP, TPTIERSP and OEPSRCE      */
-/*                     field names here follow the house prefix      */
-/*                     convention and must be tied out to each       */
-/*                     file's DDS before compiling.                  */
+/* Program Narrative - Validation and review reads for the time      */
+/*                     payment spreadsheet upload, one result set    */
+/*                     per type: ITEM SRC PLAN TIER ONE LIST.        */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
