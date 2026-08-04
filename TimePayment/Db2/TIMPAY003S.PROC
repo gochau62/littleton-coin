@@ -26,9 +26,9 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE TIMPAY003S (
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY003S (
         IN INITEM CHAR(10),
-        IN INSRCE CHAR(10),
+        IN INSRCE CHAR(6),
         IN INPLAN CHAR(2),
         IN INEXPD DECIMAL(8, 0)
         )
@@ -58,16 +58,16 @@ CREATE OR REPLACE PROCEDURE TIMPAY003S (
         END IF;
 
         UPDATE LSCPRDLIB/TPITEMSP
-           SET TIPLAN = INPLAN,
-               TIEXPD = INEXPD
-         WHERE TIITEM = INITEM
-           AND TISRCE = INSRCE;
+           SET TPPLAN = INPLAN,
+               TPEXDATE = INEXPD
+         WHERE TPITEM = INITEM
+           AND TPSRCD = INSRCE;
 
         GET DIAGNOSTICS ROWCNT = ROW_COUNT;
 
         IF ROWCNT = 0 THEN
             INSERT INTO LSCPRDLIB/TPITEMSP
-                (TIITEM, TISRCE, TIPLAN, TIEXPD)
+                (TPITEM, TPSRCD, TPPLAN, TPEXDATE)
             VALUES (INITEM, INSRCE, INPLAN, INEXPD);
         END IF;
     END;

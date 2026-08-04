@@ -26,7 +26,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE TIMPAY001S (
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
         IN INTYPE VARCHAR(10),
         IN INKEY1 VARCHAR(20),
         IN INKEY2 VARCHAR(20)
@@ -55,41 +55,42 @@ CREATE OR REPLACE PROCEDURE TIMPAY001S (
              FETCH FIRST 1 ROW ONLY;
 
         DECLARE C3 CURSOR WITH RETURN FOR
-            SELECT P.TPPLAN AS TPPLAN,
-                   RTRIM(P.TPDESC) AS TPPLDS
+            SELECT P.PPPLAN AS TPPLAN,
+                   RTRIM(P.PPDESC) AS TPPLDS
               FROM LSCPRDLIB/TPPLANSP P
-             WHERE P.TPPLAN = INKEY1
+             WHERE P.PPPLAN = INKEY1
              FETCH FIRST 1 ROW ONLY;
 
+        /* the tier file carries no plan column - its tier number is the plan */
         DECLARE C4 CURSOR WITH RETURN FOR
-            SELECT T.TTPLAN AS TPPLAN
+            SELECT T.TPTTIER AS TPPLAN
               FROM LSCPRDLIB/TPTIERSP T
-             WHERE WKPRIC BETWEEN T.TTLOWR AND T.TTHIGH
-             ORDER BY T.TTLOWR
+             WHERE WKPRIC BETWEEN T.TPTTIERLO AND T.TPTTIERHI
+             ORDER BY T.TPTTIERLO
              FETCH FIRST 1 ROW ONLY;
 
         DECLARE C5 CURSOR WITH RETURN FOR
-            SELECT T.TIITEM, T.TISRCE, T.TIPLAN, T.TIEXPD
+            SELECT T.TPITEM, T.TPSRCD, T.TPPLAN, T.TPEXDATE
               FROM LSCPRDLIB/TPITEMSP T
-             WHERE T.TIITEM = INKEY1
-               AND T.TISRCE = INKEY2
+             WHERE T.TPITEM = INKEY1
+               AND T.TPSRCD = INKEY2
              FETCH FIRST 1 ROW ONLY;
 
         DECLARE C6 CURSOR WITH RETURN FOR
-            SELECT T.TIITEM,
-                   COALESCE(RTRIM(I.IIDESC), '') AS TIDESC,
-                   T.TISRCE, T.TIPLAN,
-                   COALESCE(RTRIM(P.TPDESC), '') AS TIPLDS,
-                   T.TIEXPD
+            SELECT T.TPITEM,
+                   COALESCE(RTRIM(I.IIDESC), '') AS TPDESC,
+                   T.TPSRCD, T.TPPLAN,
+                   COALESCE(RTRIM(P.PPDESC), '') AS TPPLDS,
+                   T.TPEXDATE
               FROM LSCPRDLIB/TPITEMSP T
               LEFT JOIN LSCPRDLIB/ITMMSTL1 I
-                ON I.IISKU# = T.TIITEM
+                ON I.IISKU# = T.TPITEM
               LEFT JOIN LSCPRDLIB/TPPLANSP P
-                ON P.TPPLAN = T.TIPLAN
+                ON P.PPPLAN = T.TPPLAN
              WHERE SRCH = ''
-                OR UPPER(T.TIITEM) LIKE '%' || SRCH || '%'
-                OR UPPER(T.TISRCE) LIKE '%' || SRCH || '%'
-             ORDER BY T.TIITEM, T.TISRCE
+                OR UPPER(T.TPITEM) LIKE '%' || SRCH || '%'
+                OR UPPER(T.TPSRCD) LIKE '%' || SRCH || '%'
+             ORDER BY T.TPITEM, T.TPSRCD
              FETCH FIRST 500 ROWS ONLY;
 
         IF INTYPE = 'ITEM' THEN

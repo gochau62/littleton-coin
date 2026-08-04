@@ -26,7 +26,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE TIMPAY002S (
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
         INOUT PRITEM CHAR(10),
         INOUT PRSRCC CHAR(10),
         INOUT PRCUS# CHAR(10),

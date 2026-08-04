@@ -210,14 +210,14 @@ function renderGrid(rows) {
     var html = '';
     $.each(rows, function (i, r) {
         // an expired record stays in the grid but reads as done with
-        var expired = gridToday > 0 && parseInt(r.TIEXPD, 10) < gridToday;
+        var expired = gridToday > 0 && parseInt(r.TPEXDATE, 10) < gridToday;
         html += '<tr' + (expired ? ' class="tp-expired"' : '') + '>' +
-            '<td class="tp-mono">' + esc(r.TIITEM) + '</td>' +
-            '<td>' + esc(r.TIDESC) + '</td>' +
-            '<td class="tp-mono">' + esc(r.TISRCE) + '</td>' +
-            '<td class="tp-mono">' + esc(r.TIPLAN) + '</td>' +
-            '<td>' + esc(r.TIPLDS) + '</td>' +
-            '<td>' + fmtDate(r.TIEXPD) + '</td>' +
+            '<td class="tp-mono">' + esc(r.TPITEM) + '</td>' +
+            '<td>' + esc(r.TPDESC) + '</td>' +
+            '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +
+            '<td class="tp-mono">' + esc(r.TPPLAN) + '</td>' +
+            '<td>' + esc(r.TPPLDS) + '</td>' +
+            '<td>' + fmtDate(r.TPEXDATE) + '</td>' +
             '<td>' + (expired ? '<span class="tp-exppill">Expired</span>' : '') + '</td>' +
             '</tr>';
     });
