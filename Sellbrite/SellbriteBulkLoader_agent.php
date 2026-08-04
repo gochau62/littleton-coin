@@ -417,7 +417,9 @@ function lccJudge(string $desc, array $facts, array $cands): ?int
     }
     $sys = 'You match a dealer inventory line to its exact catalog coin. The two sides spell and '
          . 'abbreviate differently - judge by what the coin IS, never by the letters matching. '
-         . 'The same coin must agree on country, denomination, metal and date. Return ONLY JSON '
+         . 'The same coin must agree on country, denomination, metal, date AND mint mark - '
+         . '1925-S is not 1925 plain. Prefer the plain business-strike issue over die varieties '
+         . '(DDO, overdates, VAMs) unless the description itself names one. Return ONLY JSON '
          . '{"pick": n} for the entry that is this exact coin, or {"pick": 0} if none of them is.';
     $user = "ITEM:\n" . $desc
           . ($facts ? "\nKNOWN FACTS: " . json_encode($facts, JSON_UNESCAPED_SLASHES) : '')
@@ -1202,6 +1204,11 @@ function lccLookup(string $sku): array
     $parsed = $read['fields'];
     if ($year !== '')     { $parsed['year'] = $year; }
     if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
+    // the judge and the walk see the raw coin date too - a range like 1922-1925
+    // rules candidates in or out even when no single year exists
+    $facts = $parsed;
+    $rawItemDate = trim((string) ($row['item_date'] ?? ''));
+    if ($rawItemDate !== '') { $facts['lcc_coin_date'] = $rawItemDate; }
 
     // Cast a wide net: the exact and closest passes only GATHER candidates.  The
     // words never decide the match - the agent judges the pool, because spelling
@@ -1217,7 +1224,7 @@ function lccLookup(string $sku): array
     $matches = array_values($pool);
     $picked  = false;
     if (count($matches) > 1) {
-        $j = lccJudge($desc, $read['fields'], $matches);
+        $j = lccJudge($desc, $facts, $matches);
         if ($j !== null && $j > 0) {
             $one = array_splice($matches, $j - 1, 1);
             array_unshift($matches, $one[0]);
@@ -1243,7 +1250,7 @@ function lccLookup(string $sku): array
     // coin date when there is one, no matter how differently LCC words the coin.
     $via = '';
     if (!$matches) {
-        $wpath = lccAiWalk($desc, $read['fields']);
+        $wpath = lccAiWalk($desc, $facts);
         if ($wpath !== '') {
             $rows = gsMemCoins($wpath, '', $year);
             // a ranged coin date (1892-1907, 1966-72) is still a filter: keep the
@@ -1273,7 +1280,7 @@ function lccLookup(string $sku): array
             // the shelf is right but the exact coin still needs choosing - the
             // judge puts it first, so the right denomination leads the list
             if ($via === '' && count($matches) > 1) {
-                $j = lccJudge($desc, $read['fields'], $matches);
+                $j = lccJudge($desc, $facts, $matches);
                 if ($j !== null && $j > 0) {
                     $one = array_splice($matches, $j - 1, 1);
                     array_unshift($matches, $one[0]);
@@ -1321,6 +1328,9 @@ function lccDate(string $raw): array
     // "1940-S" is a year and a mint mark; "1892-1907" is a range and is not
     if (preg_match('/^(\d{4})-([A-Z]{1,2})$/', $d, $m))  { return [$m[1], $m[2]]; }
     if (preg_match('/^(\d{4})([A-Z])$/', $d, $m))        { return [$m[1], $m[2]]; }
+    // a year followed by variety text ("1878 7TF", "1878 7/8TF") is still a year -
+    // never a range, which the patterns above have already claimed
+    if (preg_match('/^(\d{4})\s+\S/', $d, $m)) { return [$m[1], '']; }
     return ['', ''];
 }
 
