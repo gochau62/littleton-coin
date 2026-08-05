@@ -123,9 +123,10 @@ switch ($action) {
         $badge   = rqsBadgeForName($conn, $reqName);
         if ($badge === '' || !ctype_digit($badge)) { $badge = '0'; }
 
-        // the Inv DE Number carries the requestor's whole name; the old system kept only the first four letters of the first name because the column was ten characters wide, and it is fifty now
-        // who actually keyed it is not kept here; that is in the activity log, against the sign on name, where it cannot be typed over
-        $deName  = substr(trim($reqName), 0, 50);
+        // the Inv DE Number is whoever is signed on, the person actually raising the requisition, and it is taken from the sign on rather than the form so it stays true when a manager raises one under somebody else's name
+        // the requestor beside it is who the requisition is for, so between them the record says who asked and who entered
+        $keyer   = ($me && $me['name'] !== '') ? $me['name'] : $user;
+        $deName  = substr(trim($keyer), 0, 50);
 
         $reqNum = rqsInsertHeader($conn,
                       $reqName,
