@@ -366,10 +366,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <!-- compact fixed pixel columns with the leftover width going to Requestor, so nothing gets crushed -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
-          <col style="width:20px"><col style="width:54px"><col style="width:76px">
+          <col style="width:20px"><col style="width:54px"><col style="width:74px">
           <col>
-          <col style="width:88px"><col style="width:36px"><col style="width:46px">
-          <col style="width:72px"><col style="width:124px"><col style="width:54px">
+          <col style="width:104px"><col style="width:36px"><col style="width:46px">
+          <col style="width:72px"><col style="width:100px"><col style="width:44px">
         </colgroup>
         <thead>
           <tr>
@@ -433,9 +433,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
-              <col style="width:12%"><col style="width:8%"><col style="width:9%">
-              <col style="width:27%"><col style="width:6%"><col style="width:7%">
-              <col style="width:7%"><col style="width:9%"><col style="width:12%">
+              <!-- widths follow what the columns actually hold: an item number runs to sixteen characters and a description to fifty, while a location is only three -->
+              <col style="width:16%"><col style="width:5%"><col style="width:8%">
+              <col style="width:30%"><col style="width:6%"><col style="width:7%">
+              <col style="width:7%"><col style="width:7%"><col style="width:11%">
               <col style="width:3%">
             </colgroup>
             <thead>

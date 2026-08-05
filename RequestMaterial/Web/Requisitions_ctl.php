@@ -56,11 +56,19 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// check users authority (10 is the minimum to use LCCOnline)
+// mode entry is the workfloor entry only shortcut; the plain URL is the full station
+// this is settled before the authority check because the two screens are not open to the same people
+$rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
+
+// the entry form asks only for the level everyone signed in to LCCOnline already has, since the whole work floor raises requisitions
+// the station screen asks for the requisitions group, because that is where a requisition is authorized, corrected and reported on
+// taking mode entry off the address no longer opens the station screen, it just puts the higher level in front of it
+$rqLevel = ($rqMode === 'entry') ? 10 : 41;
+
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", $rqLevel);
 }
 
 if ($authorized != "yes") {
@@ -85,13 +93,6 @@ if ($authorized != "yes") {
         }
     }
 
-    // mode entry is the workfloor entry only shortcut; the plain URL is the full station
-    $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
-
-    // the employee behind the sign on name, so the entry form can fill in the requestor and the badge instead of asking for them
-    // a sign on name that does not match anyone leaves this empty and the form falls back to the full lists, which keeps a long or hyphenated last name from locking someone out
-    $rqMe = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
-
     // the entry form never shows a badge, so the employee list is not sent to it at all
     // the work floor reaches this screen, and a list that never leaves the server cannot be read out of the page either
     if ($rqMode === 'entry' && is_array($rqLookups)) { unset($rqLookups['badges']); }
@@ -108,11 +109,6 @@ var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 // entry mode comes from the workfloor shortcut link and is checked all through this script
 var RQ_MODE = '<?php echo $rqMode; ?>';
 
-
-// the signed on employee, empty when the sign on name matched nobody
-var RQ_ME = <?php echo json_encode($rqMe ? $rqMe : null); ?>;
-// the sign on name itself, which stands in as the requestor when nobody on file matches it
-var RQ_USER = <?php echo json_encode($user); ?>;
 var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
@@ -685,8 +681,12 @@ function renderGrid() {
         var authName = r.RHAUTB || 'Authorization = None';
         var isReal = authName !== 'Authorization = None' &&
                      authName !== 'Authorization In Process';
+        // the two placeholders are shown as the word that matters under a column already headed Authorized, so the badge stays readable instead of being cut off mid word; the full text is still on the cell as a tooltip and in the view window
+        var authShown = authName === 'Authorization = None' ? 'None'
+                      : authName === 'Authorization In Process' ? 'In Process'
+                      : authName;
         var auth = '<span class="rq-pill ' + (isReal ? 'rq-ok' : 'rq-warn') + '">' +
-                   esc(authName) + '</span>';
+                   esc(authShown) + '</span>';
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
@@ -818,15 +818,14 @@ function applyLookups(resp) {
     fillSelect('#rqAreaTypeList', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#rqAuthByList', resp.authBy, 'CDCODE', 'CDCODE');
 
-    applySignedOnIdentity();
+    applyFirstRequestor();
 }
 
 
-// the entry form names the person who is signed on rather than asking them, so a requisition always carries the badge and the name of whoever raised it
-// when the sign on name matched nobody the full list stays in place, because a long or hyphenated last name must never stop someone requesting
-// the form opens on whoever is signed on, and when the sign on name matches nobody on file the sign on name itself stands in, so the box is never blank
-function applySignedOnIdentity() {
-    $('#addName').val((RQ_ME && RQ_ME.name) ? RQ_ME.name : RQ_USER);
+// the requestor box opens on the first name in the list, the way a dropdown sits on its first choice, and the list is there to pick from or type over
+function applyFirstRequestor() {
+    var first = nameChoices()[0];
+    if (first) { $('#addName').val(first); }
 }
 
 

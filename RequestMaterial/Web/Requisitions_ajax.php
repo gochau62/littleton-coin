@@ -50,6 +50,17 @@ if (!$conn) {
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
+// the two screens are not open to the same people, so neither are the actions behind them
+// raising a requisition and the lists the entry form needs to do it sit at the level everyone signed in to LCCOnline has
+// everything else belongs to the station screen, where a requisition is authorized, corrected and reported on, and asks for the requisitions group
+// this is checked here and not only on the screen, because the screen only decides what is drawn while this decides what can actually be done
+$rqEntryActions = array('insert', 'lookups', 'itemlookup', 'itemsearch');
+$rqNeeds = in_array($action, $rqEntryActions) ? 10 : 41;
+
+if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", $rqNeeds) != "yes") {
+    rqsOutFail("Current user profile is not authorized to use this tool.");
+}
+
 switch ($action) {
 
     // main grid rows, show O open (default), R returned, A all; q searches
