@@ -161,6 +161,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
 
+/* a badge waiting for the next refresh is tinted, only enough to tell it apart from one already written */
+.rq-grid .rq-badge.rq-pending { background: #fdf8ee; }
+
 /* a badge that has been set reads as plain text, with no box around it, because there is nothing left to type into */
 .rq-badgeset { display: inline-block; padding: 0 .3rem; }
 
