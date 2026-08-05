@@ -198,27 +198,6 @@ function rqsPreferredName($conn, $employeeName) {
 }
 
 
-// the badge belonging to a name, worked out on the server from the live employee file so no badge ever has to travel to the browser
-// an exact name wins, otherwise the one employee sharing a last name, and where a last name is shared nothing is guessed at
-function rqsBadgeForName($conn, $name) {
-    $name = trim($name);
-    if ($name === '') { return ''; }
-
-    $rows = rqsLookup($conn, "BADGE");
-    if ($rows === false || !count($rows)) { return ''; }
-
-    $parts = preg_split('/\s+/', $name);
-    $last  = strtolower(end($parts));
-    $sameLast = array();
-    foreach ($rows as $row) {
-        $who = trim($row['CDDESC']);
-        if (strcasecmp($who, $name) === 0) { return trim($row['CDCODE']); }
-        $wp = preg_split('/\s+/', $who);
-        if (count($wp) > 1 && strtolower(end($wp)) === $last) { $sameLast[] = trim($row['CDCODE']); }
-    }
-    return (count($sameLast) === 1) ? $sameLast[0] : '';
-}
-
 
 // PROGRAM NAME REQSTN005S: update the header requestor name, area code, area type, authorized by, comments and badge, where a NULL argument leaves that column unchanged
 function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null,

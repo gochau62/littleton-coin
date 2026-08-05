@@ -115,13 +115,12 @@ switch ($action) {
             rqsOutFail("No requisition lines received.");
         }
 
-        // the requestor is whoever the form named, since one person often raises a requisition for another, and the badge that rides with it is that person's
+        // the requestor is whoever the form named, since one person often raises a requisition for another
         $me      = rqsWhoAmI($conn, $user);
         $reqName = trim($payload['reqName'] ?? '');
         if ($reqName === '') { $reqName = ($me && $me['name'] !== '') ? $me['name'] : $user; }
-        // the badge is worked out here from the name, never sent up by the form, so the entry screen never has to carry a badge and the work floor never sees one
-        $badge   = rqsBadgeForName($conn, $reqName);
-        if ($badge === '' || !ctype_digit($badge)) { $badge = '0'; }
+        // new requisitions start with badge 0; whoever handles the requisition enters theirs afterwards from the station grid, which is why the entry form never asks for one
+        $badge   = '0';
 
         // the Inv DE Number is whoever is signed on, the person actually raising the requisition, and it is taken from the sign on rather than the form so it stays true when a manager raises one under somebody else's name
         // the requestor beside it is who the requisition is for, so between them the record says who asked and who entered
