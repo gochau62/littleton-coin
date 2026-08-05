@@ -321,18 +321,15 @@ $(document).ready(function () {
             inp.val(reqBadge(reqNum));
             return;
         }
-        // a requisition that already carries a badge is asked about before it is moved to another one, because that badge is the record of who the requisition belongs to
+        // setting the badge is asked about because it only happens once: after this the requisition carries that badge for good and the box is replaced by plain text
         var had = reqBadge(reqNum);
-        if (had !== '' && had !== '0' && had !== val) {
-            ask('Change the badge?',
-                'Requisition ' + reqNum + ' is on badge ' + had +
-                '. Move it to ' + (val === '' ? '(none)' : val) + '?',
-                'Change it', 'Leave it',
-                function () { saveBadge(inp, reqNum, val); },
-                function () { inp.val(had); });
-            return;
-        }
-        saveBadge(inp, reqNum, val);
+        if (val === '' || val === '0') { inp.val(had); return; }
+        ask('Set the badge?',
+            'Requisition ' + reqNum + ' will be put on badge ' + val +
+            '. The badge is set once and cannot be changed afterwards.',
+            'Set it', 'Cancel',
+            function () { saveBadge(inp, reqNum, val); },
+            function () { inp.val(had); });
     });
 
     // writes the badge away and puts it on the requisition's other lines at the same time, since every line of a requisition shares one badge
@@ -759,11 +756,7 @@ function renderGrid() {
             '<td title="' + attr(r.RDITEM) + '">' + lineBox(r, 'item', 'RDITEM', 16, '') + '</td>' +
             '<td>' + lineBox(r, 'loc', 'RDLOC', 3, '') + '</td>' +
             '<td class="rq-num">' + lineBox(r, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
-            '<td><span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
-            ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' value="' + attr(r.RHBDGE) + '">' +
-            '<button type="button" class="rq-badgedd" tabindex="-1"' +
-            ' title="Pick employee">&#9662;</button></span></td>' +
+            '<td>' + badgeCell(r) + '</td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
@@ -835,6 +828,21 @@ function gridCompare(a, b) {
     if (av < bv) { return -gridSort.dir; }
     if (av > bv) { return gridSort.dir; }
     return 0;
+}
+
+
+// the badge is set once and then stands, so a requisition that already carries one shows it as plain text
+// there is no box to type in and no arrow to open, because the procedure would refuse the change anyway and a box that looks editable but is not is worse than no box
+function badgeCell(r) {
+    var b = (r.RHBDGE == null ? '' : String(r.RHBDGE)).trim();
+    if (b !== '' && b !== '0') {
+        return '<span class="rq-badgeset" title="The badge is set once and cannot be changed">' +
+               esc(b) + '</span>';
+    }
+    return '<span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
+           ' data-req="' + esc(r['RHREQ#']) + '" value="' + attr(b) + '">' +
+           '<button type="button" class="rq-badgedd" tabindex="-1"' +
+           ' title="Pick employee">&#9662;</button></span>';
 }
 
 

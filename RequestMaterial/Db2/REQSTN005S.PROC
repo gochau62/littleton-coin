@@ -13,6 +13,12 @@
 /*                     "Authorization = None" / "In Process"         */
 /*                     placeholder values.                           */
 /*                                                                   */
+/*                     The badge is set once and then stands. It can */
+/*                     be filled in while it is still blank or zero, */
+/*                     and after that it is left alone whatever is   */
+/*                     sent, because it is the record of whose       */
+/*                     requisition it is.                            */
+/*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
 /*                     Littleton NH                                  */
@@ -60,7 +66,10 @@ CREATE OR REPLACE PROCEDURE REQSTN005S (
         UPDATE RQSREQHDRT
            SET RHAUTB = COALESCE(INAUTB, RHAUTB),
                RHCMNT = COALESCE(INCMNT, RHCMNT),
-               RHBDGE = COALESCE(INBDGE, RHBDGE),
+               RHBDGE = CASE WHEN INBDGE IS NULL              THEN RHBDGE
+                             WHEN TRIM(RHBDGE) IN ('', '0')   THEN INBDGE
+                             ELSE RHBDGE
+                        END,
                RHNAME = COALESCE(INNAME, RHNAME),
                RHARCD = COALESCE(INARCD, RHARCD),
                RHARTY = COALESCE(INARTY, RHARTY),
