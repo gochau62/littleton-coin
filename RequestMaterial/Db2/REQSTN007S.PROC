@@ -126,17 +126,40 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
         -- varying length result, and asking SUBSTR for ten characters of
         -- something shorter than ten fails the whole statement - which
         -- covers most people here, DSMITH being six.
+        --
+        -- When the employee file has nobody, the sign on profile's own
+        -- description is used instead. That is where the name at the top
+        -- of every LCCOnline page comes from, so anybody who can sign in
+        -- has one, including people who are not in the employee file at
+        -- all. It is written "Gordon Chau - IT", so anything from the
+        -- dash onwards is dropped. No badge comes with it, which is
+        -- right: somebody with no employee record has no badge either.
         DECLARE C5 CURSOR WITH RETURN FOR
-            SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
-                   TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
-              FROM LSCPRDLIB/XEMPLOYP E
-             WHERE E.LEESTAT = 'A'
-               AND ( UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
-                           TRIM(E.LELNAME)) = UPPER(TRIM(INKEY))
-                  OR ( LENGTH(TRIM(INKEY)) = 10
-                       AND UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
-                                 TRIM(E.LELNAME)) LIKE UPPER(TRIM(INKEY)) || '%' ) )
-             ORDER BY E.LELNAME, E.LEFNAME
+            SELECT CDCODE, CDDESC FROM (
+                SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
+                       TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC,
+                       1 AS PREF
+                  FROM LSCPRDLIB/XEMPLOYP E
+                 WHERE E.LEESTAT = 'A'
+                   AND ( UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                               TRIM(E.LELNAME)) = UPPER(TRIM(INKEY))
+                      OR ( LENGTH(TRIM(INKEY)) = 10
+                           AND UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                                     TRIM(E.LELNAME)) LIKE UPPER(TRIM(INKEY)) || '%' ) )
+                UNION ALL
+                SELECT '' AS CDCODE,
+                       TRIM(CASE WHEN LOCATE(' - ', U.TEXT_DESCRIPTION) > 1
+                                 THEN SUBSTR(U.TEXT_DESCRIPTION, 1,
+                                             LOCATE(' - ', U.TEXT_DESCRIPTION) - 1)
+                                 ELSE U.TEXT_DESCRIPTION
+                            END) AS CDDESC,
+                       2 AS PREF
+                  FROM QSYS2.USER_INFO U
+                 WHERE U.AUTHORIZATION_NAME = UPPER(TRIM(INKEY))
+                   AND U.TEXT_DESCRIPTION IS NOT NULL
+                   AND TRIM(U.TEXT_DESCRIPTION) <> ''
+            ) W
+             ORDER BY PREF
              FETCH FIRST 1 ROW ONLY;
 
         IF INTYPE = 'ITEM' THEN
