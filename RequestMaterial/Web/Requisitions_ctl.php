@@ -324,9 +324,7 @@ $(document).ready(function () {
         // setting the badge is asked about because it only happens once: after this the requisition carries that badge for good and the box is replaced by plain text
         var had = reqBadge(reqNum);
         if (val === '' || val === '0') { inp.val(had); return; }
-        ask('Set the badge?',
-            'Requisition ' + reqNum + ' will be put on badge ' + val +
-            '. The badge is set once and cannot be changed afterwards.',
+        ask('Set badge ' + val + '?', 'This cannot be changed later.',
             'Set it', 'Cancel',
             function () { saveBadge(inp, reqNum, val); },
             function () { inp.val(had); });
@@ -339,16 +337,13 @@ $(document).ready(function () {
             reqNum: reqNum,
             badge: val
         }, function () {
-            // update the requisition's other lines in place so the grid keeps its scroll spot
             $.each(gridRows, function (i, r) {
                 if (String(r['RHREQ#']) === reqNum) { r.RHBDGE = val; }
             });
             lastGridJson = JSON.stringify(gridRows);
-            $('#gridBody .rq-badge').each(function () {
-                if (this !== inp[0] && String($(this).data('req')) === reqNum) {
-                    $(this).val(val);
-                }
-            });
+            // drawn again straight away so the box becomes the plain locked number, on this requisition's other lines as well
+            // waiting for the next refresh would not do it: that refresh compares what comes back with what is already held and skips the redraw when they match, which they now do
+            renderGrid();
         });
     }
 
