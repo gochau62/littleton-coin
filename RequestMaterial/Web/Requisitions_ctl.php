@@ -97,6 +97,11 @@ if ($authorized != "yes") {
     // the work floor reaches this screen, and a list that never leaves the server cannot be read out of the page either
     if ($rqMode === 'entry' && is_array($rqLookups)) { unset($rqLookups['badges']); }
 
+    // the full name behind the sign on name, so the requestor box opens on whoever is at the keyboard instead of making them find themselves in the list
+    // only the name is taken from this; the badge that comes back with it stays on the server, because the entry form is not meant to show one
+    $rqMe   = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
+    $rqName = ($rqMe && $rqMe['name'] !== '') ? $rqMe['name'] : '';
+
     rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
 
     include "Requisitions_dsp.php";
@@ -108,6 +113,10 @@ if ($authorized != "yes") {
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 // entry mode comes from the workfloor shortcut link and is checked all through this script
 var RQ_MODE = '<?php echo $rqMode; ?>';
+
+
+// the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
+var RQ_NAME = <?php echo json_encode($rqName); ?>;
 
 var gridRows = [];
 var lastGridJson = '';
@@ -822,10 +831,11 @@ function applyLookups(resp) {
 }
 
 
-// the requestor box opens on the first name in the list, the way a dropdown sits on its first choice, and the list is there to pick from or type over
+// the requestor box opens on the full name of whoever is signed on, so the usual case needs no picking at all
+// a sign on name that matched nobody falls back to the first name in the list, and either way the list is there to pick from or type over
 function applyFirstRequestor() {
-    var first = nameChoices()[0];
-    if (first) { $('#addName').val(first); }
+    var start = RQ_NAME || nameChoices()[0];
+    if (start) { $('#addName').val(start); }
 }
 
 
