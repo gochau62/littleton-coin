@@ -123,10 +123,9 @@ switch ($action) {
         $badge   = rqsBadgeForName($conn, $reqName);
         if ($badge === '' || !ctype_digit($badge)) { $badge = '0'; }
 
-        // the Inv DE Number is the first four letters of the requestor's first name, which is what the old screen wrote: across the fifty thousand lines it left behind, 97 in every 100 read exactly that
+        // the Inv DE Number carries the requestor's whole name; the old system kept only the first four letters of the first name because the column was ten characters wide, and it is fifty now
         // who actually keyed it is not kept here; that is in the activity log, against the sign on name, where it cannot be typed over
-        $first   = trim(explode(' ', trim($reqName))[0]);
-        $deName  = $first !== '' ? substr($first, 0, 4) : '';
+        $deName  = substr(trim($reqName), 0, 50);
 
         $reqNum = rqsInsertHeader($conn,
                       $reqName,
@@ -192,8 +191,8 @@ switch ($action) {
         $item = isset($_POST['item']) ? substr(trim($_POST['item']), 0, 16) : null;
         $loc  = isset($_POST['loc'])  ? substr(trim($_POST['loc']), 0, 3)   : null;
         $desc = isset($_POST['desc']) ? substr(trim($_POST['desc']), 0, 50) : null;
-        // the data entry name, four letters of a first name and never a number, sent with line 0 to reach every line of the requisition
-        $deName = isset($_POST['deName']) ? substr(trim($_POST['deName']), 0, 4) : null;
+        // the data entry name, a person's name and never a number, sent with line 0 to reach every line of the requisition
+        $deName = isset($_POST['deName']) ? substr(trim($_POST['deName']), 0, 50) : null;
         // a quantity that is not a whole number above zero is dropped rather than stored, so the grid totals and the monthly report stay sound
         $qty = null;
         if (isset($_POST['qty'])) {

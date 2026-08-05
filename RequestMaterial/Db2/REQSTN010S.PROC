@@ -8,9 +8,12 @@
 /*                     parameter leaves that column unchanged, so    */
 /*                     the grid can save one box at a time as it is  */
 /*                     left.                                         */
-/*                     The data entry name is the first four letters */
-/*                     of the first name of whoever keyed the line,  */
-/*                     which is the Inv DE Number on the old screen. */
+/*                     The data entry name is the requestor's full   */
+/*                     name, which is the Inv DE Number on the       */
+/*                     screen. The old system kept only the first    */
+/*                     four letters of the first name because the    */
+/*                     column was ten characters; it holds fifty     */
+/*                     now, so the whole name is kept.               */
 /*                     It is not the requestor's badge - that is a   */
 /*                     number and lives on the header in RHBDGE.     */
 /*                     Cost, retail and the returned flag are not    */
@@ -46,7 +49,7 @@ CREATE OR REPLACE PROCEDURE REQSTN010S (
         IN INLOC   VARCHAR(3),
         IN INDESC  VARCHAR(50),
         IN INQTY   DECIMAL(9, 0),
-        IN INBDGE  VARCHAR(10)
+        IN INBDGE  VARCHAR(50)
         )
 
         LANGUAGE SQL
