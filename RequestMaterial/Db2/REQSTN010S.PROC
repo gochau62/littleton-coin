@@ -57,14 +57,6 @@ CREATE OR REPLACE PROCEDURE REQSTN010S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        -- A quantity of zero or less is refused rather than stored, because
-        -- the grid totals and the monthly report both count on it.
-        --
-        -- A line number of zero means every line of the requisition, which
-        -- is how the data entry name is set, since all the lines of one
-        -- requisition were keyed by the same person. Only the data entry
-        -- name is ever sent that way; the other columns arrive as NULL and
-        -- the COALESCE leaves them alone.
         UPDATE RQSREQDTLT
            SET RDITEM = COALESCE(INITEM, RDITEM),
                RDLOC  = COALESCE(INLOC,  RDLOC),

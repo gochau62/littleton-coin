@@ -57,10 +57,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
                AND CDACTV = 'Y'
              ORDER BY CDDESC, CDCODE;
 
-        -- ITEM autofill: description + coin year from the item master,
-        -- last-used cost/retail/coin-date string from history (the
-        -- master has no pricing). Falls back to history alone for
-        -- legacy items that are not on the master.
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT COALESCE(I.IIDESC, H.RDDESC) AS RDDESC,
                    COALESCE(H.RDCNDT,
@@ -81,9 +77,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              WHERE I.IISKU# IS NOT NULL
                 OR H.RDDESC IS NOT NULL;
 
-        -- ITEMSRCH: type-ahead over the item master, so every inventory
-        -- item is findable; each hit enriched with its last-used
-        -- cost/retail from requisition history
         DECLARE C3 CURSOR WITH RETURN FOR
             SELECT I.IISKU# AS RDITEM,
                    I.IIDESC AS RDDESC,
@@ -104,8 +97,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              ORDER BY I.IISKU#
              FETCH FIRST 200 ROWS ONLY;
 
-        -- BADGE: live active employees from the production employee
-        -- file - the badge dropdown is always current, nothing to seed
         DECLARE C4 CURSOR WITH RETURN FOR
             SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
                    TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
@@ -113,27 +104,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              WHERE E.LEESTAT = 'A'
              ORDER BY 2, 1;
 
-        -- WHOAMI: the one employee behind the sign on name passed in
-        -- INKEY. A sign on name at Littleton is the first letter of the
-        -- first name followed by the last name, and it can only hold ten
-        -- characters, so a last name long enough to have been cut short is
-        -- matched on what is left of it. No row comes back when the name
-        -- does not follow the rule, which is what lets the screen fall
-        -- back to the list.
-        --
-        -- The short name is matched with LIKE rather than by cutting the
-        -- built name down to ten characters. TRIM and a join both give a
-        -- varying length result, and asking SUBSTR for ten characters of
-        -- something shorter than ten fails the whole statement - which
-        -- covers most people here, DSMITH being six.
-        --
-        -- When the employee file has nobody, the sign on profile's own
-        -- description is used instead. That is where the name at the top
-        -- of every LCCOnline page comes from, so anybody who can sign in
-        -- has one, including people who are not in the employee file at
-        -- all. It is written "Gordon Chau - IT", so anything from the
-        -- dash onwards is dropped. No badge comes with it, which is
-        -- right: somebody with no employee record has no badge either.
         DECLARE C5 CURSOR WITH RETURN FOR
             SELECT CDCODE, CDDESC FROM (
                 SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
