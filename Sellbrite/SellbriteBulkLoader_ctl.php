@@ -87,6 +87,11 @@
             var el = document.getElementById('stdPage');
             while (el && el.parentElement && el !== document.body){
                 $(el).siblings(':visible').not('script,style,link').each(function(){
+                    // only in-flow elements squeeze the form; fixed/absolute ones
+                    // are overlays and spinners - transient, and re-showing one on
+                    // the way back would resurrect it stuck
+                    var pos = window.getComputedStyle(this).position;
+                    if (pos === 'fixed' || pos === 'absolute') return;
                     sblShellHidden.push(this);
                     $(this).hide();
                 });
