@@ -145,6 +145,21 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
 
+/* item, location, quantity and description edit in place; the box stays invisible until pointed at so the grid still reads as a list rather than a form */
+.rq-grid .rq-cell { width: 100%; box-sizing: border-box; padding: .15rem .3rem; font: inherit;
+                    color: inherit; background: transparent; border: 1px solid transparent;
+                    border-radius: 4px; }
+
+.rq-grid .rq-cell:hover { border-color: var(--rq-line); background: #fff; }
+
+.rq-grid .rq-cell:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
+                          border-color: var(--rq-blue); background: #fff; }
+
+.rq-grid .rq-cellnum { text-align: right; }
+
+/* the description keeps its quieter look while it is only being read */
+#tblGrid .rq-desc .rq-cell { color: var(--rq-muted); font-size: .82rem; }
+
 /* the small arrow that opens the employee list, like the old Access badge box */
 .rq-badgedd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: 0;
               background: none; padding: 0 .15rem; line-height: 1; font-size: .7rem;

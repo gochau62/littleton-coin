@@ -196,6 +196,26 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null,
 }
 
 
+// PROGRAM NAME REQSTN010S: correct one line from the grid, where a NULL argument leaves that column unchanged so one box can be saved at a time
+function rqsUpdateLine($conn, $reqNum, $lineNum, $item = null, $loc = null,
+                       $desc = null, $qty = null) {
+    $sql = "CALL REQSTN010S(?, ?, ?, ?, ?, ?)";
+
+    $stmt = db2_prepare($conn, $sql);
+    if (!$stmt) { return rqsFail("prepare REQSTN010S"); }
+
+    db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
+    db2_bind_param($stmt, 2, "lineNum", DB2_PARAM_IN);
+    db2_bind_param($stmt, 3, "item", DB2_PARAM_IN);
+    db2_bind_param($stmt, 4, "loc", DB2_PARAM_IN);
+    db2_bind_param($stmt, 5, "desc", DB2_PARAM_IN);
+    db2_bind_param($stmt, 6, "qty", DB2_PARAM_IN);
+
+    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN010S"); }
+    return true;
+}
+
+
 // PROGRAM NAME REQSTN006S: mark or unmark a single line returned, where a dateRet of 0 stamps today
 function rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet = 0) {
     $sql = "CALL REQSTN006S(?, ?, ?, ?)";

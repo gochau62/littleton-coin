@@ -144,7 +144,9 @@ switch ($action) {
     // update a header: missing fields (authBy/comments/badge) stay unchanged
     case 'update':
         $reqNum   = intval($_POST['reqNum']);
+        // the badge column only ever takes a number; a legacy name is left exactly as it is rather than rewritten or rejected, so an old requisition can still have its other fields corrected
         $badge    = isset($_POST['badge'])    ? substr(trim($_POST['badge']), 0, 10)    : null;
+        if ($badge !== null && $badge !== '' && !ctype_digit($badge)) { $badge = null; }
         $reqName  = isset($_POST['reqName'])  ? substr(trim($_POST['reqName']), 0, 50)  : null;
         $areaCode = isset($_POST['areaCode']) ? substr(trim($_POST['areaCode']), 0, 2)  : null;
         $areaType = isset($_POST['areaType']) ? substr(trim($_POST['areaType']), 0, 25) : null;
@@ -158,6 +160,29 @@ switch ($action) {
                   ($authBy   !== null ? ' authby ' . trim($authBy) : '') .
                   ($reqName  !== null ? ' name ' . $reqName        : '') .
                   ($badge    !== null ? ' badge ' . $badge         : ''));
+        rqsOut(array("ok" => true));
+
+    // correct one line from the grid: only the boxes that were sent are changed
+    case 'line':
+        $reqNum  = intval($_POST['reqNum']);
+        $lineNum = intval($_POST['lineNum']);
+        $item = isset($_POST['item']) ? substr(trim($_POST['item']), 0, 16) : null;
+        $loc  = isset($_POST['loc'])  ? substr(trim($_POST['loc']), 0, 3)   : null;
+        $desc = isset($_POST['desc']) ? substr(trim($_POST['desc']), 0, 50) : null;
+        // a quantity that is not a whole number above zero is dropped rather than stored, so the grid totals and the monthly report stay sound
+        $qty = null;
+        if (isset($_POST['qty'])) {
+            $q = trim(str_replace(',', '', $_POST['qty']));
+            if ($q !== '' && is_numeric($q) && floatval($q) > 0) { $qty = intval(floatval($q)); }
+        }
+        if (!rqsUpdateLine($conn, $reqNum, $lineNum, $item, $loc, $desc, $qty)) {
+            rqsOutFail();
+        }
+        rqsActLog($user, 'LINE', 'req ' . $reqNum . ' line ' . $lineNum .
+                  ($item !== null ? ' item ' . $item : '') .
+                  ($loc  !== null ? ' loc ' . $loc   : '') .
+                  ($qty  !== null ? ' qty ' . $qty   : '') .
+                  ($desc !== null ? ' desc ' . $desc : ''));
         rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)

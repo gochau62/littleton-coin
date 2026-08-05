@@ -110,6 +110,8 @@ var autoTimer = null;
 var selectedReq = null;
 // the rows of the requisition showing in the view window, reused by its Print button
 var lastReqRows = null;
+// the DE number the open view window started with, so a bad entry can drop back to it
+var viewBadgeWas = '';
 // checked Return Items wait here with their date until the next refresh saves them
 var pendingReturns = {};
 // true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
@@ -162,6 +164,14 @@ $(document).ready(function () {
     $('#btnAddLine').on('click', addLineRow);
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
+
+    // the DE number in the view window follows the same rule as the one in the grid: only a badge number saves, and anything typed to search the employee list drops back to what was stored
+    $('#v_denum').on('change', function () {
+        var val = $(this).val().trim();
+        if (val !== '' && !badgeCodeSet()[val] && !/^\d+$/.test(val)) {
+            $(this).val(viewBadgeWas);
+        }
+    });
 
     // report buttons: the Monthly Update and the per requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
@@ -219,6 +229,36 @@ $(document).ready(function () {
             pendingReturns[cb.attr('data-req') + '|' + cb.attr('data-line')] =
                 $(this).val().trim();
         }
+    });
+
+    // item number, location, quantity and description save as soon as you leave the box, the same way the badge does
+    // a quantity that is not a whole number above zero drops back to what it was rather than saving, since the grid totals and the monthly report both count on it
+    $('#gridBody').on('change', '.rq-cell', function () {
+        var inp = $(this);
+        var field = inp.data('field');
+        var was = String(inp.data('was'));
+        var val = inp.val().trim();
+
+        if (val === was) { return; }
+        if (field === 'qty' && !(/^\d+$/.test(val) && parseInt(val, 10) > 0)) {
+            inp.val(was);
+            swal('Quantity', 'Enter a whole number greater than zero.', 'warning');
+            return;
+        }
+
+        var msg = { action: 'line', reqNum: inp.data('req'), lineNum: inp.data('line') };
+        msg[field] = val;
+        postAjax(msg, function () {
+            inp.data('was', val);
+            // keep the loaded rows in step so the next refresh does not redraw the old value back over it
+            $.each(gridRows, function (i, r) {
+                if (String(r['RHREQ#']) === String(inp.data('req')) &&
+                    String(r['RDLIN#']) === String(inp.data('line'))) {
+                    r[{ item: 'RDITEM', loc: 'RDLOC', qty: 'RDQTY', desc: 'RDDESC' }[field]] = val;
+                }
+            });
+            lastGridJson = JSON.stringify(gridRows);
+        });
     });
 
     // the badge box saves as soon as you leave it; every line of the requisition shares it
@@ -540,8 +580,11 @@ function loadGrid(background) {
             var j = JSON.stringify(resp.rows);
             // nothing changed, skip the redraw
             if (j === lastGridJson) { return; }
-            lastGridJson = j;
+            // the timed refresh holds off while a box in the grid is being typed in, because redrawing under someone mid edit throws away what they were writing
+            // the rows are kept so the next refresh, or the moment they leave the box, picks them up
             gridRows = resp.rows;
+            if (background === true && $('#gridBody').find(':focus').length) { return; }
+            lastGridJson = j;
             renderGrid();
         }, background === true);
     }, background === true);
@@ -622,9 +665,9 @@ function renderGrid() {
                 esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
             '<td title="' + attr(r.RHNAME) + '">' + esc(r.RHNAME) + '</td>' +
-            '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
-            '<td>' + esc(r.RDLOC) + '</td>' +
-            '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
+            '<td title="' + attr(r.RDITEM) + '">' + lineBox(r, 'item', 'RDITEM', 16, '') + '</td>' +
+            '<td>' + lineBox(r, 'loc', 'RDLOC', 3, '') + '</td>' +
+            '<td class="rq-num">' + lineBox(r, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
             '<td><span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
             ' data-req="' + esc(r['RHREQ#']) + '"' +
             ' value="' + attr(r.RHBDGE) + '">' +
@@ -654,7 +697,7 @@ function renderGrid() {
         html += '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="2"></td>' +
             '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
-                esc(r.RDDESC) + '</td>' +
+                lineBox(r, 'desc', 'RDDESC', 50, '') + '</td>' +
             '<td colspan="2" class="rq-ret">' + retCell +
             '</td>' +
             '</tr>';
@@ -700,6 +743,18 @@ function gridCompare(a, b) {
     if (av < bv) { return -gridSort.dir; }
     if (av > bv) { return gridSort.dir; }
     return 0;
+}
+
+
+// one editable box in the grid, carrying the requisition and line it belongs to so it can save itself
+// a returned line is left as plain text, because its quantity has already been counted by the monthly report and the line is history at that point
+function lineBox(r, field, col, len, extra) {
+    var v = r[col] == null ? '' : r[col];
+    if (r.RDRTNF === 'Y') { return esc(v); }
+    return '<input class="rq-cell' + extra + '" data-field="' + field + '"' +
+           ' maxlength="' + len + '"' +
+           ' data-req="' + esc(r['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
+           ' data-was="' + attr(v) + '" value="' + attr(v) + '">';
 }
 
 
@@ -881,6 +936,7 @@ function openViewModal(reqNum) {
         $('#v_atype').val(h.RHARTY);
         $('#v_date').text(fmtDateTimeIso(h.RHRQDT, h.RHRQTM));
         $('#v_denum').val(h.RHBDGE);
+        viewBadgeWas = h.RHBDGE || '';
 
         var allReturned = true, anyLine = false;
         $.each(resp.rows, function (i, r) {
