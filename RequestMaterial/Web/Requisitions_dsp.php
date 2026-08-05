@@ -26,8 +26,12 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
         --rq-blue-hv: #0056b3; --rq-accent: #eaf6ee; --rq-bg: #f8f8f8; --rq-line: #dfe6e1;
         --rq-text: #222; --rq-muted: #5f6b62; --rq-amber: #9a6a14; --rq-red: #c0392b; }
 
+/* the screen sits inside the framework page beside its sidebar, so it never assumes the whole window: it takes the width it is given and everything inside stays within it */
 .rq-app { font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-          color: var(--rq-text); background: var(--rq-bg); padding: 0 0 2rem 0; }
+          color: var(--rq-text); background: var(--rq-bg); padding: 0 0 2rem 0;
+          max-width: 100%; box-sizing: border-box; }
+
+.rq-app *, .rq-app *::before, .rq-app *::after { box-sizing: border-box; }
 
 /* dark green title bar, with the signed in user and the clock on the right */
 .rq-topbar { display: flex; align-items: center; justify-content: space-between;
@@ -58,10 +62,16 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 /* typeahead list that drops under the item number and badge boxes */
 .rq-suggest { position: fixed; z-index: 200; background: #fff; border: 1px solid #999;
               border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); max-height: 150px;
-              overflow-y: auto; font-size: .78rem; max-width: 260px; }
+              overflow-y: auto; font-size: .78rem; }
 
-.rq-suggest div { padding: .15rem .45rem; cursor: pointer; white-space: nowrap;
-                  overflow: hidden; text-overflow: ellipsis; }
+.rq-suggest div { padding: .15rem .45rem; cursor: pointer; white-space: nowrap; }
+
+/* the name and badge lists are kept narrow, since a name is short and a long list of them is easier to read in a small box */
+#rqNameSuggest, #rqBadgeSuggest { max-width: 260px; }
+#rqNameSuggest div, #rqBadgeSuggest div { overflow: hidden; text-overflow: ellipsis; }
+
+/* the item list is not: an item number and its full description belong on one line, and the box grows to whatever the longest one needs, stopping short of the window edge */
+#rqSuggest { max-width: calc(100vw - 2rem); }
 .rq-suggest div b { color: var(--rq-blue); }
 .rq-suggest div.active, .rq-suggest div:hover { background: var(--rq-accent); }
 
@@ -84,13 +94,15 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-btn-ghost { border-style: dashed; color: var(--rq-muted); margin: .5rem 0; }
 
 /* the grid sits in a rounded white card and scrolls inside it, header staying put */
+/* the card keeps its margins but can never be wider than the space it was given, so the page itself never grows a sideways scrollbar */
 .rq-card { background: #fff; border: 1px solid var(--rq-line); border-radius: 8px;
-           margin: 0 1.25rem; overflow: hidden; }
+           margin: 0 .75rem; max-width: calc(100% - 1.5rem); overflow: hidden; }
 
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
 /* fixed column widths; borders stay uncollapsed so the frozen header keeps its lines */
-#tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem; border-collapse: separate;
+/* the smallest width the columns can honestly hold; below that the wrapper scrolls sideways rather than crushing them, which is why it must stay under the width the framework page leaves beside its sidebar */
+#tblGrid { table-layout: fixed; min-width: 700px; font-size: .86rem; border-collapse: separate;
            border-spacing: 0; }
 
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -354,10 +366,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <!-- compact fixed pixel columns with the leftover width going to Requestor, so nothing gets crushed -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
-          <col style="width:22px"><col style="width:58px"><col style="width:88px">
+          <col style="width:20px"><col style="width:54px"><col style="width:76px">
           <col>
-          <col style="width:96px"><col style="width:40px"><col style="width:52px">
-          <col style="width:88px"><col style="width:160px"><col style="width:68px">
+          <col style="width:88px"><col style="width:36px"><col style="width:46px">
+          <col style="width:72px"><col style="width:124px"><col style="width:54px">
         </colgroup>
         <thead>
           <tr>
