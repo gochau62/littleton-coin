@@ -60,15 +60,19 @@ if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'
 // this is settled before the authority check because the two screens are not open to the same people
 $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
-// the entry form asks only for the level everyone signed in to LCCOnline already has, since the whole work floor raises requisitions
-// the station screen asks for the requisitions group, because that is where a requisition is authorized, corrected and reported on
-// taking mode entry off the address no longer opens the station screen, it just puts the higher level in front of it
-$rqLevel = ($rqMode === 'entry') ? 10 : 41;
-
+// the two levels are separate grants rather than a ladder, so holding the requisitions group does not also satisfy the general one
+// the entry form therefore passes on either: the work floor reaches it on the general level, and whoever runs the station screen reaches it on the requisitions group
+// the station screen asks for the requisitions group alone, because that is where a requisition is authorized, corrected and reported on
+// taking mode entry off the address no longer opens the station screen, it just puts the higher grant in front of it
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", $rqLevel);
+    $authConn = getDB2PConn($user, $password);
+    if ($rqMode === 'entry') {
+        $authorized = (chkAutUsr($authConn, $user, "LCCONLINE", 10) == "yes" ||
+                       chkAutUsr($authConn, $user, "LCCONLINE", 41) == "yes") ? "yes" : "no";
+    } else {
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 41);
+    }
 }
 
 if ($authorized != "yes") {
