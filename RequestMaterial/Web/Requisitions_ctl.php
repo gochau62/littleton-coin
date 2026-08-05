@@ -793,9 +793,14 @@ function applyLookups(resp) {
 // the entry form names the person who is signed on rather than asking them, so a requisition always carries the badge and the name of whoever raised it
 // when the sign on name matched nobody the full list stays in place, because a long or hyphenated last name must never stop someone requesting
 function applySignedOnIdentity() {
-    if (!RQ_ME || !RQ_ME.name) { return; }
+    if (!RQ_ME || !RQ_ME.name) {
+        // nobody matched, so the badge box says as much rather than sitting there empty
+        $('#addBadge').val('').attr('placeholder', 'not on file');
+        return;
+    }
     $('#addName').html('<option value="' + esc(RQ_ME.name) + '">' +
                        esc(RQ_ME.name) + '</option>').val(RQ_ME.name).prop('disabled', true);
+    $('#addBadge').val(RQ_ME.badge);
 }
 
 

@@ -57,10 +57,11 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 
 /* typeahead list that drops under the item number and badge boxes */
 .rq-suggest { position: fixed; z-index: 200; background: #fff; border: 1px solid #999;
-              border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); max-height: 230px;
-              overflow-y: auto; font-size: .85rem; }
+              border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); max-height: 150px;
+              overflow-y: auto; font-size: .78rem; max-width: 260px; }
 
-.rq-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
+.rq-suggest div { padding: .15rem .45rem; cursor: pointer; white-space: nowrap;
+                  overflow: hidden; text-overflow: ellipsis; }
 .rq-suggest div b { color: var(--rq-blue); }
 .rq-suggest div.active, .rq-suggest div:hover { background: var(--rq-accent); }
 
@@ -392,6 +393,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <div class="rq-formrow">
           <label>Requestor:
             <select id="addName"></select>
+          </label>
+          <label>Badge:
+            <input type="text" id="addBadge" readonly tabindex="-1" title="Your badge number, taken from your sign on">
           </label>
           <label>Date:
             <input type="text" id="addDate" readonly tabindex="-1">

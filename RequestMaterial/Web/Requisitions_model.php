@@ -171,7 +171,30 @@ function rqsDeleteRequisition($conn, $reqNum) {
 function rqsWhoAmI($conn, $user) {
     $rows = rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("WHOAMI", substr(trim($user), 0, 50)));
     if ($rows === false || !count($rows)) { return null; }
-    return array("badge" => trim($rows[0]['CDCODE']), "name" => trim($rows[0]['CDDESC']));
+    return array("badge" => trim($rows[0]['CDCODE']),
+                 "name"  => rqsPreferredName($conn, trim($rows[0]['CDDESC'])));
+}
+
+
+// the employee file holds the name on the payroll while the requestor list holds the name people are known by, so Christopher Perez on the one is Topher Perez on the other
+// an exact match wins, otherwise the one entry sharing a last name is taken, and failing both the payroll name is kept so nobody is left without a name at all
+function rqsPreferredName($conn, $employeeName) {
+    $employeeName = trim($employeeName);
+    if ($employeeName === '') { return $employeeName; }
+
+    $names = rqsLookup($conn, "NAMES");
+    if ($names === false || !count($names)) { return $employeeName; }
+
+    $parts = preg_split('/\s+/', $employeeName);
+    $last  = strtolower(end($parts));
+    $sameLast = array();
+    foreach ($names as $row) {
+        $listed = trim($row['CDCODE']);
+        if (strcasecmp($listed, $employeeName) === 0) { return $listed; }
+        $lp = preg_split('/\s+/', $listed);
+        if (count($lp) > 1 && strtolower(end($lp)) === $last) { $sameLast[] = $listed; }
+    }
+    return (count($sameLast) === 1) ? $sameLast[0] : $employeeName;
 }
 
 
