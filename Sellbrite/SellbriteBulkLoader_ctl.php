@@ -75,9 +75,33 @@
     }
 
     /* ---- view switching ---- */
+    // The SKU form needs the whole screen, and the shell's sidebar squeezes it.
+    // Focus mode hides everything that sits BESIDE the loader at each level up
+    // to <body> - whatever the shell calls its menu, it is one of those - and
+    // puts it all back on the way out.  Only elements visible at the moment of
+    // hiding are touched, so popups and menus created later are never caught.
+    var sblShellHidden = [];
+    function sblShellFocus(on){
+        if (on){
+            if (sblShellHidden.length) return;
+            var el = document.getElementById('stdPage');
+            while (el && el.parentElement && el !== document.body){
+                $(el).siblings(':visible').not('script,style,link').each(function(){
+                    sblShellHidden.push(this);
+                    $(this).hide();
+                });
+                el = el.parentElement;
+            }
+        } else {
+            $(sblShellHidden).show();
+            sblShellHidden = [];
+        }
+    }
+
     function sblShow(view){
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
+        sblShellFocus(view === 'form');
     }
 
     function sblBackToList(){ sblShow('list'); }
