@@ -68,6 +68,10 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 
 /* the name and badge lists are kept narrow, since a name is short and a long list of them is easier to read in a small box */
 #rqNameSuggest, #rqBadgeSuggest { max-width: 260px; }
+
+/* the signed on person's own badge, sitting at the top of the list */
+.rq-suggest .rq-mybadge { border-bottom: 1px solid var(--rq-line); }
+.rq-suggest .rq-mybadge i { color: var(--rq-muted); font-size: .9em; }
 #rqNameSuggest div, #rqBadgeSuggest div { overflow: hidden; text-overflow: ellipsis; }
 
 /* the item list is not: an item number and its full description belong on one line, and the box grows to whatever the longest one needs, stopping short of the window edge */

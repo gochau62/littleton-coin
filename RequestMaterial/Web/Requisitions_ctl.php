@@ -102,6 +102,10 @@ if ($authorized != "yes") {
     $rqMe   = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
     $rqName = ($rqMe && $rqMe['name'] !== '') ? $rqMe['name'] : '';
 
+    // the signed on person's own badge, for the station grid only, so it can sit at the top of the badge list
+    // the entry form never receives it, the same as the rest of the badges, because the work floor is not shown badges at all
+    $rqMyBadge = ($rqMode !== 'entry' && $rqMe && $rqMe['badge'] !== '') ? $rqMe['badge'] : '';
+
     rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
 
     include "Requisitions_dsp.php";
@@ -117,6 +121,8 @@ var RQ_MODE = '<?php echo $rqMode; ?>';
 
 // the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
 var RQ_NAME = <?php echo json_encode($rqName); ?>;
+// the signed on person's own badge, empty when they have none on file
+var RQ_MYBADGE = <?php echo json_encode($rqMyBadge); ?>;
 // the sign on name itself, which stands in when no employee matched it, so the box shows who is at the keyboard either way
 var RQ_USER = <?php echo json_encode($user); ?>;
 
@@ -1137,10 +1143,20 @@ function showBadgeSuggest(inp, filterTyped) {
         $('<div class="rq-suggest-empty"></div>')
             .text('Employee list unavailable').appendTo(box);
     }
+    // whoever is signed on goes to the top, since their own badge is the one being entered nearly every time, and the rest of the list follows for the times it is not
+    if (RQ_MYBADGE) {
+        var mine = null, rest = [];
+        $.each(rows, function (i, b) {
+            if (b.c === RQ_MYBADGE) { mine = b; } else { rest.push(b); }
+        });
+        if (mine) { rows = [mine].concat(rest); }
+    }
     // no cap on the list, the menu box scrolls when there are many employees
     $.each(rows, function (i, b) {
-        $('<div></div>')
-            .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
+        var isMine = RQ_MYBADGE && b.c === RQ_MYBADGE;
+        $('<div' + (isMine ? ' class="rq-mybadge"' : '') + '></div>')
+            .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : '') +
+                  (isMine ? ' &nbsp;<i>you</i>' : ''))
             .data('code', b.c)
             .appendTo(box);
     });
