@@ -1106,10 +1106,11 @@ function hideNameSuggest() { $('#rqNameSuggest').remove(); }
 function showNameSuggest(inp) {
     hideNameSuggest();
     if (!inp.is(':focus')) { return; }
+    // every matching name is listed, never a first so many; the requestor list is the whole set of people who may raise a requisition and a name missing from it cannot be picked at all
     var typed = $.trim(inp.val()).toLowerCase();
     var rows = $.grep(nameChoices(), function (n) {
         return typed === '' || n.toLowerCase().indexOf(typed) !== -1;
-    }).slice(0, 50);
+    });
     if (!rows.length) { return; }
 
     var box = $('<div id="rqNameSuggest" class="rq-suggest"></div>');
