@@ -264,51 +264,25 @@ $(document).ready(function () {
         }
     });
 
-    // an edited box saves as soon as it is left, whether it sits in the grid or in the requisition window
-    // a quantity that is not a whole number above zero drops back to what it was rather than saving, since the grid totals and the monthly report both count on it
-    $('#gridBody, #viewLineBody').on('change', '.rq-cell', function () {
+    // the requestor saves as soon as the box is left; it belongs to the requisition rather than to one line, so it goes through the header and lands on every line of that requisition at once
+    $('#gridBody').on('change', '.rq-headcell', function () {
         var inp = $(this);
-        var field = inp.data('field');
         var was = String(inp.data('was'));
         var val = inp.val().trim();
-
         if (val === was) { return; }
 
-        // the requestor belongs to the requisition rather than to one line, so it saves through the header and lands on every line of that requisition at once
-        if (inp.hasClass('rq-headcell')) {
-            var reqNum = String(inp.data('req'));
-            postAjax({ action: 'update', reqNum: reqNum, reqName: val }, function () {
-                inp.data('was', val);
-                $.each(gridRows, function (i, r) {
-                    if (String(r['RHREQ#']) === reqNum) { r.RHNAME = val; }
-                });
-                lastGridJson = JSON.stringify(gridRows);
-                $('#gridBody .rq-headcell').each(function () {
-                    if (this !== inp[0] && String($(this).data('req')) === reqNum) {
-                        $(this).val(val).data('was', val);
-                    }
-                });
-            });
-            return;
-        }
-        if (field === 'qty' && !(/^\d+$/.test(val) && parseInt(val, 10) > 0)) {
-            inp.val(was);
-            swal('Quantity', 'Enter a whole number greater than zero.', 'warning');
-            return;
-        }
-
-        var msg = { action: 'line', reqNum: inp.data('req'), lineNum: inp.data('line') };
-        msg[field] = val;
-        postAjax(msg, function () {
+        var reqNum = String(inp.data('req'));
+        postAjax({ action: 'update', reqNum: reqNum, reqName: val }, function () {
             inp.data('was', val);
-            // keep the loaded rows in step so the next refresh does not redraw the old value back over it
             $.each(gridRows, function (i, r) {
-                if (String(r['RHREQ#']) === String(inp.data('req')) &&
-                    String(r['RDLIN#']) === String(inp.data('line'))) {
-                    r[{ item: 'RDITEM', loc: 'RDLOC', qty: 'RDQTY', desc: 'RDDESC' }[field]] = val;
-                }
+                if (String(r['RHREQ#']) === reqNum) { r.RHNAME = val; }
             });
             lastGridJson = JSON.stringify(gridRows);
+            $('#gridBody .rq-headcell').each(function () {
+                if (this !== inp[0] && String($(this).data('req')) === reqNum) {
+                    $(this).val(val).data('was', val);
+                }
+            });
         });
     });
 
@@ -789,7 +763,7 @@ function renderGrid() {
         html += '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="2"></td>' +
             '<td colspan="4" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
-                lineBox(r, 'desc', 'RDDESC', 50, '') + '</td>' +
+                esc(r.RDDESC) + '</td>' +
             '<td colspan="3" class="rq-ret">' + retCell +
             '</td>' +
             '</tr>';
@@ -860,28 +834,6 @@ function badgeCell(r) {
 }
 
 
-// one editable box in the requisition window, where the whole line is laid out and its item number, location, description and quantity can be corrected together
-// a returned line is left as plain text, the same as in the grid, because its quantity has already been counted by the monthly report
-function viewBox(r, h, field, col, len, extra) {
-    var v = r[col] == null ? '' : r[col];
-    if (r.RDRTNF === 'Y') { return esc(v); }
-    return '<input class="rq-cell' + extra + '" data-field="' + field + '"' +
-           ' maxlength="' + len + '"' +
-           ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
-           ' data-was="' + attr(v) + '" value="' + attr(v) + '">';
-}
-
-
-// one editable box in the grid, carrying the requisition and line it belongs to so it can save itself
-// a returned line is left as plain text, because its quantity has already been counted by the monthly report and the line is history at that point
-function lineBox(r, field, col, len, extra) {
-    var v = r[col] == null ? '' : r[col];
-    if (r.RDRTNF === 'Y') { return esc(v); }
-    return '<input class="rq-cell' + extra + '" data-field="' + field + '"' +
-           ' maxlength="' + len + '"' +
-           ' data-req="' + esc(r['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
-           ' data-was="' + attr(v) + '" value="' + attr(v) + '">';
-}
 
 
 // paint the up/down arrow on the active sort header
@@ -1078,11 +1030,11 @@ function openViewModal(reqNum) {
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] == null) { return; }
             html += '<tr>' +
-                '<td>' + viewBox(r, h, 'item', 'RDITEM', 16, '') + '</td>' +
-                '<td>' + viewBox(r, h, 'loc', 'RDLOC', 3, '') + '</td>' +
+                '<td>' + esc(r.RDITEM) + '</td>' +
+                '<td>' + esc(r.RDLOC) + '</td>' +
                 '<td>' + esc(r.RDCNDT) + '</td>' +
-                '<td>' + viewBox(r, h, 'desc', 'RDDESC', 50, '') + '</td>' +
-                '<td class="rq-num">' + viewBox(r, h, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
+                '<td>' + esc(r.RDDESC) + '</td>' +
+                '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
                 '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
                 '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
                 '<td class="rq-num">' + money(r.RDACST) + '</td>' +

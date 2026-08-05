@@ -184,31 +184,6 @@ switch ($action) {
                   ($badge    !== null ? ' badge ' . $badge         : ''));
         rqsOut(array("ok" => true));
 
-    // correct one line from the grid: only the boxes that were sent are changed
-    case 'line':
-        $reqNum  = intval($_POST['reqNum']);
-        $lineNum = intval($_POST['lineNum']);
-        $item = isset($_POST['item']) ? substr(trim($_POST['item']), 0, 16) : null;
-        $loc  = isset($_POST['loc'])  ? substr(trim($_POST['loc']), 0, 3)   : null;
-        $desc = isset($_POST['desc']) ? substr(trim($_POST['desc']), 0, 50) : null;
-        // the data entry name, a person's name and never a number, sent with line 0 to reach every line of the requisition
-        $deName = isset($_POST['deName']) ? substr(trim($_POST['deName']), 0, 50) : null;
-        // a quantity that is not a whole number above zero is dropped rather than stored, so the grid totals and the monthly report stay sound
-        $qty = null;
-        if (isset($_POST['qty'])) {
-            $q = trim(str_replace(',', '', $_POST['qty']));
-            if ($q !== '' && is_numeric($q) && floatval($q) > 0) { $qty = intval(floatval($q)); }
-        }
-        if (!rqsUpdateLine($conn, $reqNum, $lineNum, $item, $loc, $desc, $qty, $deName)) {
-            rqsOutFail();
-        }
-        rqsActLog($user, 'LINE', 'req ' . $reqNum . ' line ' . $lineNum .
-                  ($item   !== null ? ' item ' . $item     : '') .
-                  ($loc    !== null ? ' loc ' . $loc       : '') .
-                  ($qty    !== null ? ' qty ' . $qty       : '') .
-                  ($deName !== null ? ' dename ' . $deName : '') .
-                  ($desc   !== null ? ' desc ' . $desc     : ''));
-        rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)
     case 'monthly':

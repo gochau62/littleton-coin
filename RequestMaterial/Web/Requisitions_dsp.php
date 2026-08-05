@@ -178,7 +178,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-grid .rq-cell:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                           border-color: var(--rq-blue); background: #fff; }
 
-.rq-grid .rq-cellnum { text-align: right; }
 
 /* the description keeps its quieter look while it is only being read */
 #tblGrid .rq-desc .rq-cell { color: var(--rq-muted); font-size: .78rem; }
