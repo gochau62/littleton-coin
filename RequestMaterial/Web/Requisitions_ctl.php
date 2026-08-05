@@ -264,9 +264,9 @@ $(document).ready(function () {
         }
     });
 
-    // item number, location, quantity and description save as soon as you leave the box, the same way the badge does
+    // an edited box saves as soon as it is left, whether it sits in the grid or in the requisition window
     // a quantity that is not a whole number above zero drops back to what it was rather than saving, since the grid totals and the monthly report both count on it
-    $('#gridBody').on('change', '.rq-cell', function () {
+    $('#gridBody, #viewLineBody').on('change', '.rq-cell', function () {
         var inp = $(this);
         var field = inp.data('field');
         var was = String(inp.data('was'));
@@ -758,11 +758,11 @@ function renderGrid() {
                 '<input class="rq-cell rq-headcell" data-field="reqName" maxlength="50"' +
                 ' data-req="' + esc(r['RHREQ#']) + '"' +
                 ' data-was="' + attr(r.RHNAME) + '" value="' + attr(r.RHNAME) + '">' + '</td>' +
-            '<td title="' + attr(r.RDITEM) + '">' + lineBox(r, 'item', 'RDITEM', 16, '') + '</td>' +
-            '<td>' + lineBox(r, 'loc', 'RDLOC', 3, '') + '</td>' +
-            // the column holds five digits, which covers all but a handful of old bulk orders; those still open and save, and the full figure is on the cell for hovering over
-            '<td class="rq-num" title="' + attr(r.RDQTY) + '">' +
-                lineBox(r, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
+            // the item number, the location and the quantity are read here and corrected in the requisition window, where the whole line is in front of you rather than one box of it
+            '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
+            '<td>' + esc(r.RDLOC) + '</td>' +
+            // the column holds five digits, which covers all but a handful of old bulk orders; the full figure is on the cell for hovering over
+            '<td class="rq-num" title="' + attr(r.RDQTY) + '">' + esc(r.RDQTY) + '</td>' +
             '<td>' + badgeCell(r) + '</td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
@@ -857,6 +857,18 @@ function badgeCell(r) {
            ' value="' + attr(pend !== null ? pend : b) + '">' +
            '<button type="button" class="rq-badgedd" tabindex="-1"' +
            ' title="Pick employee">&#9662;</button></span>';
+}
+
+
+// one editable box in the requisition window, where the whole line is laid out and its item number, location, description and quantity can be corrected together
+// a returned line is left as plain text, the same as in the grid, because its quantity has already been counted by the monthly report
+function viewBox(r, h, field, col, len, extra) {
+    var v = r[col] == null ? '' : r[col];
+    if (r.RDRTNF === 'Y') { return esc(v); }
+    return '<input class="rq-cell' + extra + '" data-field="' + field + '"' +
+           ' maxlength="' + len + '"' +
+           ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
+           ' data-was="' + attr(v) + '" value="' + attr(v) + '">';
 }
 
 
@@ -1066,11 +1078,11 @@ function openViewModal(reqNum) {
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] == null) { return; }
             html += '<tr>' +
-                '<td>' + esc(r.RDITEM) + '</td>' +
-                '<td>' + esc(r.RDLOC) + '</td>' +
+                '<td>' + viewBox(r, h, 'item', 'RDITEM', 16, '') + '</td>' +
+                '<td>' + viewBox(r, h, 'loc', 'RDLOC', 3, '') + '</td>' +
                 '<td>' + esc(r.RDCNDT) + '</td>' +
-                '<td>' + esc(r.RDDESC) + '</td>' +
-                '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
+                '<td>' + viewBox(r, h, 'desc', 'RDDESC', 50, '') + '</td>' +
+                '<td class="rq-num">' + viewBox(r, h, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
                 '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
                 '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
                 '<td class="rq-num">' + money(r.RDACST) + '</td>' +
