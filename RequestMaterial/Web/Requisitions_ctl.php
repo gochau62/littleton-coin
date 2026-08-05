@@ -750,7 +750,9 @@ function renderGrid() {
                 ' data-was="' + attr(r.RHNAME) + '" value="' + attr(r.RHNAME) + '">' + '</td>' +
             '<td title="' + attr(r.RDITEM) + '">' + lineBox(r, 'item', 'RDITEM', 16, '') + '</td>' +
             '<td>' + lineBox(r, 'loc', 'RDLOC', 3, '') + '</td>' +
-            '<td class="rq-num">' + lineBox(r, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
+            // the column holds five digits, which covers all but a handful of old bulk orders; those still open and save, and the full figure is on the cell for hovering over
+            '<td class="rq-num" title="' + attr(r.RDQTY) + '">' +
+                lineBox(r, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
             '<td>' + badgeCell(r) + '</td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +

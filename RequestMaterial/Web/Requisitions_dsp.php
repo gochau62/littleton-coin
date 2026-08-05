@@ -102,7 +102,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
 /* fixed column widths; borders stay uncollapsed so the frozen header keeps its lines */
 /* the smallest width the columns can honestly hold; below that the wrapper scrolls sideways rather than crushing them, which is why it must stay under the width the framework page leaves beside its sidebar */
-#tblGrid { table-layout: fixed; min-width: 710px; font-size: .8rem; border-collapse: separate;
+#tblGrid { table-layout: fixed; min-width: 694px; font-size: .8rem; border-collapse: separate;
            border-spacing: 0; }
 
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -385,7 +385,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <!-- sized from the longest value each column actually holds, so nothing is cut off: a date is ten characters, an item number up to sixteen, a location three -->
           <col style="width:20px"><col style="width:50px"><col style="width:82px">
           <col>
-          <col style="width:104px"><col style="width:32px"><col style="width:62px">
+          <col style="width:104px"><col style="width:32px"><col style="width:46px">
           <col style="width:70px"><col style="width:92px"><col style="width:48px">
         </colgroup>
         <thead>
