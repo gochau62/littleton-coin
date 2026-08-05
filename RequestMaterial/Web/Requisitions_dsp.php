@@ -395,9 +395,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             <input type="text" id="addName" maxlength="50" autocomplete="off"
                    title="Start typing a name; the badge fills in from whoever is picked">
           </label>
-          <label>Badge:
-            <input type="text" id="addBadge" readonly tabindex="-1" title="Fills in from the requestor named on the left">
-          </label>
           <label>Date:
             <input type="text" id="addDate" readonly tabindex="-1">
           </label>

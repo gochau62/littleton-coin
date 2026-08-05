@@ -66,20 +66,24 @@ switch ($action) {
         if ($rows === false) { rqsOutFail(); }
         rqsOut(array("ok" => true, "rows" => $rows));
 
-    // the four dropdown lists plus the badge list for the add request form, used only as a fallback when the controller did not preload them onto the page
+    // the four dropdown lists plus the badge list for the station grid, used only as a fallback when the controller did not preload them onto the page
+    // the entry form asks with mode entry and gets no badge list, the same as when the controller preloads it, so the work floor never receives one by either route
     case 'lookups':
         $names  = rqsLookup($conn, "NAMES");
         $codes  = rqsLookup($conn, "AREACODE");
         $types  = rqsLookup($conn, "AREATYPE");
         $auth   = rqsLookup($conn, "AUTHBY");
-        $badges = rqsLookup($conn, "BADGE");
-        if ($names === false || $codes === false || $types === false ||
-            $auth === false || $badges === false) {
+        if ($names === false || $codes === false || $types === false || $auth === false) {
             rqsOutFail();
         }
-        rqsOut(array("ok" => true, "names" => $names, "areaCodes" => $codes,
-                     "areaTypes" => $types, "authBy" => $auth,
-                     "badges" => $badges));
+        $out = array("ok" => true, "names" => $names, "areaCodes" => $codes,
+                     "areaTypes" => $types, "authBy" => $auth);
+        if (($_POST['mode'] ?? '') !== 'entry') {
+            $badges = rqsLookup($conn, "BADGE");
+            if ($badges === false) { rqsOutFail(); }
+            $out['badges'] = $badges;
+        }
+        rqsOut($out);
 
     // item autofill: most recent description/coin date/cost/retail
     case 'itemlookup':
@@ -104,7 +108,8 @@ switch ($action) {
         $me      = rqsWhoAmI($conn, $user);
         $reqName = trim($payload['reqName'] ?? '');
         if ($reqName === '') { $reqName = ($me && $me['name'] !== '') ? $me['name'] : $user; }
-        $badge   = substr(trim($payload['badge'] ?? ''), 0, 10);
+        // the badge is worked out here from the name, never sent up by the form, so the entry screen never has to carry a badge and the work floor never sees one
+        $badge   = rqsBadgeForName($conn, $reqName);
         if ($badge === '' || !ctype_digit($badge)) { $badge = '0'; }
 
         // the data entry name records who actually keyed it, taken from the sign on and never from the form, so it stays true even when the requisition is raised for somebody else

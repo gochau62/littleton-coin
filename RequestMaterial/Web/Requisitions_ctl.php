@@ -81,6 +81,10 @@ if ($authorized != "yes") {
     // a sign on name that does not match anyone leaves this empty and the form falls back to the full lists, which keeps a long or hyphenated last name from locking someone out
     $rqMe = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
 
+    // the entry form never shows a badge, so the employee list is not sent to it at all
+    // the work floor reaches this screen, and a list that never leaves the server cannot be read out of the page either
+    if ($rqMode === 'entry' && is_array($rqLookups)) { unset($rqLookups['badges']); }
+
     rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
 
     include "Requisitions_dsp.php";
@@ -167,10 +171,7 @@ $(document).ready(function () {
 
     // the requestor box opens its list on focus, narrows it as you type, and refills the badge whenever the name settles
     $('#addName').on('focus input', function () { showNameSuggest($(this)); });
-    $('#addName').on('change blur', function () {
-        fillBadgeFor($(this).val());
-        setTimeout(hideNameSuggest, 150);
-    });
+    $('#addName').on('blur', function () { setTimeout(hideNameSuggest, 150); });
 
 
     // report buttons: the Monthly Update and the per requisition preview
@@ -792,43 +793,14 @@ function applyLookups(resp) {
 // when the sign on name matched nobody the full list stays in place, because a long or hyphenated last name must never stop someone requesting
 // the form opens on whoever is signed on, and when the sign on name matches nobody on file the sign on name itself stands in, so the box is never blank
 function applySignedOnIdentity() {
-    var startName = (RQ_ME && RQ_ME.name) ? RQ_ME.name : RQ_USER;
-    $('#addName').val(startName);
-    fillBadgeFor(startName);
-}
-
-
-// the badge that belongs to a name, taken from the live employee list that rode in with the page
-// an exact name wins, otherwise the one employee sharing a last name, and where a last name is shared by more than one person nothing is guessed at
-function badgeForName(name) {
-    name = $.trim(name);
-    if (name === '') { return ''; }
-    if (RQ_ME && RQ_ME.name && name.toLowerCase() === RQ_ME.name.toLowerCase()) { return RQ_ME.badge; }
-
-    var parts = name.split(/\s+/);
-    var last = parts[parts.length - 1].toLowerCase();
-    var sameLast = [];
-    var hit = '';
-    $.each(badgeChoices(), function (i, b) {
-        if (b.n.toLowerCase() === name.toLowerCase()) { hit = b.c; return false; }
-        var lp = b.n.split(/\s+/);
-        if (lp.length > 1 && lp[lp.length - 1].toLowerCase() === last) { sameLast.push(b.c); }
-    });
-    if (hit !== '') { return hit; }
-    return (sameLast.length === 1) ? sameLast[0] : '';
-}
-
-
-function fillBadgeFor(name) {
-    var b = badgeForName(name);
-    $('#addBadge').val(b).attr('placeholder', b === '' ? 'not on file' : '');
+    $('#addName').val((RQ_ME && RQ_ME.name) ? RQ_ME.name : RQ_USER);
 }
 
 
 function loadLookups() {
     // the lists usually ride in with the page
     if (RQ_PRELOAD) { applyLookups(RQ_PRELOAD); return; }
-    postAjax({ action: 'lookups' }, applyLookups);
+    postAjax({ action: 'lookups', mode: RQ_MODE }, applyLookups);
 }
 
 
@@ -920,7 +892,6 @@ function submitRequisition() {
 
     var payload = {
         reqName: $('#addName').val(),
-        badge: $('#addBadge').val(),
         areaCode: $('#addAreaCode').val(),
         areaType: $('#addAreaType').val(),
         rush: $('input[name="addRush"]:checked').val() === 'Y' ? 'Y' : 'N',
@@ -1116,7 +1087,7 @@ function showBadgeSuggest(inp, filterTyped) {
 
 // item search dropdown
 
-// the requestor box searches as you type, over the stored requestor list and the live employee list together, so a name that has never been on a requisition can still be picked
+// the requestor box searches as you type, over the stored requestor list and nothing else, so the names on offer are exactly the ones that list has always held
 function nameChoices() {
     var seen = {}, out = [];
     if (lookups && lookups.names) {
@@ -1125,10 +1096,6 @@ function nameChoices() {
             if (n !== '' && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); }
         });
     }
-    $.each(badgeChoices(), function (i, b) {
-        var n = $.trim(b.n);
-        if (n !== '' && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); }
-    });
     return out;
 }
 
@@ -1147,11 +1114,7 @@ function showNameSuggest(inp) {
 
     var box = $('<div id="rqNameSuggest" class="rq-suggest"></div>');
     $.each(rows, function (i, n) {
-        var b = badgeForName(n);
-        $('<div></div>')
-            .html(esc(n) + (b !== '' ? ' &nbsp;<b>' + esc(b) + '</b>' : ''))
-            .data('name', n)
-            .appendTo(box);
+        $('<div></div>').text(n).data('name', n).appendTo(box);
     });
     var rc = inp[0].getBoundingClientRect();
     box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
@@ -1161,7 +1124,6 @@ function showNameSuggest(inp) {
         e.preventDefault();
         var n = $(this).data('name');
         inp.val(n);
-        fillBadgeFor(n);
         hideNameSuggest();
     });
 }
