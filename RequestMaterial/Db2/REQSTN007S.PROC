@@ -116,9 +116,16 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
         -- WHOAMI: the one employee behind the sign on name passed in
         -- INKEY. A sign on name at Littleton is the first letter of the
         -- first name followed by the last name, and it can only hold ten
-        -- characters, so a long last name is matched on its first ten as
-        -- well. No row comes back when the name does not follow the rule,
-        -- which is what lets the screen fall back to the full lists.
+        -- characters, so a last name long enough to have been cut short is
+        -- matched on what is left of it. No row comes back when the name
+        -- does not follow the rule, which is what lets the screen fall
+        -- back to the list.
+        --
+        -- The short name is matched with LIKE rather than by cutting the
+        -- built name down to ten characters. TRIM and a join both give a
+        -- varying length result, and asking SUBSTR for ten characters of
+        -- something shorter than ten fails the whole statement - which
+        -- covers most people here, DSMITH being six.
         DECLARE C5 CURSOR WITH RETURN FOR
             SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
                    TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
@@ -126,8 +133,9 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              WHERE E.LEESTAT = 'A'
                AND ( UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
                            TRIM(E.LELNAME)) = UPPER(TRIM(INKEY))
-                  OR SUBSTR(UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
-                           TRIM(E.LELNAME)), 1, 10) = UPPER(TRIM(INKEY)) )
+                  OR ( LENGTH(TRIM(INKEY)) = 10
+                       AND UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                                 TRIM(E.LELNAME)) LIKE UPPER(TRIM(INKEY)) || '%' ) )
              ORDER BY E.LELNAME, E.LEFNAME
              FETCH FIRST 1 ROW ONLY;
 

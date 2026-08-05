@@ -268,7 +268,17 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   border: 1px solid #999; border-radius: 3px; background: #fff; padding: .15rem .45rem;
   font-size: .9rem; color: var(--rq-text); }
 
-.rq-lgcyval { background: #fafafa; }
+/* a read only value keeps the height of the boxes beside it, so an empty one is still a box rather than a hairline */
+.rq-lgcyval { background: #fafafa; min-height: 1.65rem; }
+
+/* a box with a list behind it, carrying the arrow inside its right edge the way the badge box does, so the list can be opened at any time and not only by typing */
+.rq-combo { position: relative; display: inline-block; }
+.rq-combo input { padding-right: 1.1rem; }
+.rq-combodd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: 0;
+              background: none; cursor: pointer; color: var(--rq-muted); font-size: .7rem;
+              line-height: 1; padding: 0 .2rem; }
+
+.rq-combodd:hover { color: var(--rq-blue); }
 .rq-lgcytable { border-collapse: separate; border-spacing: 4px 5px; }
 .rq-lgcytable thead th { position: static; background: none; border: none; color: var(--rq-text);
                          font-weight: 700; padding: .2rem .45rem; }
@@ -484,20 +494,15 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <!-- one requisition stacked label over value; Authorized By and Comments are editable here -->
         <div class="rq-lgcy">
           <div class="rq-lgcyrow"><label>ID:</label><span class="rq-lgcyval" id="v_id"></span></div>
-          <div class="rq-lgcyrow"><label>Name:</label><input type="text" id="v_name" list="rqNameList" maxlength="50"></div>
-          <div class="rq-lgcyrow"><label>Area Code:</label><input type="text" id="v_acode" list="rqAreaCodeList" maxlength="2"></div>
-          <div class="rq-lgcyrow"><label>Area Type:</label><input type="text" id="v_atype" list="rqAreaTypeList" maxlength="25"></div>
+          <!-- each of these carries its own arrow, so the list is there to open whether or not anything has been typed -->
+          <div class="rq-lgcyrow"><label>Name:</label><span class="rq-combo"><input type="text" id="v_name" data-list="names" maxlength="50"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
+          <div class="rq-lgcyrow"><label>Area Code:</label><span class="rq-combo"><input type="text" id="v_acode" data-list="areaCodes" maxlength="2"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
+          <div class="rq-lgcyrow"><label>Area Type:</label><span class="rq-combo"><input type="text" id="v_atype" data-list="areaTypes" maxlength="25"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
           <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum" title="The first four letters of the first name of whoever entered the requisition; it records who keyed it and is not changed by hand"></span></div>
           <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
-          <div class="rq-lgcyrow"><label>Authorized By:</label><input type="text" id="authBy" list="rqAuthByList" maxlength="50"></div>
+          <div class="rq-lgcyrow"><label>Authorized By:</label><span class="rq-combo"><input type="text" id="authBy" data-list="authBy" maxlength="50"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
-
-          <!-- the choices behind the boxes above; a box with a list attached can be typed into freely or picked from, which is how the old screen behaved -->
-          <datalist id="rqNameList"></datalist>
-          <datalist id="rqAreaCodeList"></datalist>
-          <datalist id="rqAreaTypeList"></datalist>
-          <datalist id="rqAuthByList"></datalist>
         </div>
 
         <hr style="border:none;border-top:2px solid #333;margin:.9rem 0;">

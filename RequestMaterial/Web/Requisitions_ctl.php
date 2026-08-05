@@ -117,6 +117,8 @@ var RQ_MODE = '<?php echo $rqMode; ?>';
 
 // the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
 var RQ_NAME = <?php echo json_encode($rqName); ?>;
+// the sign on name itself, which stands in when no employee matched it, so the box shows who is at the keyboard either way
+var RQ_USER = <?php echo json_encode($user); ?>;
 
 var gridRows = [];
 var lastGridJson = '';
@@ -184,6 +186,17 @@ $(document).ready(function () {
     $('#btnAddLine').on('click', addLineRow);
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
+
+    // the view window boxes open their list on the arrow or on landing in the box, and narrow it while typing
+    $('.rq-combo input').on('focus', function () { showComboSuggest($(this), false); });
+    $('.rq-combo input').on('input', function () { showComboSuggest($(this), true); });
+    $('.rq-combo input').on('blur', function () { setTimeout(hideComboSuggest, 150); });
+    $('.rq-combodd').on('mousedown', function (e) {
+        e.preventDefault();
+        var inp = $(this).siblings('input');
+        if ($('#rqComboSuggest').length) { hideComboSuggest(); }
+        else { inp.trigger('focus'); showComboSuggest(inp, false); }
+    });
 
     // the requestor box opens the whole list on focus even though a name is already filled in, so somebody entering for another person can see every name without first clearing the box, and narrows it only once they start typing
     $('#addName').on('focus', function () { showNameSuggest($(this), false); });
@@ -258,6 +271,24 @@ $(document).ready(function () {
         var val = inp.val().trim();
 
         if (val === was) { return; }
+
+        // the requestor belongs to the requisition rather than to one line, so it saves through the header and lands on every line of that requisition at once
+        if (inp.hasClass('rq-headcell')) {
+            var reqNum = String(inp.data('req'));
+            postAjax({ action: 'update', reqNum: reqNum, reqName: val }, function () {
+                inp.data('was', val);
+                $.each(gridRows, function (i, r) {
+                    if (String(r['RHREQ#']) === reqNum) { r.RHNAME = val; }
+                });
+                lastGridJson = JSON.stringify(gridRows);
+                $('#gridBody .rq-headcell').each(function () {
+                    if (this !== inp[0] && String($(this).data('req')) === reqNum) {
+                        $(this).val(val).data('was', val);
+                    }
+                });
+            });
+            return;
+        }
         if (field === 'qty' && !(/^\d+$/.test(val) && parseInt(val, 10) > 0)) {
             inp.val(was);
             swal('Quantity', 'Enter a whole number greater than zero.', 'warning');
@@ -707,7 +738,10 @@ function renderGrid() {
             '<td><span class="rq-reqlink" title="Open requisition ' + esc(r['RHREQ#']) + '">' +
                 esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td title="' + attr(r.RHNAME) + '">' + esc(r.RHNAME) + '</td>' +
+            '<td title="' + attr(r.RHNAME) + '">' +
+                '<input class="rq-cell rq-headcell" data-field="reqName" maxlength="50"' +
+                ' data-req="' + esc(r['RHREQ#']) + '"' +
+                ' data-was="' + attr(r.RHNAME) + '" value="' + attr(r.RHNAME) + '">' + '</td>' +
             '<td title="' + attr(r.RDITEM) + '">' + lineBox(r, 'item', 'RDITEM', 16, '') + '</td>' +
             '<td>' + lineBox(r, 'loc', 'RDLOC', 3, '') + '</td>' +
             '<td class="rq-num">' + lineBox(r, 'qty', 'RDQTY', 9, ' rq-cellnum') + '</td>' +
@@ -821,11 +855,7 @@ function applyLookups(resp) {
     // Authorization None is a stored choice in the code list, not a placeholder added here
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
 
-    // the same lists again behind the boxes in the view window, which are typed into rather than picked from
-    fillSelect('#rqNameList', resp.names, 'CDCODE', 'CDCODE');
-    fillSelect('#rqAreaCodeList', resp.areaCodes, 'CDCODE', 'CDDESC');
-    fillSelect('#rqAreaTypeList', resp.areaTypes, 'CDCODE', 'CDCODE');
-    fillSelect('#rqAuthByList', resp.authBy, 'CDCODE', 'CDCODE');
+    // the boxes in the view window read the same lists straight out of lookups when their arrow is used
 
     applyFirstRequestor();
 }
@@ -834,7 +864,7 @@ function applyLookups(resp) {
 // the requestor box opens on the full name of whoever is signed on, so the usual case needs no picking at all
 // a sign on name that matched nobody falls back to the first name in the list, and either way the list is there to pick from or type over
 function applyFirstRequestor() {
-    var start = RQ_NAME || nameChoices()[0];
+    var start = RQ_NAME || RQ_USER || nameChoices()[0];
     if (start) { $('#addName').val(start); }
 }
 
@@ -1140,6 +1170,49 @@ function nameChoices() {
         });
     }
     return out;
+}
+
+
+// the lists behind the boxes in the view window, each one the same code list the entry form uses
+function comboValues(which) {
+    var rows = lookups ? lookups[which] : null;
+    var out = [];
+    if (!rows) { return out; }
+    $.each(rows, function (i, r) {
+        var v = $.trim(r.CDCODE || '');
+        if (v !== '') { out.push(v); }
+    });
+    return out;
+}
+
+
+function hideComboSuggest() { $('#rqComboSuggest').remove(); }
+
+
+// opens under whichever box was asked for; with filterTyped off it shows the whole list, which is what the arrow does
+function showComboSuggest(inp, filterTyped) {
+    hideComboSuggest();
+    var vals = comboValues(inp.data('list'));
+    if (!vals.length) { return; }
+    var typed = filterTyped ? $.trim(inp.val()).toLowerCase() : '';
+    var rows = $.grep(vals, function (v) {
+        return typed === '' || v.toLowerCase().indexOf(typed) !== -1;
+    });
+    if (!rows.length) { return; }
+
+    var box = $('<div id="rqComboSuggest" class="rq-suggest"></div>');
+    $.each(rows, function (i, v) {
+        $('<div></div>').text(v).data('val', v).appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        inp.val($(this).data('val'));
+        hideComboSuggest();
+    });
 }
 
 
