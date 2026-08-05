@@ -19,6 +19,10 @@
 $GLOBALS['rqsErr'] = '';
 
 
+// TESTING ONLY - answers the sign on lookup as this profile instead of whoever is really signed on, so the screen can be tried out as somebody else. Set it back to '' before this goes anywhere near production; while it holds anything the screen carries a red banner saying so.
+define('RQS_TEST_AS', 'CPEREZ');
+
+
 // activity log path: the LCCOnline_logs folder beside the PHP is writable by the web profile while the docroot itself is not, so this is where the file actually appears, and keeping it relative to __DIR__ means it stays correct on every instance
 define('RQS_ACT_LOG', __DIR__ . '/LCCOnline_logs/requisition_activity.log');
 
@@ -169,6 +173,7 @@ function rqsDeleteRequisition($conn, $reqNum) {
 
 // PROGRAM NAME REQSTN007S type WHOAMI: the badge and full name of the employee behind a sign on name, returning an empty list when the sign on name does not match anyone
 function rqsWhoAmI($conn, $user) {
+    if (RQS_TEST_AS !== '') { $user = RQS_TEST_AS; }
     $rows = rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("WHOAMI", substr(trim($user), 0, 50)));
     if ($rows === false || !count($rows)) { return null; }
     return array("badge" => trim($rows[0]['CDCODE']),
