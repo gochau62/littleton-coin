@@ -114,7 +114,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 #tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
 #tblGrid .rq-ret input { vertical-align: middle; }
 #tblGrid .rq-ret label { margin: 0 .35rem 0 .3rem; }
-#tblGrid .rq-retdate { width: 5.4rem; padding: .12rem .35rem; font-size: .78rem;
+#tblGrid .rq-retdate { width: 5rem; padding: .12rem .3rem; font-size: .75rem;
                        border: 1px solid var(--rq-line); border-radius: 4px; }
 
 #tblGrid .rq-retdone { color: var(--rq-green); font-weight: 700; font-size: .78rem; }

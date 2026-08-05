@@ -324,17 +324,12 @@ $(document).ready(function () {
         // a requisition that already carries a badge is asked about before it is moved to another one, because that badge is the record of who the requisition belongs to
         var had = reqBadge(reqNum);
         if (had !== '' && had !== '0' && had !== val) {
-            swal({
-                title: 'Change the badge?',
-                text: 'Requisition ' + reqNum + ' is on badge ' + had +
-                      '. Move it to ' + (val === '' ? '(none)' : val) + '?',
-                type: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Change it'
-            }, function (ok) {
-                if (ok) { saveBadge(inp, reqNum, val); }
-                else { inp.val(had); }
-            });
+            ask('Change the badge?',
+                'Requisition ' + reqNum + ' is on badge ' + had +
+                '. Move it to ' + (val === '' ? '(none)' : val) + '?',
+                'Change it', 'Leave it',
+                function () { saveBadge(inp, reqNum, val); },
+                function () { inp.val(had); });
             return;
         }
         saveBadge(inp, reqNum, val);
@@ -598,6 +593,25 @@ function markStale() {
 }
 
 
+// a yes or no the user has to answer before anything happens, in the same swal box as every other message on the page
+// every option is spelled out rather than left to default, because a box missing them answers nothing when the button is pressed
+function ask(title, text, yes, no, onYes, onNo) {
+    swal({
+        title: title,
+        text: text,
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonText: yes,
+        cancelButtonText: no,
+        closeOnConfirm: true,
+        closeOnCancel: true
+    }, function (ok) {
+        if (ok) { onYes(); }
+        else if (onNo) { onNo(); }
+    });
+}
+
+
 // today as mm/dd/yyyy, for the Return Item date autofill
 function fmtToday() {
     var d = new Date();
@@ -771,11 +785,12 @@ function renderGrid() {
                 '<input type="text" class="rq-retdate" maxlength="10"' +
                 (pend !== null ? ' value="' + attr(pend) + '"' : '') + '>';
         }
+        // the second line borrows the Badge column as well, because the Return Item box, its label and its date need more room than Authorized and Rush leave between them
         html += '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="2"></td>' +
-            '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
+            '<td colspan="4" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
                 lineBox(r, 'desc', 'RDDESC', 50, '') + '</td>' +
-            '<td colspan="2" class="rq-ret">' + retCell +
+            '<td colspan="3" class="rq-ret">' + retCell +
             '</td>' +
             '</tr>';
     });
