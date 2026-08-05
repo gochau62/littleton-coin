@@ -136,6 +136,8 @@ var selectedReq = null;
 var lastReqRows = null;
 // checked Return Items wait here with their date until the next refresh saves them
 var pendingReturns = {};
+// a badge typed into the grid waits here by requisition number until the next refresh saves it, so it can still be taken back
+var pendingBadges = {};
 // true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
 var sheetNavMove = false;
 
@@ -321,31 +323,12 @@ $(document).ready(function () {
             inp.val(reqBadge(reqNum));
             return;
         }
-        // setting the badge is asked about because it only happens once: after this the requisition carries that badge for good and the box is replaced by plain text
-        var had = reqBadge(reqNum);
-        if (val === '' || val === '0') { inp.val(had); return; }
-        ask('Set badge ' + val + '?', 'This cannot be changed later.',
-            'Set it', 'Cancel',
-            function () { saveBadge(inp, reqNum, val); },
-            function () { inp.val(had); });
+        // nothing is written yet: the badge waits with the checked Return Items and they all go in together on the next refresh
+        // that gap is the chance to take it back, by clearing the box or typing a different number, because once it is written the badge cannot be changed
+        if (val === '' || val === '0') { delete pendingBadges[reqNum]; }
+        else { pendingBadges[reqNum] = val; }
+        inp.toggleClass('rq-pending', val !== '' && val !== '0');
     });
-
-    // writes the badge away and puts it on the requisition's other lines at the same time, since every line of a requisition shares one badge
-    function saveBadge(inp, reqNum, val) {
-        postAjax({
-            action: 'update',
-            reqNum: reqNum,
-            badge: val
-        }, function () {
-            $.each(gridRows, function (i, r) {
-                if (String(r['RHREQ#']) === reqNum) { r.RHBDGE = val; }
-            });
-            lastGridJson = JSON.stringify(gridRows);
-            // drawn again straight away so the box becomes the plain locked number, on this requisition's other lines as well
-            // waiting for the next refresh would not do it: that refresh compares what comes back with what is already held and skips the redraw when they match, which they now do
-            renderGrid();
-        });
-    }
 
     // the badge box opens the employee list on focus and narrows it as you type
     $('#gridBody').on('focusin', '.rq-badge', function () {
@@ -649,21 +632,48 @@ function attr(s) {
 function loadGrid(background) {
     // Open pulls all its rows and filters them in the browser; Returned and All search on the server
     var q = (gridShow === 'O') ? '' : $('#txtFilter').val().trim();
-    submitPendingReturns(function () {
-        postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
-            $('#lblUpdated').removeClass('rq-stale')
-                .text('Updated ' + new Date().toLocaleTimeString());
-            var j = JSON.stringify(resp.rows);
-            // nothing changed, skip the redraw
-            if (j === lastGridJson) { return; }
-            // the timed refresh holds off while a box in the grid is being typed in, because redrawing under someone mid edit throws away what they were writing
-            // the rows are kept so the next refresh, or the moment they leave the box, picks them up
-            gridRows = resp.rows;
-            if (background === true && $('#gridBody').find(':focus').length) { return; }
-            lastGridJson = j;
-            renderGrid();
-        }, background === true);
-    }, background === true);
+    var silent = background === true;
+
+    // everything waiting goes in first, badges then returns, and only then are the rows pulled back
+    submitPendingBadges(function () {
+        submitPendingReturns(function () {
+            postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
+                $('#lblUpdated').removeClass('rq-stale')
+                    .text('Updated ' + new Date().toLocaleTimeString());
+                var j = JSON.stringify(resp.rows);
+                // nothing changed, skip the redraw
+                if (j === lastGridJson) { return; }
+                // the timed refresh holds off while a box in the grid is being typed in, because redrawing under someone mid edit throws away what they were writing
+                // the rows are kept so the next refresh, or the moment they leave the box, picks them up
+                gridRows = resp.rows;
+                if (silent && $('#gridBody').find(':focus').length) { return; }
+                lastGridJson = j;
+                renderGrid();
+            }, silent);
+        }, silent);
+    }, silent);
+}
+
+
+// badges typed into the grid are written before the rows come back, so the refresh shows them settled and locked
+// a badge that was typed and then cleared never gets here, which is how it is taken back
+function submitPendingBadges(next, silent) {
+    var keys = Object.keys(pendingBadges);
+    if (!keys.length) { next(); return; }
+
+    var done = 0;
+    $.each(keys, function (i, reqNum) {
+        postAjax({ action: 'update', reqNum: reqNum, badge: pendingBadges[reqNum] },
+            function () {
+                delete pendingBadges[reqNum];
+                done++;
+                if (done === keys.length) {
+                    // the rows held here are now behind the database, so the redraw is not skipped as unchanged
+                    lastGridJson = '';
+                    next();
+                }
+            }, silent);
+    });
 }
 
 
@@ -836,8 +846,15 @@ function badgeCell(r) {
         return '<span class="rq-badgeset" title="The badge is set once and cannot be changed">' +
                esc(b) + '</span>';
     }
-    return '<span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
-           ' data-req="' + esc(r['RHREQ#']) + '" value="' + attr(b) + '">' +
+    // a badge typed but not yet written keeps its number and its marking when the grid redraws, the same way a checked Return Item keeps its tick
+    var pend = pendingBadges.hasOwnProperty(String(r['RHREQ#']))
+             ? pendingBadges[String(r['RHREQ#'])] : null;
+    return '<span class="rq-badgewrap"><input class="rq-badge' +
+           (pend !== null ? ' rq-pending' : '') + '" maxlength="10"' +
+           ' title="' + (pend !== null ? 'Waiting for the next refresh; clear it to take it back'
+                                       : 'Set once, then it cannot be changed') + '"' +
+           ' data-req="' + esc(r['RHREQ#']) + '"' +
+           ' value="' + attr(pend !== null ? pend : b) + '">' +
            '<button type="button" class="rq-badgedd" tabindex="-1"' +
            ' title="Pick employee">&#9662;</button></span>';
 }

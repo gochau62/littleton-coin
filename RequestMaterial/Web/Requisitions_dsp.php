@@ -164,6 +164,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 /* a badge that has been set reads as plain text, with no box around it, because there is nothing left to type into */
 .rq-badgeset { display: inline-block; padding: 0 .3rem; }
 
+/* a badge typed but not yet written is marked while it waits, so it is plain that the refresh is what settles it */
+.rq-grid .rq-badge.rq-pending { border-color: var(--rq-amber); background: #fffaf0;
+                                font-weight: 700; }
+
 /* item, location, quantity and description edit in place; the box stays invisible until pointed at so the grid still reads as a list rather than a form */
 .rq-grid .rq-cell { width: 100%; box-sizing: border-box; padding: .3rem .25rem; font: inherit;
                     color: inherit; background: transparent; border: 1px solid transparent;
