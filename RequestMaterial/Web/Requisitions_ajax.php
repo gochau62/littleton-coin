@@ -100,14 +100,16 @@ switch ($action) {
             rqsOutFail("No requisition lines received.");
         }
 
-        // the badge and the requestor come from whoever is signed on, not from the browser, so a requisition cannot be entered under someone else's name
-        // a sign on name that matches nobody falls back to what the form sent and to badge 0, which is how it behaved before
+        // the requestor is whoever the form named, since one person often raises a requisition for another, and the badge that rides with it is that person's
         $me      = rqsWhoAmI($conn, $user);
-        $badge   = ($me && $me['badge'] !== '') ? $me['badge'] : '0';
-        $reqName = ($me && $me['name']  !== '') ? $me['name']  : $payload['reqName'];
+        $reqName = trim($payload['reqName'] ?? '');
+        if ($reqName === '') { $reqName = ($me && $me['name'] !== '') ? $me['name'] : $user; }
+        $badge   = substr(trim($payload['badge'] ?? ''), 0, 10);
+        if ($badge === '' || !ctype_digit($badge)) { $badge = '0'; }
 
-        // the header carries the requestor's badge number while every line carries the data entry name, the first four letters of the first name of whoever keyed it, which is what the eighteen years of history in this column hold
-        $first   = trim(explode(' ', trim($reqName))[0]);
+        // the data entry name records who actually keyed it, taken from the sign on and never from the form, so it stays true even when the requisition is raised for somebody else
+        $keyer   = ($me && $me['name'] !== '') ? $me['name'] : $user;
+        $first   = trim(explode(' ', trim($keyer))[0]);
         $deName  = $first !== '' ? substr($first, 0, 4) : '';
 
         $reqNum = rqsInsertHeader($conn,

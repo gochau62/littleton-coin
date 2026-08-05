@@ -96,6 +96,8 @@ var RQ_MODE = '<?php echo $rqMode; ?>';
 
 // the signed on employee, empty when the sign on name matched nobody
 var RQ_ME = <?php echo json_encode($rqMe ? $rqMe : null); ?>;
+// the sign on name itself, which stands in as the requestor when nobody on file matches it
+var RQ_USER = <?php echo json_encode($user); ?>;
 var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
@@ -110,8 +112,6 @@ var autoTimer = null;
 var selectedReq = null;
 // the rows of the requisition showing in the view window, reused by its Print button
 var lastReqRows = null;
-// the DE number the open view window started with, so a bad entry can drop back to it
-var viewBadgeWas = '';
 // checked Return Items wait here with their date until the next refresh saves them
 var pendingReturns = {};
 // true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
@@ -165,14 +165,13 @@ $(document).ready(function () {
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
 
-    // Inv DE Number holds four letters of a first name, never a number, so a number typed into it drops back to what was stored
-    $('#v_denum').on('change', function () {
-        var val = $(this).val().trim();
-        if (val !== '' && /\d/.test(val)) {
-            $(this).val(viewBadgeWas);
-            swal('Inv DE Number', 'This is the first four letters of the first name of whoever entered the requisition, not a badge number.', 'warning');
-        }
+    // the requestor box opens its list on focus, narrows it as you type, and refills the badge whenever the name settles
+    $('#addName').on('focus input', function () { showNameSuggest($(this)); });
+    $('#addName').on('change blur', function () {
+        fillBadgeFor($(this).val());
+        setTimeout(hideNameSuggest, 150);
     });
+
 
     // report buttons: the Monthly Update and the per requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
@@ -774,7 +773,6 @@ function updateSortIndicators() {
 function applyLookups(resp) {
     lookups = resp;
     // all four lists come from the RQSCODEFLT code file via REQSTN007S
-    fillSelect('#addName', resp.names, 'CDCODE', 'CDCODE');
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
     // Authorization None is a stored choice in the code list, not a placeholder added here
@@ -792,15 +790,38 @@ function applyLookups(resp) {
 
 // the entry form names the person who is signed on rather than asking them, so a requisition always carries the badge and the name of whoever raised it
 // when the sign on name matched nobody the full list stays in place, because a long or hyphenated last name must never stop someone requesting
+// the form opens on whoever is signed on, and when the sign on name matches nobody on file the sign on name itself stands in, so the box is never blank
 function applySignedOnIdentity() {
-    if (!RQ_ME || !RQ_ME.name) {
-        // nobody matched, so the badge box says as much rather than sitting there empty
-        $('#addBadge').val('').attr('placeholder', 'not on file');
-        return;
-    }
-    $('#addName').html('<option value="' + esc(RQ_ME.name) + '">' +
-                       esc(RQ_ME.name) + '</option>').val(RQ_ME.name).prop('disabled', true);
-    $('#addBadge').val(RQ_ME.badge);
+    var startName = (RQ_ME && RQ_ME.name) ? RQ_ME.name : RQ_USER;
+    $('#addName').val(startName);
+    fillBadgeFor(startName);
+}
+
+
+// the badge that belongs to a name, taken from the live employee list that rode in with the page
+// an exact name wins, otherwise the one employee sharing a last name, and where a last name is shared by more than one person nothing is guessed at
+function badgeForName(name) {
+    name = $.trim(name);
+    if (name === '') { return ''; }
+    if (RQ_ME && RQ_ME.name && name.toLowerCase() === RQ_ME.name.toLowerCase()) { return RQ_ME.badge; }
+
+    var parts = name.split(/\s+/);
+    var last = parts[parts.length - 1].toLowerCase();
+    var sameLast = [];
+    var hit = '';
+    $.each(badgeChoices(), function (i, b) {
+        if (b.n.toLowerCase() === name.toLowerCase()) { hit = b.c; return false; }
+        var lp = b.n.split(/\s+/);
+        if (lp.length > 1 && lp[lp.length - 1].toLowerCase() === last) { sameLast.push(b.c); }
+    });
+    if (hit !== '') { return hit; }
+    return (sameLast.length === 1) ? sameLast[0] : '';
+}
+
+
+function fillBadgeFor(name) {
+    var b = badgeForName(name);
+    $('#addBadge').val(b).attr('placeholder', b === '' ? 'not on file' : '');
 }
 
 
@@ -899,6 +920,7 @@ function submitRequisition() {
 
     var payload = {
         reqName: $('#addName').val(),
+        badge: $('#addBadge').val(),
         areaCode: $('#addAreaCode').val(),
         areaType: $('#addAreaType').val(),
         rush: $('input[name="addRush"]:checked').val() === 'Y' ? 'Y' : 'N',
@@ -945,8 +967,7 @@ function openViewModal(reqNum) {
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] != null && deName === '') { deName = (r.RDBDGE || '').trim(); }
         });
-        $('#v_denum').val(deName);
-        viewBadgeWas = deName;
+        $('#v_denum').text(deName);
 
         var allReturned = true, anyLine = false;
         $.each(resp.rows, function (i, r) {
@@ -1008,15 +1029,9 @@ function updateCurrent() {
         areaCode: $('#v_acode').val(),
         areaType: $('#v_atype').val()
     }, function () {
-        // the data entry name lives on the lines, so it goes separately with line 0 to reach all of them, and only when it was actually changed
-        var deName = $('#v_denum').val().trim();
-        var done = function () {
-            $('#mdlView').prop('hidden', true);
-            swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
-            loadGrid();
-        };
-        if (deName === viewBadgeWas) { done(); return; }
-        postAjax({ action: 'line', reqNum: reqNum, lineNum: 0, deName: deName }, done);
+        $('#mdlView').prop('hidden', true);
+        swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
+        loadGrid();
     });
 }
 
@@ -1100,6 +1115,57 @@ function showBadgeSuggest(inp, filterTyped) {
 }
 
 // item search dropdown
+
+// the requestor box searches as you type, over the stored requestor list and the live employee list together, so a name that has never been on a requisition can still be picked
+function nameChoices() {
+    var seen = {}, out = [];
+    if (lookups && lookups.names) {
+        $.each(lookups.names, function (i, r) {
+            var n = $.trim(r.CDCODE || '');
+            if (n !== '' && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); }
+        });
+    }
+    $.each(badgeChoices(), function (i, b) {
+        var n = $.trim(b.n);
+        if (n !== '' && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); }
+    });
+    return out;
+}
+
+
+function hideNameSuggest() { $('#rqNameSuggest').remove(); }
+
+
+function showNameSuggest(inp) {
+    hideNameSuggest();
+    if (!inp.is(':focus')) { return; }
+    var typed = $.trim(inp.val()).toLowerCase();
+    var rows = $.grep(nameChoices(), function (n) {
+        return typed === '' || n.toLowerCase().indexOf(typed) !== -1;
+    }).slice(0, 50);
+    if (!rows.length) { return; }
+
+    var box = $('<div id="rqNameSuggest" class="rq-suggest"></div>');
+    $.each(rows, function (i, n) {
+        var b = badgeForName(n);
+        $('<div></div>')
+            .html(esc(n) + (b !== '' ? ' &nbsp;<b>' + esc(b) + '</b>' : ''))
+            .data('name', n)
+            .appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        var n = $(this).data('name');
+        inp.val(n);
+        fillBadgeFor(n);
+        hideNameSuggest();
+    });
+}
+
 
 function hideSuggest() { $('#rqSuggest').remove(); }
 

@@ -392,10 +392,11 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <!-- requestor, date, rush and the area choices that apply to the whole requisition -->
         <div class="rq-formrow">
           <label>Requestor:
-            <select id="addName"></select>
+            <input type="text" id="addName" maxlength="50" autocomplete="off"
+                   title="Start typing a name; the badge fills in from whoever is picked">
           </label>
           <label>Badge:
-            <input type="text" id="addBadge" readonly tabindex="-1" title="Your badge number, taken from your sign on">
+            <input type="text" id="addBadge" readonly tabindex="-1" title="Fills in from the requestor named on the left">
           </label>
           <label>Date:
             <input type="text" id="addDate" readonly tabindex="-1">
@@ -472,7 +473,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <div class="rq-lgcyrow"><label>Area Code:</label><input type="text" id="v_acode" list="rqAreaCodeList" maxlength="2"></div>
           <div class="rq-lgcyrow"><label>Area Type:</label><input type="text" id="v_atype" list="rqAreaTypeList" maxlength="25"></div>
           <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
-          <div class="rq-lgcyrow"><label>Inv DE Number:</label><input type="text" id="v_denum" maxlength="4" title="The first four letters of the first name of whoever entered the requisition"></div>
+          <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum" title="The first four letters of the first name of whoever entered the requisition; it records who keyed it and is not changed by hand"></span></div>
           <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
           <div class="rq-lgcyrow"><label>Authorized By:</label><input type="text" id="authBy" list="rqAuthByList" maxlength="50"></div>
           <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
