@@ -316,7 +316,6 @@ $(document).ready(function () {
         // that gap is the chance to take it back, by clearing the box or typing a different number, because once it is written the badge cannot be changed
         if (val === '' || val === '0') { delete pendingBadges[reqNum]; }
         else { pendingBadges[reqNum] = val; }
-        inp.toggleClass('rq-pending', val !== '' && val !== '0');
     });
 
     // clicking into an empty badge box fills in your own badge straight away, since that is the one being entered nearly every time
@@ -325,7 +324,7 @@ $(document).ready(function () {
         var inp = $(this);
         var val = inp.val().trim();
         if (RQ_MYBADGE && (val === '' || val === '0')) {
-            inp.val(RQ_MYBADGE).addClass('rq-pending');
+            inp.val(RQ_MYBADGE);
             pendingBadges[String(inp.data('req'))] = RQ_MYBADGE;
         }
         showBadgeSuggest(inp, false);
@@ -845,8 +844,7 @@ function badgeCell(r) {
     // a badge typed but not yet written keeps its number and its marking when the grid redraws, the same way a checked Return Item keeps its tick
     var pend = pendingBadges.hasOwnProperty(String(r['RHREQ#']))
              ? pendingBadges[String(r['RHREQ#'])] : null;
-    return '<span class="rq-badgewrap"><input class="rq-badge' +
-           (pend !== null ? ' rq-pending' : '') + '" maxlength="10"' +
+    return '<span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
            ' title="' + (pend !== null ? 'Waiting for the next refresh; clear it to take it back'
                                        : 'Set once, then it cannot be changed') + '"' +
            ' data-req="' + esc(r['RHREQ#']) + '"' +
@@ -1169,10 +1167,8 @@ function showBadgeSuggest(inp, filterTyped) {
     }
     // no cap on the list, the menu box scrolls when there are many employees
     $.each(rows, function (i, b) {
-        var isMine = RQ_MYBADGE && b.c === RQ_MYBADGE;
-        $('<div' + (isMine ? ' class="rq-mybadge"' : '') + '></div>')
-            .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : '') +
-                  (isMine ? ' &nbsp;<i>you</i>' : ''))
+        $('<div></div>')
+            .html('<b>' + esc(b.c) + '</b>' + (b.n ? ' &nbsp; ' + esc(b.n) : ''))
             .data('code', b.c)
             .appendTo(box);
     });

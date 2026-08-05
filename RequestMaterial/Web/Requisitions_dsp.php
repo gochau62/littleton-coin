@@ -68,10 +68,6 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 
 /* the name and badge lists are kept narrow, since a name is short and a long list of them is easier to read in a small box */
 #rqNameSuggest, #rqBadgeSuggest { max-width: 260px; }
-
-/* the signed on person's own badge, sitting at the top of the list */
-.rq-suggest .rq-mybadge { border-bottom: 1px solid var(--rq-line); }
-.rq-suggest .rq-mybadge i { color: var(--rq-muted); font-size: .9em; }
 #rqNameSuggest div, #rqBadgeSuggest div { overflow: hidden; text-overflow: ellipsis; }
 
 /* the item list is not: an item number and its full description belong on one line, and the box grows to whatever the longest one needs, stopping short of the window edge */
@@ -168,9 +164,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 /* a badge that has been set reads as plain text, with no box around it, because there is nothing left to type into */
 .rq-badgeset { display: inline-block; padding: 0 .3rem; }
 
-/* a badge typed but not yet written is marked while it waits, so it is plain that the refresh is what settles it */
-.rq-grid .rq-badge.rq-pending { border-color: var(--rq-amber); background: #fffaf0;
-                                font-weight: 700; }
 
 /* item, location, quantity and description edit in place; the box stays invisible until pointed at so the grid still reads as a list rather than a form */
 .rq-grid .rq-cell { width: 100%; box-sizing: border-box; padding: .3rem .25rem; font: inherit;
