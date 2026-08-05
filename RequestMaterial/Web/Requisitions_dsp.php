@@ -449,14 +449,21 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <!-- one requisition stacked label over value; Authorized By and Comments are editable here -->
         <div class="rq-lgcy">
           <div class="rq-lgcyrow"><label>ID:</label><span class="rq-lgcyval" id="v_id"></span></div>
-          <div class="rq-lgcyrow"><label>Name:</label><span class="rq-lgcyval" id="v_name"></span></div>
-          <div class="rq-lgcyrow"><label>Area Code:</label><span class="rq-lgcyval" id="v_acode"></span></div>
-          <div class="rq-lgcyrow"><label>Area Type:</label><span class="rq-lgcyval" id="v_atype"></span></div>
+          <div class="rq-lgcyrow"><label>Name:</label><input type="text" id="v_name" list="rqNameList" maxlength="50"></div>
+          <div class="rq-lgcyrow"><label>Area Code:</label><input type="text" id="v_acode" list="rqAreaCodeList" maxlength="2"></div>
+          <div class="rq-lgcyrow"><label>Area Type:</label><input type="text" id="v_atype" list="rqAreaTypeList" maxlength="25"></div>
           <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
-          <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum"></span></div>
+          <div class="rq-lgcyrow"><label>Inv DE Number:</label><input type="text" id="v_denum" list="rqBadgeList" maxlength="10"></div>
           <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
-          <div class="rq-lgcyrow"><label>Authorized By:</label><select id="authBy"></select></div>
+          <div class="rq-lgcyrow"><label>Authorized By:</label><input type="text" id="authBy" list="rqAuthByList" maxlength="50"></div>
           <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
+
+          <!-- the choices behind the boxes above; a box with a list attached can be typed into freely or picked from, which is how the old screen behaved -->
+          <datalist id="rqNameList"></datalist>
+          <datalist id="rqAreaCodeList"></datalist>
+          <datalist id="rqAreaTypeList"></datalist>
+          <datalist id="rqBadgeList"></datalist>
+          <datalist id="rqAuthByList"></datalist>
         </div>
 
         <hr style="border:none;border-top:2px solid #333;margin:.9rem 0;">

@@ -100,10 +100,14 @@ switch ($action) {
             rqsOutFail("No requisition lines received.");
         }
 
-        // new requisitions start with badge 0; someone fills it in later
-        $badge = '0';
+        // the badge and the requestor come from whoever is signed on, not from the browser, so a requisition cannot be entered under someone else's name
+        // a sign on name that matches nobody falls back to what the form sent and to badge 0, which is how it behaved before
+        $me      = rqsWhoAmI($conn, $user);
+        $badge   = ($me && $me['badge'] !== '') ? $me['badge'] : '0';
+        $reqName = ($me && $me['name']  !== '') ? $me['name']  : $payload['reqName'];
+
         $reqNum = rqsInsertHeader($conn,
-                      $payload['reqName'],
+                      $reqName,
                       $payload['areaCode'],
                       $payload['areaType'],
                       ($payload['rush'] == 'Y' ? 'Y' : 'N'),
@@ -133,21 +137,27 @@ switch ($action) {
             }
         }
 
-        rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines)');
+        rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines)' .
+                  ' for ' . $reqName . ' badge ' . $badge);
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
     // update a header: missing fields (authBy/comments/badge) stay unchanged
     case 'update':
-        $reqNum = intval($_POST['reqNum']);
-        $badge  = isset($_POST['badge']) ? substr(trim($_POST['badge']), 0, 10) : null;
-        if (!rqsUpdateReq($conn, $reqNum,
-                          $_POST['authBy'] ?? null,
-                          $_POST['comments'] ?? null,
-                          $badge)) {
+        $reqNum   = intval($_POST['reqNum']);
+        $badge    = isset($_POST['badge'])    ? substr(trim($_POST['badge']), 0, 10)    : null;
+        $reqName  = isset($_POST['reqName'])  ? substr(trim($_POST['reqName']), 0, 50)  : null;
+        $areaCode = isset($_POST['areaCode']) ? substr(trim($_POST['areaCode']), 0, 2)  : null;
+        $areaType = isset($_POST['areaType']) ? substr(trim($_POST['areaType']), 0, 25) : null;
+        $authBy   = $_POST['authBy'] ?? null;
+        if (!rqsUpdateReq($conn, $reqNum, $authBy, $_POST['comments'] ?? null,
+                          $badge, $reqName, $areaCode, $areaType)) {
             rqsOutFail();
         }
+        // the log names the authorizer that was set, so a later question about who approved something under whose name can be answered from the log alone
         rqsActLog($user, 'UPDATE', 'req ' . $reqNum .
-                  ($badge !== null ? ' badge ' . $badge : ''));
+                  ($authBy   !== null ? ' authby ' . trim($authBy) : '') .
+                  ($reqName  !== null ? ' name ' . $reqName        : '') .
+                  ($badge    !== null ? ' badge ' . $badge         : ''));
         rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)

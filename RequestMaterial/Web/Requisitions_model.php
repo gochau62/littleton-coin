@@ -167,9 +167,18 @@ function rqsDeleteRequisition($conn, $reqNum) {
 }
 
 
-// PROGRAM NAME REQSTN005S: update the header authorized by, comments and badge, where a NULL argument leaves that column unchanged
-function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
-    $sql = "CALL REQSTN005S(?, ?, ?, ?)";
+// PROGRAM NAME REQSTN007S type WHOAMI: the badge and full name of the employee behind a sign on name, returning an empty list when the sign on name does not match anyone
+function rqsWhoAmI($conn, $user) {
+    $rows = rqsFetchAll($conn, "CALL REQSTN007S(?, ?)", array("WHOAMI", substr(trim($user), 0, 50)));
+    if ($rows === false || !count($rows)) { return null; }
+    return array("badge" => trim($rows[0]['CDCODE']), "name" => trim($rows[0]['CDDESC']));
+}
+
+
+// PROGRAM NAME REQSTN005S: update the header requestor name, area code, area type, authorized by, comments and badge, where a NULL argument leaves that column unchanged
+function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null,
+                      $reqName = null, $areaCode = null, $areaType = null) {
+    $sql = "CALL REQSTN005S(?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return rqsFail("prepare REQSTN005S"); }
@@ -178,6 +187,9 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null) {
     db2_bind_param($stmt, 2, "authBy", DB2_PARAM_IN);
     db2_bind_param($stmt, 3, "comments", DB2_PARAM_IN);
     db2_bind_param($stmt, 4, "badge", DB2_PARAM_IN);
+    db2_bind_param($stmt, 5, "reqName", DB2_PARAM_IN);
+    db2_bind_param($stmt, 6, "areaCode", DB2_PARAM_IN);
+    db2_bind_param($stmt, 7, "areaType", DB2_PARAM_IN);
 
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN005S"); }
     return true;

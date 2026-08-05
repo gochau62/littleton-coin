@@ -113,12 +113,32 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              WHERE E.LEESTAT = 'A'
              ORDER BY 2, 1;
 
+        -- WHOAMI: the one employee behind the sign on name passed in
+        -- INKEY. A sign on name at Littleton is the first letter of the
+        -- first name followed by the last name, and it can only hold ten
+        -- characters, so a long last name is matched on its first ten as
+        -- well. No row comes back when the name does not follow the rule,
+        -- which is what lets the screen fall back to the full lists.
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
+                   TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
+              FROM LSCPRDLIB/XEMPLOYP E
+             WHERE E.LEESTAT = 'A'
+               AND ( UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                           TRIM(E.LELNAME)) = UPPER(TRIM(INKEY))
+                  OR SUBSTR(UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                           TRIM(E.LELNAME)), 1, 10) = UPPER(TRIM(INKEY)) )
+             ORDER BY E.LELNAME, E.LEFNAME
+             FETCH FIRST 1 ROW ONLY;
+
         IF INTYPE = 'ITEM' THEN
             OPEN C2;
         ELSEIF INTYPE = 'ITEMSRCH' THEN
             OPEN C3;
         ELSEIF INTYPE = 'BADGE' THEN
             OPEN C4;
+        ELSEIF INTYPE = 'WHOAMI' THEN
+            OPEN C5;
         ELSE
             OPEN C1;
         END IF;

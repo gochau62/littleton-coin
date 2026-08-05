@@ -77,6 +77,10 @@ if ($authorized != "yes") {
     // mode entry is the workfloor entry only shortcut; the plain URL is the full station
     $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
+    // the employee behind the sign on name, so the entry form can fill in the requestor and the badge instead of asking for them
+    // a sign on name that does not match anyone leaves this empty and the form falls back to the full lists, which keeps a long or hyphenated last name from locking someone out
+    $rqMe = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
+
     rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
 
     include "Requisitions_dsp.php";
@@ -88,6 +92,10 @@ if ($authorized != "yes") {
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 // entry mode comes from the workfloor shortcut link and is checked all through this script
 var RQ_MODE = '<?php echo $rqMode; ?>';
+
+
+// the signed on employee, empty when the sign on name matched nobody
+var RQ_ME = <?php echo json_encode($rqMe ? $rqMe : null); ?>;
 var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
@@ -713,9 +721,26 @@ function applyLookups(resp) {
     fillSelect('#addName', resp.names, 'CDCODE', 'CDCODE');
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
-    fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
     // Authorization None is a stored choice in the code list, not a placeholder added here
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
+
+    // the same lists again behind the boxes in the view window, which are typed into rather than picked from
+    fillSelect('#rqNameList', resp.names, 'CDCODE', 'CDCODE');
+    fillSelect('#rqAreaCodeList', resp.areaCodes, 'CDCODE', 'CDDESC');
+    fillSelect('#rqAreaTypeList', resp.areaTypes, 'CDCODE', 'CDCODE');
+    fillSelect('#rqAuthByList', resp.authBy, 'CDCODE', 'CDCODE');
+    if (resp.badges) { fillSelect('#rqBadgeList', resp.badges, 'CDCODE', 'CDDESC'); }
+
+    applySignedOnIdentity();
+}
+
+
+// the entry form names the person who is signed on rather than asking them, so a requisition always carries the badge and the name of whoever raised it
+// when the sign on name matched nobody the full list stays in place, because a long or hyphenated last name must never stop someone requesting
+function applySignedOnIdentity() {
+    if (!RQ_ME || !RQ_ME.name) { return; }
+    $('#addName').html('<option value="' + esc(RQ_ME.name) + '">' +
+                       esc(RQ_ME.name) + '</option>').val(RQ_ME.name).prop('disabled', true);
 }
 
 
@@ -848,13 +873,14 @@ function openViewModal(reqNum) {
         var h = resp.rows[0];
         $('#viewReqNum').text(h['RHREQ#']);
 
-        // legacy style header fields
+        // legacy style header fields; the boxes can be corrected here the way the old screen allowed
+        // the number and the date stay as plain text: the number is the key, and the date is what the monthly report groups on
         $('#v_id').text(h['RHREQ#']);
-        $('#v_name').text(h.RHNAME);
-        $('#v_acode').text(h.RHARCD);
-        $('#v_atype').text(h.RHARTY);
+        $('#v_name').val(h.RHNAME);
+        $('#v_acode').val(h.RHARCD);
+        $('#v_atype').val(h.RHARTY);
         $('#v_date').text(fmtDateTimeIso(h.RHRQDT, h.RHRQTM));
-        $('#v_denum').text(h.RHBDGE);
+        $('#v_denum').val(h.RHBDGE);
 
         var allReturned = true, anyLine = false;
         $.each(resp.rows, function (i, r) {
@@ -864,13 +890,8 @@ function openViewModal(reqNum) {
         });
         $('#v_returned').text(anyLine && allReturned ? 'Yes' : 'No');
 
-        // preselect the saved authorizer; an old name no longer on the list is added so it appears
-        var sel = $('#authBy');
-        var val = h.RHAUTB || 'Authorization = None';
-        if (!sel.find('option').filter(function () { return this.value === val; }).length) {
-            sel.append('<option>' + esc(val) + '</option>');
-        }
-        sel.val(val);
+        // the saved authorizer shows as it stands, and because the box is typed into, an old name no longer on the list still appears exactly as it was stored
+        $('#authBy').val(h.RHAUTB || 'Authorization = None');
         $('#authComments').val(h.RHCMNT);
 
         var html = '';
@@ -909,14 +930,18 @@ function fmtDateTimeIso(d8, t6) {
 }
 
 
-// the view window Update button, sending the authorized by name and comments through REQSTN005S
+// the view window Update button, sending the whole header through REQSTN005S so a correction made in any of the boxes is saved
 function updateCurrent() {
     var reqNum = $('#mdlView').data('req');
     postAjax({
         action: 'update',
         reqNum: reqNum,
         authBy: $('#authBy').val(),
-        comments: $('#authComments').val()
+        comments: $('#authComments').val(),
+        reqName: $('#v_name').val(),
+        areaCode: $('#v_acode').val(),
+        areaType: $('#v_atype').val(),
+        badge: $('#v_denum').val()
     }, function () {
         $('#mdlView').prop('hidden', true);
         swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
