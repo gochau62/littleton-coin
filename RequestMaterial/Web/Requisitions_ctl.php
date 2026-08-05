@@ -310,9 +310,16 @@ $(document).ready(function () {
         inp.toggleClass('rq-pending', val !== '' && val !== '0');
     });
 
-    // the badge box opens the employee list on focus and narrows it as you type
+    // clicking into an empty badge box fills in your own badge straight away, since that is the one being entered nearly every time
+    // it is queued like any other, so it is still taken back by clearing the box before the next refresh, and the list is there underneath to pick somebody else
     $('#gridBody').on('focusin', '.rq-badge', function () {
-        showBadgeSuggest($(this), false);
+        var inp = $(this);
+        var val = inp.val().trim();
+        if (RQ_MYBADGE && (val === '' || val === '0')) {
+            inp.val(RQ_MYBADGE).addClass('rq-pending');
+            pendingBadges[String(inp.data('req'))] = RQ_MYBADGE;
+        }
+        showBadgeSuggest(inp, false);
     });
     $('#gridBody').on('input', '.rq-badge', function () {
         showBadgeSuggest($(this), true);
