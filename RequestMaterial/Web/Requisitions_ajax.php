@@ -122,7 +122,8 @@ switch ($action) {
                       $payload['areaCode'],
                       $payload['areaType'],
                       ($payload['rush'] == 'Y' ? 'Y' : 'N'),
-                      $payload['authBy'] ?? '',
+                      // the entry form never sets this; a requisition raised there starts unauthorized and is authorized later from the station screen
+                      (($payload['mode'] ?? '') === 'entry') ? 'Authorization = None' : ($payload['authBy'] ?? ''),
                       $badge,
                       $payload['comments']);
         if ($reqNum === false) { rqsOutFail(); }

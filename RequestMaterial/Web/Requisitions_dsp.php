@@ -264,7 +264,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
 /* entry only mode: the work floor form fills the page and cannot be closed */
-.rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
+.rq-entry .rq-toolbar, .rq-entry .rq-card, .rq-entry #addAuthByRow { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x, .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
 
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
@@ -412,7 +412,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <label>Area Type:
             <select id="addAreaType"></select>
           </label>
-          <label>Authorized By:
+          <!-- the work floor entry form does not show this: a requisition is authorized by the people who review it, not by the person raising it -->
+          <label id="addAuthByRow">Authorized By:
             <select id="addAuthBy"></select>
           </label>
         </div>

@@ -33,14 +33,25 @@
 
     document.title = "Requisition Material";
 
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+    // the framework supplies this on most instances; the fallback keeps the message visible where it does not
+    if (typeof showErrorMessage !== "function") {
+        function showErrorMessage(m) {
+            var d = document.getElementById("errorMsg");
+            d.innerHTML = m;
+            d.className = "ui-state-error ui-corner-all";
+            d.style.display = "block";
+        }
+    }
 
 
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+    // the same not authorized message the other LCC tools show, an alert first and then the red box left on the page behind it
+    function showNotAuthorized() {
+        alert("Current user profile is not authorized\nto use this tool");
+        showErrorMessage("Current user profile is not authorized to use this tool.");
+    }
 </script>
 
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
@@ -169,8 +180,9 @@ $(document).ready(function () {
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
 
-    // the requestor box opens its list on focus, narrows it as you type, and refills the badge whenever the name settles
-    $('#addName').on('focus input', function () { showNameSuggest($(this)); });
+    // the requestor box opens the whole list on focus even though a name is already filled in, so somebody entering for another person can see every name without first clearing the box, and narrows it only once they start typing
+    $('#addName').on('focus', function () { showNameSuggest($(this), false); });
+    $('#addName').on('input', function () { showNameSuggest($(this), true); });
     $('#addName').on('blur', function () { setTimeout(hideNameSuggest, 150); });
 
 
@@ -273,6 +285,27 @@ $(document).ready(function () {
             inp.val(reqBadge(reqNum));
             return;
         }
+        // a requisition that already carries a badge is asked about before it is moved to another one, because that badge is the record of who the requisition belongs to
+        var had = reqBadge(reqNum);
+        if (had !== '' && had !== '0' && had !== val) {
+            swal({
+                title: 'Change the badge?',
+                text: 'Requisition ' + reqNum + ' is on badge ' + had +
+                      '. Move it to ' + (val === '' ? '(none)' : val) + '?',
+                type: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Change it'
+            }, function (ok) {
+                if (ok) { saveBadge(inp, reqNum, val); }
+                else { inp.val(had); }
+            });
+            return;
+        }
+        saveBadge(inp, reqNum, val);
+    });
+
+    // writes the badge away and puts it on the requisition's other lines at the same time, since every line of a requisition shares one badge
+    function saveBadge(inp, reqNum, val) {
         postAjax({
             action: 'update',
             reqNum: reqNum,
@@ -289,7 +322,7 @@ $(document).ready(function () {
                 }
             });
         });
-    });
+    }
 
     // the badge box opens the employee list on focus and narrows it as you type
     $('#gridBody').on('focusin', '.rq-badge', function () {
@@ -892,6 +925,7 @@ function submitRequisition() {
 
     var payload = {
         reqName: $('#addName').val(),
+        mode: RQ_MODE,
         areaCode: $('#addAreaCode').val(),
         areaType: $('#addAreaType').val(),
         rush: $('input[name="addRush"]:checked').val() === 'Y' ? 'Y' : 'N',
@@ -1103,11 +1137,11 @@ function nameChoices() {
 function hideNameSuggest() { $('#rqNameSuggest').remove(); }
 
 
-function showNameSuggest(inp) {
+function showNameSuggest(inp, filterTyped) {
     hideNameSuggest();
     if (!inp.is(':focus')) { return; }
     // every matching name is listed, never a first so many; the requestor list is the whole set of people who may raise a requisition and a name missing from it cannot be picked at all
-    var typed = $.trim(inp.val()).toLowerCase();
+    var typed = filterTyped ? $.trim(inp.val()).toLowerCase() : '';
     var rows = $.grep(nameChoices(), function (n) {
         return typed === '' || n.toLowerCase().indexOf(typed) !== -1;
     });
