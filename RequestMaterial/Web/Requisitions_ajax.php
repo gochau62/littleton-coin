@@ -106,6 +106,10 @@ switch ($action) {
         $badge   = ($me && $me['badge'] !== '') ? $me['badge'] : '0';
         $reqName = ($me && $me['name']  !== '') ? $me['name']  : $payload['reqName'];
 
+        // the header carries the requestor's badge number while every line carries the data entry name, the first four letters of the first name of whoever keyed it, which is what the eighteen years of history in this column hold
+        $first   = trim(explode(' ', trim($reqName))[0]);
+        $deName  = $first !== '' ? substr($first, 0, 4) : '';
+
         $reqNum = rqsInsertHeader($conn,
                       $reqName,
                       $payload['areaCode'],
@@ -127,7 +131,7 @@ switch ($action) {
                 floatval(str_replace(',', '', $line['cost'])),
                 floatval(str_replace(',', '', $line['retail'])),
                 floatval(str_replace(',', '', $line['addCost'])),
-                $badge, $line['skuTo']);
+                $deName, $line['skuTo']);
             if (!$ok) {
                 $err = $GLOBALS['rqsErr'];
                 rqsDeleteRequisition($conn, $reqNum);
@@ -169,20 +173,23 @@ switch ($action) {
         $item = isset($_POST['item']) ? substr(trim($_POST['item']), 0, 16) : null;
         $loc  = isset($_POST['loc'])  ? substr(trim($_POST['loc']), 0, 3)   : null;
         $desc = isset($_POST['desc']) ? substr(trim($_POST['desc']), 0, 50) : null;
+        // the data entry name, four letters of a first name and never a number, sent with line 0 to reach every line of the requisition
+        $deName = isset($_POST['deName']) ? substr(trim($_POST['deName']), 0, 4) : null;
         // a quantity that is not a whole number above zero is dropped rather than stored, so the grid totals and the monthly report stay sound
         $qty = null;
         if (isset($_POST['qty'])) {
             $q = trim(str_replace(',', '', $_POST['qty']));
             if ($q !== '' && is_numeric($q) && floatval($q) > 0) { $qty = intval(floatval($q)); }
         }
-        if (!rqsUpdateLine($conn, $reqNum, $lineNum, $item, $loc, $desc, $qty)) {
+        if (!rqsUpdateLine($conn, $reqNum, $lineNum, $item, $loc, $desc, $qty, $deName)) {
             rqsOutFail();
         }
         rqsActLog($user, 'LINE', 'req ' . $reqNum . ' line ' . $lineNum .
-                  ($item !== null ? ' item ' . $item : '') .
-                  ($loc  !== null ? ' loc ' . $loc   : '') .
-                  ($qty  !== null ? ' qty ' . $qty   : '') .
-                  ($desc !== null ? ' desc ' . $desc : ''));
+                  ($item   !== null ? ' item ' . $item     : '') .
+                  ($loc    !== null ? ' loc ' . $loc       : '') .
+                  ($qty    !== null ? ' qty ' . $qty       : '') .
+                  ($deName !== null ? ' dename ' . $deName : '') .
+                  ($desc   !== null ? ' desc ' . $desc     : ''));
         rqsOut(array("ok" => true));
 
     // monthly report rows (yyyymm)

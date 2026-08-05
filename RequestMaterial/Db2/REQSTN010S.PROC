@@ -3,10 +3,16 @@
 /* Program Name      - REQSTN010S                                    */
 /*                                                                   */
 /* Program Narrative - Correct one Requisition line from the station */
-/*                     grid: item number, location, description and  */
-/*                     quantity. A NULL parameter leaves that column */
-/*                     unchanged, so the grid can save one box at a  */
-/*                     time as it is left.                           */
+/*                     grid: item number, location, description,     */
+/*                     quantity and the data entry name. A NULL      */
+/*                     parameter leaves that column unchanged, so    */
+/*                     the grid can save one box at a time as it is  */
+/*                     left.                                         */
+/*                     The data entry name is the first four letters */
+/*                     of the first name of whoever keyed the line,  */
+/*                     which is the Inv DE Number on the old screen. */
+/*                     It is not the requestor's badge - that is a   */
+/*                     number and lives on the header in RHBDGE.     */
 /*                     Cost, retail and the returned flag are not    */
 /*                     touched here - the Return Item box owns the   */
 /*                     flag and the money columns come from the item */
@@ -39,7 +45,8 @@ CREATE OR REPLACE PROCEDURE REQSTN010S (
         IN INITEM  VARCHAR(16),
         IN INLOC   VARCHAR(3),
         IN INDESC  VARCHAR(50),
-        IN INQTY   DECIMAL(9, 0)
+        IN INQTY   DECIMAL(9, 0),
+        IN INBDGE  VARCHAR(10)
         )
 
         LANGUAGE SQL
@@ -49,14 +56,21 @@ CREATE OR REPLACE PROCEDURE REQSTN010S (
     BEGIN
         -- A quantity of zero or less is refused rather than stored, because
         -- the grid totals and the monthly report both count on it.
+        --
+        -- A line number of zero means every line of the requisition, which
+        -- is how the data entry name is set, since all the lines of one
+        -- requisition were keyed by the same person. Only the data entry
+        -- name is ever sent that way; the other columns arrive as NULL and
+        -- the COALESCE leaves them alone.
         UPDATE RQSREQDTLT
            SET RDITEM = COALESCE(INITEM, RDITEM),
                RDLOC  = COALESCE(INLOC,  RDLOC),
                RDDESC = COALESCE(INDESC, RDDESC),
+               RDBDGE = COALESCE(INBDGE, RDBDGE),
                RDQTY  = CASE WHEN INQTY IS NULL THEN RDQTY
                              WHEN INQTY > 0     THEN INQTY
                              ELSE RDQTY
                         END
          WHERE RDREQ# = INREQ#
-           AND RDLIN# = INLIN#;
+           AND ( INLIN# = 0 OR RDLIN# = INLIN# );
     END;

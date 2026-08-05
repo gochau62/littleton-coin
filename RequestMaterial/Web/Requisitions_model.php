@@ -196,10 +196,10 @@ function rqsUpdateReq($conn, $reqNum, $authBy, $comments, $badge = null,
 }
 
 
-// PROGRAM NAME REQSTN010S: correct one line from the grid, where a NULL argument leaves that column unchanged so one box can be saved at a time
+// PROGRAM NAME REQSTN010S: correct one line from the grid, where a NULL argument leaves that column unchanged so one box can be saved at a time, and a lineNum of 0 reaches every line of the requisition for the data entry name
 function rqsUpdateLine($conn, $reqNum, $lineNum, $item = null, $loc = null,
-                       $desc = null, $qty = null) {
-    $sql = "CALL REQSTN010S(?, ?, ?, ?, ?, ?)";
+                       $desc = null, $qty = null, $deName = null) {
+    $sql = "CALL REQSTN010S(?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return rqsFail("prepare REQSTN010S"); }
@@ -210,6 +210,7 @@ function rqsUpdateLine($conn, $reqNum, $lineNum, $item = null, $loc = null,
     db2_bind_param($stmt, 4, "loc", DB2_PARAM_IN);
     db2_bind_param($stmt, 5, "desc", DB2_PARAM_IN);
     db2_bind_param($stmt, 6, "qty", DB2_PARAM_IN);
+    db2_bind_param($stmt, 7, "deName", DB2_PARAM_IN);
 
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN010S"); }
     return true;

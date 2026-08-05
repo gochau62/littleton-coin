@@ -468,7 +468,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <div class="rq-lgcyrow"><label>Area Code:</label><input type="text" id="v_acode" list="rqAreaCodeList" maxlength="2"></div>
           <div class="rq-lgcyrow"><label>Area Type:</label><input type="text" id="v_atype" list="rqAreaTypeList" maxlength="25"></div>
           <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
-          <div class="rq-lgcyrow"><label>Inv DE Number:</label><input type="text" id="v_denum" list="rqBadgeList" maxlength="10"></div>
+          <div class="rq-lgcyrow"><label>Inv DE Number:</label><input type="text" id="v_denum" maxlength="4" title="The first four letters of the first name of whoever entered the requisition"></div>
           <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
           <div class="rq-lgcyrow"><label>Authorized By:</label><input type="text" id="authBy" list="rqAuthByList" maxlength="50"></div>
           <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
@@ -477,7 +477,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <datalist id="rqNameList"></datalist>
           <datalist id="rqAreaCodeList"></datalist>
           <datalist id="rqAreaTypeList"></datalist>
-          <datalist id="rqBadgeList"></datalist>
           <datalist id="rqAuthByList"></datalist>
         </div>
 

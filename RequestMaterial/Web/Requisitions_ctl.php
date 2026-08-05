@@ -165,11 +165,12 @@ $(document).ready(function () {
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
 
-    // the DE number in the view window follows the same rule as the one in the grid: only a badge number saves, and anything typed to search the employee list drops back to what was stored
+    // Inv DE Number holds four letters of a first name, never a number, so a number typed into it drops back to what was stored
     $('#v_denum').on('change', function () {
         var val = $(this).val().trim();
-        if (val !== '' && !badgeCodeSet()[val] && !/^\d+$/.test(val)) {
+        if (val !== '' && /\d/.test(val)) {
             $(this).val(viewBadgeWas);
+            swal('Inv DE Number', 'This is the first four letters of the first name of whoever entered the requisition, not a badge number.', 'warning');
         }
     });
 
@@ -784,7 +785,6 @@ function applyLookups(resp) {
     fillSelect('#rqAreaCodeList', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#rqAreaTypeList', resp.areaTypes, 'CDCODE', 'CDCODE');
     fillSelect('#rqAuthByList', resp.authBy, 'CDCODE', 'CDCODE');
-    if (resp.badges) { fillSelect('#rqBadgeList', resp.badges, 'CDCODE', 'CDDESC'); }
 
     applySignedOnIdentity();
 }
@@ -935,8 +935,13 @@ function openViewModal(reqNum) {
         $('#v_acode').val(h.RHARCD);
         $('#v_atype').val(h.RHARTY);
         $('#v_date').text(fmtDateTimeIso(h.RHRQDT, h.RHRQTM));
-        $('#v_denum').val(h.RHBDGE);
-        viewBadgeWas = h.RHBDGE || '';
+        // Inv DE Number is the data entry name off the lines, not the requestor's badge number on the header; all the lines of one requisition were keyed by the same person so the first line speaks for them
+        var deName = '';
+        $.each(resp.rows, function (i, r) {
+            if (r['RDLIN#'] != null && deName === '') { deName = (r.RDBDGE || '').trim(); }
+        });
+        $('#v_denum').val(deName);
+        viewBadgeWas = deName;
 
         var allReturned = true, anyLine = false;
         $.each(resp.rows, function (i, r) {
@@ -996,12 +1001,17 @@ function updateCurrent() {
         comments: $('#authComments').val(),
         reqName: $('#v_name').val(),
         areaCode: $('#v_acode').val(),
-        areaType: $('#v_atype').val(),
-        badge: $('#v_denum').val()
+        areaType: $('#v_atype').val()
     }, function () {
-        $('#mdlView').prop('hidden', true);
-        swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
-        loadGrid();
+        // the data entry name lives on the lines, so it goes separately with line 0 to reach all of them, and only when it was actually changed
+        var deName = $('#v_denum').val().trim();
+        var done = function () {
+            $('#mdlView').prop('hidden', true);
+            swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
+            loadGrid();
+        };
+        if (deName === viewBadgeWas) { done(); return; }
+        postAjax({ action: 'line', reqNum: reqNum, lineNum: 0, deName: deName }, done);
     });
 }
 
