@@ -121,7 +121,7 @@ function dspBulkLoader(&$screenData)
 .gs-dd { padding:9px 12px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; max-width:170px; }
 .gs-dd:focus { border-color:#1e6e43; }
 .mkt-pick { font-size:12px; font-weight:700; color:#344054; display:inline-flex; align-items:center; gap:6px; }
-.mkt-pick .gs-dd { max-width:120px; }
+.mkt-pick .gs-dd { width:auto; max-width:none; padding:6px 8px; }
 .ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; background:#fff; }
 .ui-autocomplete .ui-menu-item-wrapper { padding:6px 10px; }
 
@@ -295,7 +295,6 @@ details.group summary::-webkit-details-marker { display:none; }
     <div id="formView" style="display:none">
         <div class="sbl-tools">
             <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
-            <span id="formTitle" style="font-weight:700;color:#101828;"></span>
             <label class="mkt-pick">Market
                 <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()">
                     <option value="">All</option>

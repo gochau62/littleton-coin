@@ -188,7 +188,6 @@
         sblClearForm();
         // market starts as All; picked with the form's own Market picker
         sblMarketApply();
-        $('#formTitle').text('New SKU');
         sblShow('form');
         sblRecompute();
     }
@@ -251,7 +250,6 @@
             $('#f_id').val(res.row.id);
             $('#f_marketplace').val(res.row.marketplace || '');
             sblMarketApply();
-            $('#formTitle').text('Edit SKU - ' + (res.row.sku || ''));
             sblShow('form');
             sblRecompute();
         }, 'json');
@@ -858,9 +856,9 @@
         // and the Autofill after it land on clean boxes and nothing from the
         // last coin bleeds in.  The same SKU again keeps the work so far.
         if (sku !== sblLccSku){
-            var id = $('#f_id').val(), title = $('#formTitle').text();
+            var id = $('#f_id').val();
             sblClearForm();
-            if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
+            if (id) { $('#f_id').val(id); }
             $('#lcc-sku').val(sku);   // the reset empties the box; the lookup keeps its SKU
         }
         // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
