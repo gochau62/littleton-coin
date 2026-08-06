@@ -883,9 +883,11 @@
                 $('#gs-autofill').prop('disabled', false);
                 sblMarkGsFields(true);
 
-            } else {
+            } else if (res.via !== 'suggest') {
+                // real candidates: put the operator in the coin box to pick
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
             }
+            // suggestions stay quiet: the box is enabled, the list waits for a click
         }, 'json').fail(function(){
             $('#lcc-item-info').text('Lookup failed - the server returned an error (check the agent file).');
         });
