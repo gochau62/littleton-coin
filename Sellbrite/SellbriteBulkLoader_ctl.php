@@ -175,6 +175,10 @@
         var pv = document.getElementById('pv-img'); if (pv){ pv.removeAttribute('src'); pv.classList.add('broken'); }
         $('#f_marketplace').val('');
         sblAutofilled = false;
+        // the Item by SKU bar resets with the rest of the form
+        $('#lcc-sku').val('');
+        $('#lcc-item-info').empty();
+        sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
@@ -857,6 +861,7 @@
             var id = $('#f_id').val(), title = $('#formTitle').text();
             sblClearForm();
             if (id) { $('#f_id').val(id); $('#formTitle').text(title); }
+            $('#lcc-sku').val(sku);   // the reset empties the box; the lookup keeps its SKU
         }
         // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
         // and say when the server itself failed, instead of looking frozen
