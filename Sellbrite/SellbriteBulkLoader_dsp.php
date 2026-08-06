@@ -65,14 +65,14 @@ function dspBulkLoader(&$screenData)
 
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
-#stdPage { background:#f4f6f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
-/* the time-payment header: dark green bar across the top, the signed-in user
-   on the right - the title sits centered instead of left */
+#stdPage { background:#f8f8f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
+/* the time-payment header, same colors and sizes as that screen - only the
+   title sits centered instead of left */
 .sbl-topbar { display:flex; align-items:center; background:#1C4532; color:#fff;
-              padding:.85rem 1.25rem; margin:-20px -28px 18px; position:relative; }
-.sbl-topbar h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#fff; margin:0; flex:1; text-align:center; }
+              padding:.6rem 1.25rem; margin:-20px -28px 18px; position:relative; }
+.sbl-topbar h1 { font-size:1.15rem; font-weight:600; color:#fff; margin:0; flex:1; text-align:center; }
 /* the back arrow sits inside the header bar, top left */
-.sbl-back { position:absolute; top:9px; left:12px; }
+.sbl-back { position:absolute; top:5px; left:12px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
 .sbl-tools .spacer { flex:1; }
 .sbl-search { padding:9px 14px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; width:280px; }
@@ -155,7 +155,7 @@ function dspBulkLoader(&$screenData)
 .btn-ghost { background:#fff; color:#344054; border:1px solid #d0d5dd; }
 .btn-ghost:hover { color:#1e6e43; border-color:#1e6e43; }
 .btn-green { background:#1e6e43; } .btn-green:hover { background:#16563a; }
-.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#f4f6f8; color:#101828; }
+.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#f8f8f8; color:#101828; }
 
 
 /* table - plain and simple; the hard character cut on the title is what
