@@ -1023,7 +1023,7 @@ function openViewModal(reqNum) {
         $('#v_acode').val(h.RHARCD);
         $('#v_atype').val(h.RHARTY);
         $('#v_date').text(fmtDateTimeIso(h.RHRQDT, h.RHRQTM));
-        // Inv DE Number is the data entry name off the lines, not the requestor's badge number on the header; all the lines of one requisition were keyed by the same person so the first line speaks for them
+        // Entered By is the name off the lines, not the badge on the header; all the lines of one requisition were entered by the same person so the first line speaks for them
         var deName = '';
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] != null && deName === '') { deName = (r.RDBDGE || '').trim(); }
@@ -1475,7 +1475,7 @@ function reqPrintHtml(rows) {
         '<tr><td><span class="rpt-lbl">Rush</span> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
             '<td></td><td><span class="rpt-lbl">Date:</span> ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
         '<tr><td><span class="rpt-lbl">Authorized By</span> ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
-            '<td><span class="rpt-lbl">DataEntry:</span> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
+            '<td><span class="rpt-lbl">Badge:</span> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
         '<tr><td><span class="rpt-lbl">Area Code:</span> ' + esc(h.RHARCD) + '</td>' +
             '<td><span class="rpt-lbl">Area Type:</span> ' + esc(h.RHARTY) + '</td><td></td></tr>' +
         '</table>';

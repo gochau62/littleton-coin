@@ -133,7 +133,7 @@ switch ($action) {
         // new requisitions start with badge 0; whoever handles the requisition enters theirs afterwards from the station grid, which is why the entry form never asks for one
         $badge   = '0';
 
-        // the Inv DE Number is whoever is signed on, the person actually raising the requisition, and it is taken from the sign on rather than the form so it stays true when a manager raises one under somebody else's name
+        // Entered By is whoever is signed on, the person actually raising the requisition, and it is taken from the sign on rather than the form so it stays true when a manager raises one under somebody else's name
         // the requestor beside it is who the requisition is for, so between them the record says who asked and who entered
         $keyer   = ($me && $me['name'] !== '') ? $me['name'] : $user;
         $deName  = substr(trim($keyer), 0, 50);
