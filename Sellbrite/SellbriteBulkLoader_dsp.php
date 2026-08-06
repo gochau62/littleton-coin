@@ -144,6 +144,7 @@ function dspBulkLoader(&$screenData)
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#1e6e43; color:#fff; font-size:14px; font-weight:600; border-radius:8px; cursor:pointer; }
 .btn:hover { background:#16563a; }
 .btn.btn-danger { background:#fff; color:#b42318; border:1px solid #e8aaa5; } .btn.btn-danger:hover { background:#fef3f2; }
+.btn.btn-blue { background:#fff; color:#0056b3; border:1px solid #a8c7ef; } .btn.btn-blue:hover { background:#ecf3fc; }
 .btn-ghost { background:#fff; color:#344054; border:1px solid #d0d5dd; }
 .btn-ghost:hover { color:#1e6e43; border-color:#1e6e43; }
 .btn-green { background:#1e6e43; } .btn-green:hover { background:#16563a; }
@@ -261,7 +262,7 @@ details.group summary::-webkit-details-marker { display:none; }
             </span>
             <span class="spacer"></span>
             <span class="btn-stack">
-                <button type="button" class="btn" onclick="sblNew()">+ New SKU</button>
+                <button type="button" class="btn btn-blue" onclick="sblNew()">+ New SKU</button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
             </span>
         </div>
@@ -307,7 +308,7 @@ details.group summary::-webkit-details-marker { display:none; }
             </label>
             <span class="spacer"></span>
             <span id="valid-pill" class="pill ok">Ready</span>
-            <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
+            <button type="button" class="btn btn-blue" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
 
         <div class="lcc-bar">
@@ -326,7 +327,7 @@ details.group summary::-webkit-details-marker { display:none; }
                    placeholder="3. Year" disabled>
             <input type="text" id="gs-coin" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="4. Coin" disabled>
-            <button type="button" class="btn" id="gs-autofill" onclick="sblGsAutofill()" disabled
+            <button type="button" class="btn btn-blue" id="gs-autofill" onclick="sblGsAutofill()" disabled
                     title="Fill the highlighted fields from GreySheet">Autofill</button>
         </div>
 
