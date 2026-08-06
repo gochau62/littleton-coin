@@ -505,7 +505,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <div class="rq-lgcyrow"><label>Area Code:</label><span class="rq-combo"><input type="text" id="v_acode" data-list="areaCodes" maxlength="2"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Area Type:</label><span class="rq-combo"><input type="text" id="v_atype" data-list="areaTypes" maxlength="25"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
-          <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum" title="The first four letters of the first name of whoever entered the requisition; it records who keyed it and is not changed by hand"></span></div>
+          <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum"></span></div>
           <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
           <div class="rq-lgcyrow"><label>Authorized By:</label><span class="rq-combo"><input type="text" id="authBy" data-list="authBy" maxlength="50"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
