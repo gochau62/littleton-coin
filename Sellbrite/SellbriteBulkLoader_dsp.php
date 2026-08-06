@@ -71,8 +71,6 @@ function dspBulkLoader(&$screenData)
 .sbl-topbar { display:flex; align-items:center; background:#1C4532; color:#fff;
               padding:.85rem 1.25rem; margin:-20px -28px 18px; position:relative; }
 .sbl-topbar h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#fff; margin:0; flex:1; text-align:center; }
-.sbl-topbar .sbl-user { position:absolute; right:1.25rem; top:50%; transform:translateY(-50%);
-                        font-size:.85rem; opacity:.9; text-transform:uppercase; }
 /* the back arrow sits inside the header bar, top left */
 .sbl-back { position:absolute; top:9px; left:12px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
@@ -246,7 +244,6 @@ details.group summary::-webkit-details-marker { display:none; }
 <div id='stdPage'>
     <header class="sbl-topbar">
         <h1>Sellbrite Bulk Loader</h1>
-        <span class="sbl-user"><?= sbl_e((string) ($_SESSION['username'] ?? '')) ?></span>
     </header>
 
     <div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden" style="display:none"></div>
