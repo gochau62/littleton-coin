@@ -110,8 +110,6 @@ if ($authorized != "yes") {
     // the entry form never receives it, the same as the rest of the badges, because the work floor is not shown badges at all
     $rqMyBadge = ($rqMode !== 'entry' && $rqMe && $rqMe['badge'] !== '') ? $rqMe['badge'] : '';
 
-    rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
-
     include "Requisitions_dsp.php";
 
     dspRequisitions($user, $rqLookups, $rqMode);

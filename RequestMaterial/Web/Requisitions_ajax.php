@@ -170,8 +170,7 @@ switch ($action) {
             }
         }
 
-        rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines)' .
-                  ' for ' . $reqName . ' badge ' . $badge);
+        rqsActLog($user, 'INSERT', 'req ' . $reqNum . ' (' . $lineNum . ' lines) for ' . $reqName);
         rqsOut(array("ok" => true, "reqNum" => $reqNum, "lines" => $lineNum));
 
     // update a header: missing fields (authBy/comments/badge) stay unchanged
