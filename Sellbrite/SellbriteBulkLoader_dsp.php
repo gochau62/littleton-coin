@@ -62,7 +62,7 @@ function dspBulkLoader(&$screenData)
 
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
-#stdPage { background:#eef3ef; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
+#stdPage { background:#e4efe7; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
 /* the requisitions / time payment topbar: dark green, the signed-in user and
    the clock on the right - only the title sits centered instead of left */
 .sbl-topbar { display:flex; align-items:center; justify-content:flex-end;
@@ -153,7 +153,7 @@ function dspBulkLoader(&$screenData)
 .btn-ghost { background:#fff; color:#344054; border:1px solid #d0d5dd; }
 .btn-ghost:hover { color:#1e6e43; border-color:#1e6e43; }
 .btn-green { background:#1e6e43; } .btn-green:hover { background:#16563a; }
-.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#eef3ef; color:#101828; }
+.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#e4efe7; color:#101828; }
 
 
 /* table */
