@@ -305,7 +305,7 @@
         var cells = '<td>' + sblEsc(mkt) + '</td>'
                   + '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
                   + '<td>' + sblEsc(sblCut(row.category_name, 28)) + '</td>'
-                  + '<td title="' + sblEsc(row.name || '') + '">' + sblEsc(sblCut(row.name, 55)) + '</td>'
+                  + '<td title="' + sblEsc(row.name || '') + '">' + sblEsc(sblCut(row.name, 45)) + '</td>'
                   + '<td>' + sblEsc(row.grade || '') + '</td>'
                   + '<td class="num">' + price + '</td><td class="num">' + qty + '</td>'
                   + '<td>' + sblEsc(row.updated_at || '') + '</td>'

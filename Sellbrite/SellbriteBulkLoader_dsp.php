@@ -157,11 +157,11 @@ function dspBulkLoader(&$screenData)
 /* table */
 /* overflow-x: if the table ever outgrows the card it scrolls inside it,
    never stretching the page past the sidebar */
-.table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; overflow-x:auto; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+#stdPage .table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; overflow-x:auto !important; box-shadow:0 1px 3px rgba(16,24,40,.06); }
 /* fixed layout with PERCENT columns: they always total 100% of the card, so
    the grid can never outgrow the page no matter how narrow the sidebar leaves
    it - long text trims to ... inside its cell instead of stretching anything */
-table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; table-layout:fixed; }
+#stdPage table.grid { width:100% !important; border-collapse:collapse; font-size:13.5px; background:#fff; table-layout:fixed !important; }
 /* box-sizing + no side borders: the shell's own table styling adds cell
    borders and content-box widths that break the fit - these override it */
 #stdPage .grid th, #stdPage .grid td { box-sizing:border-box; border-left:none; border-right:none; }
@@ -295,7 +295,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     <td><?= sbl_e(ucfirst((string) ($r['marketplace'] ?? ''))) ?: 'All' ?></td>
                     <td><span class="sku-link" onclick="sblEdit(<?= (int) $r['id'] ?>)"><?= sbl_e($r['sku']) ?></span></td>
                     <td><?= sbl_e($cut($r['category_name'] ?? '', 28)) ?></td>
-                    <td title="<?= sbl_e($r['name'] ?? '') ?>"><?= sbl_e($cut($r['name'] ?? '', 55)) ?></td>
+                    <td title="<?= sbl_e($r['name'] ?? '') ?>"><?= sbl_e($cut($r['name'] ?? '', 45)) ?></td>
                     <td><?= sbl_e($r['grade'] ?? '') ?></td>
                     <td class="num"><?= ($r['price'] ?? '') !== '' ? '$' . sbl_e($r['price']) : '&mdash;' ?></td>
                     <td class="num"><?= sbl_e($r['quantity'] ?? '') ?: '&mdash;' ?></td>
