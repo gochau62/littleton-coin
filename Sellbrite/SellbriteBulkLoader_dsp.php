@@ -65,10 +65,16 @@ function dspBulkLoader(&$screenData)
 
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
-#stdPage { background:#e4efe7; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
-#stdPage h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 16px; }
-/* the back arrow sits on the title line, top left; the title stays centered */
-.sbl-back { position:absolute; top:14px; left:28px; }
+#stdPage { background:#f4f6f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
+/* the time-payment header: dark green bar across the top, the signed-in user
+   on the right - the title sits centered instead of left */
+.sbl-topbar { display:flex; align-items:center; background:#1C4532; color:#fff;
+              padding:.85rem 1.25rem; margin:-20px -28px 18px; position:relative; }
+.sbl-topbar h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#fff; margin:0; flex:1; text-align:center; }
+.sbl-topbar .sbl-user { position:absolute; right:1.25rem; top:50%; transform:translateY(-50%);
+                        font-size:.85rem; opacity:.9; text-transform:uppercase; }
+/* the back arrow sits inside the header bar, top left */
+.sbl-back { position:absolute; top:9px; left:12px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
 .sbl-tools .spacer { flex:1; }
 .sbl-search { padding:9px 14px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; width:280px; }
@@ -151,7 +157,7 @@ function dspBulkLoader(&$screenData)
 .btn-ghost { background:#fff; color:#344054; border:1px solid #d0d5dd; }
 .btn-ghost:hover { color:#1e6e43; border-color:#1e6e43; }
 .btn-green { background:#1e6e43; } .btn-green:hover { background:#16563a; }
-.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#e4efe7; color:#101828; }
+.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#f4f6f8; color:#101828; }
 
 
 /* table - plain and simple; the hard character cut on the title is what
@@ -238,7 +244,10 @@ details.group summary::-webkit-details-marker { display:none; }
 <div id="sbl-spinner"><div class="ld"></div></div>
 
 <div id='stdPage'>
-    <h1>Sellbrite Bulk Loader</h1>
+    <header class="sbl-topbar">
+        <h1>Sellbrite Bulk Loader</h1>
+        <span class="sbl-user"><?= sbl_e((string) ($_SESSION['username'] ?? '')) ?></span>
+    </header>
 
     <div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden" style="display:none"></div>
     <div id="successMsg" class="ui-state-highlight ui-corner-all ui-helper-hidden" style="display:none"></div>
