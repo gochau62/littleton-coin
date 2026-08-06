@@ -62,7 +62,7 @@ function dspBulkLoader(&$screenData)
 
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
-#stdPage { background:#f4f6f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
+#stdPage { background:#eef3ef; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
 /* the back arrow sits on the title line, top left; the title stays centered */
 .sbl-back { position:absolute; top:14px; left:28px; }
 #stdPage h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 16px; }
@@ -147,13 +147,13 @@ function dspBulkLoader(&$screenData)
 .btn-ghost { background:#fff; color:#344054; border:1px solid #d0d5dd; }
 .btn-ghost:hover { color:#1e6e43; border-color:#1e6e43; }
 .btn-green { background:#1e6e43; } .btn-green:hover { background:#16563a; }
-.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#f4f6f8; color:#101828; }
+.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#eef3ef; color:#101828; }
 
 
 /* table */
 .table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06); }
 table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
-.grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f9fafb; border-bottom:1px solid #e4e7ec; }
+.grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
 .grid td { padding:10px 14px; border-bottom:1px solid #eef1f4; }
 .grid tbody tr:hover{ background:#f4f8f6; }
 .grid .num { text-align:right; } .sku-link { font-family:Consolas,monospace; color:#1e6e43; font-weight:700; cursor:pointer; }
@@ -213,7 +213,7 @@ details.group summary::-webkit-details-marker { display:none; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#101828; }
-.preview-img { aspect-ratio:1/1; border-radius:8px; overflow:hidden; background:#f9fafb; display:grid; place-items:center; margin-bottom:10px; border:1px solid #e4e7ec; position:relative; }
+.preview-img { aspect-ratio:1/1; border-radius:8px; overflow:hidden; background:#f7faf8; display:grid; place-items:center; margin-bottom:10px; border:1px solid #e4e7ec; position:relative; }
 .preview-img img { width:100%; height:100%; object-fit:cover; } .preview-img img.broken { display:none; }
 .img-fallback { position:absolute; color:#667085; font-size:13px; } .preview-img img:not(.broken)+.img-fallback { display:none; }
 .pv-title { font-weight:700; font-size:14px; color:#101828; margin-bottom:6px; } .pv-price { color:#1e6e43; font-weight:800; font-size:16px; }
