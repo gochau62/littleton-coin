@@ -153,7 +153,13 @@ function dspBulkLoader(&$screenData)
 
 /* table */
 .table-card { background:#fff; border:1px solid #333; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06); }
-table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
+/* fixed layout: long titles trim to ... instead of wrapping the row tall */
+table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; table-layout:fixed; }
+.grid th:nth-child(1){ width:70px; } .grid th:nth-child(2){ width:140px; }
+.grid th:nth-child(3){ width:150px; } .grid th:nth-child(5){ width:70px; }
+.grid th:nth-child(6){ width:80px; }  .grid th:nth-child(7){ width:55px; }
+.grid th:nth-child(8){ width:125px; } .grid th:nth-child(9){ width:135px; }
+.grid td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #333; }
 .grid td { padding:10px 14px; border-bottom:1px solid #eef1f4; }
 .grid tbody tr:hover{ background:#f4f8f6; }
