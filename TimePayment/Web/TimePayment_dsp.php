@@ -16,7 +16,7 @@
 <!--  * Project   - 230077                              *  -->
 <!--  ***************************************************   */
 
-function dspTimePayment($user) {
+function dspTimePayment() {
 ?>
 
 <style>
@@ -30,11 +30,9 @@ function dspTimePayment($user) {
 .tp-app { font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
           color: var(--tp-text); background: var(--tp-bg); padding: 0 0 2rem 0; }
 
-/* dark green title bar, with the signed in user on the right */
-.tp-topbar { display: flex; align-items: center; justify-content: space-between;
-             background: var(--tp-green-dk); color: #fff; padding: .6rem 1.25rem; }
+/* dark green title bar */
+.tp-topbar { background: var(--tp-green-dk); color: #fff; padding: .6rem 1.25rem; }
 .tp-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
-.tp-topbar-right { font-size: .85rem; opacity: .9; }
 
 /* each section sits in a rounded white card on the grey page */
 .tp-card { background: #fff; border: 1px solid var(--tp-line); border-radius: 8px;
@@ -102,7 +100,6 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
 
     <div class="tp-topbar">
         <h1>Time Payment Items Maintenance</h1>
-        <div class="tp-topbar-right"><?php echo htmlspecialchars($user); ?></div>
     </div>
 
     <div class="tp-card">
