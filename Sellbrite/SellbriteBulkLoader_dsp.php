@@ -154,25 +154,12 @@ function dspBulkLoader(&$screenData)
 .btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#e4efe7; color:#101828; }
 
 
-/* table */
-/* overflow-x: if the table ever outgrows the card it scrolls inside it,
-   never stretching the page past the sidebar */
-#stdPage .table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; overflow-x:auto !important; box-shadow:0 1px 3px rgba(16,24,40,.06); }
-/* fixed layout with PERCENT columns: they always total 100% of the card, so
-   the grid can never outgrow the page no matter how narrow the sidebar leaves
-   it - long text trims to ... inside its cell instead of stretching anything */
-#stdPage table.grid { width:100% !important; border-collapse:collapse; font-size:13.5px; background:#fff; table-layout:fixed !important; }
-/* box-sizing + no side borders: the shell's own table styling adds cell
-   borders and content-box widths that break the fit - these override it */
-#stdPage .grid th, #stdPage .grid td { box-sizing:border-box; border-left:none; border-right:none; }
-.grid th:nth-child(1){ width:7%; } .grid th:nth-child(2){ width:13%; }
-.grid th:nth-child(3){ width:12%; } .grid th:nth-child(5){ width:7%; }
-.grid th:nth-child(6){ width:8%; }  .grid th:nth-child(7){ width:5%; }
-.grid th:nth-child(8){ width:13%; } .grid th:nth-child(9){ width:13%; }
-.grid td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.grid .mini { padding:4px 9px; font-size:11.5px; }
-.grid thead th { text-align:left; padding:10px 10px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
-.grid td { padding:9px 10px; border-bottom:1px solid #eef1f4; }
+/* table - plain and simple; the hard character cut on the title is what
+   keeps the rows short */
+.table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
+.grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
+.grid td { padding:10px 14px; border-bottom:1px solid #eef1f4; }
 .grid tbody tr:hover{ background:#f4f8f6; }
 .grid .num { text-align:right; } .sku-link { font-family:Consolas,monospace; color:#1e6e43; font-weight:700; cursor:pointer; }
 .sku-link:hover{ text-decoration:underline; }
@@ -295,7 +282,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     <td><?= sbl_e(ucfirst((string) ($r['marketplace'] ?? ''))) ?: 'All' ?></td>
                     <td><span class="sku-link" onclick="sblEdit(<?= (int) $r['id'] ?>)"><?= sbl_e($r['sku']) ?></span></td>
                     <td><?= sbl_e($cut($r['category_name'] ?? '', 28)) ?></td>
-                    <td title="<?= sbl_e($r['name'] ?? '') ?>"><?= sbl_e($cut($r['name'] ?? '', 45)) ?></td>
+                    <td title="<?= sbl_e($r['name'] ?? '') ?>"><?= sbl_e($cut($r['name'] ?? '', 35)) ?></td>
                     <td><?= sbl_e($r['grade'] ?? '') ?></td>
                     <td class="num"><?= ($r['price'] ?? '') !== '' ? '$' . sbl_e($r['price']) : '&mdash;' ?></td>
                     <td class="num"><?= sbl_e($r['quantity'] ?? '') ?: '&mdash;' ?></td>
