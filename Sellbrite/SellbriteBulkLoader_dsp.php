@@ -62,7 +62,9 @@ function dspBulkLoader(&$screenData)
 
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
-#stdPage { background:#f4f6f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; }
+#stdPage { background:#f4f6f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
+/* the back arrow sits on the title line, top left; the title stays centered */
+.sbl-back { position:absolute; top:14px; left:28px; }
 #stdPage h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 16px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
 .sbl-tools .spacer { flex:1; }
@@ -293,8 +295,8 @@ details.group summary::-webkit-details-marker { display:none; }
 
     <!-- ============ ADD / EDIT VIEW ============ -->
     <div id="formView" style="display:none">
+        <button type="button" class="btn btn-grey btn-sm sbl-back" onclick="sblBackToList()">&larr; Inventory</button>
         <div class="sbl-tools">
-            <button type="button" class="btn btn-grey" onclick="sblBackToList()">&larr; Inventory</button>
             <label class="mkt-pick">Market
                 <select id="f_marketplace" name="marketplace" data-name="marketplace" class="gs-dd" onchange="sblMarketApply()">
                     <option value="">All</option>
