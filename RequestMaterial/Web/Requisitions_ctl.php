@@ -114,6 +114,14 @@ if ($authorized != "yes") {
 
     include "Requisitions_dsp.php";
 
+    // while the sign on lookup is being answered as somebody else, the screen says so in a band nobody can miss
+    if (RQS_TEST_AS !== '') {
+        echo '<div style="background:#c0392b;color:#fff;padding:.6rem 1.25rem;font-weight:700;">' .
+             'TESTING - signed on as ' . htmlspecialchars($user, ENT_QUOTES) .
+             ' but answering as ' . htmlspecialchars(RQS_TEST_AS, ENT_QUOTES) .
+             '. Clear RQS_TEST_AS in Requisitions_model.php before promoting.</div>';
+    }
+
     dspRequisitions($user, $rqLookups, $rqMode);
 ?>
 
