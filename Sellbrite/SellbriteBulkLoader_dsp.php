@@ -63,15 +63,9 @@ function dspBulkLoader(&$screenData)
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
 #stdPage { background:#e4efe7; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
-/* the requisitions / time payment topbar: dark green, the signed-in user and
-   the clock on the right - only the title sits centered instead of left */
-.sbl-topbar { display:flex; align-items:center; justify-content:flex-end;
-              background:#1C4532; color:#fff; padding:.6rem 1.25rem; margin:-20px -28px 18px; position:relative; }
-.sbl-topbar h1 { font-size:1.15rem; font-weight:600; margin:0; color:#fff;
-                 position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap; }
-.sbl-topbar-right { display:flex; gap:1rem; font-size:.85rem; opacity:.9; }
-/* the back arrow sits inside the header bar, top left */
-.sbl-back { position:absolute; top:5px; left:12px; }
+#stdPage h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 16px; }
+/* the back arrow sits on the title line, top left; the title stays centered */
+.sbl-back { position:absolute; top:14px; left:28px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
 .sbl-tools .spacer { flex:1; }
 .sbl-search { padding:9px 14px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; width:280px; }
@@ -239,13 +233,7 @@ details.group summary::-webkit-details-marker { display:none; }
 <div id="sbl-spinner"><div class="ld"></div></div>
 
 <div id='stdPage'>
-    <header class="sbl-topbar">
-        <h1>Sellbrite Bulk Loader</h1>
-        <div class="sbl-topbar-right">
-            <span id="sblUser"><?= sbl_e((string) ($_SESSION['username'] ?? '')) ?></span>
-            <span id="sblClock"></span>
-        </div>
-    </header>
+    <h1>Sellbrite Bulk Loader</h1>
 
     <div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden" style="display:none"></div>
     <div id="successMsg" class="ui-state-highlight ui-corner-all ui-helper-hidden" style="display:none"></div>
@@ -458,9 +446,6 @@ details.group summary::-webkit-details-marker { display:none; }
 var SBL_GRADE_POOLS = <?= json_encode(Schema::gradePools()) ?>;
 // coin type pools by drill-down tree
 var SBL_COINTYPE_POOLS = <?= json_encode(Schema::coinTypePools()) ?>;
-// the topbar clock ticks like the requisitions one
-function sblTick(){ var el = document.getElementById('sblClock'); if (el) el.textContent = new Date().toLocaleString(); }
-sblTick(); setInterval(sblTick, 1000);
 </script>
 <?php
 }
