@@ -31,7 +31,7 @@
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
-    document.title = "Item Time Payment Upload";
+    document.title = "Item Time Payment";
 
     // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
@@ -61,7 +61,7 @@ if ($authorized != "yes") {
     tpyActLog($user, 'OPEN');
 
     include "TimePayment_dsp.php";
-    dspTimePayment($user);
+    dspTimePayment();
 ?>
 
 <script>
@@ -169,14 +169,12 @@ function uploadFile() {
 
 
 function renderResults(resp) {
-    var pills = '<span class="tp-pill tp-pill-ok">' + resp.added + ' added</span>' +
-                '<span class="tp-pill tp-pill-ok">' + resp.updated + ' updated</span>' +
-                '<span class="tp-pill ' + (resp.errors > 0 ? 'tp-pill-err' : 'tp-pill-ok') + '">' +
-                resp.errors + ' skipped</span>';
-    if (resp.errors > 0 && resp.emailed) {
-        pills += '<span class="tp-pill tp-pill-note">exception report e-mailed to you</span>';
-    }
-    $('#resSummary').html(pills);
+    var summary = '<b>' + resp.added + '</b> added, <b>' + resp.updated + '</b> updated' +
+                  (resp.errors > 0
+                      ? ', <span class="tp-bad"><b>' + resp.errors + '</b> skipped</span>' +
+                        (resp.emailed ? ' <span class="tp-mailed">(e-mailed to you)</span>' : '')
+                      : '');
+    $('#resSummary').html(summary);
 
     var html = '';
     $.each(resp.report || [], function (i, r) {
@@ -192,7 +190,7 @@ function renderResults(resp) {
     });
     $('#resBody').html(html ||
         '<tr><td colspan="7" class="tp-empty">The spreadsheet had no data rows.</td></tr>');
-    $('#resultsCard').prop('hidden', false);
+    $('#resultsBlock').prop('hidden', false);
 }
 
 
@@ -209,7 +207,7 @@ function loadGrid() {
 function renderGrid(rows) {
     var html = '';
     $.each(rows, function (i, r) {
-        // an expired record stays in the grid but reads as done with
+        // an expired record stays in the grid but reads as done with, its date in red
         var expired = gridToday > 0 && parseInt(r.TPEXDATE, 10) < gridToday;
         html += '<tr' + (expired ? ' class="tp-expired"' : '') + '>' +
             '<td class="tp-mono">' + esc(r.TPITEM) + '</td>' +
@@ -217,12 +215,11 @@ function renderGrid(rows) {
             '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPPLAN) + '</td>' +
             '<td>' + esc(r.TPPLDS) + '</td>' +
-            '<td>' + fmtDate(r.TPEXDATE) + '</td>' +
-            '<td>' + (expired ? '<span class="tp-exppill">Expired</span>' : '') + '</td>' +
+            '<td class="tp-exp">' + fmtDate(r.TPEXDATE) + '</td>' +
             '</tr>';
     });
     $('#gridBody').html(html ||
-        '<tr><td colspan="7" class="tp-empty">No time payment records match.</td></tr>');
+        '<tr><td colspan="6" class="tp-empty">No time payment records match.</td></tr>');
     $('#lblCount').text(rows.length + ' record' + (rows.length === 1 ? '' : 's'));
 }
 </script>
