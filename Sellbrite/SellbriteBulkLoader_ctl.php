@@ -304,8 +304,8 @@
         var mkt = row.marketplace ? row.marketplace.charAt(0).toUpperCase() + row.marketplace.slice(1) : 'All';
         var cells = '<td>' + sblEsc(mkt) + '</td>'
                   + '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
-                  + '<td>' + sblEsc(row.category_name || '') + '</td>'
-                  + '<td>' + sblEsc(row.name || '') + '</td>'
+                  + '<td>' + sblEsc(sblCut(row.category_name, 28)) + '</td>'
+                  + '<td title="' + sblEsc(row.name || '') + '">' + sblEsc(sblCut(row.name, 55)) + '</td>'
                   + '<td>' + sblEsc(row.grade || '') + '</td>'
                   + '<td class="num">' + price + '</td><td class="num">' + qty + '</td>'
                   + '<td>' + sblEsc(row.updated_at || '') + '</td>'
@@ -320,6 +320,9 @@
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    // grid text cuts at a hard length so one long title can never stretch a row
+    function sblCut(s, n){ s = s == null ? '' : String(s); return s.length > n ? s.slice(0, n) + '...' : s; }
     
     // cert number only exists once a grading service is picked (server sends the yellow nudge)
     function sblCertNumGate(clearIt){

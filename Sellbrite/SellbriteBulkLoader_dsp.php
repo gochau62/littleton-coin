@@ -27,6 +27,9 @@ function dspBulkLoader(&$screenData)
     $textareas = ['description','extended_description','feature_1','feature_2','feature_3',
                   'feature_4','feature_5','condition_note','search_terms'];
 
+    // grid text cuts at a hard length so one long title can never stretch a row
+    $cut = static function ($s, $n) { $s = (string) $s; return strlen($s) > $n ? substr($s, 0, $n) . '...' : $s; };
+
     // One form control.
     $renderField = function (array $col) use ($textareas): string {
         $name = $col['name']; $auto = !empty($col['auto']); $req = !empty($col['required']);
@@ -285,8 +288,8 @@ details.group summary::-webkit-details-marker { display:none; }
                 <tr id="sku-row-<?= (int) $r['id'] ?>">
                     <td><?= sbl_e(ucfirst((string) ($r['marketplace'] ?? ''))) ?: 'All' ?></td>
                     <td><span class="sku-link" onclick="sblEdit(<?= (int) $r['id'] ?>)"><?= sbl_e($r['sku']) ?></span></td>
-                    <td><?= sbl_e($r['category_name'] ?? '') ?></td>
-                    <td><?= sbl_e($r['name'] ?? '') ?></td>
+                    <td><?= sbl_e($cut($r['category_name'] ?? '', 28)) ?></td>
+                    <td title="<?= sbl_e($r['name'] ?? '') ?>"><?= sbl_e($cut($r['name'] ?? '', 55)) ?></td>
                     <td><?= sbl_e($r['grade'] ?? '') ?></td>
                     <td class="num"><?= ($r['price'] ?? '') !== '' ? '$' . sbl_e($r['price']) : '&mdash;' ?></td>
                     <td class="num"><?= sbl_e($r['quantity'] ?? '') ?: '&mdash;' ?></td>
