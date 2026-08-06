@@ -105,6 +105,12 @@ function esc(s) {
 }
 
 
+// esc() for attribute values (quotes escaped too), for the hover titles on clipped cells
+function attr(s) {
+    return esc(s).replace(/"/g, '&quot;');
+}
+
+
 // stored dates are an 8 digit yyyymmdd number, so show them as mm/dd/yyyy
 function fmtDate(dec) {
     var s = String(dec);
@@ -185,7 +191,7 @@ function renderResults(resp) {
             '<td class="tp-mono">' + esc(r.plan) + '</td>' +
             '<td>' + esc(r.exp) + '</td>' +
             '<td><span class="tp-st tp-st-' + esc(r.status) + '">' + esc(r.status) + '</span></td>' +
-            '<td class="tp-msg">' + esc(r.msg) + '</td>' +
+            '<td class="tp-msg" title="' + attr(r.msg) + '">' + esc(r.msg) + '</td>' +
             '</tr>';
     });
     $('#resBody').html(html ||
@@ -210,11 +216,11 @@ function renderGrid(rows) {
         // an expired record stays in the grid but reads as done with, its date in red
         var expired = gridToday > 0 && parseInt(r.TPEXDATE, 10) < gridToday;
         html += '<tr' + (expired ? ' class="tp-expired"' : '') + '>' +
-            '<td class="tp-mono">' + esc(r.TPITEM) + '</td>' +
-            '<td>' + esc(r.TPDESC) + '</td>' +
+            '<td class="tp-mono" title="' + attr(r.TPITEM) + '">' + esc(r.TPITEM) + '</td>' +
+            '<td title="' + attr(r.TPDESC) + '">' + esc(r.TPDESC) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPPLAN) + '</td>' +
-            '<td>' + esc(r.TPPLDS) + '</td>' +
+            '<td title="' + attr(r.TPPLDS) + '">' + esc(r.TPPLDS) + '</td>' +
             '<td class="tp-exp">' + fmtDate(r.TPEXDATE) + '</td>' +
             '</tr>';
     });

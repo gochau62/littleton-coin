@@ -62,14 +62,20 @@ function dspTimePayment($user) {
 .tp-summary .tp-bad { color: var(--tp-red); }
 .tp-summary .tp-mailed { color: var(--tp-amber); }
 
-/* both tables scroll inside their card with the heading row staying put */
-.tp-tablewrap { overflow-x: auto; max-height: 55vh; overflow-y: auto; }
-.tp-grid { width: 100%; border-collapse: collapse; font-size: .86rem; }
+/* both tables scroll inside their card with the heading row staying put. The card
+   footprint never follows the data: the records box holds one fixed height whether
+   the search matches 0 rows or 500, and the fixed table layout below keeps long
+   values from widening the block until it slips under the LCCOnline sidebar */
+.tp-tablewrap { overflow: auto; max-height: 22rem; }
+.tp-fixedbox { height: 22rem; }
+.tp-grid { width: 100%; min-width: 680px; table-layout: fixed;
+           border-collapse: collapse; font-size: .86rem; }
 .tp-grid thead th { position: sticky; top: 0; z-index: 5; background: var(--tp-accent);
                     color: var(--tp-green-dk); text-align: left; padding: .45rem .7rem;
-                    border-bottom: 1px solid var(--tp-line); white-space: nowrap; }
+                    border-bottom: 1px solid var(--tp-line); white-space: nowrap;
+                    overflow: hidden; text-overflow: ellipsis; }
 .tp-grid tbody td { padding: .35rem .7rem; border-bottom: 1px solid var(--tp-line);
-                    white-space: nowrap; }
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-grid tbody tr:nth-child(even) { background: #f7faf8; }
 .tp-grid .tp-mono { font-family: var(--tp-mono); }
 .tp-grid .tp-msg { white-space: normal; }
@@ -116,6 +122,9 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
         <div class="tp-summary" id="resSummary"></div>
         <div class="tp-tablewrap">
             <table class="tp-grid" id="tblResults">
+                <colgroup><col style="width:7%"><col style="width:14%"><col style="width:10%">
+                <col style="width:8%"><col style="width:13%"><col style="width:10%">
+                <col style="width:38%"></colgroup>
                 <thead><tr>
                     <th>Row</th><th>Item #</th><th>Source</th><th>Plan</th>
                     <th>Expiration</th><th>Result</th><th>Detail</th>
@@ -131,8 +140,10 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
             <input type="text" class="tp-filter" id="txtSearch" placeholder="Search item # or source code">
             <span class="tp-count" id="lblCount"></span>
         </div>
-        <div class="tp-tablewrap">
+        <div class="tp-tablewrap tp-fixedbox">
             <table class="tp-grid" id="tblGrid">
+                <colgroup><col style="width:14%"><col style="width:33%"><col style="width:10%">
+                <col style="width:8%"><col style="width:20%"><col style="width:15%"></colgroup>
                 <thead><tr>
                     <th>Item #</th><th>Description</th><th>Source</th>
                     <th>Plan</th><th>Plan Description</th><th>Expiration</th>
