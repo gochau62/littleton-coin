@@ -871,8 +871,9 @@
             sblRevealFilled();
             sblRecompute();
             if (!sblLccMatches.length) return;
-            // suggestions are shown, never steered: no drill, no category fill
-            if (res.via !== 'suggest') sblLccDrill(sblLccMatches[0]);
+            // suggestions fill the drill-down too - the operator sees the shelf
+            // the candidates came from; only the auto-import stays off for them
+            sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
             if ((sblLccMatches.length === 1 || res.picked) && res.via !== 'suggest'){
                 // one coin fits, or the judge named one: pick it and light up
