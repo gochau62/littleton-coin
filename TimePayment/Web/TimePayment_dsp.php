@@ -101,7 +101,7 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
 <div class="tp-app">
 
     <div class="tp-topbar">
-        <h1>Item Time Payment</h1>
+        <h1>Time Payment Items Maintenance</h1>
         <div class="tp-topbar-right"><?php echo htmlspecialchars($user); ?></div>
     </div>
 
@@ -140,13 +140,15 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
             <input type="text" class="tp-filter" id="txtSearch" placeholder="Search item # or source code">
             <span class="tp-count" id="lblCount"></span>
         </div>
+        <!-- the same columns, in the same order, as the green screen subfile; the item
+             master description rides on the Item cell as a hover title -->
         <div class="tp-tablewrap tp-fixedbox">
             <table class="tp-grid" id="tblGrid">
-                <colgroup><col style="width:14%"><col style="width:33%"><col style="width:10%">
-                <col style="width:8%"><col style="width:20%"><col style="width:15%"></colgroup>
+                <colgroup><col style="width:15%"><col style="width:12%"><col style="width:8%">
+                <col style="width:45%"><col style="width:20%"></colgroup>
                 <thead><tr>
-                    <th>Item #</th><th>Description</th><th>Source</th>
-                    <th>Plan</th><th>Plan Description</th><th>Expiration</th>
+                    <th>Item</th><th>Source</th><th>Plan</th>
+                    <th>Description</th><th>Expire Date</th>
                 </tr></thead>
                 <tbody id="gridBody"></tbody>
             </table>

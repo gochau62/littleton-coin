@@ -31,7 +31,7 @@
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
-    document.title = "Item Time Payment";
+    document.title = "Time Payment Items Maintenance";
 
     // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
@@ -111,11 +111,12 @@ function attr(s) {
 }
 
 
-// stored dates are an 8 digit yyyymmdd number, so show them as mm/dd/yyyy
+// stored dates are an 8 digit yyyymmdd number, shown the way the green screen
+// shows them: 12/28/26, 2/01/27
 function fmtDate(dec) {
     var s = String(dec);
     if (s.length !== 8 || s === '00000000') { return ''; }
-    return s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4);
+    return parseInt(s.substr(4, 2), 10) + '/' + s.substr(6, 2) + '/' + s.substr(2, 2);
 }
 
 
@@ -213,11 +214,11 @@ function loadGrid() {
 function renderGrid(rows) {
     var html = '';
     $.each(rows, function (i, r) {
-        // an expired record stays in the grid but reads as done with, its date in red
+        // an expired record stays in the grid but reads as done with, its date in red;
+        // hovering the item shows its item master description, like the screen can't
         var expired = gridToday > 0 && parseInt(r.TPEXDATE, 10) < gridToday;
         html += '<tr' + (expired ? ' class="tp-expired"' : '') + '>' +
-            '<td class="tp-mono" title="' + attr(r.TPITEM) + '">' + esc(r.TPITEM) + '</td>' +
-            '<td title="' + attr(r.TPDESC) + '">' + esc(r.TPDESC) + '</td>' +
+            '<td class="tp-mono" title="' + attr(r.TPDESC) + '">' + esc(r.TPITEM) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPPLAN) + '</td>' +
             '<td title="' + attr(r.TPPLDS) + '">' + esc(r.TPPLDS) + '</td>' +
@@ -225,7 +226,7 @@ function renderGrid(rows) {
             '</tr>';
     });
     $('#gridBody').html(html ||
-        '<tr><td colspan="6" class="tp-empty">No time payment records match.</td></tr>');
+        '<tr><td colspan="5" class="tp-empty">No time payment records match.</td></tr>');
     $('#lblCount').text(rows.length + ' record' + (rows.length === 1 ? '' : 's'));
 }
 </script>
