@@ -74,6 +74,17 @@
         });
     }
 
+    // any collapsed section that just received a value opens itself - filled
+    // boxes hidden behind a folded section read as "nothing happened"
+    function sblRevealFilled(){
+        $('details.group:not([open])').each(function(){
+            var d = this;
+            $(d).find('[data-name]').each(function(){
+                if (String(this.value || '').trim() !== ''){ d.open = true; return false; }
+            });
+        });
+    }
+
     /* ---- view switching ---- */
     // The SKU form needs the whole screen, and the shell's sidebar squeezes it.
     // Focus mode hides everything that sits BESIDE the loader at each level up
@@ -139,6 +150,7 @@
                 if (el && v && (cur === '' || cur.indexOf('***') === 0)){ el.value = v; wrote.push(k); }
             });
             $('#genai-msg').text(wrote.length ? 'Wrote ' + wrote.join(', ') + '.' : 'Nothing came back - fill manually.');
+            sblRevealFilled();
             sblRecompute();
         }, 'json').fail(function(){
             $('#genai-btn').prop('disabled', false);
@@ -340,6 +352,7 @@
         sblMarketApply();                  // and only the chosen market's boxes
         sblCertNumGate(false);             // lock/unlock Cert Number for this row
         sblLccApply();                     // LCC values fill only what GreySheet left blank
+        sblRevealFilled();
         sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
     }
@@ -439,7 +452,9 @@
                 var el = document.querySelector('#sku-form [data-name="' + n + '"]');
                 if (!el) return;
                 var f = el.closest('.field');
-                if (f) f.style.display = show[group] ? '' : 'none';
+                // a box holding a value stays visible no matter the category rules -
+                // hiding filled data reads as "autofill did nothing"
+                if (f) f.style.display = (show[group] || String(el.value || '').trim() !== '') ? '' : 'none';
             });
         });
         // The whole "Other product types" section only exists when one applies.
@@ -853,6 +868,7 @@
             sblLccFields = res.fields || {};
             sblLccMatches = res.matches || [];
             sblLccApply();
+            sblRevealFilled();
             sblRecompute();
             if (!sblLccMatches.length) return;
             // suggestions are shown, never steered: no drill, no category fill
