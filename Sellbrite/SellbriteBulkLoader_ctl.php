@@ -150,7 +150,6 @@
                 if (el && v && (cur === '' || cur.indexOf('***') === 0)){ el.value = v; wrote.push(k); }
             });
             $('#genai-msg').text(wrote.length ? 'Wrote ' + wrote.join(', ') + '.' : 'Nothing came back - fill manually.');
-            sblCompactMark();
             sblRevealFilled();
             sblRecompute();
         }, 'json').fail(function(){
@@ -182,7 +181,6 @@
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         sblResetAutoBadges();
         sblFieldVisibility();
-        sblCompactMark();
         sblMarketApply();
         sblCertNumGate(false);
     }
@@ -358,7 +356,6 @@
         sblMarketApply();                  // and only the chosen market's boxes
         sblCertNumGate(false);             // lock/unlock Cert Number for this row
         sblLccApply();                     // LCC values fill only what GreySheet left blank
-        sblCompactMark();                  // newly filled boxes surface in compact mode
         sblRevealFilled();
         sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
@@ -393,7 +390,6 @@
         $('#sku-form').on('change', '#f_category_name', function(){ sblYearRefresh(); sblFieldVisibility(); });
         $('#sku-form').on('change', '#f_single_coin_or_set', sblFieldVisibility);
         sblFieldVisibility();
-        sblCompactApply();
     });
 
     /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
@@ -472,28 +468,6 @@
             other.style.display = any ? '' : 'none';
             if (any) other.open = true;
         }
-    }
-
-    // Compact mode: only required and filled boxes show, so the form stays
-    // short - the toggle in the toolbar brings every field back when needed.
-    var sblCompact = true;
-    function sblCompactMark(){
-        $('#sku-form .field').each(function(){
-            var el = this.querySelector('[data-name]');
-            if (!el) return;
-            var empty = !el.hasAttribute('data-required') && String(el.value || '').trim() === '';
-            if (empty && el === document.activeElement) return;   // never hide the box being typed in
-            this.classList.toggle('sbl-empty', empty);
-        });
-    }
-    function sblCompactApply(){
-        sblCompactMark();
-        $('#sku-form').toggleClass('sbl-compact', sblCompact);
-        $('#fields-toggle').text(sblCompact ? 'Show all fields' : 'Show filled only');
-    }
-    function sblFieldsToggle(){
-        sblCompact = !sblCompact;
-        sblCompactApply();
     }
 
     function sblMarkGsFields(on){
@@ -899,7 +873,6 @@
             sblLccFields = res.fields || {};
             sblLccMatches = res.matches || [];
             sblLccApply();
-            sblCompactMark();
             sblRevealFilled();
             sblRecompute();
             if (!sblLccMatches.length) return;
@@ -994,7 +967,6 @@
             });
             sblPreview(res.fields);
             sblValidity(res);
-            sblCompactMark();   // formula results surface in compact mode as they fill
             if (sblAutofilled) sblSyncAutoBadges();
         }, 'json');
     }

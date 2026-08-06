@@ -194,10 +194,6 @@ details.group summary::-webkit-details-marker { display:none; }
 .field.cert-locked { display:none !important; }
 
 
-/* compact mode: empty optional boxes stay hidden until something fills them */
-#sku-form.sbl-compact .field.sbl-empty { display:none; }
-
-
 /* Valid-values combo boxes show a caret so users know a menu opens on click. */
 .field input.has-menu { padding-right:30px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23667085'/%3E%3C/svg%3E");
@@ -309,8 +305,6 @@ details.group summary::-webkit-details-marker { display:none; }
                 </select>
             </label>
             <span class="spacer"></span>
-            <button type="button" class="mini" id="fields-toggle" onclick="sblFieldsToggle()"
-                    title="Compact shows only the required and filled boxes - press to see every field">Show all fields</button>
             <span id="valid-pill" class="pill ok">Ready</span>
             <button type="button" class="btn" id="save-btn" onclick="sblSave()">Save SKU</button>
         </div>
