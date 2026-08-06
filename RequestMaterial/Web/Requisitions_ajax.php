@@ -183,15 +183,21 @@ switch ($action) {
         $areaCode = isset($_POST['areaCode']) ? substr(trim($_POST['areaCode']), 0, 2)  : null;
         $areaType = isset($_POST['areaType']) ? substr(trim($_POST['areaType']), 0, 25) : null;
         $authBy   = $_POST['authBy'] ?? null;
-        if (!rqsUpdateReq($conn, $reqNum, $authBy, $_POST['comments'] ?? null,
+        $comments = $_POST['comments'] ?? null;
+        if (!rqsUpdateReq($conn, $reqNum, $authBy, $comments,
                           $badge, $reqName, $areaCode, $areaType)) {
             rqsOutFail();
         }
-        // the log names the authorizer that was set, so a later question about who approved something under whose name can be answered from the log alone
+        // every field the request carried is named, so a question later about who changed what on which requisition is answered by the log by itself
+        // the authorizer and the requestor matter most: between them and the sign on name at the front of the line, a requisition authorized or raised under somebody else's name shows up plainly
         rqsActLog($user, 'UPDATE', 'req ' . $reqNum .
-                  ($authBy   !== null ? ' authby ' . trim($authBy) : '') .
-                  ($reqName  !== null ? ' name ' . $reqName        : '') .
-                  ($badge    !== null ? ' badge ' . $badge         : ''));
+                  ($authBy   !== null ? ' authby ' . trim($authBy)   : '') .
+                  ($reqName  !== null ? ' name ' . $reqName          : '') .
+                  ($badge    !== null ? ' badge ' . $badge           : '') .
+                  ($areaCode !== null ? ' areacode ' . $areaCode     : '') .
+                  ($areaType !== null ? ' areatype ' . $areaType     : '') .
+                  ($comments !== null ? ' comments "' .
+                       substr(trim($comments), 0, 60) . '"'          : ''));
         rqsOut(array("ok" => true));
 
 
