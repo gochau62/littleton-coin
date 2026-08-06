@@ -158,15 +158,21 @@ function dspBulkLoader(&$screenData)
 /* overflow-x: if the table ever outgrows the card it scrolls inside it,
    never stretching the page past the sidebar */
 .table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; overflow-x:auto; box-shadow:0 1px 3px rgba(16,24,40,.06); }
-/* fixed layout: long titles trim to ... instead of wrapping the row tall */
+/* fixed layout with PERCENT columns: they always total 100% of the card, so
+   the grid can never outgrow the page no matter how narrow the sidebar leaves
+   it - long text trims to ... inside its cell instead of stretching anything */
 table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; table-layout:fixed; }
-.grid th:nth-child(1){ width:62px; } .grid th:nth-child(2){ width:120px; }
-.grid th:nth-child(3){ width:120px; } .grid th:nth-child(5){ width:62px; }
-.grid th:nth-child(6){ width:70px; }  .grid th:nth-child(7){ width:45px; }
-.grid th:nth-child(8){ width:115px; } .grid th:nth-child(9){ width:125px; }
+/* box-sizing + no side borders: the shell's own table styling adds cell
+   borders and content-box widths that break the fit - these override it */
+#stdPage .grid th, #stdPage .grid td { box-sizing:border-box; border-left:none; border-right:none; }
+.grid th:nth-child(1){ width:7%; } .grid th:nth-child(2){ width:13%; }
+.grid th:nth-child(3){ width:12%; } .grid th:nth-child(5){ width:7%; }
+.grid th:nth-child(6){ width:8%; }  .grid th:nth-child(7){ width:5%; }
+.grid th:nth-child(8){ width:13%; } .grid th:nth-child(9){ width:13%; }
 .grid td { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
-.grid td { padding:10px 14px; border-bottom:1px solid #eef1f4; }
+.grid .mini { padding:4px 9px; font-size:11.5px; }
+.grid thead th { text-align:left; padding:10px 10px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
+.grid td { padding:9px 10px; border-bottom:1px solid #eef1f4; }
 .grid tbody tr:hover{ background:#f4f8f6; }
 .grid .num { text-align:right; } .sku-link { font-family:Consolas,monospace; color:#1e6e43; font-weight:700; cursor:pointer; }
 .sku-link:hover{ text-decoration:underline; }
