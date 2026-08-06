@@ -48,7 +48,7 @@ CREATE OR REPLACE PROCEDURE STYCRD003S (
         END IF;
 
         IF INFROM <= 21 THEN
-            UPDATE LSCDEVLIBP/IVSCBODYP
+            UPDATE LSCPRDLIB/IVSCBODYP
                SET SCBTXT = '',
                    SCBSRK = ''
              WHERE SCBSKU = INKEY
