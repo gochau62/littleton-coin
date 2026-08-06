@@ -68,7 +68,7 @@ function dspBulkLoader(&$screenData)
 .sbl-back { position:absolute; top:14px; left:28px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
 .sbl-tools .spacer { flex:1; }
-.sbl-search { padding:9px 14px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; width:280px; }
+.sbl-search { padding:9px 14px; border-radius:8px; border:1px solid #555; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; width:280px; }
 .sbl-search:focus { border-color:#1e6e43; box-shadow:0 0 0 3px rgba(30,110,67,.15); }
 .gs-cascade { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
 .gs-cascade input:disabled, .gs-cascade select:disabled,
@@ -77,12 +77,12 @@ function dspBulkLoader(&$screenData)
 
 /* GreySheet drill-down bar on the SKU form: one aligned row, steps in order. */
 .gs-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#fff;
-          border:1px solid #e4e7ec; border-radius:10px; padding:10px 14px; margin-bottom:16px;
+          border:1px solid #333; border-radius:10px; padding:10px 14px; margin-bottom:16px;
           box-shadow:0 1px 3px rgba(16,24,40,.06); }
 /* LCC item bar: the SKU shortcut above the GreySheet finder. Start from
    the coin's own tag and the finder fills itself in; skip it and nothing changes. */
 .lcc-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff;
-           border:1px solid #e4e7ec; border-radius:10px;
+           border:1px solid #333; border-radius:10px;
            padding:10px 14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
 /* the item master's own record - always its own line under the SKU box */
 .lcc-bar .lcc-item-info { flex-basis:100%; font-size:12px; color:#475467; min-width:0;
@@ -108,19 +108,19 @@ function dspBulkLoader(&$screenData)
 
 /* labelled groups for the toolbar controls (Search / Export) */
 .tool-group { display:inline-flex; align-items:center; gap:8px; padding:5px 5px 5px 14px;
-              border:1px solid #d0d5dd; border-radius:8px; background:#fff; }
+              border:1px solid #555; border-radius:8px; background:#fff; }
 .tool-group .tg-lbl { font-size:11px; font-weight:700; text-transform:uppercase;
                       letter-spacing:.6px; color:#667085; white-space:nowrap; }
 .tool-group .tg-input { border:none; background:transparent; outline:none; font-size:13px;
                         font-family:inherit; padding:6px 2px; width:220px; }
-.tool-group .gs-dd { box-shadow:none; border-color:#e4e7ec; }
+.tool-group .gs-dd { box-shadow:none; border-color:#555; }
 .btn.btn-sm { padding:7px 16px; font-size:13px; }
 .btn-stack { display:inline-flex; flex-direction:column; gap:6px; }
 .btn-stack .btn { justify-content:center; }
 .tool-stack { display:inline-flex; flex-direction:column; gap:8px; align-items:flex-start; }
 .export-group { border-color:#1e6e43; background:#f0f7f3; }
 .export-group .tg-lbl { color:#1e6e43; }
-.gs-dd { padding:9px 12px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; max-width:170px; }
+.gs-dd { padding:9px 12px; border-radius:8px; border:1px solid #555; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; max-width:170px; }
 .gs-dd:focus { border-color:#1e6e43; }
 .mkt-pick { font-size:12px; font-weight:700; color:#344054; display:inline-flex; align-items:center; gap:6px; }
 .mkt-pick .gs-dd { width:auto; max-width:none; padding:6px 8px; }
@@ -140,26 +140,26 @@ function dspBulkLoader(&$screenData)
 .card.apilog .ms { color:#98a2b3; }
 .gs-total { font-weight:400; font-size:11px; color:#1e6e43; }
 .gs-rawbox summary { cursor:pointer; font-weight:700; color:#101828; font-size:13px; }
-.gs-rawbox pre { max-height:360px; overflow:auto; background:#f9fafb; border:1px solid #e4e7ec; border-radius:8px; padding:8px; font-size:11px; line-height:1.4; white-space:pre; margin:8px 0 0; }
+.gs-rawbox pre { max-height:360px; overflow:auto; background:#f9fafb; border:1px solid #333; border-radius:8px; padding:8px; font-size:11px; line-height:1.4; white-space:pre; margin:8px 0 0; }
 .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border:none; background:#1e6e43; color:#fff; font-size:14px; font-weight:600; border-radius:8px; cursor:pointer; }
 .btn:hover { background:#16563a; }
 .btn.btn-danger { background:#fff; color:#b42318; border:1px solid #e8aaa5; } .btn.btn-danger:hover { background:#fef3f2; }
 .btn.btn-blue { background:#fff; color:#0056b3; border:1px solid #a8c7ef; } .btn.btn-blue:hover { background:#ecf3fc; }
-.btn-ghost { background:#fff; color:#344054; border:1px solid #d0d5dd; }
+.btn-ghost { background:#fff; color:#344054; border:1px solid #555; }
 .btn-ghost:hover { color:#1e6e43; border-color:#1e6e43; }
 .btn-green { background:#1e6e43; } .btn-green:hover { background:#16563a; }
-.btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#e4efe7; color:#101828; }
+.btn-grey { background:#fff; color:#475467; border:1px solid #555; } .btn-grey:hover { background:#e4efe7; color:#101828; }
 
 
 /* table */
-.table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+.table-card { background:#fff; border:1px solid #333; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06); }
 table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
-.grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
+.grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #333; }
 .grid td { padding:10px 14px; border-bottom:1px solid #eef1f4; }
 .grid tbody tr:hover{ background:#f4f8f6; }
 .grid .num { text-align:right; } .sku-link { font-family:Consolas,monospace; color:#1e6e43; font-weight:700; cursor:pointer; }
 .sku-link:hover{ text-decoration:underline; }
-.mini { font-size:12px; color:#475467; padding:4px 12px; border-radius:6px; border:1px solid #d0d5dd; background:#fff; cursor:pointer; font-weight:600; }
+.mini { font-size:12px; color:#475467; padding:4px 12px; border-radius:6px; border:1px solid #555; background:#fff; cursor:pointer; font-weight:600; }
 .mini:hover{ color:#1e6e43; border-color:#1e6e43; } .mini.danger:hover{ color:#b42318; background:#fef3f2; border-color:#b42318; }
 .empty { text-align:center; padding:40px; color:#667085; }
 
@@ -167,8 +167,8 @@ table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:
 /* form */
 .editor { display:grid; grid-template-columns:1fr 300px; gap:20px; align-items:start; margin-top:6px; }
 .form-col { display:flex; flex-direction:column; gap:14px; }
-.card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
-fieldset.group, details.group { border:1px solid #e4e7ec; border-radius:10px; }
+.card { background:#fff; border:1px solid #333; border-radius:10px; padding:16px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+fieldset.group, details.group { border:1px solid #333; border-radius:10px; }
 details.group { padding:12px 14px; margin-bottom:14px; background:#fff; }
 .group legend, .group summary { font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#101828; padding:0 6px; }
 details.group summary { cursor:pointer; color:#1e6e43; list-style:none; user-select:none; }
@@ -182,7 +182,7 @@ details.group summary::-webkit-details-marker { display:none; }
 /* Small label text so even the longest names stay on one line. */
 .field label { font-size:10.5px; color:#667085; font-weight:600; display:flex; gap:6px; align-items:center; }
 .field .req { color:#b42318; }
-.field input,.field select,.field textarea { background:#fff; border:1px solid #d0d5dd; border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
+.field input,.field select,.field textarea { background:#fff; border:1px solid #555; border-radius:8px; padding:8px 10px; font-size:13px; font-family:inherit; width:100%; }
 
 
 /* background-color only - the shorthand would erase the has-menu caret */
@@ -214,7 +214,7 @@ details.group summary::-webkit-details-marker { display:none; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#101828; }
-.preview-img { aspect-ratio:1/1; border-radius:8px; overflow:hidden; background:#f7faf8; display:grid; place-items:center; margin-bottom:10px; border:1px solid #e4e7ec; position:relative; }
+.preview-img { aspect-ratio:1/1; border-radius:8px; overflow:hidden; background:#f7faf8; display:grid; place-items:center; margin-bottom:10px; border:1px solid #555; position:relative; }
 .preview-img img { width:100%; height:100%; object-fit:cover; } .preview-img img.broken { display:none; }
 .img-fallback { position:absolute; color:#667085; font-size:13px; } .preview-img img:not(.broken)+.img-fallback { display:none; }
 .pv-title { font-weight:700; font-size:14px; color:#101828; margin-bottom:6px; } .pv-price { color:#1e6e43; font-weight:800; font-size:16px; }
