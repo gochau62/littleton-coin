@@ -63,9 +63,12 @@ function dspBulkLoader(&$screenData)
 <style>
 /* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
 #stdPage { background:#eef3ef; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
-/* the back arrow sits on the title line, top left; the title stays centered */
-.sbl-back { position:absolute; top:14px; left:28px; }
-#stdPage h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#1C4532; text-align:center; margin:0 0 16px; }
+/* the solid dark-green header bar from requisitions / time payment, edge to
+   edge across the page, with the title centered in white */
+#stdPage h1 { font-size:1.25rem; letter-spacing:.3px; font-weight:700; color:#fff; background:#1C4532;
+              text-align:center; margin:-20px -28px 18px; padding:14px 28px; }
+/* the back arrow sits inside the header bar, top left */
+.sbl-back { position:absolute; top:9px; left:16px; }
 .sbl-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid #e4e7ec; }
 .sbl-tools .spacer { flex:1; }
 .sbl-search { padding:9px 14px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; width:280px; }
