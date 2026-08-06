@@ -309,7 +309,7 @@ details.group summary::-webkit-details-marker { display:none; }
         </div>
 
         <div class="lcc-bar">
-            <span class="lcc-bar-label">LCC item</span>
+            <span class="lcc-bar-label">Item by SKU</span>
             <input type="text" id="lcc-sku" class="sbl-search lcc-grow has-menu" autocomplete="off"
                    placeholder="SKU">
             <span id="lcc-item-info" class="lcc-item-info"></span>
