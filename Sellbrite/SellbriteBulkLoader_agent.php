@@ -673,8 +673,9 @@ function gsPricing(int $gsId, $grade = null, &$meta = []): array
     $meta = [];
     if ($gsId <= 0) { return []; }
     $params = ['Gsid' => $gsId];
-    // only pass grade when its a plain number - GreySheet rejects text here
-    if ($grade !== null && ctype_digit((string) $grade)) { $params['Grade'] = (int) $grade; }
+    // GreySheet takes only the number, so "VG 8" / "XF-40" / "MS65RD" send their
+    // digits - without this the grade was dropped and pricing fell to the lowest row
+    if ($grade !== null && preg_match('/(\d{1,2})/', (string) $grade, $gm)) { $params['Grade'] = (int) $gm[1]; }
     $resp  = gsApiGet('GetPricingRequest', $params, $meta);
     // the actual price row is nested one level down, inside PricingData
     $first = gsData($resp)[0] ?? [];

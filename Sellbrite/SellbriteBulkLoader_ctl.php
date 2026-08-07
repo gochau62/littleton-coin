@@ -249,6 +249,17 @@
             });
             $('#f_id').val(res.row.id);
             $('#f_marketplace').val(res.row.marketplace || '');
+            // the finder bars come back the way they were saved
+            if (res.row.lcc_sku){ $('#lcc-sku').val(res.row.lcc_sku); sblLccSku = res.row.lcc_sku; }
+            if (res.row.gs_path){
+                sblLccDrill({ path: res.row.gs_path });
+                if (res.row.gs_gsid){
+                    sblPendingGsId = parseInt(res.row.gs_gsid, 10) || 0;
+                    $('#gs-coin').prop('disabled', false).data('sblPicked', 1).val(res.row.gs_coin || '');
+                    $('#gs-autofill').prop('disabled', !sblPendingGsId);
+                    sblMarkGsFields(!!sblPendingGsId);
+                }
+            }
             sblMarketApply();
             sblShow('form');
             sblRecompute();
@@ -588,6 +599,15 @@
         sblCurYear = y;
         $('#gs-coin').val('').data('sblPicked', 0);
         sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
+        sblBarsRecord('');   // no coin picked any more
+    }
+
+    // the finder-bar state rides along in hidden form fields, so Save keeps it
+    // and Edit puts both bars back the way they were
+    function sblBarsRecord(label){
+        $('#f_gs_gsid').val(sblPendingGsId || '');
+        $('#f_gs_coin').val(sblPendingGsId ? (label || '') : '');
+        $('#f_gs_path').val(sblCurPath || '');
     }
 
     function sblYearAutocomplete(){
@@ -646,6 +666,7 @@
                 $('#gs-coin').data('sblPicked', 1).val(ui.item.display || ui.item.label).autocomplete('close');
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
+                sblBarsRecord(ui.item.label);   // the pick saves with the row
                 return false;
             }
         }).autocomplete('instance')._renderItem = function(ul, item){
@@ -722,6 +743,7 @@
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
+        sblBarsRecord('');
     }
 
     /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
@@ -867,6 +889,7 @@
         // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
         // and say when the server itself failed, instead of looking frozen
         $('#lcc-item-info').text('Looking up ' + sku + '\u2026');
+        $('#f_lcc_sku').val(sku);   // the Item-by-SKU bar saves with the row
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
             if (res.returnClass !== 'success'){ $('#lcc-item-info').empty(); return; }
             sblLccData = res.item || {};
@@ -889,6 +912,7 @@
                 $('#gs-coin').data('sblPicked', 1).val(m0.label);
                 $('#gs-autofill').prop('disabled', false);
                 sblMarkGsFields(true);
+                sblBarsRecord(m0.label);   // the pick saves with the row
 
             } else if (res.via !== 'suggest') {
                 // real candidates: put the operator in the coin box to pick

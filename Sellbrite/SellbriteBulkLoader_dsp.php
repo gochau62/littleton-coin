@@ -346,6 +346,11 @@ details.group summary::-webkit-details-marker { display:none; }
                 <input type="hidden" name="id" id="f_id" value="">
                 <!-- hidden GreySheet coin weight (troy oz): packaging recomputes from it after the Certification pick -->
                 <input type="hidden" name="weight" id="f_weight" value="" data-name="weight">
+                <!-- the finder bars save with the row and restore on edit -->
+                <input type="hidden" name="lcc_sku" id="f_lcc_sku" value="">
+                <input type="hidden" name="gs_path" id="f_gs_path" value="">
+                <input type="hidden" name="gs_gsid" id="f_gs_gsid" value="">
+                <input type="hidden" name="gs_coin" id="f_gs_coin" value="">
                 <?php
                 // collapsible sections; required = the Sellbrite mandatory list + qty/cost/search terms
                 $required = array_merge(Schema::requiredNames(), ['quantity', 'cost', 'search_terms']);

@@ -142,6 +142,8 @@ function sbl_writable_columns()
     $cols  = sbl_columns();
     $cols[] = 'marketplace';   // per-SKU market; not a Sellbrite header, so not in the schema
     $cols[] = 'created_by';    // row owner (signed-on user); not a Sellbrite header
+    // the finder bars save with the row (columns exist after the ALTER; filtered out before)
+    foreach (['lcc_sku', 'gs_path', 'gs_gsid', 'gs_coin'] as $bc) { $cols[] = $bc; }
     $tcols = sbl_table_columns();
     if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
