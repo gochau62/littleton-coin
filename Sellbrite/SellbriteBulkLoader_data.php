@@ -292,7 +292,7 @@ return [
         ['name' => 'ebay_graded_coin_professional_grader', 'label' => 'eBay Graded Coin Professional Grader', 'required' => false, 'auto' => true],
         ['name' => 'z_ebay_ungraded_coin_condition', 'label' => 'z eBay Ungraded Coin Condition', 'required' => false, 'auto' => true],
         ['name' => 'bullion_shape', 'label' => 'Bullion Shape', 'required' => false, 'auto' => false, 'dropdown' => 'bullion_shape'],
-        ['name' => 'price', 'label' => 'Price', 'required' => false, 'auto' => false],
+        ['name' => 'price', 'label' => 'Retail', 'required' => false, 'auto' => false],
         ['name' => 'cost', 'label' => 'Cost', 'required' => false, 'auto' => false],
         ['name' => 'quantity', 'label' => 'Quantity', 'required' => true, 'auto' => false],
         ['name' => 'exact_image', 'label' => 'Exact Image', 'required' => false, 'auto' => false, 'dropdown' => 'exact_image'],

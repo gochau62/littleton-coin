@@ -281,7 +281,7 @@ details.group summary::-webkit-details-marker { display:none; }
         <div id="list-table" class="table-card"<?= $skus ? '' : ' style="display:none"' ?>>
         <table class="grid">
             <thead><tr><th>Market</th><th>SKU</th><th>Category</th><th>Title</th><th>Grade</th>
-                <th class="num">Price</th><th class="num">Qty</th><th>Updated</th><th></th></tr></thead>
+                <th class="num">Retail</th><th class="num">Qty</th><th>Updated</th><th></th></tr></thead>
             <tbody id="sku-tbody">
             <?php foreach ($skus as $r): ?>
                 <tr id="sku-row-<?= (int) $r['id'] ?>">

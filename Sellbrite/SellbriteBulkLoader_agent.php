@@ -802,12 +802,9 @@ function sbl_field_guide(): array
             . 'graded and certified PR 70 DCAM by PCGS, with the special privy mark honoring the 250th anniversary '
             . 'of the United States Army. Contains 1 oz 0.999 Silver." Plain raw grade examples: '
             . '"A genuine 1943 Lincoln Wheat Steel Cent Penny Coin, in AU About Uncirculated Condition." No hype.'],
-        'extended_description' => ['desc' => 'EXPANDED DESCRIPTION for the whole category: 2-4 factual sentences built from YOUR description PLUS the GreySheet GeneralNotes/Obverse/Reverse text (composition, design, designer, history). Write it so the SAME text fits every coin in this category - no grade, date, mint or price. House example: "In 1943, the U.S. Mint struck Lincoln cents in zinc-coated steel to save copper for munitions and other military materials in World War II. Each unique one-year-only issue bears Victor D. Brenner\'s Lincoln portrait obverse and Wheat Ears reverse designs."'],
-        'feature_4'      => ['desc' => 'a COLLECTOR\'S NOTE about the SERIES (history, design, collector appeal) - category-level, 2-4 sentences, no this-coin grade/date/price. REWRITE the facts in YOUR OWN words: it must NOT copy or lightly rephrase the GeneralNotes or the extended_description - no shared sentences. House example: "Lincoln cents with the original Wheat Ears reverse were introduced in 1909 on the 100th anniversary of Abraham Lincoln\'s birth and were struck until 1958. These bronze cents were the first circulating U.S. coins to feature a portrait of a historical figure. Over its decades-long circulation, the Lincoln Wheat Cent only underwent one composition change. In 1943, the composition was changed from bronze to zinc-coated steel to save copper during the war." Do NOT add the "COLLECTOR\'S NOTE:" prefix; the system adds it.'],
         'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
         'weight'         => ['src' => 'WeightOunces', 'desc' => 'coin weight in troy ounces, number only'],
         'search_terms'   => ['desc' => '8-15 lowercase space-separated keywords: metal, type, denomination, mint, theme, "numismatics", "coin"'],
-        'price'          => ['src' => 'pricing CpgVal', 'req' => true, 'desc' => 'CPG retail; the operator confirms it'],
         'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
     ];
 }
@@ -1106,22 +1103,11 @@ function gsAiMap(array $coin): array
         $want = preg_split('/[^a-z0-9]+/', strtolower($aiV), -1, PREG_SPLIT_NO_EMPTY);
         if (!array_diff($want, $have)) { $row[$vf] = $aiV; }
     }
-    // GeneralNotes stays the Expanded Description; 
-    // the obverse + reverse design text becomes the COLLECTOR'S NOTE
-    $gsClean = static function ($s): string {
-        $s = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $s)));
-        return trim((string) preg_replace('/\s+/', ' ', $s));
-    };
-    $gsNotes  = $gsClean($coin['GeneralNotes'] ?? '');
-    $gsDesign = trim($gsClean($coin['ObverseDescription'] ?? '') . ' ' . $gsClean($coin['ReverseDescription'] ?? ''));
-    if (trim((string) ($row['extended_description'] ?? '')) === '') {
-        $src = $gsNotes !== '' ? $gsNotes : $gsDesign;
-        if ($src !== '') { $row['extended_description'] = mb_substr($src, 0, 1900); }
-    }
-    if (trim((string) ($row['feature_4'] ?? '')) === '') {
-        $src = $gsDesign !== '' ? $gsDesign : trim((string) ($row['extended_description'] ?? ''));
-        if ($src !== '') { $row['feature_4'] = mb_substr($src, 0, 1400); }
-    }
+    // GreySheet's notes and design text are copyrighted - they never land in
+    // the listing boxes. Expanded Description and the COLLECTOR'S NOTE stay
+    // empty until the Generate-with-AI button writes them in its own words.
+    $row['extended_description'] = '';
+    $row['feature_4'] = '';
     return sbl_snap_row($row);
 }
 
@@ -1545,7 +1531,7 @@ function gsImport(array $params): array
     if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     // strip commas etc. from whatever landed in price/cost
     foreach (['price', 'cost'] as $pf) { if (($row[$pf] ?? '') !== '') { $row[$pf] = gsPriceNum($row[$pf]); } }
-    if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
+    $row['price'] = '';   // the Retail box stays empty - the operator types the price
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
 
     // Pricing names the grade it priced (GradeLabel): autofill Grade with it,
