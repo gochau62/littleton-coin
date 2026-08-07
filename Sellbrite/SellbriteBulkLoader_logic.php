@@ -274,6 +274,10 @@ final class Computer
         if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
             $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
         }
+        // Condition follows circulated/uncirculated: Uncirculated lists as new,
+        // everything else as used - off the screen but still in the spreadsheet
+        $circ = trim((string) ($row['circulated_or_uncirculated'] ?? ''));
+        $row['condition'] = stripos($circ, 'uncirc') !== false ? 'new' : 'used';
 
         // Package weight = the coin's own weight FROM GREYSHEET
         // auto adjusted for certification wrap and slabs from GSA
@@ -629,11 +633,11 @@ final class Exporter
         $ws->setCellValue('A2', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
             . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 3. *Required Fields.');
         foreach ($keep as $i => $orig) {
-            if (isset(self::LAYOUT_NOTES[$orig])) { $ws->setCellValue($cell($i, 1), self::LAYOUT_NOTES[$orig]); }
+            // row 1 stays blank - the per-column required notes were dropped
             $ws->setCellValue($cell($i, 3), self::LAYOUT_HUMAN[$orig]);
             $ws->setCellValue($cell($i, 4), self::LAYOUT[$orig]);
             if (isset($fills[$orig])) {
-                foreach ([1, 3, 4] as $rowNo) {
+                foreach ([3, 4] as $rowNo) {
                     $ws->getStyle($cell($i, $rowNo))->getFill()
                        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                        ->getStartColor()->setARGB($fills[$orig]);
@@ -682,14 +686,14 @@ final class Exporter
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 3. *Required Fields.';
         $fh = fopen('php://temp', 'r+');
-        $notes = $human = $machine = [];
+        $human = $machine = [];
         foreach ($keep as $orig) {
-            $notes[]   = self::LAYOUT_NOTES[$orig] ?? '';
             $human[]   = self::LAYOUT_HUMAN[$orig];
             $machine[] = self::LAYOUT[$orig];
         }
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
-        fputcsv($fh, $notes); fputcsv($fh, $bannerRow);
+        // row 1 stays blank - the per-column required notes were dropped
+        fputcsv($fh, array_fill(0, $n, '')); fputcsv($fh, $bannerRow);
         fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
             $mkt  = strtolower(trim((string) ($row['marketplace'] ?? '')));

@@ -354,7 +354,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     // fields in the example workbook's column order
                     'Coin details' => ['open' => true, 'fields' => [
                         'sku','category_name','brand','country_of_manufacture',
-                        'price','original_retail','creation_date','condition',
+                        'price','original_retail','creation_date',
                         'coin_type','denomination','year','mint_mark','mint_location',
                         'coin_variety_1','coin_variety_2','coin_design','grade',
                         'designation_abbrivation','title_suffix','circulated_or_uncirculated',
@@ -411,7 +411,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     // operator-owned picks: autofill suggests, no badge
                     $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
                     // fully manual: no badge, no formula refresh; Cert Number unlocks with Certification
-                    $manualAlways = ['title_suffix', 'certification', 'certification_number', 'condition'];
+                    $manualAlways = ['title_suffix', 'certification', 'certification_number'];
                     foreach ($sec['fields'] as $n) {
                         if (!isset($byName[$n])) { continue; }
                         $col = $byName[$n];
