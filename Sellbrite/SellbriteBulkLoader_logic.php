@@ -630,14 +630,13 @@ final class Exporter
         $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $ws = $ss->getActiveSheet();
         $ws->setTitle('product_data');
-        $ws->setCellValue('A2', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
-            . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 3. *Required Fields.');
+        $ws->setCellValue('A1', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
+            . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 2. *Required Fields.');
         foreach ($keep as $i => $orig) {
-            // row 1 stays blank - the per-column required notes were dropped
-            $ws->setCellValue($cell($i, 3), self::LAYOUT_HUMAN[$orig]);
-            $ws->setCellValue($cell($i, 4), self::LAYOUT[$orig]);
+            $ws->setCellValue($cell($i, 2), self::LAYOUT_HUMAN[$orig]);
+            $ws->setCellValue($cell($i, 3), self::LAYOUT[$orig]);
             if (isset($fills[$orig])) {
-                foreach ([3, 4] as $rowNo) {
+                foreach ([2, 3] as $rowNo) {
                     $ws->getStyle($cell($i, $rowNo))->getFill()
                        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                        ->getStartColor()->setARGB($fills[$orig]);
@@ -648,7 +647,7 @@ final class Exporter
         // the copy-heavy columns (description, features) stay readable.
         $widths = [];
         foreach ($keep as $i => $orig) { $widths[$i] = strlen(self::LAYOUT_HUMAN[$orig]); }
-        $r = 5;
+        $r = 4;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
             foreach ($keep as $i => $orig) {
@@ -684,7 +683,7 @@ final class Exporter
         $n = count($keep);
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
-                . 'header names in row 3. *Required Fields.';
+                . 'header names in row 2. *Required Fields.';
         $fh = fopen('php://temp', 'r+');
         $human = $machine = [];
         foreach ($keep as $orig) {
@@ -692,8 +691,7 @@ final class Exporter
             $machine[] = self::LAYOUT[$orig];
         }
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
-        // row 1 stays blank - the per-column required notes were dropped
-        fputcsv($fh, array_fill(0, $n, '')); fputcsv($fh, $bannerRow);
+        fputcsv($fh, $bannerRow);
         fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
             $mkt  = strtolower(trim((string) ($row['marketplace'] ?? '')));
