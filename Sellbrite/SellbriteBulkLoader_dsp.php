@@ -437,7 +437,7 @@ details.group summary::-webkit-details-marker { display:none; }
                 </div>
                 <div class="card checklist"><h3>Validation</h3>
                     <ul id="issue-list"><li style="color:#667085">Live as you type&hellip;</li></ul></div>
-                <?php if (false) { /* API-call log + raw panel hidden while testing - change false to true to bring them back */ ?>
+                <?php if (true) { /* the API-call log + raw GreySheet panel; false hides them for testing */ ?>
                 <div class="card apilog"><h3>API calls <span id="gs-total" class="gs-total"><?php
                     $__calls = (int) ($_SESSION['gs_api_calls'] ?? 0);
                     if ($__calls > 0) { echo '&middot; ' . number_format($__calls) . ' used this session'; }
