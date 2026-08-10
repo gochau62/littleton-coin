@@ -54,7 +54,7 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';
