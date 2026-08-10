@@ -33,11 +33,6 @@
 
     document.title = "Story Card Maintenance";
 
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
-
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
-
 // Story Card Maintenance frontend logic (SKU picker, both sides, footer editor)
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
@@ -53,6 +48,9 @@ var suggestTimer = null;
 var suggestSeq = 0;
 
 $(document).ready(function () {
+    // this script is on the page whether or not the screen is, so when a profile is turned away there is nothing here to wire up
+    if (typeof S1_FIRST === 'undefined') { return; }
+
     buildSide('#side1Lines', S1_FIRST, S1_LAST);
     buildSide('#side2Lines', S2_FIRST, S2_LAST);
     setCard(null);
@@ -615,8 +613,6 @@ function tickClock() {
 }
 </script>
 
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
-
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
@@ -628,7 +624,11 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the standard LCC Online refusal: the header, sidebar and footer stay as they are and the message stands where the screen would have been
+    // it is written out here rather than popped up from script, so a profile that is turned away sees a finished page and nothing of the screen behind it
+    echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
+         'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
+         'You are not authorized to view the page requested</div>';
 } else {
 
     require_once __DIR__ . '/StoryCard_model.php';
