@@ -66,12 +66,18 @@ function dspTimePayment() {
    values from widening the block until it slips under the LCCOnline sidebar */
 .tp-tablewrap { overflow: auto; max-height: 22rem; }
 .tp-fixedbox { height: 22rem; }
+/* borders stay uncollapsed so the frozen header can carry its own lines */
 .tp-grid { width: 100%; min-width: 680px; table-layout: fixed;
-           border-collapse: collapse; font-size: .86rem; }
+           border-collapse: separate; border-spacing: 0; font-size: .86rem; }
+/* shadows, not borders, so the black lines travel with the sticky header
+   instead of scrolling away with the rows underneath it */
 .tp-grid thead th { position: sticky; top: 0; z-index: 5; background: var(--tp-accent);
                     color: var(--tp-green-dk); text-align: left; padding: .45rem .7rem;
-                    border-bottom: 1px solid var(--tp-line); white-space: nowrap;
-                    overflow: hidden; text-overflow: ellipsis; }
+                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    border: none;
+                    box-shadow: inset -1px 0 0 0 #333, inset 0 1px 0 0 #333, 0 2px 0 0 #333; }
+.tp-grid thead th:first-child { box-shadow: inset 1px 0 0 0 #333, inset -1px 0 0 0 #333,
+                    inset 0 1px 0 0 #333, 0 2px 0 0 #333; }
 .tp-grid tbody td { padding: .35rem .7rem; border-bottom: 1px solid var(--tp-line);
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-grid tbody tr:nth-child(even) { background: #f7faf8; }
