@@ -63,6 +63,11 @@
      	hideSuccessMessage();
      	$("#dspResults").html("");
 	}
+	
+	function showNotAuthorized() {
+		// alert("Current user profile is not authorized\nto view selected documents");
+		showErrorMessage("Current user profile is not authorized to view selected document.");
+	}
 
     // file extension check
 	// takes two arguments inputID and an array of file extensions (.jpg)
@@ -148,11 +153,7 @@ $authConn = getDB2PConn($user, $password);
 $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
 
  if ( $authorized != "yes") {
-	// the standard LCC Online refusal: the header, sidebar and footer stay as they are and the message stands where the screen would have been
-	// it is written out here rather than popped up from script, so a profile that is turned away sees a finished page and nothing of the screen behind it
-	echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
-	     'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
-	     'You are not authorized to view the page requested</div>';
+ 		showNotAuthorized();
  } else {
 
 	include("GFTCRDCVP_dsp.php"); 
