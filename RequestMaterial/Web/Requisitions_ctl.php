@@ -29,18 +29,19 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
+<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Requisition Material";
 
     // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+    function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
 
 
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
 </script>
 
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
