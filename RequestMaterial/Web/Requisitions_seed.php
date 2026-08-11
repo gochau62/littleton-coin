@@ -29,9 +29,10 @@ $password = $_SESSION['password'] ?? '';
 $conn = null;
 if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
 
+// the same level the station screen asks for, so whoever looks after the requisitions can load them
 $authorized = "yes";
 if ($conn && function_exists('chkAutUsr')) {
-    $authorized = chkAutUsr($conn, $user, "LCCONLINE", 50);
+    $authorized = chkAutUsr($conn, $user, "LCCONLINE", 41);
 }
 if (!$conn || $authorized != "yes") {
     exit('Not authorized (sign in to LCC Online first).');
@@ -47,32 +48,68 @@ $TABLES = array(
     'RQSCODEFLT' => array('CDTYPE','CDCODE','CDDESC','CDACTV'),
 );
 
-// the load runs when a CSV is posted: it streams the file row by row into the chosen table with batched commits for speed on the journaled tables
+// all three files can be picked at once; they are sorted into load order here, header then detail then codes, because the detail lines hang off the headers
+function rqsLoadOrder($files, $TABLES) {
+    $order = array_keys($TABLES);
+    $out = array();
+    foreach ($files as $f) {
+        foreach ($TABLES as $t => $c) {
+            if (stripos($f['name'], $t) !== false) { $f['table'] = $t; break; }
+        }
+        $out[] = $f;
+    }
+    usort($out, function ($a, $b) use ($order) {
+        $ia = array_search($a['table'] ?? '', $order, true);
+        $ib = array_search($b['table'] ?? '', $order, true);
+        return (($ia === false) ? 99 : $ia) - (($ib === false) ? 99 : $ib);
+    });
+    return $out;
+}
+
+// the load runs when files are posted: each is streamed row by row into its table with batched commits for speed on the journaled tables
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
     header('Content-Type: text/plain; charset=utf-8');
 
-    $up = $_FILES['csv'];
+    // one file or several arrive in the same shape, so they are flattened into a plain list first
+    $picked = array();
+    if (is_array($_FILES['csv']['name'])) {
+        foreach ($_FILES['csv']['name'] as $i => $nm) {
+            if ($nm === '') { continue; }
+            $picked[] = array('name' => $nm, 'tmp_name' => $_FILES['csv']['tmp_name'][$i],
+                              'size' => $_FILES['csv']['size'][$i],
+                              'error' => $_FILES['csv']['error'][$i]);
+        }
+    } else {
+        $picked[] = $_FILES['csv'];
+    }
+    if (!count($picked)) { exit("No files were chosen.\n"); }
+
+    $forced = strtoupper(trim($_POST['table'] ?? ''));
+    $picked = rqsLoadOrder($picked, $TABLES);
+
+    echo "SEED LOAD  " . count($picked) . " file(s)\n";
+    echo str_repeat('=', 60) . "\n\n";
+    @ob_flush(); @flush();
+
+foreach ($picked as $up) {
     if ($up['error'] !== UPLOAD_ERR_OK) {
-        exit("Upload failed (code {$up['error']}). If the file is the detail CSV (~5 MB),\n" .
+        echo "{$up['name']}: upload failed (code {$up['error']}). If this is the detail CSV (~5 MB),\n" .
              "check php.ini upload_max_filesize / post_max_size - currently " .
-             ini_get('upload_max_filesize') . " / " . ini_get('post_max_size') . ".\n");
+             ini_get('upload_max_filesize') . " / " . ini_get('post_max_size') . ".\n\n";
+        continue;
     }
 
-    // which table: explicit choice wins, otherwise detect from the filename
-    $table = strtoupper(trim($_POST['table'] ?? ''));
-    if ($table === '' || $table === 'AUTO') {
-        foreach ($TABLES as $t => $c) {
-            if (stripos($up['name'], $t) !== false) { $table = $t; break; }
-        }
-    }
+    // which table: an explicit choice wins when only one file was picked, otherwise it comes from the filename
+    $table = (count($picked) === 1 && $forced !== '' && $forced !== 'AUTO')
+           ? $forced : ($up['table'] ?? '');
     if (!isset($TABLES[$table])) {
-        exit("Could not tell which table '{$up['name']}' belongs to.\n" .
-             "Name the file after its table or pick the table in the form.\n");
+        echo "{$up['name']}: could not tell which table this belongs to - name it after its table.\n\n";
+        continue;
     }
     $cols = $TABLES[$table];
     $ncol = count($cols);
 
-    echo "SEED LOAD  {$up['name']}  ->  {$table}  (" . number_format($up['size']) . " bytes)\n";
+    echo "{$up['name']}  ->  {$table}  (" . number_format($up['size']) . " bytes)\n";
     echo str_repeat('-', 60) . "\n";
     @ob_flush(); @flush();
 
@@ -159,7 +196,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
         $v = ($r && ($x = db2_fetch_assoc($r))) ? $x['V'] : '(query failed)';
         echo "  " . str_pad($label, 38) . " = " . number_format((float)$v) . "\n";
     }
-    echo "\nGo back and load the next file, or open Requisitions_ctl.php to see the grid.\n";
+    echo "\n" . str_repeat('=', 60) . "\n\n";
+    @ob_flush(); @flush();
+}
+
+    echo "All done. Open Requisitions_ctl.php to see the grid.\n";
     exit;
 }
 
@@ -173,14 +214,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['csv'])) {
 </div>
 <div style="max-width:620px;margin:1.5rem auto;background:#fff;border:1px solid #dfe6e1;border-radius:8px;padding:1.25rem;">
   <p style="color:#5f6b62;margin-top:0;">
-    Pick one of the <code>Data/*.csv</code> files from the repo. The target table is
-    detected from the filename (or pick it yourself). Load order:
+    Pick the <code>RequestMaterial/Data/*.csv</code> files - <b>all three at once</b> if you
+    like. Each one's table comes from its filename, and they are loaded in the right order
+    whatever order you pick them in:
     <b>RQSREQHDRT &rarr; RQSREQDTLT &rarr; RQSCODEFLT</b>.
+    The header file restarts the requisition numbering on its own when it loads.
   </p>
   <form method="post" enctype="multipart/form-data">
-    <p><input type="file" name="csv" accept=".csv" required></p>
+    <p><input type="file" name="csv[]" accept=".csv" multiple required></p>
     <p>
-      <label style="color:#5f6b62;">Table:
+      <label style="color:#5f6b62;">Table (only used when one file is picked):
         <select name="table">
           <option value="AUTO" selected>auto-detect from filename</option>
           <option>RQSREQHDRT</option>

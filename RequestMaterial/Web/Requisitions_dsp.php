@@ -26,8 +26,12 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
         --rq-blue-hv: #0056b3; --rq-accent: #eaf6ee; --rq-bg: #f8f8f8; --rq-line: #dfe6e1;
         --rq-text: #222; --rq-muted: #5f6b62; --rq-amber: #9a6a14; --rq-red: #c0392b; }
 
+/* the screen sits inside the framework page beside its sidebar, so it never assumes the whole window: it takes the width it is given and everything inside stays within it */
 .rq-app { font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-          color: var(--rq-text); background: var(--rq-bg); padding: 0 0 2rem 0; }
+          color: var(--rq-text); background: var(--rq-bg); padding: 0 0 2rem 0;
+          max-width: 100%; box-sizing: border-box; }
+
+.rq-app *, .rq-app *::before, .rq-app *::after { box-sizing: border-box; }
 
 /* dark green title bar, with the signed in user and the clock on the right */
 .rq-topbar { display: flex; align-items: center; justify-content: space-between;
@@ -57,10 +61,17 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 
 /* typeahead list that drops under the item number and badge boxes */
 .rq-suggest { position: fixed; z-index: 200; background: #fff; border: 1px solid #999;
-              border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); max-height: 230px;
-              overflow-y: auto; font-size: .85rem; }
+              border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, .18); max-height: 150px;
+              overflow-y: auto; font-size: .78rem; }
 
-.rq-suggest div { padding: .3rem .6rem; cursor: pointer; white-space: nowrap; }
+.rq-suggest div { padding: .15rem .45rem; cursor: pointer; white-space: nowrap; }
+
+/* the name and badge lists are kept narrow, since a name is short and a long list of them is easier to read in a small box */
+#rqNameSuggest, #rqBadgeSuggest { max-width: 260px; }
+#rqNameSuggest div, #rqBadgeSuggest div { overflow: hidden; text-overflow: ellipsis; }
+
+/* the item list is not: an item number and its full description belong on one line, and the box grows to whatever the longest one needs, stopping short of the window edge */
+#rqSuggest { max-width: calc(100vw - 2rem); }
 .rq-suggest div b { color: var(--rq-blue); }
 .rq-suggest div.active, .rq-suggest div:hover { background: var(--rq-accent); }
 
@@ -83,22 +94,27 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
 .rq-btn-ghost { border-style: dashed; color: var(--rq-muted); margin: .5rem 0; }
 
 /* the grid sits in a rounded white card and scrolls inside it, header staying put */
+/* the card keeps its margins but can never be wider than the space it was given, so the page itself never grows a sideways scrollbar */
 .rq-card { background: #fff; border: 1px solid var(--rq-line); border-radius: 8px;
-           margin: 0 1.25rem; overflow: hidden; }
+           margin: 0 .75rem; max-width: calc(100% - 1.5rem); overflow: hidden; }
 
 .rq-tablewrap { overflow-x: auto; max-height: 70vh; }
 .rq-grid { width: 100%; border-collapse: collapse; font-size: .88rem; }
 /* fixed column widths; borders stay uncollapsed so the frozen header keeps its lines */
-#tblGrid { table-layout: fixed; min-width: 780px; font-size: .86rem; border-collapse: separate;
+/* the smallest width the columns can honestly hold; below that the wrapper scrolls sideways rather than crushing them, which is why it must stay under the width the framework page leaves beside its sidebar */
+#tblGrid { table-layout: fixed; min-width: 694px; font-size: .8rem; border-collapse: separate;
            border-spacing: 0; }
 
 #tblGrid tbody td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-                    padding: .4rem .5rem; }
+                    padding: .35rem .3rem; }
+
+/* a cell holding an editable box gives up its own padding, because the box inside already has some and the two together were eating a quarter of the column and cutting the text off */
+#tblGrid tbody td:has(.rq-cell), #tblGrid tbody td:has(.rq-badgewrap) { padding: 0; }
 
 #tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
 #tblGrid .rq-ret input { vertical-align: middle; }
 #tblGrid .rq-ret label { margin: 0 .35rem 0 .3rem; }
-#tblGrid .rq-retdate { width: 5.4rem; padding: .12rem .35rem; font-size: .78rem;
+#tblGrid .rq-retdate { width: 5rem; padding: .12rem .3rem; font-size: .75rem;
                        border: 1px solid var(--rq-line); border-radius: 4px; }
 
 #tblGrid .rq-retdone { color: var(--rq-green); font-weight: 700; font-size: .78rem; }
@@ -139,11 +155,32 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-reqlink:hover { text-decoration: underline; color: var(--rq-blue-hv); }
 /* badge box: editable in the grid; all lines of a req share it */
 .rq-badgewrap { position: relative; display: inline-block; width: 100%; }
-.rq-grid .rq-badge { width: 100%; box-sizing: border-box; padding: .2rem 1rem .2rem .35rem;
-                     font-size: .85rem; border: 1px solid var(--rq-line); border-radius: 4px; }
+.rq-grid .rq-badge { width: 100%; box-sizing: border-box; padding: .25rem .8rem .25rem .3rem;
+                     font-size: .8rem; border: 1px solid var(--rq-line); border-radius: 4px; }
 
 .rq-grid .rq-badge:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
                            border-color: var(--rq-blue); }
+
+/* a badge waiting for the next refresh is tinted, only enough to tell it apart from one already written */
+.rq-grid .rq-badge.rq-pending { background: #fdf8ee; }
+
+/* a badge that has been set reads as plain text, with no box around it, because there is nothing left to type into */
+.rq-badgeset { display: inline-block; padding: 0 .3rem; }
+
+
+/* item, location, quantity and description edit in place; the box stays invisible until pointed at so the grid still reads as a list rather than a form */
+.rq-grid .rq-cell { width: 100%; box-sizing: border-box; padding: .3rem .25rem; font: inherit;
+                    color: inherit; background: transparent; border: 1px solid transparent;
+                    border-radius: 4px; }
+
+.rq-grid .rq-cell:hover { border-color: var(--rq-line); background: #fff; }
+
+.rq-grid .rq-cell:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
+                          border-color: var(--rq-blue); background: #fff; }
+
+
+/* the description keeps its quieter look while it is only being read */
+#tblGrid .rq-desc .rq-cell { color: var(--rq-muted); font-size: .78rem; }
 
 /* the small arrow that opens the employee list, like the old Access badge box */
 .rq-badgedd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: 0;
@@ -158,7 +195,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-empty { text-align: center; color: var(--rq-muted); padding: 1.5rem !important; }
 
 /* small colored labels in the Authorized and Rush columns */
-.rq-pill { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .75rem;
+.rq-pill { display: inline-block; padding: .1rem .4rem; border-radius: 999px; font-size: .72rem;
            font-weight: 600; white-space: nowrap; }
 
 .rq-ok { background: var(--rq-accent); color: var(--rq-green-hv); }
@@ -237,7 +274,17 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   border: 1px solid #999; border-radius: 3px; background: #fff; padding: .15rem .45rem;
   font-size: .9rem; color: var(--rq-text); }
 
-.rq-lgcyval { background: #fafafa; }
+/* a read only value keeps the height of the boxes beside it, so an empty one is still a box rather than a hairline */
+.rq-lgcyval { background: #fafafa; min-height: 1.65rem; }
+
+/* a box with a list behind it, carrying the arrow inside its right edge the way the badge box does, so the list can be opened at any time and not only by typing */
+.rq-combo { position: relative; display: inline-block; }
+.rq-combo input { padding-right: 1.1rem; }
+.rq-combodd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: 0;
+              background: none; cursor: pointer; color: var(--rq-muted); font-size: .7rem;
+              line-height: 1; padding: 0 .2rem; }
+
+.rq-combodd:hover { color: var(--rq-blue); }
 .rq-lgcytable { border-collapse: separate; border-spacing: 4px 5px; }
 .rq-lgcytable thead th { position: static; background: none; border: none; color: var(--rq-text);
                          font-weight: 700; padding: .2rem .45rem; }
@@ -248,7 +295,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
 /* entry only mode: the work floor form fills the page and cannot be closed */
-.rq-entry .rq-toolbar, .rq-entry .rq-card { display: none; }
+.rq-entry .rq-toolbar, .rq-entry .rq-card, .rq-entry #addAuthByRow { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x, .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
 
 .rq-entry .rq-overlay { background: var(--rq-bg); padding-top: 1.5rem; }
@@ -338,10 +385,11 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
       <!-- compact fixed pixel columns with the leftover width going to Requestor, so nothing gets crushed -->
       <table class="rq-grid" id="tblGrid">
         <colgroup>
-          <col style="width:22px"><col style="width:58px"><col style="width:88px">
+          <!-- sized from the longest value each column actually holds, so nothing is cut off: a date is ten characters, an item number up to sixteen, a location three -->
+          <col style="width:20px"><col style="width:50px"><col style="width:82px">
           <col>
-          <col style="width:96px"><col style="width:40px"><col style="width:52px">
-          <col style="width:88px"><col style="width:160px"><col style="width:68px">
+          <col style="width:104px"><col style="width:32px"><col style="width:46px">
+          <col style="width:70px"><col style="width:92px"><col style="width:48px">
         </colgroup>
         <thead>
           <tr>
@@ -376,7 +424,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <!-- requestor, date, rush and the area choices that apply to the whole requisition -->
         <div class="rq-formrow">
           <label>Requestor:
-            <select id="addName"></select>
+            <input type="text" id="addName" maxlength="50" autocomplete="off"
+                   title="Start typing a name; the badge fills in from whoever is picked">
           </label>
           <label>Date:
             <input type="text" id="addDate" readonly tabindex="-1">
@@ -395,7 +444,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <label>Area Type:
             <select id="addAreaType"></select>
           </label>
-          <label>Authorized By:
+          <!-- the work floor entry form does not show this: a requisition is authorized by the people who review it, not by the person raising it -->
+          <label id="addAuthByRow">Authorized By:
             <select id="addAuthBy"></select>
           </label>
         </div>
@@ -403,9 +453,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
-              <col style="width:12%"><col style="width:8%"><col style="width:9%">
-              <col style="width:27%"><col style="width:6%"><col style="width:7%">
-              <col style="width:7%"><col style="width:9%"><col style="width:12%">
+              <!-- widths follow what the columns actually hold: an item number runs to sixteen characters and a description to fifty, while a location is only three -->
+              <col style="width:16%"><col style="width:5%"><col style="width:8%">
+              <col style="width:30%"><col style="width:6%"><col style="width:7%">
+              <col style="width:7%"><col style="width:7%"><col style="width:11%">
               <col style="width:3%">
             </colgroup>
             <thead>
@@ -449,13 +500,14 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <!-- one requisition stacked label over value; Authorized By and Comments are editable here -->
         <div class="rq-lgcy">
           <div class="rq-lgcyrow"><label>ID:</label><span class="rq-lgcyval" id="v_id"></span></div>
-          <div class="rq-lgcyrow"><label>Name:</label><span class="rq-lgcyval" id="v_name"></span></div>
-          <div class="rq-lgcyrow"><label>Area Code:</label><span class="rq-lgcyval" id="v_acode"></span></div>
-          <div class="rq-lgcyrow"><label>Area Type:</label><span class="rq-lgcyval" id="v_atype"></span></div>
+          <!-- each of these carries its own arrow, so the list is there to open whether or not anything has been typed -->
+          <div class="rq-lgcyrow"><label>Name:</label><span class="rq-combo"><input type="text" id="v_name" data-list="names" maxlength="50"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
+          <div class="rq-lgcyrow"><label>Area Code:</label><span class="rq-combo"><input type="text" id="v_acode" data-list="areaCodes" maxlength="2"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
+          <div class="rq-lgcyrow"><label>Area Type:</label><span class="rq-combo"><input type="text" id="v_atype" data-list="areaTypes" maxlength="25"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Date:</label><span class="rq-lgcyval" id="v_date"></span></div>
-          <div class="rq-lgcyrow"><label>Inv DE Number:</label><span class="rq-lgcyval" id="v_denum"></span></div>
+          <div class="rq-lgcyrow"><label>Entered By:</label><span class="rq-lgcyval" id="v_denum"></span></div>
           <div class="rq-lgcyrow"><label class="rq-lgcyital">Returned</label><span id="v_returned" style="border:none;"></span></div>
-          <div class="rq-lgcyrow"><label>Authorized By:</label><select id="authBy"></select></div>
+          <div class="rq-lgcyrow"><label>Authorized By:</label><span class="rq-combo"><input type="text" id="authBy" data-list="authBy" maxlength="50"><button type="button" class="rq-combodd" tabindex="-1" title="Pick from the list">&#9662;</button></span></div>
           <div class="rq-lgcyrow"><label>Comments:</label><input type="text" id="authComments" maxlength="500"></div>
         </div>
 

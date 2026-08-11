@@ -32,28 +32,33 @@
 <script type="text/javascript">
 
     document.title = "Requisition Material";
-
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
-
-
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
-
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// check users authority (10 is the minimum to use LCCOnline)
+// mode entry is the workfloor entry only shortcut; the plain URL is the full station
+// this is settled before the authority check because the two screens are not open to the same people
+$rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
+
+// the two levels are separate grants rather than a ladder, so holding the requisitions group does not also satisfy the general one
+// the entry form therefore passes on either: the work floor reaches it on the general level, and whoever runs the station screen reaches it on the requisitions group
+// the station screen asks for the requisitions group alone, because that is where a requisition is authorized, corrected and reported on
+// taking mode entry off the address no longer opens the station screen, it just puts the higher grant in front of it
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    $authConn = getDB2PConn($user, $password);
+    if ($rqMode === 'entry') {
+        $authorized = (chkAutUsr($authConn, $user, "LCCONLINE", 10) == "yes" ||
+                       chkAutUsr($authConn, $user, "LCCONLINE", 41) == "yes") ? "yes" : "no";
+    } else {
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 41);
+    }
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';
@@ -74,12 +79,21 @@ if ($authorized != "yes") {
         }
     }
 
-    // mode entry is the workfloor entry only shortcut; the plain URL is the full station
-    $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
+    // the entry form never shows a badge, so the employee list is not sent to it at all
+    // the work floor reaches this screen, and a list that never leaves the server cannot be read out of the page either
+    if ($rqMode === 'entry' && is_array($rqLookups)) { unset($rqLookups['badges']); }
 
-    rqsActLog($user, 'OPEN', $rqMode === 'entry' ? 'entry form' : 'station');
+    // the full name behind the sign on name, so the requestor box opens on whoever is at the keyboard instead of making them find themselves in the list
+    // only the name is taken from this; the badge that comes back with it stays on the server, because the entry form is not meant to show one
+    $rqMe   = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
+    $rqName = ($rqMe && $rqMe['name'] !== '') ? $rqMe['name'] : '';
+
+    // the signed on person's own badge, for the station grid only, so it can sit at the top of the badge list
+    // the entry form never receives it, the same as the rest of the badges, because the work floor is not shown badges at all
+    $rqMyBadge = ($rqMode !== 'entry' && $rqMe && $rqMe['badge'] !== '') ? $rqMe['badge'] : '';
 
     include "Requisitions_dsp.php";
+
     dspRequisitions($user, $rqLookups, $rqMode);
 ?>
 
@@ -88,6 +102,15 @@ if ($authorized != "yes") {
 var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
 // entry mode comes from the workfloor shortcut link and is checked all through this script
 var RQ_MODE = '<?php echo $rqMode; ?>';
+
+
+// the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
+var RQ_NAME = <?php echo json_encode($rqName); ?>;
+// the signed on person's own badge, empty when they have none on file
+var RQ_MYBADGE = <?php echo json_encode($rqMyBadge); ?>;
+// the sign on name itself, which stands in when no employee matched it, so the box shows who is at the keyboard either way
+var RQ_USER = <?php echo json_encode($user); ?>;
+
 var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
@@ -104,6 +127,8 @@ var selectedReq = null;
 var lastReqRows = null;
 // checked Return Items wait here with their date until the next refresh saves them
 var pendingReturns = {};
+// a badge typed into the grid waits here by requisition number until the next refresh saves it, so it can still be taken back
+var pendingBadges = {};
 // true while arrow keys travel the sheet, so landing on an Item # cell does not pop its menu
 var sheetNavMove = false;
 
@@ -154,6 +179,23 @@ $(document).ready(function () {
     $('#btnAddLine').on('click', addLineRow);
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
+
+    // the view window boxes open their list on the arrow or on landing in the box, and narrow it while typing
+    $('.rq-combo input').on('focus', function () { showComboSuggest($(this), false); });
+    $('.rq-combo input').on('input', function () { showComboSuggest($(this), true); });
+    $('.rq-combo input').on('blur', function () { setTimeout(hideComboSuggest, 150); });
+    $('.rq-combodd').on('mousedown', function (e) {
+        e.preventDefault();
+        var inp = $(this).siblings('input');
+        if ($('#rqComboSuggest').length) { hideComboSuggest(); }
+        else { inp.trigger('focus'); showComboSuggest(inp, false); }
+    });
+
+    // the requestor box opens the whole list on focus even though a name is already filled in, so somebody entering for another person can see every name without first clearing the box, and narrows it only once they start typing
+    $('#addName').on('focus', function () { showNameSuggest($(this), false); });
+    $('#addName').on('input', function () { showNameSuggest($(this), true); });
+    $('#addName').on('blur', function () { setTimeout(hideNameSuggest, 150); });
+
 
     // report buttons: the Monthly Update and the per requisition preview
     $('#btnMonthly').on('click', openMonthlyReport);
@@ -213,6 +255,28 @@ $(document).ready(function () {
         }
     });
 
+    // the requestor saves as soon as the box is left; it belongs to the requisition rather than to one line, so it goes through the header and lands on every line of that requisition at once
+    $('#gridBody').on('change', '.rq-headcell', function () {
+        var inp = $(this);
+        var was = String(inp.data('was'));
+        var val = inp.val().trim();
+        if (val === was) { return; }
+
+        var reqNum = String(inp.data('req'));
+        postAjax({ action: 'update', reqNum: reqNum, reqName: val }, function () {
+            inp.data('was', val);
+            $.each(gridRows, function (i, r) {
+                if (String(r['RHREQ#']) === reqNum) { r.RHNAME = val; }
+            });
+            lastGridJson = JSON.stringify(gridRows);
+            $('#gridBody .rq-headcell').each(function () {
+                if (this !== inp[0] && String($(this).data('req')) === reqNum) {
+                    $(this).val(val).data('was', val);
+                }
+            });
+        });
+    });
+
     // the badge box saves as soon as you leave it; every line of the requisition shares it
     $('#gridBody').on('change', '.rq-badge', function () {
         var inp = $(this);
@@ -224,27 +288,23 @@ $(document).ready(function () {
             inp.val(reqBadge(reqNum));
             return;
         }
-        postAjax({
-            action: 'update',
-            reqNum: reqNum,
-            badge: val
-        }, function () {
-            // update the requisition's other lines in place so the grid keeps its scroll spot
-            $.each(gridRows, function (i, r) {
-                if (String(r['RHREQ#']) === reqNum) { r.RHBDGE = val; }
-            });
-            lastGridJson = JSON.stringify(gridRows);
-            $('#gridBody .rq-badge').each(function () {
-                if (this !== inp[0] && String($(this).data('req')) === reqNum) {
-                    $(this).val(val);
-                }
-            });
-        });
+        // nothing is written yet: the badge waits with the checked Return Items and they all go in together on the next refresh
+        // that gap is the chance to take it back, by clearing the box or typing a different number, because once it is written the badge cannot be changed
+        if (val === '' || val === '0') { delete pendingBadges[reqNum]; }
+        else { pendingBadges[reqNum] = val; }
+        inp.toggleClass('rq-pending', val !== '' && val !== '0');
     });
 
-    // the badge box opens the employee list on focus and narrows it as you type
+    // clicking into an empty badge box fills in your own badge straight away, since that is the one being entered nearly every time
+    // it is queued like any other, so it is still taken back by clearing the box before the next refresh, and the list is there underneath to pick somebody else
     $('#gridBody').on('focusin', '.rq-badge', function () {
-        showBadgeSuggest($(this), false);
+        var inp = $(this);
+        var val = inp.val().trim();
+        if (RQ_MYBADGE && (val === '' || val === '0')) {
+            inp.val(RQ_MYBADGE).addClass('rq-pending');
+            pendingBadges[String(inp.data('req'))] = RQ_MYBADGE;
+        }
+        showBadgeSuggest(inp, false);
     });
     $('#gridBody').on('input', '.rq-badge', function () {
         showBadgeSuggest($(this), true);
@@ -480,6 +540,25 @@ function markStale() {
 }
 
 
+// a yes or no the user has to answer before anything happens, in the same swal box as every other message on the page
+// every option is spelled out rather than left to default, because a box missing them answers nothing when the button is pressed
+function ask(title, text, yes, no, onYes, onNo) {
+    swal({
+        title: title,
+        text: text,
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonText: yes,
+        cancelButtonText: no,
+        closeOnConfirm: true,
+        closeOnCancel: true
+    }, function (ok) {
+        if (ok) { onYes(); }
+        else if (onNo) { onNo(); }
+    });
+}
+
+
 // today as mm/dd/yyyy, for the Return Item date autofill
 function fmtToday() {
     var d = new Date();
@@ -525,18 +604,48 @@ function attr(s) {
 function loadGrid(background) {
     // Open pulls all its rows and filters them in the browser; Returned and All search on the server
     var q = (gridShow === 'O') ? '' : $('#txtFilter').val().trim();
-    submitPendingReturns(function () {
-        postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
-            $('#lblUpdated').removeClass('rq-stale')
-                .text('Updated ' + new Date().toLocaleTimeString());
-            var j = JSON.stringify(resp.rows);
-            // nothing changed, skip the redraw
-            if (j === lastGridJson) { return; }
-            lastGridJson = j;
-            gridRows = resp.rows;
-            renderGrid();
-        }, background === true);
-    }, background === true);
+    var silent = background === true;
+
+    // everything waiting goes in first, badges then returns, and only then are the rows pulled back
+    submitPendingBadges(function () {
+        submitPendingReturns(function () {
+            postAjax({ action: 'list', show: gridShow, q: q }, function (resp) {
+                $('#lblUpdated').removeClass('rq-stale')
+                    .text('Updated ' + new Date().toLocaleTimeString());
+                var j = JSON.stringify(resp.rows);
+                // nothing changed, skip the redraw
+                if (j === lastGridJson) { return; }
+                // the timed refresh holds off while a box in the grid is being typed in, because redrawing under someone mid edit throws away what they were writing
+                // the rows are kept so the next refresh, or the moment they leave the box, picks them up
+                gridRows = resp.rows;
+                if (silent && $('#gridBody').find(':focus').length) { return; }
+                lastGridJson = j;
+                renderGrid();
+            }, silent);
+        }, silent);
+    }, silent);
+}
+
+
+// badges typed into the grid are written before the rows come back, so the refresh shows them settled and locked
+// a badge that was typed and then cleared never gets here, which is how it is taken back
+function submitPendingBadges(next, silent) {
+    var keys = Object.keys(pendingBadges);
+    if (!keys.length) { next(); return; }
+
+    var done = 0;
+    $.each(keys, function (i, reqNum) {
+        postAjax({ action: 'update', reqNum: reqNum, badge: pendingBadges[reqNum] },
+            function () {
+                delete pendingBadges[reqNum];
+                done++;
+                if (done === keys.length) {
+                    // the rows held here are now behind the database, so the redraw is not skipped as unchanged
+                    lastGridJson = '';
+                    next();
+                }
+            }, silent);
+    });
 }
 
 
@@ -600,8 +709,12 @@ function renderGrid() {
         var authName = r.RHAUTB || 'Authorization = None';
         var isReal = authName !== 'Authorization = None' &&
                      authName !== 'Authorization In Process';
+        // the two placeholders are shown as the word that matters under a column already headed Authorized, so the badge stays readable instead of being cut off mid word; the full text is still on the cell as a tooltip and in the view window
+        var authShown = authName === 'Authorization = None' ? 'None'
+                      : authName === 'Authorization In Process' ? 'In Process'
+                      : authName;
         var auth = '<span class="rq-pill ' + (isReal ? 'rq-ok' : 'rq-warn') + '">' +
-                   esc(authName) + '</span>';
+                   esc(authShown) + '</span>';
         var rush = (r.RHRUSH === 'Y')
             ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '';
 
@@ -613,15 +726,16 @@ function renderGrid() {
             '<td><span class="rq-reqlink" title="Open requisition ' + esc(r['RHREQ#']) + '">' +
                 esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td title="' + attr(r.RHNAME) + '">' + esc(r.RHNAME) + '</td>' +
+            '<td title="' + attr(r.RHNAME) + '">' +
+                '<input class="rq-cell rq-headcell" data-field="reqName" maxlength="50"' +
+                ' data-req="' + esc(r['RHREQ#']) + '"' +
+                ' data-was="' + attr(r.RHNAME) + '" value="' + attr(r.RHNAME) + '">' + '</td>' +
+            // the item number, the location and the quantity are read here and corrected in the requisition window, where the whole line is in front of you rather than one box of it
             '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
             '<td>' + esc(r.RDLOC) + '</td>' +
-            '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
-            '<td><span class="rq-badgewrap"><input class="rq-badge" maxlength="10"' +
-            ' data-req="' + esc(r['RHREQ#']) + '"' +
-            ' value="' + attr(r.RHBDGE) + '">' +
-            '<button type="button" class="rq-badgedd" tabindex="-1"' +
-            ' title="Pick employee">&#9662;</button></span></td>' +
+            // the column holds five digits, which covers all but a handful of old bulk orders; the full figure is on the cell for hovering over
+            '<td class="rq-num" title="' + attr(r.RDQTY) + '">' + esc(r.RDQTY) + '</td>' +
+            '<td>' + badgeCell(r) + '</td>' +
             '<td title="' + attr(authName) + '">' + auth + '</td>' +
             '<td>' + rush + '</td>' +
             '</tr>';
@@ -643,11 +757,12 @@ function renderGrid() {
                 '<input type="text" class="rq-retdate" maxlength="10"' +
                 (pend !== null ? ' value="' + attr(pend) + '"' : '') + '>';
         }
+        // the second line borrows the Badge column as well, because the Return Item box, its label and its date need more room than Authorized and Rush leave between them
         html += '<tr' + recAttr + 'rq-r2">' +
             '<td colspan="2"></td>' +
-            '<td colspan="5" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
+            '<td colspan="4" class="rq-desc" title="' + attr(r.RDDESC) + '">' +
                 esc(r.RDDESC) + '</td>' +
-            '<td colspan="2" class="rq-ret">' + retCell +
+            '<td colspan="3" class="rq-ret">' + retCell +
             '</td>' +
             '</tr>';
     });
@@ -695,6 +810,30 @@ function gridCompare(a, b) {
 }
 
 
+// the badge is set once and then stands, so a requisition that already carries one shows it as plain text
+// there is no box to type in and no arrow to open, because the procedure would refuse the change anyway and a box that looks editable but is not is worse than no box
+function badgeCell(r) {
+    var b = (r.RHBDGE == null ? '' : String(r.RHBDGE)).trim();
+    if (b !== '' && b !== '0') {
+        return '<span class="rq-badgeset" title="The badge is set once and cannot be changed">' +
+               esc(b) + '</span>';
+    }
+    // a badge typed but not yet written keeps its number and its marking when the grid redraws, the same way a checked Return Item keeps its tick
+    var pend = pendingBadges.hasOwnProperty(String(r['RHREQ#']))
+             ? pendingBadges[String(r['RHREQ#'])] : null;
+    return '<span class="rq-badgewrap"><input class="rq-badge' +
+           (pend !== null ? ' rq-pending' : '') + '" maxlength="10"' +
+           ' title="' + (pend !== null ? 'Waiting for the next refresh; clear it to take it back'
+                                       : 'Set once, then it cannot be changed') + '"' +
+           ' data-req="' + esc(r['RHREQ#']) + '"' +
+           ' value="' + attr(pend !== null ? pend : b) + '">' +
+           '<button type="button" class="rq-badgedd" tabindex="-1"' +
+           ' title="Pick employee">&#9662;</button></span>';
+}
+
+
+
+
 // paint the up/down arrow on the active sort header
 function updateSortIndicators() {
     $('#tblGrid thead th[data-sortkey]').each(function () {
@@ -710,19 +849,29 @@ function updateSortIndicators() {
 function applyLookups(resp) {
     lookups = resp;
     // all four lists come from the RQSCODEFLT code file via REQSTN007S
-    fillSelect('#addName', resp.names, 'CDCODE', 'CDCODE');
     fillSelect('#addAreaCode', resp.areaCodes, 'CDCODE', 'CDDESC');
     fillSelect('#addAreaType', resp.areaTypes, 'CDCODE', 'CDCODE');
-    fillSelect('#authBy', resp.authBy, 'CDCODE', 'CDCODE');
     // Authorization None is a stored choice in the code list, not a placeholder added here
     fillSelect('#addAuthBy', resp.authBy, 'CDCODE', 'CDCODE');
+
+    // the boxes in the view window read the same lists straight out of lookups when their arrow is used
+
+    applyFirstRequestor();
+}
+
+
+// the requestor box opens on the full name of whoever is signed on, so the usual case needs no picking at all
+// a sign on name that matched nobody falls back to the first name in the list, and either way the list is there to pick from or type over
+function applyFirstRequestor() {
+    var start = RQ_NAME || RQ_USER || nameChoices()[0];
+    if (start) { $('#addName').val(start); }
 }
 
 
 function loadLookups() {
     // the lists usually ride in with the page
     if (RQ_PRELOAD) { applyLookups(RQ_PRELOAD); return; }
-    postAjax({ action: 'lookups' }, applyLookups);
+    postAjax({ action: 'lookups', mode: RQ_MODE }, applyLookups);
 }
 
 
@@ -814,6 +963,7 @@ function submitRequisition() {
 
     var payload = {
         reqName: $('#addName').val(),
+        mode: RQ_MODE,
         areaCode: $('#addAreaCode').val(),
         areaType: $('#addAreaType').val(),
         rush: $('input[name="addRush"]:checked').val() === 'Y' ? 'Y' : 'N',
@@ -848,13 +998,19 @@ function openViewModal(reqNum) {
         var h = resp.rows[0];
         $('#viewReqNum').text(h['RHREQ#']);
 
-        // legacy style header fields
+        // legacy style header fields; the boxes can be corrected here the way the old screen allowed
+        // the number and the date stay as plain text: the number is the key, and the date is what the monthly report groups on
         $('#v_id').text(h['RHREQ#']);
-        $('#v_name').text(h.RHNAME);
-        $('#v_acode').text(h.RHARCD);
-        $('#v_atype').text(h.RHARTY);
+        $('#v_name').val(h.RHNAME);
+        $('#v_acode').val(h.RHARCD);
+        $('#v_atype').val(h.RHARTY);
         $('#v_date').text(fmtDateTimeIso(h.RHRQDT, h.RHRQTM));
-        $('#v_denum').text(h.RHBDGE);
+        // Entered By is the name off the lines, not the badge on the header; all the lines of one requisition were entered by the same person so the first line speaks for them
+        var deName = '';
+        $.each(resp.rows, function (i, r) {
+            if (r['RDLIN#'] != null && deName === '') { deName = (r.RDBDGE || '').trim(); }
+        });
+        $('#v_denum').text(deName);
 
         var allReturned = true, anyLine = false;
         $.each(resp.rows, function (i, r) {
@@ -864,13 +1020,8 @@ function openViewModal(reqNum) {
         });
         $('#v_returned').text(anyLine && allReturned ? 'Yes' : 'No');
 
-        // preselect the saved authorizer; an old name no longer on the list is added so it appears
-        var sel = $('#authBy');
-        var val = h.RHAUTB || 'Authorization = None';
-        if (!sel.find('option').filter(function () { return this.value === val; }).length) {
-            sel.append('<option>' + esc(val) + '</option>');
-        }
-        sel.val(val);
+        // the saved authorizer shows as it stands, and because the box is typed into, an old name no longer on the list still appears exactly as it was stored
+        $('#authBy').val(h.RHAUTB || 'Authorization = None');
         $('#authComments').val(h.RHCMNT);
 
         var html = '';
@@ -909,14 +1060,17 @@ function fmtDateTimeIso(d8, t6) {
 }
 
 
-// the view window Update button, sending the authorized by name and comments through REQSTN005S
+// the view window Update button, sending the whole header through REQSTN005S so a correction made in any of the boxes is saved
 function updateCurrent() {
     var reqNum = $('#mdlView').data('req');
     postAjax({
         action: 'update',
         reqNum: reqNum,
         authBy: $('#authBy').val(),
-        comments: $('#authComments').val()
+        comments: $('#authComments').val(),
+        reqName: $('#v_name').val(),
+        areaCode: $('#v_acode').val(),
+        areaType: $('#v_atype').val()
     }, function () {
         $('#mdlView').prop('hidden', true);
         swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
@@ -981,6 +1135,14 @@ function showBadgeSuggest(inp, filterTyped) {
         $('<div class="rq-suggest-empty"></div>')
             .text('Employee list unavailable').appendTo(box);
     }
+    // whoever is signed on goes to the top, since their own badge is the one being entered nearly every time, and the rest of the list follows for the times it is not
+    if (RQ_MYBADGE) {
+        var mine = null, rest = [];
+        $.each(rows, function (i, b) {
+            if (b.c === RQ_MYBADGE) { mine = b; } else { rest.push(b); }
+        });
+        if (mine) { rows = [mine].concat(rest); }
+    }
     // no cap on the list, the menu box scrolls when there are many employees
     $.each(rows, function (i, b) {
         $('<div></div>')
@@ -1004,6 +1166,92 @@ function showBadgeSuggest(inp, filterTyped) {
 }
 
 // item search dropdown
+
+// the requestor box searches as you type, over the stored requestor list and nothing else, so the names on offer are exactly the ones that list has always held
+function nameChoices() {
+    var seen = {}, out = [];
+    if (lookups && lookups.names) {
+        $.each(lookups.names, function (i, r) {
+            var n = $.trim(r.CDCODE || '');
+            if (n !== '' && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); }
+        });
+    }
+    return out;
+}
+
+
+// the lists behind the boxes in the view window, each one the same code list the entry form uses
+function comboValues(which) {
+    var rows = lookups ? lookups[which] : null;
+    var out = [];
+    if (!rows) { return out; }
+    $.each(rows, function (i, r) {
+        var v = $.trim(r.CDCODE || '');
+        if (v !== '') { out.push(v); }
+    });
+    return out;
+}
+
+
+function hideComboSuggest() { $('#rqComboSuggest').remove(); }
+
+
+// opens under whichever box was asked for; with filterTyped off it shows the whole list, which is what the arrow does
+function showComboSuggest(inp, filterTyped) {
+    hideComboSuggest();
+    var vals = comboValues(inp.data('list'));
+    if (!vals.length) { return; }
+    var typed = filterTyped ? $.trim(inp.val()).toLowerCase() : '';
+    var rows = $.grep(vals, function (v) {
+        return typed === '' || v.toLowerCase().indexOf(typed) !== -1;
+    });
+    if (!rows.length) { return; }
+
+    var box = $('<div id="rqComboSuggest" class="rq-suggest"></div>');
+    $.each(rows, function (i, v) {
+        $('<div></div>').text(v).data('val', v).appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        inp.val($(this).data('val'));
+        hideComboSuggest();
+    });
+}
+
+
+function hideNameSuggest() { $('#rqNameSuggest').remove(); }
+
+
+function showNameSuggest(inp, filterTyped) {
+    hideNameSuggest();
+    if (!inp.is(':focus')) { return; }
+    // every matching name is listed, never a first so many; the requestor list is the whole set of people who may raise a requisition and a name missing from it cannot be picked at all
+    var typed = filterTyped ? $.trim(inp.val()).toLowerCase() : '';
+    var rows = $.grep(nameChoices(), function (n) {
+        return typed === '' || n.toLowerCase().indexOf(typed) !== -1;
+    });
+    if (!rows.length) { return; }
+
+    var box = $('<div id="rqNameSuggest" class="rq-suggest"></div>');
+    $.each(rows, function (i, n) {
+        $('<div></div>').text(n).data('name', n).appendTo(box);
+    });
+    var rc = inp[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+    // mousedown (not click) so the pick lands before the input's blur
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        var n = $(this).data('name');
+        inp.val(n);
+        hideNameSuggest();
+    });
+}
+
 
 function hideSuggest() { $('#rqSuggest').remove(); }
 
@@ -1209,7 +1457,7 @@ function reqPrintHtml(rows) {
         '<tr><td><span class="rpt-lbl">Rush</span> ' + (h.RHRUSH === 'Y' ? 'Yes' : 'No') + '</td>' +
             '<td></td><td><span class="rpt-lbl">Date:</span> ' + fmtDateTime(h.RHRQDT, h.RHRQTM) + '</td></tr>' +
         '<tr><td><span class="rpt-lbl">Authorized By</span> ' + esc(h.RHAUTB || 'Authorization = None') + '</td>' +
-            '<td><span class="rpt-lbl">DataEntry:</span> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
+            '<td><span class="rpt-lbl">Badge:</span> ' + esc(h.RHBDGE) + '</td><td></td></tr>' +
         '<tr><td><span class="rpt-lbl">Area Code:</span> ' + esc(h.RHARCD) + '</td>' +
             '<td><span class="rpt-lbl">Area Type:</span> ' + esc(h.RHARTY) + '</td><td></td></tr>' +
         '</table>';
