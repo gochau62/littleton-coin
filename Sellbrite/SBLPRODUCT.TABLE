@@ -120,6 +120,10 @@ CREATE TABLE LSCDEVLIBP.SBLPRODUCT (
    advent_calendar_item_length     FOR COLUMN ADVITMLEN  DECIMAL(7, 2)   DEFAULT NULL,
    advent_calendar_item_width      FOR COLUMN ADVITMWID  DECIMAL(7, 2)   DEFAULT NULL,
    advent_calendar_item_weight     FOR COLUMN ADVITMWGT  DECIMAL(7, 3)   DEFAULT NULL,
+   lcc_sku                         FOR COLUMN LCCSKU     VARCHAR(20) CCSID 1208     DEFAULT NULL,
+   gs_path                         FOR COLUMN GSPATH     VARCHAR(400) CCSID 1208    DEFAULT NULL,
+   gs_gsid                         FOR COLUMN GSGSID     VARCHAR(20) CCSID 1208     DEFAULT NULL,
+   gs_coin                         FOR COLUMN GSCOIN     VARCHAR(200) CCSID 1208    DEFAULT NULL,
    created_by FOR COLUMN CREATEBY  VARCHAR(10) CCSID 1208    DEFAULT NULL,
    created_at FOR COLUMN CREATTS  TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
    updated_at FOR COLUMN UPDATETS TIMESTAMP NOT NULL
@@ -225,6 +229,10 @@ LABEL ON LSCDEVLIBP.SBLPRODUCT (
    advent_calendar_item_length     TEXT IS 'Advent Calendar Item Length',
    advent_calendar_item_width      TEXT IS 'Advent Calendar Item Width',
    advent_calendar_item_weight     TEXT IS 'Advent Calendar Item Weight',
+   lcc_sku    TEXT IS 'Item-by-SKU Bar (restores on edit)',
+   gs_path    TEXT IS 'GreySheet Series Path (restores on edit)',
+   gs_gsid    TEXT IS 'GreySheet Coin GsId (restores on edit)',
+   gs_coin    TEXT IS 'GreySheet Coin Label (restores on edit)',
    created_by TEXT IS 'Row Owner (signed-on user profile)',
    created_at TEXT IS 'Created Timestamp',
    updated_at TEXT IS 'Updated Timestamp');

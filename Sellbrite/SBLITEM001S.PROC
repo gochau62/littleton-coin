@@ -1,0 +1,97 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - SBLITEM001S                                   */
+/*                                                                   */
+/* Program Narrative - LCC item master lookup for the Sellbrite      */
+/*                     Bulk Loader.  INTYPE picks the mode:          */
+/*                       ITEM   - one exact SKU, everything below    */
+/*                       SEARCH - type-ahead list for the SKU box,   */
+/*                                SKU prefix match, capped at 50     */
+/*                                                                   */
+/*                     Given an LCC SKU, ITEM returns every column   */
+/*                     the loader can turn into a form value, so     */
+/*                     the operator does not retype what LCC         */
+/*                     already knows.  Selling price stays out of    */
+/*                     it - the listing takes its price from         */
+/*                     GreySheet - but retail, cost, on hand and     */
+/*                     roll quantity come back, because GreySheet    */
+/*                     cannot know those about our piece.  Coded     */
+/*                     columns (category, type, variety, brand) are  */
+/*                     still left out until their code tables are    */
+/*                     known - a raw code fills no dropdown.         */
+/*                     Read only - the loader never writes to the    */
+/*                     item master.                                  */
+/*                                                                   */
+/*                     DYNUSRPRF(*OWNER) so the procedure reads      */
+/*                     LSCPRDLIB under its owner's authority; the    */
+/*                     web user needs no authority to production.    */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(SBLITEM001S) COMMIT(*NONE)             */
+/*                                                                   */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project - 260064                                              |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE SBLITEM001S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(16)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        -- One row when the SKU is on the master, none when it is not.
+        -- The numeric columns come back raw; PHP decides how to show them.
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT TRIM(I.IISKU#) AS ITEM_SKU,
+                   TRIM(I.IIDESC) AS ITEM_DESC,
+                   TRIM(I.IICDAT) AS ITEM_DATE,
+                   TRIM(I.IIGRAD) AS ITEM_GRADE,
+                   TRIM(I.IIGRD2) AS ITEM_GRADE2,
+                   TRIM(I.IIICMT) AS ITEM_COMMENT,
+                   TRIM(I.IIROOT) AS ITEM_ROOT,
+                   TRIM(I.IISLNK) AS ITEM_LINK,
+                   I.IIPRCE       AS ITEM_RETAIL,
+                   I.IIAVGC       AS ITEM_COST,
+                   I.IIQTOH       AS ITEM_QOH,
+                   I.IIROLL       AS ITEM_ROLL
+              FROM LSCPRDLIB/ITMMSTP I
+             WHERE I.IISKU# = INKEY
+             FETCH FIRST 1 ROW ONLY;
+
+        -- SEARCH feeds the SKU box's type-ahead list.  Prefix match on the
+        -- item number only, the way the requisition screen searches it: the
+        -- item number is the indexed key, so the production file stays fast.
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT TRIM(I.IISKU#) AS ITEM_SKU,
+                   TRIM(I.IIDESC) AS ITEM_DESC,
+                   TRIM(I.IICDAT) AS ITEM_DATE
+              FROM LSCPRDLIB/ITMMSTP I
+             WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) || '%'
+             ORDER BY I.IISKU#
+             FETCH FIRST 50 ROWS ONLY;
+
+        IF INTYPE = 'SEARCH' THEN
+            OPEN C2;
+        ELSE
+            OPEN C1;
+        END IF;
+    END;

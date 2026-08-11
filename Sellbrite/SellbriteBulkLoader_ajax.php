@@ -177,6 +177,19 @@ switch ($action) {
         echo json_encode(['returnClass' => 'success', 'years' => $years]);
         break;
 
+    case 'lccSearch':
+        // type-ahead list for the LCC SKU box
+        echo json_encode(['returnClass' => 'success', 'matches' => lccSearch((string) ($_POST['q'] ?? ''))]);
+        break;
+
+    case 'lccLookup':
+        // LCC SKU -> item master description/date + the GreySheet coins it matches
+        $lcc = lccLookup((string) ($_POST['sku'] ?? ''));
+        echo json_encode(['returnClass' => $lcc['ok'] ? 'success' : 'error', 'item' => $lcc['item'],
+                          'fields' => $lcc['fields'] ?? [], 'picked' => $lcc['picked'] ?? false, 'sure' => $lcc['sure'] ?? false, 'via' => $lcc['via'] ?? '',
+                          'matches' => $lcc['matches'], 'message' => $lcc['error']]);
+        break;
+
     case 'gsImport':
         // autofill by the dropdown pick's gs_id
         $imp = gsImport($_POST);

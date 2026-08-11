@@ -25,6 +25,11 @@ if (!defined('SBL_TABLE')) {
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
 
+if (!defined('SBL_ITEM_PROC')) {
+    // Qualified for the same reason: an unqualified CALL depends on the job's library list.
+    define('SBL_ITEM_PROC', 'LSCDEVLIBP.SBLITEM001S');
+}
+
 // open one DB2 connection from the session credentials and reuse it
 function sbl_conn()
 {
@@ -104,6 +109,20 @@ function sbl_own_filter()
     return sbl_current_user() !== '' && isset(sbl_table_columns()['created_by']);
 }
 
+}
+
+// the signed-on user owns the rows they create; '' (dev, no session) sees everything
+function sbl_current_user()
+{
+    return strtoupper(trim((string) ($_SESSION['username'] ?? '')));
+}
+
+// true once the created_by ALTER has run and a user is signed on
+function sbl_own_filter()
+{
+    return sbl_current_user() !== '' && isset(sbl_table_columns()['created_by']);
+}
+
 // product column names in schema order
 function sbl_columns()
 {
@@ -137,6 +156,8 @@ function sbl_writable_columns()
     $cols  = sbl_columns();
     $cols[] = 'marketplace';   // per-SKU market; not a Sellbrite header, so not in the schema
     $cols[] = 'created_by';    // row owner (signed-on user); not a Sellbrite header
+    // the finder bars save with the row (columns exist after the ALTER; filtered out before)
+    foreach (['lcc_sku', 'gs_path', 'gs_gsid', 'gs_coin'] as $bc) { $cols[] = $bc; }
     $tcols = sbl_table_columns();
     if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
@@ -182,6 +203,41 @@ function sblGetAll($q = '')
     $sql .= ' ORDER BY updated_at DESC';
     return sbl_select($sql, $params);
 }
+
+// run the item master procedure; false when the call itself fails (not created, wrong
+// signature, no authority), [] when it ran and matched nothing - the caller needs both
+function sbl_lcc_call($type, $key)
+{
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    $stmt = db2_prepare($conn, 'CALL ' . SBL_ITEM_PROC . '(?, ?)');
+    if (!$stmt) { sbl_db_err('SBLITEM001S prepare'); return false; }
+    if (!db2_execute($stmt, [$type, $key])) { sbl_db_err('SBLITEM001S execute'); return false; }
+    $rows = [];
+    while ($r = db2_fetch_assoc($stmt)) { $rows[] = array_change_key_case($r, CASE_LOWER); }
+    return $rows;
+}
+
+
+// PROGRAM NAME SBLITEM001S type ITEM: one LCC item master row for an exact SKU
+function sblLccItem($sku)
+{
+    $sku = strtoupper(trim((string) $sku));
+    if ($sku === '') { return []; }
+    $rows = sbl_lcc_call('ITEM', $sku);
+    return $rows === false ? false : ($rows[0] ?? []);
+}
+
+
+// PROGRAM NAME SBLITEM001S type SEARCH: item numbers starting with what has been typed, for the SKU box menu
+function sblLccSearch($prefix)
+{
+    // an empty prefix is allowed: the procedure's LIKE '%' lists the first items,
+    // which is what the box shows when it is clicked before anything is typed
+    $rows = sbl_lcc_call('SEARCH', strtoupper(trim((string) $prefix)));
+    return $rows === false ? false : $rows;
+}
+
 
 // most recent saved listing in a category (currently unused)
 function sblCategoryExample($category)

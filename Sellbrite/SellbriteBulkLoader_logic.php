@@ -274,6 +274,10 @@ final class Computer
         if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
             $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
         }
+        // Condition follows circulated/uncirculated: Uncirculated lists as new,
+        // everything else as used - off the screen but still in the spreadsheet
+        $circ = trim((string) ($row['circulated_or_uncirculated'] ?? ''));
+        $row['condition'] = stripos($circ, 'uncirc') !== false ? 'new' : 'used';
 
         // Package weight = the coin's own weight FROM GREYSHEET
         // auto adjusted for certification wrap and slabs from GSA
@@ -316,6 +320,10 @@ final class Computer
         }
         if (stripos($sku, '.WS') !== false && $g('price') !== '') { $row['original_retail'] = $g('price'); }
 
+        // keep whatever is in the box when there is not enough yet to compose a title,
+        // so the LCC inventory description stands in until the parts arrive
+        $builtTitle = self::buildTitle($row);
+        if ($builtTitle !== '') { $row['name'] = $builtTitle; }
         $row['name'] = self::buildTitle($row);
         // The description REBUILDS while it still has the standard house shape
 
@@ -623,6 +631,13 @@ final class Exporter
         $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $ws = $ss->getActiveSheet();
         $ws->setTitle('product_data');
+        $ws->setCellValue('A1', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
+            . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 2. *Required Fields.');
+        foreach ($keep as $i => $orig) {
+            $ws->setCellValue($cell($i, 2), self::LAYOUT_HUMAN[$orig]);
+            $ws->setCellValue($cell($i, 3), self::LAYOUT[$orig]);
+            if (isset($fills[$orig])) {
+                foreach ([2, 3] as $rowNo) {
         $ws->setCellValue('A2', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
             . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 3. *Required Fields.');
         foreach ($keep as $i => $orig) {
@@ -641,6 +656,7 @@ final class Exporter
         // the copy-heavy columns (description, features) stay readable.
         $widths = [];
         foreach ($keep as $i => $orig) { $widths[$i] = strlen(self::LAYOUT_HUMAN[$orig]); }
+        $r = 4;
         $r = 5;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
@@ -677,6 +693,10 @@ final class Exporter
         $n = count($keep);
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
+                . 'header names in row 2. *Required Fields.';
+        $fh = fopen('php://temp', 'r+');
+        $human = $machine = [];
+        foreach ($keep as $orig) {
                 . 'header names in row 3. *Required Fields.';
         $fh = fopen('php://temp', 'r+');
         $notes = $human = $machine = [];
@@ -686,6 +706,7 @@ final class Exporter
             $machine[] = self::LAYOUT[$orig];
         }
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
+        fputcsv($fh, $bannerRow);
         fputcsv($fh, $notes); fputcsv($fh, $bannerRow);
         fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
