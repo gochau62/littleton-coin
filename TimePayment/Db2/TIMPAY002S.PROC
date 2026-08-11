@@ -1,0 +1,42 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - TIMPAY002S                                    */
+/*                                                                   */
+/* Program Narrative - Registers the OE0337R item price retrieval    */
+/*                     module as a stored procedure, for pricing     */
+/*                     items whose plan column was left blank.       */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/30/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(TIMPAY002S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
+        INOUT PRITEM CHAR(10),
+        INOUT PRSRCC CHAR(10),
+        INOUT PRCUS# CHAR(10),
+        INOUT PRQTY  DECIMAL(5, 0),
+        INOUT PRPRIC DECIMAL(9, 2)
+        )
+
+        LANGUAGE RPGLE
+        SPECIFIC TIMPAY002S
+        NOT DETERMINISTIC
+        NO SQL
+        EXTERNAL NAME 'LSCPRDLIB/OE0337R'
+        PARAMETER STYLE GENERAL;

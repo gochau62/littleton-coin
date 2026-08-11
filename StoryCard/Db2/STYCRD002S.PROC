@@ -1,0 +1,122 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - STYCRD002S                                    */
+/*                                                                   */
+/* Program Narrative - Write one story card line, doing exactly what */
+/*                     the matching Access screen did.               */
+/*                                                                   */
+/*                     CARD  - a body line.  Updates the line when   */
+/*                             it is there and inserts it when it is */
+/*                             not, which is the CheckLineMode test  */
+/*                             the Access save ran per line.         */
+/*                             INLNO must be 1 to 11 for side 1 or   */
+/*                             13 to 21 for side 2 - the limits the  */
+/*                             Access guards and their messages both */
+/*                             state, 11 lines and 9 lines.          */
+/*                     FOOTI - a footer line, insert only.  This is  */
+/*                             the Access footer save in insert      */
+/*                             mode, used when the footer is empty.  */
+/*                     FOOTU - a footer line, update only.  This is  */
+/*                             the Access footer save in update      */
+/*                             mode, which never inserted, so a line */
+/*                             past the end of the footer updates    */
+/*                             nothing.                              */
+/*                                                                   */
+/*                     INKEY is the SKU for CARD and the footer key  */
+/*                     for FOOTI and FOOTU, where blank means key 1. */
+/*                                                                   */
+/*                     Text and search key are trimmed to the file   */
+/*                     widths of 50 and 15.                          */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/27/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(STYCRD002S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE STYCRD002S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY  VARCHAR(20),
+        IN INLNO  DECIMAL(4, 0),
+        IN INTXT  VARCHAR(100),
+        IN INSRK  VARCHAR(30)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE ROWCNT INTEGER DEFAULT 0;
+        DECLARE WKTXT  CHAR(50);
+        DECLARE WKSRK  CHAR(15);
+        DECLARE WKSKY  DECIMAL(7, 0);
+
+        SET WKTXT = LEFT(COALESCE(INTXT, ''), 50);
+        SET WKSRK = LEFT(COALESCE(INSRK, ''), 15);
+
+        IF INTYPE = 'CARD' THEN
+
+            IF INKEY IS NULL OR TRIM(INKEY) = '' THEN
+                SIGNAL SQLSTATE '75002'
+                    SET MESSAGE_TEXT = 'A SKU is required to write a story card line';
+            END IF;
+
+            IF NOT (INLNO BETWEEN 1 AND 11 OR INLNO BETWEEN 13 AND 21) THEN
+                SIGNAL SQLSTATE '75003'
+                    SET MESSAGE_TEXT = 'Story card line must be 1 to 11 or 13 to 21';
+            END IF;
+
+            UPDATE LSCPRDLIB/IVSCBODYP
+               SET SCBTXT = WKTXT,
+                   SCBSRK = WKSRK
+             WHERE SCBSKU = INKEY
+               AND SCBLNO = INLNO;
+
+            GET DIAGNOSTICS ROWCNT = ROW_COUNT;
+
+            IF ROWCNT = 0 THEN
+                INSERT INTO LSCPRDLIB/IVSCBODYP
+                    (SCBSKU, SCBLNO, SCBTXT, SCBSRK)
+                VALUES (INKEY, INLNO, WKTXT, WKSRK);
+            END IF;
+
+        ELSEIF INTYPE = 'FOOTI' OR INTYPE = 'FOOTU' THEN
+
+            IF INLNO < 1 THEN
+                SIGNAL SQLSTATE '75004'
+                    SET MESSAGE_TEXT = 'Footer line number must be 1 or more';
+            END IF;
+
+            SET WKSKY = DECIMAL(COALESCE(NULLIF(TRIM(INKEY), ''), '1'), 7, 0);
+
+            IF INTYPE = 'FOOTI' THEN
+                INSERT INTO LSCPRDLIB/IVSCFOOTP
+                    (SCFSKY, SCFLNO, SCFTXT)
+                VALUES (WKSKY, INLNO, WKTXT);
+            ELSE
+                UPDATE LSCPRDLIB/IVSCFOOTP
+                   SET SCFTXT = WKTXT
+                 WHERE SCFSKY = WKSKY
+                   AND SCFLNO = INLNO;
+            END IF;
+
+        ELSE
+            SIGNAL SQLSTATE '75005'
+                SET MESSAGE_TEXT = 'STYCRD002S type must be CARD FOOTI or FOOTU';
+        END IF;
+    END;

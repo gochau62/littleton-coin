@@ -1,0 +1,81 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN005S                                    */
+/*                                                                   */
+/* Program Narrative - Update a Requisition header: requestor name,  */
+/*                     area code, area type, authorized-by,          */
+/*                     comments and badge. A NULL                    */
+/*                     parameter leaves that column unchanged, so    */
+/*                     the grid's badge box can send badge only      */
+/*                     while the view window sends the whole header. */
+/*                     The authorized flag is derived - 'Y' when a   */
+/*                     real person is named, 'N' for the             */
+/*                     "Authorization = None" / "In Process"         */
+/*                     placeholder values.                           */
+/*                                                                   */
+/*                     The badge is set once and then stands. It can */
+/*                     be filled in while it is still blank or zero, */
+/*                     and after that it is left alone whatever is   */
+/*                     sent, because it is the record of whose       */
+/*                     requisition it is.                            */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN005S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer - G Chau         Date - 08/05/2026                  |*/
+/* |  Purpose - Take the requestor name, area code and area type so |*/
+/* |            the view window can correct a header the way the    |*/
+/* |            old screen did.                                     |*/
+/* |            This adds parameters, and CREATE OR REPLACE does    |*/
+/* |            not replace across a different parameter count, so  |*/
+/* |            the four parameter version has to be dropped or it  |*/
+/* |            stays behind and keeps getting called:              |*/
+/* |            DROP PROCEDURE REQSTN005S                           |*/
+/* |              (DECIMAL, VARCHAR, VARCHAR, VARCHAR)              |*/
+/* |  Project - 260074                                              |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN005S (
+        IN INREQ#  DECIMAL(9, 0),
+        IN INAUTB  VARCHAR(50),
+        IN INCMNT  VARCHAR(500),
+        IN INBDGE  VARCHAR(10),
+        IN INNAME  VARCHAR(50),
+        IN INARCD  CHAR(2),
+        IN INARTY  VARCHAR(25)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        UPDATE RQSREQHDRT
+           SET RHAUTB = COALESCE(INAUTB, RHAUTB),
+               RHCMNT = COALESCE(INCMNT, RHCMNT),
+               RHBDGE = CASE WHEN INBDGE IS NULL              THEN RHBDGE
+                             WHEN TRIM(RHBDGE) IN ('', '0')   THEN INBDGE
+                             ELSE RHBDGE
+                        END,
+               RHNAME = COALESCE(INNAME, RHNAME),
+               RHARCD = COALESCE(INARCD, RHARCD),
+               RHARTY = COALESCE(INARTY, RHARTY),
+               RHAUTF = CASE WHEN COALESCE(INAUTB, RHAUTB) = ''
+                              OR  COALESCE(INAUTB, RHAUTB) = 'Authorization = None'
+                              OR  COALESCE(INAUTB, RHAUTB) = 'Authorization In Process'
+                             THEN 'N' ELSE 'Y'
+                        END
+         WHERE RHREQ# = INREQ#;
+    END;

@@ -1,0 +1,42 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN009S                                    */
+/*                                                                   */
+/* Program Narrative - Delete a requisition (detail then header).    */
+/*                     Used by the web insert to back out a partial  */
+/*                     requisition if a line insert fails, so a      */
+/*                     failed submit never leaves a half-saved       */
+/*                     requisition behind.                           */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/20/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN009S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN009S (
+        IN INREQ# DECIMAL(9, 0)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DELETE FROM RQSREQDTLT WHERE RDREQ# = INREQ#;
+        DELETE FROM RQSREQHDRT WHERE RHREQ# = INREQ#;
+    END;

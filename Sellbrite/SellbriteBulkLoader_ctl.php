@@ -118,6 +118,10 @@
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
         sblShellFocus(view === 'form');
+    /* ---- view switching ---- */
+    function sblShow(view){
+        $("#listView").toggle(view === 'list');
+        $("#formView").toggle(view === 'form');
     }
 
     function sblBackToList(){ sblShow('list'); }
@@ -188,6 +192,7 @@
         sblClearForm();
         // market starts as All; picked with the form's own Market picker
         sblMarketApply();
+        $('#formTitle').text('New SKU');
         sblShow('form');
         sblRecompute();
     }
@@ -261,6 +266,8 @@
                 }
             }
             sblMarketApply();
+            sblMarketApply();
+            $('#formTitle').text('Edit SKU - ' + (res.row.sku || ''));
             sblShow('form');
             sblRecompute();
         }, 'json');
@@ -317,6 +324,8 @@
                   + '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
                   + '<td>' + sblEsc(sblCut(row.category_name, 28)) + '</td>'
                   + '<td title="' + sblEsc(row.name || '') + '">' + sblEsc(sblCut(row.name, 35)) + '</td>'
+                  + '<td>' + sblEsc(row.category_name || '') + '</td>'
+                  + '<td>' + sblEsc(row.name || '') + '</td>'
                   + '<td>' + sblEsc(row.grade || '') + '</td>'
                   + '<td class="num">' + price + '</td><td class="num">' + qty + '</td>'
                   + '<td>' + sblEsc(row.updated_at || '') + '</td>'
@@ -354,6 +363,8 @@
 
             // anything already filled is left alone - typed, LCC or a previous import
             if (el && String(el.value || '').trim() !== '') return;
+            // Country is set ONCE by the tree - autofill never overwrites it.
+            if (k === 'country_of_manufacture' && el && String(el.value || '').trim() !== '') return;
             if (el && v !== null && v !== '') {
 
                  // selects: add missing options so unmatched names still land
@@ -471,6 +482,7 @@
                 // a box holding a value stays visible no matter the category rules -
                 // hiding filled data reads as "autofill did nothing"
                 if (f) f.style.display = (show[group] || String(el.value || '').trim() !== '') ? '' : 'none';
+                if (f) f.style.display = show[group] ? '' : 'none';
             });
         });
         // The whole "Other product types" section only exists when one applies.
@@ -674,6 +686,7 @@
         };
         $('#gs-coin').on('focus', function(){
             if ((sblCurPath || sblLccMatches.length) && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
+            if (sblCurPath && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
         });
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
@@ -739,6 +752,7 @@
 
     function sblResetBelowSeries(){
         sblCurYear = ''; sblPendingGsId = 0; sblYearList = []; sblLccMatches = []; sblLccData = null;
+        sblCurYear = ''; sblPendingGsId = 0; sblYearList = [];
         $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
@@ -930,6 +944,13 @@
         // Autofill ADDS, it never removes: anything already in a box stays put,
         // so an LCC lookup or a typed correction survives the import.
         var grade = $('#f_grade').val() || '';
+        // start CLEAN: wipe everything except the operator-owned fields
+        var grade = $('#f_grade').val() || '';
+        var keep = ['sku', 'marketplace', 'quantity', 'category_name', 'country_of_manufacture', 'condition',
+                    'certification', 'certification_number'];
+        $('#sku-form [data-name]').each(function(){
+            if (keep.indexOf(this.getAttribute('data-name')) < 0) this.value = '';
+        });
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
         sblResetAutoBadges();
@@ -963,6 +984,12 @@
         // listing for a coin nothing has been read about.
         if (res.returnClass === 'notfound'){
             swal("GreySheet doesn't have this coin", 'Fill the listing in by hand.', 'info');
+        if (res.returnClass === 'notfound'){
+            swal({ title:"GreySheet doesn't have this coin",
+                   text:'Would you like the AI to generate this listing?',
+                   type:'info', showCancelButton:true,
+                   confirmButtonText:'Generate with AI', cancelButtonText:'Cancel', closeOnConfirm:true },
+            function(go){ if (go) sblGsGenerate(hint); });
             return;
         }
         if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
@@ -970,6 +997,15 @@
         sblFillFromRow(res.row);
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
+    }
+
+    function sblGsGenerate(hint){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
+            if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
+            sblFillFromRow(res.row);
+            swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
+                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
+        }, 'json');
     }
 
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
@@ -1046,6 +1082,9 @@
         if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete();
                                 sblLccAutocomplete(); sblFieldCombos(); }
 
+        // Tree -> Series -> Year -> Coin drill-down
+        sblLoadRoots();
+        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
     });
 </script>
 
