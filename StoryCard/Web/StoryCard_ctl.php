@@ -29,9 +29,15 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
+<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Story Card Maintenance";
+
+    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
+    function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
+
+    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
 
 // Story Card Maintenance frontend logic (SKU picker, both sides, footer editor)
 // the card as it came back from the server, so Revert has something to go to
@@ -612,6 +618,8 @@ function tickClock() {
     $('#scClock').text(d.toLocaleDateString() + '  ' + d.toLocaleTimeString());
 }
 </script>
+
+<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
