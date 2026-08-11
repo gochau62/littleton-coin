@@ -1,0 +1,163 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - PRJTRK001S                                    */
+/*                                                                   */
+/* Program Narrative - Read-only data feeds for the Project          */
+/*                     Tracking dashboard rewrite, one result set    */
+/*                     per type: LIST TIME NOTES COMP PGMR.          */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 08/11/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(PRJTRK001S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* IMPORTANT - the file and field names below were taken from the    */
+/* reads in the legacy PROJ_* pages (PRPROJP master fields, the      */
+/* PRESTMTP estimate fields, the PTTIME time reads and the WN        */
+/* WebNotes fields). Before compiling, tie each file and field out   */
+/* against PROJ_model.php and webNotesModel.php on the server and    */
+/* correct any that differ - only the names need fixing, the shape   */
+/* of each cursor stays the same.                                    */
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY1 VARCHAR(20),
+        IN INKEY2 VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE WKFROM DECIMAL(8, 0) DEFAULT 0;
+        DECLARE WKTO   DECIMAL(8, 0) DEFAULT 0;
+        DECLARE WKALL  VARCHAR(1)    DEFAULT 'N';
+
+        /* Every project outside the 90000-90999 internal range, with the
+           newest estimate and the summed programming time riding along.
+           INKEY1 = 'Y' includes completed and rejected projects; 'N'
+           returns open work only. The dashboard derives the steering
+           committee stage and the status buckets from these columns in
+           ProjectTracking_model.php - keep this cursor a plain read. */
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT P.PR# AS PJNUM,
+                   RTRIM(P.PRDESC) AS PJDESC,
+                   RTRIM(P.PRRQST) AS PJRQST,
+                   RTRIM(P.PRSPONSR) AS PJSPONSR,
+                   RTRIM(P.PRPGMR) AS PJPGMR,
+                   RTRIM(P.PRDEPT) AS PJDEPT,
+                   RTRIM(P.PRSUBDEPT) AS PJSUBDEPT,
+                   P.PRUPTY AS PJDEPTPR,
+                   P.PRPRTY AS PJSCPR,
+                   RTRIM(P.PRTYPE) AS PJTYPE,
+                   P.PRECOM AS PJSCHDATE,
+                   P.PRACOM AS PJCOMPDATE,
+                   RTRIM(P.PRRESCOD) AS PJRESCOD,
+                   COALESCE(E.PRESTLOW, 0) AS PJESTLOW,
+                   COALESCE(E.PRESTHI, 0) AS PJESTHI,
+                   COALESCE(E.PRESTDATE, 0) AS PJESTDATE,
+                   CASE WHEN E.PRPROJ# IS NULL THEN 'N' ELSE 'Y' END
+                       AS PJHASEST,
+                   COALESCE(T.PJHOURS, 0) AS PJHOURS
+              FROM LSCPRDLIB/PRPROJP P
+              LEFT JOIN (
+                   SELECT PRPROJ#, PRESTLOW, PRESTHI, PRESTDATE,
+                          ROW_NUMBER() OVER (
+                              PARTITION BY PRPROJ#
+                              ORDER BY PRESTDATE DESC, PRESTTIME DESC) AS RN
+                     FROM LSCPRDLIB/PRESTMTP
+                   ) E
+                ON E.PRPROJ# = P.PR#
+               AND E.RN = 1
+              LEFT JOIN (
+                   SELECT PTPROJ#, SUM(PTTIME) AS PJHOURS
+                     FROM LSCPRDLIB/PRTIMEP
+                    GROUP BY PTPROJ#
+                   ) T
+                ON T.PTPROJ# = P.PR#
+             WHERE P.PR# NOT BETWEEN 90000 AND 90999
+               AND (WKALL = 'Y'
+                    OR (P.PRACOM = 0 AND RTRIM(P.PRRESCOD) <> 'REJ'))
+             ORDER BY P.PR#;
+
+        /* Time entries in a date range, for the weekly activity digest.
+           Dates are the 8 digit YYYYMMDD numbers the green screen writes. */
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT T.PTPROJ# AS TMPROJ,
+                   RTRIM(T.PTUSER) AS TMUSER,
+                   T.PTDATE AS TMDATE,
+                   T.PTTIME AS TMHOURS
+              FROM LSCPRDLIB/PRTIMEP T
+             WHERE T.PTDATE BETWEEN WKFROM AND WKTO
+             ORDER BY T.PTUSER, T.PTPROJ#;
+
+        /* WebNotes comment index rows for project comments in a date
+           range - the comment text itself lives in IFS files, so only
+           the who/when/what-kind columns come back. */
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT RTRIM(W.WNIDVAL) AS NTPROJ,
+                   RTRIM(W.WNUSER) AS NTUSER,
+                   W.WNDATE AS NTDATE,
+                   RTRIM(W.WNTYPE) AS NTTYPE
+              FROM LSCPRDLIB/WEBNOTESP W
+             WHERE RTRIM(W.WNPREFIX) = 'PROJ_'
+               AND W.WNDATE BETWEEN WKFROM AND WKTO
+             ORDER BY W.WNUSER, W.WNIDVAL;
+
+        /* Projects completed in a date range, for the weekly digest. */
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT P.PR# AS PJNUM,
+                   RTRIM(P.PRDESC) AS PJDESC,
+                   RTRIM(P.PRPGMR) AS PJPGMR,
+                   P.PRACOM AS PJCOMPDATE
+              FROM LSCPRDLIB/PRPROJP P
+             WHERE P.PRACOM BETWEEN WKFROM AND WKTO
+               AND P.PR# NOT BETWEEN 90000 AND 90999
+             ORDER BY P.PRPGMR, P.PR#;
+
+        /* The programmer/estimator list the legacy pages load their
+           dropdowns from. */
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT RTRIM(G.PGDEVPRF) AS PGPROFILE
+              FROM LSCPRDLIB/PRIDTRANSP G
+             ORDER BY G.PGDEVPRF;
+
+        IF INTYPE = 'LIST' THEN
+            SET WKALL = UPPER(TRIM(COALESCE(NULLIF(INKEY1, ''), 'N')));
+            OPEN C1;
+        ELSEIF INTYPE = 'TIME' THEN
+            SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
+            SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
+            OPEN C2;
+        ELSEIF INTYPE = 'NOTES' THEN
+            SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
+            SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
+            OPEN C3;
+        ELSEIF INTYPE = 'COMP' THEN
+            SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
+            SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
+            OPEN C4;
+        ELSEIF INTYPE = 'PGMR' THEN
+            OPEN C5;
+        ELSE
+            SIGNAL SQLSTATE '75011'
+                SET MESSAGE_TEXT = 'Type must be LIST TIME NOTES COMP PGMR';
+        END IF;
+    END;

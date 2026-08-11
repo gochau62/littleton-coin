@@ -1,0 +1,240 @@
+<?php
+/*    ***************************************************  -->
+<!--  * Program Name - ProjectTracking_ajax.php         *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
+<!--  * Date Written 08/11/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   -                                     *  -->
+<!--  ***************************************************   */
+
+// AJAX endpoint, buffer from byte 0 so stray include output can't corrupt the JSON
+ob_start();
+foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
+    if (file_exists($f)) { require_once $f; }
+}
+
+// the same vendored PhpSpreadsheet copy the other loaders read uploads with -
+// only needed for the Excel download action
+$prjVendor = '/www/seidenphp/htdocs/vendor/autoload.php';
+if (file_exists($prjVendor)) { require_once $prjVendor; }
+
+if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+
+$user     = $_SESSION['username'] ?? '';
+$password = $_SESSION['password'] ?? '';
+
+require_once __DIR__ . '/ProjectTracking_model.php';
+
+$conn = null;
+if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
+
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
+
+// the Excel download streams a workbook, everything else streams JSON
+if ($action !== 'download') {
+    while (ob_get_level() > 0) { ob_end_clean(); }
+    header('Content-Type: application/json');
+}
+
+function prjOut($arr) { echo json_encode($arr); exit; }
+
+
+function prjOutFail($msg = '') {
+    prjOut(array("ok" => false,
+                 "msg" => $msg !== '' ? $msg : ($GLOBALS['prjErr'] ?: 'Request failed.')));
+}
+
+
+// a stored YYYYMMDD number as MM/DD/YYYY, blank when there is no date
+function prjFmtDate($dec) {
+    $s = strval(intval($dec));
+    if (strlen($s) !== 8) { return ''; }
+    return substr($s, 4, 2) . '/' . substr($s, 6, 2) . '/' . substr($s, 0, 4);
+}
+
+
+// trim a project row down to what the screens render, so the JSON stays small
+function prjRowOut($row) {
+    return array(
+        'num'    => intval($row['PJNUM']),
+        'desc'   => trim($row['PJDESC']),
+        'pgmr'   => trim($row['PJPGMR']),
+        'rqst'   => trim($row['PJRQST']),
+        'dept'   => trim($row['PJDEPT']),
+        'deptpr' => intval($row['PJDEPTPR']),
+        'scpr'   => intval($row['PJSCPR']),
+        'stage'  => $row['STAGE'],
+        'status' => $row['STATUS'],
+        'low'    => floatval($row['PJESTLOW']),
+        'hi'     => floatval($row['PJESTHI']),
+        'hours'  => floatval($row['PJHOURS']),
+        'sched'  => prjFmtDate($row['PJSCHDATE']),
+        'comp'   => prjFmtDate($row['PJCOMPDATE']),
+    );
+}
+
+
+// group project rows by programmer the way the Projects-by-developer
+// spreadsheet does: busiest first, the Unassigned bucket last
+function prjGroupByPgmr($projects) {
+    $groups = array();
+    foreach ($projects as $row) {
+        $pgmr = trim($row['PJPGMR']);
+        if ($pgmr === '') { $pgmr = 'Unassigned'; }
+        if (!isset($groups[$pgmr])) { $groups[$pgmr] = array(); }
+        $groups[$pgmr][] = $row;
+    }
+    $unassigned = $groups['Unassigned'] ?? null;
+    unset($groups['Unassigned']);
+    ksort($groups);
+    if ($unassigned !== null) { $groups['Unassigned'] = $unassigned; }
+    return $groups;
+}
+
+
+if (!$conn) {
+    prjOutFail("No database connection - sign in to LCC Online first.");
+}
+
+// 20 is the PMS authority level the legacy PROJ_* pages require
+if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 20) != "yes") {
+    prjOutFail("Current user profile is not authorized to use this tool.");
+}
+
+switch ($action) {
+
+    // everything the dashboard draws in one round trip: the stat tiles, the
+    // pipeline, the two charts, the project table, and the cached weekly summary
+    case 'dashboard':
+        $projects = prjProjects($conn, 'N');
+        if ($projects === false) { prjOutFail(); }
+        $rollup = prjDashboardRollup($projects);
+
+        $out = array();
+        foreach ($projects as $row) { $out[] = prjRowOut($row); }
+
+        prjActLog($user, 'DASHBOARD');
+        prjOut(array("ok" => true,
+                     "tiles" => $rollup['tiles'],
+                     "pipeline" => $rollup['pipeline'],
+                     "status" => $rollup['status'],
+                     "load" => $rollup['load'],
+                     "stages" => $GLOBALS['prjStages'],
+                     "statuses" => $GLOBALS['prjStatuses'],
+                     "projects" => $out,
+                     "weekly" => prjWeeklyRead(),
+                     "updated" => date('M j, Y')));
+
+    // the assignments page rows; complete=Y adds finished and rejected work
+    case 'assignments':
+        $includeComplete = (($_POST['complete'] ?? $_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
+        $projects = prjProjects($conn, $includeComplete);
+        if ($projects === false) { prjOutFail(); }
+
+        $out = array();
+        foreach ($projects as $row) { $out[] = prjRowOut($row); }
+
+        prjActLog($user, 'ASSIGNMENTS', 'complete=' . $includeComplete);
+        prjOut(array("ok" => true,
+                     "stages" => $GLOBALS['prjStages'],
+                     "projects" => $out,
+                     "updated" => date('M j, Y')));
+
+    // build this week's digest, write the AI summary, cache it. POST only so
+    // a crawler or prefetch can't burn an API call
+    case 'weeklygenerate':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            prjOutFail("The weekly summary is generated with a POST.");
+        }
+        list($ok, $result) = prjGenerateWeekly($conn, $user);
+        if (!$ok) { prjOutFail($result); }
+        // the digest rides in the cache file for reference, not in the response
+        unset($result['digest']);
+        prjOut(array("ok" => true, "weekly" => $result));
+
+    // the assignments view as a workbook, grouped per programmer the way the
+    // Projects-by-developer spreadsheet lays it out
+    case 'download':
+        if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
+            while (ob_get_level() > 0) { ob_end_clean(); }
+            header('Content-Type: application/json');
+            prjOutFail("The spreadsheet library is not available on this server.");
+        }
+        $includeComplete = (($_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
+        $projects = prjProjects($conn, $includeComplete);
+        if ($projects === false) {
+            while (ob_get_level() > 0) { ob_end_clean(); }
+            header('Content-Type: application/json');
+            prjOutFail();
+        }
+
+        $book  = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $book->getActiveSheet();
+        $sheet->setTitle('Projects by developer');
+
+        $heads = array('Pjt#', 'SC Stage', 'Dept', 'Dept Prty', 'SC Prty',
+                       'Description', 'Low Est', 'Hi Est', 'Hours',
+                       'Sched Comp', 'Comp Date');
+        $widths = array('A' => 10, 'B' => 16, 'C' => 8, 'D' => 10, 'E' => 9,
+                        'F' => 52, 'G' => 9, 'H' => 9, 'I' => 9, 'J' => 12,
+                        'K' => 12);
+        foreach ($widths as $col => $w) {
+            $sheet->getColumnDimension($col)->setWidth($w);
+        }
+
+        $r = 1;
+        foreach (prjGroupByPgmr($projects) as $pgmr => $rows) {
+            $count = count($rows);
+            $sheet->setCellValue('A' . $r,
+                $pgmr . ' - ' . $count . ' project' . ($count === 1 ? '' : 's'));
+            $sheet->mergeCells('A' . $r . ':K' . $r);
+            $sheet->getStyle('A' . $r)->getFont()->setBold(true)->setSize(12);
+            $r += 1;
+
+            $sheet->fromArray($heads, NULL, 'A' . $r);
+            $sheet->getStyle('A' . $r . ':K' . $r)->getFont()->setBold(true);
+            $r += 1;
+
+            foreach ($rows as $row) {
+                $sheet->fromArray(array(
+                    intval($row['PJNUM']),
+                    $GLOBALS['prjStages'][$row['STAGE']] ?? ucfirst($row['STAGE']),
+                    trim($row['PJDEPT']),
+                    intval($row['PJDEPTPR']),
+                    intval($row['PJSCPR']),
+                    trim($row['PJDESC']),
+                    floatval($row['PJESTLOW']),
+                    floatval($row['PJESTHI']),
+                    floatval($row['PJHOURS']),
+                    prjFmtDate($row['PJSCHDATE']),
+                    prjFmtDate($row['PJCOMPDATE']),
+                ), NULL, 'A' . $r);
+                $r += 1;
+            }
+            $r += 1; // blank row between programmers, like the source sheet
+        }
+
+        prjActLog($user, 'DOWNLOAD', 'complete=' . $includeComplete);
+
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="ProjectsByDeveloper_' .
+               date('Ymd') . '.xlsx"');
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book, 'Xlsx');
+        $writer->save('php://output');
+        exit;
+
+    default:
+        prjOutFail("Unknown action.");
+}
+?>
