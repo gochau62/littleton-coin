@@ -54,6 +54,9 @@ var suggestTimer = null;
 var suggestSeq = 0;
 
 $(document).ready(function () {
+    // this script is on the page whether or not the screen is, so when a profile is turned away there is nothing here to wire up
+    if (typeof S1_FIRST === 'undefined') { return; }
+
     buildSide('#side1Lines', S1_FIRST, S1_LAST);
     buildSide('#side2Lines', S2_FIRST, S2_LAST);
     setCard(null);
@@ -629,6 +632,7 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
+    // the framework's standard refusal page, the same call the older LCC tools make
     showNotAuthorized();
 } else {
 

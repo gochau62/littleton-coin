@@ -1,16 +1,18 @@
 /*-------------------------------------------------------------------*/
 /*                                                                   */
-/* Program Name      - REQSTN002S                                    */
+/* Program Name      - TIMPAY002S                                    */
 /*                                                                   */
-/* Program Narrative - Insert Requisition Detail Line                */
+/* Program Narrative - Registers the OE0337R item price retrieval    */
+/*                     module as a stored procedure, for pricing     */
+/*                     items whose plan column was left blank.       */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
 /*                     Littleton NH                                  */
 /*                                                                   */
-/* Date Written      - 07/20/2026                                    */
+/* Date Written      - 07/30/2026                                    */
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
-/*                     SRCMBR(REQSTN002S)                            */
+/*                     SRCMBR(TIMPAY002S)                            */
 /*********************************************************************/
 /*                                                                   */
 /* __________________________________________________________________*/
@@ -24,31 +26,17 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE REQSTN002S (
-        IN INREQ#  DECIMAL(9, 0),
-        IN INLIN#  DECIMAL(3, 0),
-        IN INITEM  VARCHAR(16),
-        IN INLOC   VARCHAR(3),
-        IN INCNDT  VARCHAR(10),
-        IN INDESC  VARCHAR(50),
-        IN INQTY   DECIMAL(9, 0),
-        IN INCOST  DECIMAL(13, 4),
-        IN INRETL  DECIMAL(13, 4),
-        IN INACST  DECIMAL(13, 2),
-        IN INBDGE  VARCHAR(50),
-        IN INSKUT  VARCHAR(16)
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
+        INOUT PRITEM CHAR(10),
+        INOUT PRSRCC CHAR(10),
+        INOUT PRCUS# CHAR(10),
+        INOUT PRQTY  DECIMAL(5, 0),
+        INOUT PRPRIC DECIMAL(9, 2)
         )
 
-        LANGUAGE SQL
-        MODIFIES SQL DATA
-        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
-
-    BEGIN
-        INSERT INTO RQSREQDTLT
-            (RDREQ#, RDLIN#, RDITEM, RDLOC, RDCNDT, RDDESC,
-             RDQTY, RDCOST, RDRETL, RDACST, RDBDGE, RDSKUT,
-             RDRTNF, RDRTDT)
-        VALUES (INREQ#, INLIN#, INITEM, INLOC, INCNDT, INDESC,
-                INQTY, INCOST, INRETL, INACST, INBDGE, INSKUT,
-                'N', 0);
-    END;
+        LANGUAGE RPGLE
+        SPECIFIC TIMPAY002S
+        NOT DETERMINISTIC
+        NO SQL
+        EXTERNAL NAME 'LSCPRDLIB/OE0337R'
+        PARAMETER STYLE GENERAL;

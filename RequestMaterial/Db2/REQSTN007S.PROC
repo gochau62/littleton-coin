@@ -57,10 +57,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
                AND CDACTV = 'Y'
              ORDER BY CDDESC, CDCODE;
 
-        -- ITEM autofill: description + coin year from the item master,
-        -- last-used cost/retail/coin-date string from history (the
-        -- master has no pricing). Falls back to history alone for
-        -- legacy items that are not on the master.
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT COALESCE(I.IIDESC, H.RDDESC) AS RDDESC,
                    COALESCE(H.RDCNDT,
@@ -81,9 +77,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              WHERE I.IISKU# IS NOT NULL
                 OR H.RDDESC IS NOT NULL;
 
-        -- ITEMSRCH: type-ahead over the item master, so every inventory
-        -- item is findable; each hit enriched with its last-used
-        -- cost/retail from requisition history
         DECLARE C3 CURSOR WITH RETURN FOR
             SELECT I.IISKU# AS RDITEM,
                    I.IIDESC AS RDDESC,
@@ -104,8 +97,6 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              ORDER BY I.IISKU#
              FETCH FIRST 200 ROWS ONLY;
 
-        -- BADGE: live active employees from the production employee
-        -- file - the badge dropdown is always current, nothing to seed
         DECLARE C4 CURSOR WITH RETURN FOR
             SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
                    TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC
@@ -113,12 +104,42 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              WHERE E.LEESTAT = 'A'
              ORDER BY 2, 1;
 
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT CDCODE, CDDESC FROM (
+                SELECT TRIM(CHAR(INT(E.LEBADGE))) AS CDCODE,
+                       TRIM(E.LEFNAME) || ' ' || TRIM(E.LELNAME) AS CDDESC,
+                       1 AS PREF
+                  FROM LSCPRDLIB/XEMPLOYP E
+                 WHERE E.LEESTAT = 'A'
+                   AND ( UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                               TRIM(E.LELNAME)) = UPPER(TRIM(INKEY))
+                      OR ( LENGTH(TRIM(INKEY)) = 10
+                           AND UPPER(SUBSTR(TRIM(E.LEFNAME), 1, 1) ||
+                                     TRIM(E.LELNAME)) LIKE UPPER(TRIM(INKEY)) || '%' ) )
+                UNION ALL
+                SELECT '' AS CDCODE,
+                       TRIM(CASE WHEN LOCATE(' - ', U.TEXT_DESCRIPTION) > 1
+                                 THEN SUBSTR(U.TEXT_DESCRIPTION, 1,
+                                             LOCATE(' - ', U.TEXT_DESCRIPTION) - 1)
+                                 ELSE U.TEXT_DESCRIPTION
+                            END) AS CDDESC,
+                       2 AS PREF
+                  FROM QSYS2.USER_INFO U
+                 WHERE U.AUTHORIZATION_NAME = UPPER(TRIM(INKEY))
+                   AND U.TEXT_DESCRIPTION IS NOT NULL
+                   AND TRIM(U.TEXT_DESCRIPTION) <> ''
+            ) W
+             ORDER BY PREF
+             FETCH FIRST 1 ROW ONLY;
+
         IF INTYPE = 'ITEM' THEN
             OPEN C2;
         ELSEIF INTYPE = 'ITEMSRCH' THEN
             OPEN C3;
         ELSEIF INTYPE = 'BADGE' THEN
             OPEN C4;
+        ELSEIF INTYPE = 'WHOAMI' THEN
+            OPEN C5;
         ELSE
             OPEN C1;
         END IF;

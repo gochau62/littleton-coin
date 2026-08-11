@@ -40,9 +40,6 @@ CREATE OR REPLACE PROCEDURE REQSTN006S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        -- The flag guard makes the update idempotent: if another station
-        -- already set the same state, this quietly does nothing instead of
-        -- re-stamping the return date.
         UPDATE RQSREQDTLT
            SET RDRTNF = INRTNF,
                RDRTDT = CASE WHEN INRTNF <> 'Y' THEN 0

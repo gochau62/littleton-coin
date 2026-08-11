@@ -1,0 +1,116 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - TIMPAY001S                                    */
+/*                                                                   */
+/* Program Narrative - Validation and review reads for the time      */
+/*                     payment spreadsheet upload, one result set    */
+/*                     per type: ITEM SRC PLAN TIER ONE LIST.        */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 07/30/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(TIMPAY001S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
+        IN INTYPE VARCHAR(10),
+        IN INKEY1 VARCHAR(20),
+        IN INKEY2 VARCHAR(20)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE SRCH   VARCHAR(20)   DEFAULT '';
+        DECLARE WKPRIC DECIMAL(9, 2) DEFAULT 0;
+
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT I.IISKU# AS TPITEM,
+                   RTRIM(I.IIDESC) AS TPDESC
+              FROM LSCPRDLIB/ITMMSTL1 I
+             WHERE I.IISKU# = INKEY1
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT S.SRCCOD AS TPSRCE
+              FROM LSCPRDLIB/OEPSRCE S
+             WHERE S.SRCCOD = INKEY1
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT P.PPPLAN AS TPPLAN,
+                   RTRIM(P.PPDESC) AS TPPLDS
+              FROM LSCPRDLIB/TPPLANSP P
+             WHERE P.PPPLAN = INKEY1
+             FETCH FIRST 1 ROW ONLY;
+
+        /* the tier file carries no plan column - its tier number is the plan */
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT T.TPTTIER AS TPPLAN
+              FROM LSCPRDLIB/TPTIERSP T
+             WHERE WKPRIC BETWEEN T.TPTTIERLO AND T.TPTTIERHI
+             ORDER BY T.TPTTIERLO
+             FETCH FIRST 1 ROW ONLY;
+
+        /* GO-LIVE: TPITEMSP reads LSCDEVLIBP while testing - flip both
+           cursors (and TIMPAY003S) to LSCPRDLIB when the tool goes live */
+        DECLARE C5 CURSOR WITH RETURN FOR
+            SELECT T.TPITEM, T.TPSRCD, T.TPPLAN, T.TPEXDATE
+              FROM LSCDEVLIBP/TPITEMSP T
+             WHERE T.TPITEM = INKEY1
+               AND T.TPSRCD = INKEY2
+             FETCH FIRST 1 ROW ONLY;
+
+        DECLARE C6 CURSOR WITH RETURN FOR
+            SELECT T.TPITEM,
+                   COALESCE(RTRIM(I.IIDESC), '') AS TPDESC,
+                   T.TPSRCD, T.TPPLAN,
+                   COALESCE(RTRIM(P.PPDESC), '') AS TPPLDS,
+                   T.TPEXDATE
+              FROM LSCDEVLIBP/TPITEMSP T
+              LEFT JOIN LSCPRDLIB/ITMMSTL1 I
+                ON I.IISKU# = T.TPITEM
+              LEFT JOIN LSCPRDLIB/TPPLANSP P
+                ON P.PPPLAN = T.TPPLAN
+             WHERE SRCH = ''
+                OR UPPER(T.TPITEM) LIKE '%' || SRCH || '%'
+                OR UPPER(T.TPSRCD) LIKE '%' || SRCH || '%'
+             ORDER BY T.TPITEM, T.TPSRCD
+             FETCH FIRST 500 ROWS ONLY;
+
+        IF INTYPE = 'ITEM' THEN
+            OPEN C1;
+        ELSEIF INTYPE = 'SRC' THEN
+            OPEN C2;
+        ELSEIF INTYPE = 'PLAN' THEN
+            OPEN C3;
+        ELSEIF INTYPE = 'TIER' THEN
+            SET WKPRIC = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 9, 2);
+            OPEN C4;
+        ELSEIF INTYPE = 'ONE' THEN
+            OPEN C5;
+        ELSEIF INTYPE = 'LIST' THEN
+            SET SRCH = UPPER(TRIM(COALESCE(INKEY1, '')));
+            OPEN C6;
+        ELSE
+            SIGNAL SQLSTATE '75011'
+                SET MESSAGE_TEXT = 'Type must be ITEM SRC PLAN TIER ONE LIST';
+        END IF;
+    END;
