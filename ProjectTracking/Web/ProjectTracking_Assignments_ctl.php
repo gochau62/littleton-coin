@@ -92,10 +92,23 @@ function esc(s) {
 }
 
 
+// esc() for attribute values (quotes escaped too), for hover titles and
+// option values built into HTML strings
+function attr(s) {
+    return esc(s).replace(/"/g, '&quot;');
+}
+
+
+// each fetch takes a sequence number so a slow earlier response can never
+// overwrite a newer one when the checkbox is toggled quickly
+var loadSeq = 0;
+
 function loadAssignments() {
+    var seq = ++loadSeq;
     var complete = $('#chkComplete').is(':checked') ? 'Y' : 'N';
     $.post('ProjectTracking_ajax.php', { action: 'assignments', complete: complete },
         function (resp) {
+            if (seq !== loadSeq) { return; }
             if (!resp || !resp.ok) {
                 showErrorMessage((resp && resp.msg) ? resp.msg : 'Request failed.');
                 return;
@@ -105,6 +118,7 @@ function loadAssignments() {
             fillDevFilter(resp);
             renderGroups();
         }, 'json').fail(function () {
+            if (seq !== loadSeq) { return; }
             showErrorMessage('Server error - see the log.');
         });
 }
@@ -118,7 +132,7 @@ function fillDevFilter(resp) {
     });
     var opts = '<option value="">All developers</option>';
     $.each(Object.keys(pgmrs).sort(), function (i, n) {
-        opts += '<option value="' + esc(n) + '"' +
+        opts += '<option value="' + attr(n) + '"' +
                 (n === current ? ' selected' : '') + '>' + esc(n) + '</option>';
     });
     $('#selPgmr').html(opts);
@@ -147,7 +161,7 @@ function groupTable(rows) {
             '<td>' + esc(p.dept) + '</td>' +
             '<td class="pt-num">' + p.deptpr + '</td>' +
             '<td class="pt-num">' + p.scpr + '</td>' +
-            '<td title="' + esc(p.desc) + '">' + esc(p.desc) + '</td>' +
+            '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td class="pt-num">' + p.low + '</td>' +
             '<td class="pt-num">' + p.hi + '</td>' +
             '<td class="pt-num">' + p.hours + '</td>' +

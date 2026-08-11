@@ -23,10 +23,13 @@ $GLOBALS['prjErr'] = '';
 define('PRJ_AI_MODEL', 'claude-opus-5');
 define('PRJ_AI_URL', 'https://api.anthropic.com/v1/messages');
 
-// activity log and weekly summary cache live in the LCCOnline_logs folder
-// beside the PHP, which is writable by the web profile while the docroot is not
+// the activity log lives in the LCCOnline_logs folder beside the PHP, like
+// every other tool's log. The weekly summary cache and the API key do NOT -
+// LCCOnline_logs is web-served and the Clario purge job empties it monthly,
+// so anything secret or durable goes in a folder outside the htdocs tree
 define('PRJ_ACT_LOG', __DIR__ . '/LCCOnline_logs/projecttracking_activity.log');
-define('PRJ_WEEKLY_DIR', __DIR__ . '/LCCOnline_logs');
+define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
+define('PRJ_KEY_FILE', '/www/seidenphp/anthropic_api.key');
 
 // steering committee pipeline stages, in the order the dashboard shows them.
 // 'complete' is not part of the pipeline but comes back from prjStage()
@@ -297,14 +300,16 @@ function prjWeeklyDigest($conn, $from, $to) {
 
 
 // where the cached weekly summary lives; one file per week ending date, plus
-// a "latest" copy the dashboard reads without knowing the date
+// a "latest" copy the dashboard reads without knowing the date. The folder
+// sits outside the served docroot - the digest is per-developer activity
+// data and must only reach the browser through the authorized endpoint
 function prjWeeklyPath($weekEnd) {
-    return PRJ_WEEKLY_DIR . '/projecttracking_weekly_' . intval($weekEnd) . '.json';
+    return PRJ_DATA_DIR . '/projecttracking_weekly_' . intval($weekEnd) . '.json';
 }
 
 
 function prjWeeklyLatestPath() {
-    return PRJ_WEEKLY_DIR . '/projecttracking_weekly_latest.json';
+    return PRJ_DATA_DIR . '/projecttracking_weekly_latest.json';
 }
 
 
@@ -317,6 +322,7 @@ function prjWeeklyRead() {
 
 
 function prjWeeklyWrite($summary) {
+    if (!is_dir(PRJ_DATA_DIR)) { @mkdir(PRJ_DATA_DIR, 0770, true); }
     $json = json_encode($summary);
     @file_put_contents(prjWeeklyPath($summary['to']), $json);
     if (@file_put_contents(prjWeeklyLatestPath(), $json) === false) {
@@ -360,14 +366,13 @@ function prjFallbackSummary($digest) {
 
 
 // the API key comes from the ANTHROPIC_API_KEY environment variable, or from
-// a one-line key file in the logs folder (outside the docroot's readable
-// paths) - never from source, after what happened with PROJ_sendChgNotif
+// a one-line key file OUTSIDE the htdocs tree so it can never be fetched over
+// HTTP - never from source, after what happened with PROJ_sendChgNotif
 function prjApiKey() {
     $key = trim(strval(getenv('ANTHROPIC_API_KEY')));
     if ($key !== '') { return $key; }
-    $keyFile = PRJ_WEEKLY_DIR . '/anthropic_api.key';
-    if (is_readable($keyFile)) {
-        return trim(strval(file_get_contents($keyFile)));
+    if (is_readable(PRJ_KEY_FILE)) {
+        return trim(strval(file_get_contents(PRJ_KEY_FILE)));
     }
     return '';
 }
@@ -378,9 +383,8 @@ function prjApiKey() {
 function prjClaudeSummary($digest) {
     $key = prjApiKey();
     if ($key === '') {
-        return array(false, 'No Anthropic API key is configured - set the ' .
-                     'ANTHROPIC_API_KEY environment variable or drop the key in ' .
-                     PRJ_WEEKLY_DIR . '/anthropic_api.key', '');
+        return array(false, 'No Anthropic API key is configured - see the ' .
+                     'weekly summary section of the technical reference.', '');
     }
 
     $system =

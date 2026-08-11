@@ -49,6 +49,9 @@ screen, the Excel download and the weekly summary all read from them:
   set) → `approved` (SC priority set) → `new` (no estimate yet) → `parked`
   (estimated, dept priority zeroed) → `needsinfo` (estimated, no scheduled
   date) → `awaiting` (estimated + scheduled, waiting on the committee).
+  The pipeline's Rejected count is **all-time** — the file carries no
+  rejection date to scope it to a period. If that reads too large, drop
+  `rejected` from `$GLOBALS['prjStages']` and the segment disappears.
 - **Status** (donut, open projects only): `Est. not needed` (fire projects,
   type FR) → `On hold` (dept priority zeroed) → `Active` (scheduled
   completion date on file — the legacy "in-play" test) → `Waiting on user`.
@@ -68,15 +71,23 @@ Dev" spreadsheet covered.
 - **Generate** posts `action=weeklygenerate`. The model builds a JSON digest
   from Db2, sends it to the Anthropic Messages API (`claude-opus-5` — see
   `PRJ_AI_MODEL`), and caches the result in
-  `LCCOnline_logs/projecttracking_weekly_<weekend>.json` plus a `_latest`
-  copy the dashboard reads. One run per week is the intended cadence; a
-  week's digest is a few thousand tokens, so a run costs pennies.
+  `/www/seidenphp/ProjectTracking_data/` (created on first write; the web
+  profile needs write access there) as
+  `projecttracking_weekly_<weekend>.json` plus a `_latest` copy the
+  dashboard reads. One run per week is the intended cadence; a week's
+  digest is a few thousand tokens, so a run costs pennies.
+- **The cache deliberately lives outside the htdocs tree.** The digest is
+  per-developer activity data, and `LCCOnline_logs` is both web-served and
+  emptied monthly by the Clario purge job — so neither the cache nor the
+  key belongs there. Only the activity log stays in `LCCOnline_logs`, like
+  every other tool's.
 - **The summary only restates the digest.** The prompt forbids inventing
   projects or numbers, and the digest rides along in the cache file so a
   summary can always be checked against its data.
 - **API key:** set the `ANTHROPIC_API_KEY` environment variable for the web
   server, or drop the key as a single line in
-  `LCCOnline_logs/anthropic_api.key`. Never put the key in source.
+  `/www/seidenphp/anthropic_api.key` (`PRJ_KEY_FILE`) — outside the served
+  tree, so it can never be fetched over HTTP. Never put the key in source.
 - **No key / API failure:** the card still works — it falls back to a plain
   deterministic rollup of the same digest and says so in the meta line.
 - **Scheduling:** the button is the v1 workflow (like the monthly PTS

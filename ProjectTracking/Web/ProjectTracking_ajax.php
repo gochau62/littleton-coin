@@ -40,13 +40,15 @@ if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// the Excel download streams a workbook, everything else streams JSON
-if ($action !== 'download') {
+// every JSON reply - including a failure on the download action's path -
+// purges the buffer and claims the content type itself, so stray include
+// output can never ride along and no reply goes out as text/html
+function prjOut($arr) {
     while (ob_get_level() > 0) { ob_end_clean(); }
-    header('Content-Type: application/json');
+    if (!headers_sent()) { header('Content-Type: application/json'); }
+    echo json_encode($arr);
+    exit;
 }
-
-function prjOut($arr) { echo json_encode($arr); exit; }
 
 
 function prjOutFail($msg = '') {
@@ -79,6 +81,9 @@ function prjRowOut($row) {
         'hi'     => floatval($row['PJESTHI']),
         'hours'  => floatval($row['PJHOURS']),
         'sched'  => prjFmtDate($row['PJSCHDATE']),
+        // the raw YYYYMMDD rides along so the table can sort the formatted
+        // date chronologically instead of month-first
+        'schedraw' => intval($row['PJSCHDATE']),
         'comp'   => prjFmtDate($row['PJCOMPDATE']),
     );
 }
@@ -114,14 +119,25 @@ if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 20) != 
 switch ($action) {
 
     // everything the dashboard draws in one round trip: the stat tiles, the
-    // pipeline, the two charts, the project table, and the cached weekly summary
+    // pipeline, the two charts, the project table, and the cached weekly
+    // summary. The rollup reads the full list so the pipeline's Rejected
+    // count is real (the file carries no rejection date, so it is all-time);
+    // the table itself stays open work only
     case 'dashboard':
-        $projects = prjProjects($conn, 'N');
+        $projects = prjProjects($conn, 'Y');
         if ($projects === false) { prjOutFail(); }
         $rollup = prjDashboardRollup($projects);
 
         $out = array();
-        foreach ($projects as $row) { $out[] = prjRowOut($row); }
+        foreach ($projects as $row) {
+            if ($row['STAGE'] === 'complete' || $row['STAGE'] === 'rejected') { continue; }
+            $out[] = prjRowOut($row);
+        }
+
+        // the summary text is the deliverable; the digest behind it stays in
+        // the cache file where it can be checked, not in every page load
+        $weekly = prjWeeklyRead();
+        if (is_array($weekly)) { unset($weekly['digest']); }
 
         prjActLog($user, 'DASHBOARD');
         prjOut(array("ok" => true,
@@ -132,7 +148,7 @@ switch ($action) {
                      "stages" => $GLOBALS['prjStages'],
                      "statuses" => $GLOBALS['prjStatuses'],
                      "projects" => $out,
-                     "weekly" => prjWeeklyRead(),
+                     "weekly" => $weekly,
                      "updated" => date('M j, Y')));
 
     // the assignments page rows; complete=Y adds finished and rejected work
@@ -166,17 +182,11 @@ switch ($action) {
     // Projects-by-developer spreadsheet lays it out
     case 'download':
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
-            while (ob_get_level() > 0) { ob_end_clean(); }
-            header('Content-Type: application/json');
             prjOutFail("The spreadsheet library is not available on this server.");
         }
         $includeComplete = (($_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
-        if ($projects === false) {
-            while (ob_get_level() > 0) { ob_end_clean(); }
-            header('Content-Type: application/json');
-            prjOutFail();
-        }
+        if ($projects === false) { prjOutFail(); }
 
         $book  = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $book->getActiveSheet();

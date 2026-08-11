@@ -108,6 +108,13 @@ function esc(s) {
 }
 
 
+// esc() for attribute values (quotes escaped too), for hover titles and
+// option values built into HTML strings
+function attr(s) {
+    return esc(s).replace(/"/g, '&quot;');
+}
+
+
 // chart hover tooltip helpers - one shared floating div
 function tipShow(evt, html) {
     $('#ptTip').html(html).css({
@@ -179,7 +186,7 @@ function renderLoad(load) {
         var color = (name === 'Unassigned') ? '#d03b3b' : '#2a78d6';
         var label = (name === 'Unassigned') ? 'Unassigned' : name;
 
-        svg += '<g class="pt-bar" data-name="' + esc(label) + '" data-count="' + count + '">' +
+        svg += '<g class="pt-bar" data-name="' + attr(label) + '" data-count="' + count + '">' +
                '<text x="' + (labelW - 8) + '" y="' + (y + barH - 2) +
                '" text-anchor="end" font-size="11" fill="#5f6570">' + esc(label) + '</text>' +
                '<rect x="' + labelW + '" y="' + y + '" width="' + len +
@@ -209,7 +216,12 @@ function renderDonut(status, labels) {
     $.each(status, function (k, c) { total += c; });
 
     var size = 150, stroke = 26, r = (size - stroke) / 2;
-    var c = size / 2, circ = 2 * Math.PI * r, gap = 2;
+    var c = size / 2, circ = 2 * Math.PI * r;
+    var segs = 0;
+    $.each(status, function (k, cnt) { if (cnt > 0) { segs += 1; } });
+    // gaps only make sense between segments - a lone segment draws the
+    // full unbroken ring
+    var gap = (segs > 1) ? 2 : 0;
     var svg = '<svg width="' + size + '" height="' + size +
               '" role="img" aria-label="Open projects by status">';
 
@@ -299,7 +311,7 @@ function fillFilters(resp) {
     });
     var opts = '<option value="">All assignees</option>';
     $.each(Object.keys(pgmrs).sort(), function (i, n) {
-        opts += '<option value="' + esc(n) + '">' + esc(n) + '</option>';
+        opts += '<option value="' + attr(n) + '">' + esc(n) + '</option>';
     });
     $('#selPgmr').html(opts);
 
@@ -338,6 +350,11 @@ function renderTable() {
         if (sortKey === 'stage') {
             x = stageOrder.indexOf(x); y = stageOrder.indexOf(y);
         }
+        if (sortKey === 'sched') {
+            // the formatted MM/DD/YYYY would sort month-first; the raw
+            // YYYYMMDD sorts chronologically, no-date rows first
+            x = a.schedraw; y = b.schedraw;
+        }
         if (typeof x === 'string') { x = x.toLowerCase(); y = String(y).toLowerCase(); }
         if (x < y) { return -sortDir; }
         if (x > y) { return sortDir; }
@@ -350,7 +367,7 @@ function renderTable() {
             ? '<span class="pt-unassigned">Unassigned</span>' : esc(p.pgmr);
         html += '<tr>' +
             '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
-            '<td title="' + esc(p.desc) + '">' + esc(p.desc) + '</td>' +
+            '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + pgmr + '</td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
             '<td class="pt-num">' + p.deptpr + '</td>' +

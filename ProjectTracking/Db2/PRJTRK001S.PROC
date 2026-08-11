@@ -98,7 +98,9 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
              ORDER BY P.PR#;
 
         /* Time entries in a date range, for the weekly activity digest.
-           Dates are the 8 digit YYYYMMDD numbers the green screen writes. */
+           Dates are the 8 digit YYYYMMDD numbers the green screen writes.
+           The internal 90000-90999 buckets are excluded to match C1/C4 -
+           the digest covers project work, not vacation/meeting time. */
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT T.PTPROJ# AS TMPROJ,
                    RTRIM(T.PTUSER) AS TMUSER,
@@ -106,6 +108,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    T.PTTIME AS TMHOURS
               FROM LSCPRDLIB/PRTIMEP T
              WHERE T.PTDATE BETWEEN WKFROM AND WKTO
+               AND T.PTPROJ# NOT BETWEEN 90000 AND 90999
              ORDER BY T.PTUSER, T.PTPROJ#;
 
         /* WebNotes comment index rows for project comments in a date
