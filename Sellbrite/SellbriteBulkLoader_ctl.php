@@ -42,6 +42,7 @@
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
     function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
+    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
     var SBL_LABELS = {};
     var sblPreviewImg = '';
@@ -1049,6 +1050,8 @@
 </script>
 
 <!--  Begin Content Here -->
+<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
@@ -1060,7 +1063,7 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    showNotAuthorized();
+    echo '<script>showNotAuthorized();</script>';
 } else {
 
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
