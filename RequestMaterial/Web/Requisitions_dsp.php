@@ -244,8 +244,9 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
 /* line grid looks like a spreadsheet: the cell draws the box, the input shows none */
-.rq-lines { table-layout: fixed; border-collapse: collapse; }
-.rq-lines th { padding: .3rem .45rem; }
+.rq-lines { table-layout: fixed; border-collapse: collapse; min-width: 720px; }
+/* headers may wrap to a second line rather than clip when the window squeezes the fixed columns */
+.rq-lines th { padding: .3rem .45rem; white-space: normal; }
 .rq-lines tbody td { border: 1px solid #c9d2cc; padding: 0; overflow: hidden; background: #fff; }
 
 .rq-lines tbody tr:nth-child(even) td:not(:last-child) { background: #f5f6f6; }
@@ -461,7 +462,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             </colgroup>
             <thead>
               <tr>
-                <th>Item #</th><th>Location</th><th>Item Date</th>
+                <th>Item #</th><th title="Location">Loc</th><th>Item Date</th>
                 <th>Description</th><th class="rq-num">Qty</th>
                 <th class="rq-num">Cost $</th><th class="rq-num">Retail $</th>
                 <th class="rq-num">Add Cost $</th><th>SKU To</th><th></th>
