@@ -1056,13 +1056,20 @@
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
 // check users authority (10 is the minimum to use LCCOnline)
+// nobody signed in: skip the check entirely - chkAutUsr prints its raw
+// auth-recs error for an empty profile, and the shell's Sign In header
+// at the top of the page is the login screen to point at
 $authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+if ($user === '') {
+    $authorized = "signin";
+} elseif (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
     $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
 }
 
-if ($authorized != "yes") {
+if ($authorized === "signin") {
+    echo '<script>showErrorMessage("Please sign in (top right) to use this tool.");</script>';
+} elseif ($authorized != "yes") {
     echo '<script>showNotAuthorized();</script>';
 } else {
 
