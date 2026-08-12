@@ -121,12 +121,14 @@ if (!$user or !$pass) {
 			setUserProfile($conn, $user, $pass);
 
 			// land back on the page the person signed in from, when the sign-in form carried one
-			// only a local path on this site is honored, and never index or this processor itself,
-			// so the redirect cannot loop and cannot be aimed off the box
+			// only a local path on this site is honored, and never index, this processor, or the log out
+			// page, so the redirect cannot loop, cannot sign the person straight back out, and cannot be
+			// aimed off the box
 			$returnTo = isset($_POST['return_to']) ? trim($_POST['return_to']) : '';
 			if ($returnTo !== '' && substr($returnTo, 0, 1) === '/' && substr($returnTo, 0, 2) !== '//'
 			    && stripos($returnTo, 'index.php') === false
-			    && stripos($returnTo, 'LogOnProcess') === false) {
+			    && stripos($returnTo, 'LogOnProcess') === false
+			    && stripos($returnTo, 'LogOut') === false) {
 				header("Location: ".$returnTo);
 			} else {
 				header("Location: ".$_SESSION['dftPage']);
