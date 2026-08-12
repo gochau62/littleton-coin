@@ -910,17 +910,18 @@ function openAddModal() {
 }
 
 
+// every box takes exactly as many characters as its column can display, so nothing typed can ever sit hidden past the edge
 function addLineRow() {
     var row = '<tr>' +
         '<td><input class="ln-item" size="12" maxlength="16"></td>' +
         '<td><input class="ln-loc" size="6" maxlength="3"></td>' +
         '<td><input class="ln-cndt" size="8" maxlength="10"></td>' +
         '<td><input class="ln-desc" size="40" maxlength="50"></td>' +
-        '<td><input class="ln-qty rq-num" size="5"></td>' +
-        '<td><input class="ln-cost rq-num" size="7"></td>' +
-        '<td><input class="ln-retail rq-num" size="7"></td>' +
-        '<td><input class="ln-acost rq-num" size="7"></td>' +
-        '<td><input class="ln-skuto" size="12"></td>' +
+        '<td><input class="ln-qty rq-num" size="5" maxlength="7"></td>' +
+        '<td><input class="ln-cost rq-num" size="7" maxlength="8"></td>' +
+        '<td><input class="ln-retail rq-num" size="7" maxlength="8"></td>' +
+        '<td><input class="ln-acost rq-num" size="7" maxlength="8"></td>' +
+        '<td><input class="ln-skuto" size="12" maxlength="16"></td>' +
         '<td><button type="button" class="rq-x rq-linedel" title="Remove line"' +
         ' onclick="$(this).closest(\'tr\').remove()">&times;</button></td>' +
         '</tr>';

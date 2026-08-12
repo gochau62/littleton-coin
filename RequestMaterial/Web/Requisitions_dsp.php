@@ -244,7 +244,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
 /* line grid looks like a spreadsheet: the cell draws the box, the input shows none */
-.rq-lines { table-layout: fixed; border-collapse: collapse; min-width: 1100px; }
+.rq-lines { table-layout: fixed; border-collapse: collapse; min-width: 1150px; }
 .rq-lines th { padding: .3rem .45rem; }
 .rq-lines tbody td { border: 1px solid #c9d2cc; padding: 0; overflow: hidden; background: #fff; }
 
@@ -453,12 +453,12 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
-              <!-- the columns hold what the legacy entry form's boxes held: item number and SKU To equal at twelve characters and up,
-                   location and item date eight, description the full fifty, and the dollar boxes six or more -->
-              <!-- every heading fits its column on one line at the table's minimum width, so nothing clips and nothing wraps -->
-              <col style="width:12%"><col style="width:6%"><col style="width:7%">
-              <col style="width:35%"><col style="width:5%"><col style="width:6%">
-              <col style="width:6%"><col style="width:8%"><col style="width:12%">
+              <!-- each column displays the full count of characters its box accepts, measured at the table's minimum width:
+                   item number and SKU To sixteen, item date ten, description fifty, quantity seven, the dollar boxes eight -->
+              <!-- every heading fits its column on one line at that width too, so nothing clips and nothing wraps -->
+              <col style="width:12%"><col style="width:4%"><col style="width:8%">
+              <col style="width:32.5%"><col style="width:6.5%"><col style="width:7%">
+              <col style="width:7%"><col style="width:8%"><col style="width:12%">
               <col style="width:3%">
             </colgroup>
             <thead>
