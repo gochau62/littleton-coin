@@ -71,14 +71,6 @@ function gsLog($msg)
     // could not write the file: fall back to the LCCOnline logger, then PHP's
     if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec('Greysheet ' . $msg); }
     else { error_log('Greysheet ' . $msg); }
-function gsLog($msg)
-{
-    // prefix every entry so Sellbrite lines are easy to spot in the shared log
-    $line = 'Greysheet ' . $msg;
-    // Use LCCOnline logger 
-    if (function_exists('putLCCOnlineLogRec')) { putLCCOnlineLogRec($line); }
-    // otherwise use PHP error log
-    else { error_log($line); }
 }
 
 // connection setup for GreySheet: adds the keys, enforces the timeout, records the call.
@@ -172,7 +164,6 @@ function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 // default and that deliberation IS most of the latency - pick-from-a-list calls
 // run with 0, the listing-writing calls keep a small budget for quality.
 function geminiJson($system, $user, &$meta = [], int $think = 0)
-function geminiJson($system, $user, &$meta = [])
 {
     // if not key set return error 
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
@@ -188,7 +179,6 @@ function geminiJson($system, $user, &$meta = [])
         'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json',
                                 'maxOutputTokens' => 8192,
                                 'thinkingConfig' => ['thinkingBudget' => $think]],
-        'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 8192],
     ], JSON_UNESCAPED_SLASHES);
 
     $ch = curl_init($url);
@@ -345,13 +335,11 @@ function gsMemSearch(string $q, int $limit = 40): array
     if (!$words) { return []; }
     // Start from all coins ('C' rows)...
     $sql = 'SELECT ref_id, name, path, coin_date FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'C'";
-    $sql = 'SELECT ref_id, name, path FROM ' . SBL_GSMEM_TABLE . " WHERE kind = 'C'";
     $params = [];
     foreach ($words as $w) {
         // require each word, case-insensitively
         $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
         $params[] = '%' . strtoupper(gsStem($w)) . '%';
-        $params[] = '%' . strtoupper($w) . '%';
     }
     // alphabetical, capped at limit
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
@@ -359,7 +347,6 @@ function gsMemSearch(string $q, int $limit = 40): array
     foreach (gsMemRows($sql, $params) as $r) {
         $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? ''),
                   'coin_date' => (string) ($r['coin_date'] ?? '')];
-        $out[] = ['gs_id' => (int) $r['ref_id'], 'label' => $r['name'], 'path' => (string) ($r['path'] ?? '')];
     }
     return $out;
 }
@@ -578,10 +565,6 @@ function gsMemSeries(string $rootPath, string $q = '', int $limit = 10000): arra
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
         $params[] = '%' . strtoupper(gsStem($w)) . '%';
-    // words must appear in the series name or in its path
-    foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
-        $sql .= " AND UPPER(name CONCAT ' ' CONCAT COALESCE(path, '')) LIKE ?";
-        $params[] = '%' . strtoupper($w) . '%';
     }
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
@@ -637,10 +620,6 @@ function gsMemCoins(string $nodePath, string $q = '', string $year = '', int $li
     foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
         $sql .= " AND UPPER(name) LIKE ?";
         $params[] = '%' . strtoupper(gsStem($w)) . '%';
-    // search narrows by words in the coin name
-    foreach (array_filter(explode(' ', gsNorm($q))) as $w) {
-        $sql .= " AND UPPER(name) LIKE ?";
-        $params[] = '%' . strtoupper($w) . '%';
     }
     $sql .= ' ORDER BY name FETCH FIRST ' . (int) $limit . ' ROWS ONLY';
     $out = [];
@@ -697,8 +676,6 @@ function gsPricing(int $gsId, $grade = null, &$meta = []): array
     // GreySheet takes only the number, so "VG 8" / "XF-40" / "MS65RD" send their
     // digits - without this the grade was dropped and pricing fell to the lowest row
     if ($grade !== null && preg_match('/(\d{1,2})/', (string) $grade, $gm)) { $params['Grade'] = (int) $gm[1]; }
-    // only pass grade when its a plain number - GreySheet rejects text here
-    if ($grade !== null && ctype_digit((string) $grade)) { $params['Grade'] = (int) $grade; }
     $resp  = gsApiGet('GetPricingRequest', $params, $meta);
     // the actual price row is nested one level down, inside PricingData
     $first = gsData($resp)[0] ?? [];
@@ -829,12 +806,6 @@ function sbl_field_guide(): array
         'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
         'weight'         => ['src' => 'WeightOunces', 'desc' => 'coin weight in troy ounces, number only'],
         'search_terms'   => ['desc' => '8-15 lowercase space-separated keywords: metal, type, denomination, mint, theme, "numismatics", "coin"'],
-        'extended_description' => ['desc' => 'EXPANDED DESCRIPTION for the whole category: 2-4 factual sentences built from YOUR description PLUS the GreySheet GeneralNotes/Obverse/Reverse text (composition, design, designer, history). Write it so the SAME text fits every coin in this category - no grade, date, mint or price. House example: "In 1943, the U.S. Mint struck Lincoln cents in zinc-coated steel to save copper for munitions and other military materials in World War II. Each unique one-year-only issue bears Victor D. Brenner\'s Lincoln portrait obverse and Wheat Ears reverse designs."'],
-        'feature_4'      => ['desc' => 'a COLLECTOR\'S NOTE about the SERIES (history, design, collector appeal) - category-level, 2-4 sentences, no this-coin grade/date/price. REWRITE the facts in YOUR OWN words: it must NOT copy or lightly rephrase the GeneralNotes or the extended_description - no shared sentences. House example: "Lincoln cents with the original Wheat Ears reverse were introduced in 1909 on the 100th anniversary of Abraham Lincoln\'s birth and were struck until 1958. These bronze cents were the first circulating U.S. coins to feature a portrait of a historical figure. Over its decades-long circulation, the Lincoln Wheat Cent only underwent one composition change. In 1943, the composition was changed from bronze to zinc-coated steel to save copper during the war." Do NOT add the "COLLECTOR\'S NOTE:" prefix; the system adds it.'],
-        'diameter'       => ['src' => 'Diameter', 'desc' => 'millimeters, number only'],
-        'weight'         => ['src' => 'WeightOunces', 'desc' => 'coin weight in troy ounces, number only'],
-        'search_terms'   => ['desc' => '8-15 lowercase space-separated keywords: metal, type, denomination, mint, theme, "numismatics", "coin"'],
-        'price'          => ['src' => 'pricing CpgVal', 'req' => true, 'desc' => 'CPG retail; the operator confirms it'],
         'cost'           => ['src' => 'pricing GreyVal', 'req' => true, 'desc' => 'wholesale (advanced tier); the operator confirms it'],
     ];
 }
@@ -1122,7 +1093,6 @@ function gsAiMap(array $coin): array
           . ($ctOpts ? "\n\nCOIN TYPE OPTIONS (pick ONE exactly, or leave coin_type empty):\n" . implode(' | ', $ctOpts) : '');
     // Ask Gemini; keep only real schema fields from the answer.
     $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 512));
-    $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
     // The guard only accepts words already in the original, so the AI can remove but never invent.
@@ -1139,22 +1109,6 @@ function gsAiMap(array $coin): array
     // empty until the Generate-with-AI button writes them in its own words.
     $row['extended_description'] = '';
     $row['feature_4'] = '';
-    // GeneralNotes stays the Expanded Description; 
-    // the obverse + reverse design text becomes the COLLECTOR'S NOTE
-    $gsClean = static function ($s): string {
-        $s = html_entity_decode(strip_tags(str_ireplace(['<br>', '<br/>', '<br />'], ' ', (string) $s)));
-        return trim((string) preg_replace('/\s+/', ' ', $s));
-    };
-    $gsNotes  = $gsClean($coin['GeneralNotes'] ?? '');
-    $gsDesign = trim($gsClean($coin['ObverseDescription'] ?? '') . ' ' . $gsClean($coin['ReverseDescription'] ?? ''));
-    if (trim((string) ($row['extended_description'] ?? '')) === '') {
-        $src = $gsNotes !== '' ? $gsNotes : $gsDesign;
-        if ($src !== '') { $row['extended_description'] = mb_substr($src, 0, 1900); }
-    }
-    if (trim((string) ($row['feature_4'] ?? '')) === '') {
-        $src = $gsDesign !== '' ? $gsDesign : trim((string) ($row['extended_description'] ?? ''));
-        if ($src !== '') { $row['feature_4'] = mb_substr($src, 0, 1400); }
-    }
     return sbl_snap_row($row);
 }
 
@@ -1201,7 +1155,6 @@ function gsListingFill(array $post): array
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
         $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 512));
-        $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m));
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
         }
@@ -1525,9 +1478,6 @@ function lccSearch(string $q): array
 }
 
 
-    return ['ok' => true, 'matches' => gsMemSearch($q), 'error' => ''];
-}
-
 // last step of any import: run the computed fields, then the validator
 function gs_finalize(array $row, $source, string $via, array $calls = []): array
 {
@@ -1553,7 +1503,6 @@ function gsImport(array $params): array
     $calls[] = ['call' => 'GetCollectibleRequest?GsId=' . $gsId, 'ms' => (int) ($mCol['ms'] ?? 0),
                 'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)')
                               : ('nothing returned' . gs_why($mCol))];
-                'got' => $coin ? ('"' . ($coin['Name'] ?? '?') . '"  (' . count($coin) . ' fields)') : 'nothing returned'];
     if (!$coin) { return array_merge($base, ['ok' => true, 'calls' => $calls]); }
 
     // picked from stores the full path ("World Coins > Austria > ...").
@@ -1572,7 +1521,6 @@ function gsImport(array $params): array
                 'got' => $price ? ('CpgVal=' . ($price['CpgVal'] ?? '-') . '  GreyVal=' . ($price['GreyVal'] ?? '-')
                                    . ($price['GradeLabel'] ?? '' ? '  (' . $price['GradeLabel'] . ')' : ''))
                                 : ('no pricing' . gs_why($mPr))];
-                                : 'no pricing (basic tier or none)'];
     if ($price) {
         $coin['CpgVal']     = $price['CpgVal'] ?? '';
         $coin['GreyVal']    = $price['GreyVal'] ?? '';
@@ -1585,7 +1533,6 @@ function gsImport(array $params): array
     // strip commas etc. from whatever landed in price/cost
     foreach (['price', 'cost'] as $pf) { if (($row[$pf] ?? '') !== '') { $row[$pf] = gsPriceNum($row[$pf]); } }
     $row['price'] = '';   // the Retail box stays empty - the operator types the price
-    if (($coin['CpgVal'] ?? '') !== '' && ($row['price'] ?? '') === '') { $row['price'] = gsPriceNum($coin['CpgVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
 
     // Pricing names the grade it priced (GradeLabel): autofill Grade with it,
@@ -1617,7 +1564,6 @@ function gsGenerate(array $params): array
          . 'features and search terms. Leave uncertain facts empty rather than guessing. '
          . 'Return ONLY a JSON object keyed by field machine-name.';
     $row = sbl_clean_ai_row(geminiJson($sys, "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nCOIN TO LIST:\n" . $hint, $m, 512));
-    $row = sbl_clean_ai_row(geminiJson($sys, "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nCOIN TO LIST:\n" . $hint, $m));
     if (!$row) { return array_merge($base, ['error' => 'The AI did not return a usable listing.']); }
     return gs_finalize($row, null, 'ai-generated');
 }

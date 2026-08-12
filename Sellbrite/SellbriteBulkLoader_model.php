@@ -109,20 +109,6 @@ function sbl_own_filter()
     return sbl_current_user() !== '' && isset(sbl_table_columns()['created_by']);
 }
 
-}
-
-// the signed-on user owns the rows they create; '' (dev, no session) sees everything
-function sbl_current_user()
-{
-    return strtoupper(trim((string) ($_SESSION['username'] ?? '')));
-}
-
-// true once the created_by ALTER has run and a user is signed on
-function sbl_own_filter()
-{
-    return sbl_current_user() !== '' && isset(sbl_table_columns()['created_by']);
-}
-
 // product column names in schema order
 function sbl_columns()
 {

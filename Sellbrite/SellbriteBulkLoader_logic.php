@@ -324,7 +324,6 @@ final class Computer
         // so the LCC inventory description stands in until the parts arrive
         $builtTitle = self::buildTitle($row);
         if ($builtTitle !== '') { $row['name'] = $builtTitle; }
-        $row['name'] = self::buildTitle($row);
         // The description REBUILDS while it still has the standard house shape
 
         $curDesc = trim((string) ($row['description'] ?? ''));
@@ -638,14 +637,6 @@ final class Exporter
             $ws->setCellValue($cell($i, 3), self::LAYOUT[$orig]);
             if (isset($fills[$orig])) {
                 foreach ([2, 3] as $rowNo) {
-        $ws->setCellValue('A2', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
-            . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 3. *Required Fields.');
-        foreach ($keep as $i => $orig) {
-            if (isset(self::LAYOUT_NOTES[$orig])) { $ws->setCellValue($cell($i, 1), self::LAYOUT_NOTES[$orig]); }
-            $ws->setCellValue($cell($i, 3), self::LAYOUT_HUMAN[$orig]);
-            $ws->setCellValue($cell($i, 4), self::LAYOUT[$orig]);
-            if (isset($fills[$orig])) {
-                foreach ([1, 3, 4] as $rowNo) {
                     $ws->getStyle($cell($i, $rowNo))->getFill()
                        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
                        ->getStartColor()->setARGB($fills[$orig]);
@@ -657,7 +648,6 @@ final class Exporter
         $widths = [];
         foreach ($keep as $i => $orig) { $widths[$i] = strlen(self::LAYOUT_HUMAN[$orig]); }
         $r = 4;
-        $r = 5;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
             foreach ($keep as $i => $orig) {
@@ -697,17 +687,11 @@ final class Exporter
         $fh = fopen('php://temp', 'r+');
         $human = $machine = [];
         foreach ($keep as $orig) {
-                . 'header names in row 3. *Required Fields.';
-        $fh = fopen('php://temp', 'r+');
-        $notes = $human = $machine = [];
-        foreach ($keep as $orig) {
-            $notes[]   = self::LAYOUT_NOTES[$orig] ?? '';
             $human[]   = self::LAYOUT_HUMAN[$orig];
             $machine[] = self::LAYOUT[$orig];
         }
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
         fputcsv($fh, $bannerRow);
-        fputcsv($fh, $notes); fputcsv($fh, $bannerRow);
         fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
             $mkt  = strtolower(trim((string) ($row['marketplace'] ?? '')));
