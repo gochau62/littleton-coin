@@ -29,15 +29,9 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
-<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Story Card Maintenance";
-
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
-
-    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
 
 // Story Card Maintenance frontend logic (SKU picker, both sides, footer editor)
 // the card as it came back from the server, so Revert has something to go to
@@ -619,16 +613,25 @@ function tickClock() {
 }
 </script>
 
-<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
-
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // check users authority (10 is the minimum to use LCCOnline)
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } else {
+        $authConn   = getDB2PConn($user, $password);
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    }
 }
 
 if ($authorized != "yes") {

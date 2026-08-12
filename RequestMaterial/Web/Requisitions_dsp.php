@@ -244,7 +244,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
 /* line grid looks like a spreadsheet: the cell draws the box, the input shows none */
-.rq-lines { table-layout: fixed; border-collapse: collapse; }
+.rq-lines { table-layout: fixed; border-collapse: collapse; min-width: 1150px; }
 .rq-lines th { padding: .3rem .45rem; }
 .rq-lines tbody td { border: 1px solid #c9d2cc; padding: 0; overflow: hidden; background: #fff; }
 
@@ -453,15 +453,17 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
-              <!-- widths follow what the columns actually hold: an item number runs to sixteen characters and a description to fifty, while a location is only three -->
-              <col style="width:16%"><col style="width:5%"><col style="width:8%">
-              <col style="width:30%"><col style="width:6%"><col style="width:7%">
-              <col style="width:7%"><col style="width:7%"><col style="width:11%">
+              <!-- each column displays the full count of characters its box accepts, measured at the table's minimum width:
+                   item number and SKU To sixteen, item date ten, description fifty, quantity seven, the dollar boxes eight -->
+              <!-- every heading fits its column on one line at that width too, so nothing clips and nothing wraps -->
+              <col style="width:12%"><col style="width:4%"><col style="width:8%">
+              <col style="width:32.5%"><col style="width:6.5%"><col style="width:7%">
+              <col style="width:7%"><col style="width:8%"><col style="width:12%">
               <col style="width:3%">
             </colgroup>
             <thead>
               <tr>
-                <th>Item #</th><th>Location</th><th>Item Date</th>
+                <th>Item #</th><th title="Location">Loc</th><th>Item Date</th>
                 <th>Description</th><th class="rq-num">Qty</th>
                 <th class="rq-num">Cost $</th><th class="rq-num">Retail $</th>
                 <th class="rq-num">Add Cost $</th><th>SKU To</th><th></th>

@@ -29,20 +29,9 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
-<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Requisition Material";
-
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
-
-
-    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
-</script>
-
-<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
-
 </script>
 
 <?php
@@ -52,17 +41,27 @@ if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'
 // this is settled before the authority check because the two screens are not open to the same people
 $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
 // the two levels are separate grants rather than a ladder, so holding the requisitions group does not also satisfy the general one
 // the entry form therefore passes on either: the work floor reaches it on the general level, and whoever runs the station screen reaches it on the requisitions group
 // the station screen asks for the requisitions group alone, because that is where a requisition is authorized, corrected and reported on
 // taking mode entry off the address no longer opens the station screen, it just puts the higher grant in front of it
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn = getDB2PConn($user, $password);
-    if ($rqMode === 'entry') {
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } elseif ($rqMode === 'entry') {
+        $authConn = getDB2PConn($user, $password);
         $authorized = (chkAutUsr($authConn, $user, "LCCONLINE", 10) == "yes" ||
                        chkAutUsr($authConn, $user, "LCCONLINE", 41) == "yes") ? "yes" : "no";
     } else {
+        $authConn = getDB2PConn($user, $password);
         $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 41);
     }
 }
@@ -386,10 +385,10 @@ $(document).ready(function () {
         if (item === '') { return; }
         postAjax({ action: 'itemlookup', item: item }, function (resp) {
             if (!resp.row) { return; }
-            if (row.find('.ln-desc').val().trim() === '') { row.find('.ln-desc').val(resp.row.RDDESC); }
-            if (row.find('.ln-cndt').val().trim() === '') { row.find('.ln-cndt').val(resp.row.RDCNDT); }
-            if (!parseFloat(row.find('.ln-cost').val())) { row.find('.ln-cost').val(resp.row.RDCOST); }
-            if (!parseFloat(row.find('.ln-retail').val())) { row.find('.ln-retail').val(resp.row.RDRETL); }
+            if (row.find('.ln-desc').val().trim() === '') { row.find('.ln-desc').val($.trim(resp.row.RDDESC)); }
+            if (row.find('.ln-cndt').val().trim() === '') { row.find('.ln-cndt').val($.trim(resp.row.RDCNDT)); }
+            if (!parseFloat(row.find('.ln-cost').val())) { row.find('.ln-cost').val(fillNum(resp.row.RDCOST)); }
+            if (!parseFloat(row.find('.ln-retail').val())) { row.find('.ln-retail').val(fillNum(resp.row.RDRETL)); }
         }, true);
         row.find('.ln-loc').trigger('focus');
     });
@@ -594,6 +593,14 @@ function parseDateMDY(s) {
     var d = new Date(yr, mo - 1, dy);
     if (d.getFullYear() !== yr || d.getMonth() !== mo - 1 || d.getDate() !== dy) { return 0; }
     return yr * 10000 + mo * 100 + dy;
+}
+
+
+// autofill for the dollar boxes: the table stores four decimal places, so 14.5000 comes back as 14.5 and a zero
+// stays blank instead of filling the box with .0000, which reads as a price and hides that nothing is known
+function fillNum(v) {
+    v = parseFloat(v) || 0;
+    return v ? String(v) : '';
 }
 
 
@@ -913,17 +920,18 @@ function openAddModal() {
 }
 
 
+// every box takes exactly as many characters as its column can display, so nothing typed can ever sit hidden past the edge
 function addLineRow() {
     var row = '<tr>' +
         '<td><input class="ln-item" size="12" maxlength="16"></td>' +
         '<td><input class="ln-loc" size="6" maxlength="3"></td>' +
         '<td><input class="ln-cndt" size="8" maxlength="10"></td>' +
         '<td><input class="ln-desc" size="40" maxlength="50"></td>' +
-        '<td><input class="ln-qty rq-num" size="5"></td>' +
-        '<td><input class="ln-cost rq-num" size="7"></td>' +
-        '<td><input class="ln-retail rq-num" size="7"></td>' +
-        '<td><input class="ln-acost rq-num" size="7"></td>' +
-        '<td><input class="ln-skuto" size="12"></td>' +
+        '<td><input class="ln-qty rq-num" size="5" maxlength="7"></td>' +
+        '<td><input class="ln-cost rq-num" size="7" maxlength="8"></td>' +
+        '<td><input class="ln-retail rq-num" size="7" maxlength="8"></td>' +
+        '<td><input class="ln-acost rq-num" size="7" maxlength="8"></td>' +
+        '<td><input class="ln-skuto" size="12" maxlength="16"></td>' +
         '<td><button type="button" class="rq-x rq-linedel" title="Remove line"' +
         ' onclick="$(this).closest(\'tr\').remove()">&times;</button></td>' +
         '</tr>';
@@ -1285,10 +1293,10 @@ function showSuggest(inp, rows) {
         var r = $(this).data('row');
         var row = inp.closest('tr');
         inp.val(r.RDITEM);
-        row.find('.ln-desc').val(r.RDDESC);
-        row.find('.ln-cndt').val(r.RDCNDT);
-        row.find('.ln-cost').val(r.RDCOST);
-        row.find('.ln-retail').val(r.RDRETL);
+        row.find('.ln-desc').val($.trim(r.RDDESC));
+        row.find('.ln-cndt').val($.trim(r.RDCNDT));
+        row.find('.ln-cost').val(fillNum(r.RDCOST));
+        row.find('.ln-retail').val(fillNum(r.RDRETL));
         hideSuggest();
         row.find('.ln-loc').trigger('focus');
     });
@@ -1490,7 +1498,7 @@ function reqPrintHtml(rows) {
             '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
             '<td class="rq-num">' + money(er) + '</td>' +
             '<td class="rq-num">' + money(r.RDACST) + '</td>' +
-            '<td>' + esc(r.RDSKUT) + '</td>' +
+            '<td class="rpt-skuto">' + esc(r.RDSKUT) + '</td>' +
             '<td class="rpt-ret">' + rptReturned(r) + '</td></tr>';
     });
     if (body === '') {
@@ -1499,10 +1507,11 @@ function reqPrintHtml(rows) {
 
     return head +
         '<table class="rpt-boxed">' +
-        '<colgroup><col style="width:9%"><col style="width:4%"><col style="width:7%">' +
-        '<col style="width:23%"><col style="width:5%"><col style="width:7%">' +
+        // Sku # and Sku To hold the same sixteen character field, so the two columns get the same width
+        '<colgroup><col style="width:10%"><col style="width:4%"><col style="width:7%">' +
+        '<col style="width:21%"><col style="width:5%"><col style="width:7%">' +
         '<col style="width:7%"><col style="width:7%"><col style="width:7%">' +
-        '<col style="width:6%"><col style="width:6%"><col style="width:12%"></colgroup>' +
+        '<col style="width:6%"><col style="width:10%"><col style="width:9%"></colgroup>' +
         '<thead><tr>' +
         '<th>Sku #:</th><th>Loc:</th><th>Coin<br>Date:</th><th>Description:</th>' +
         '<th class="rq-num">Qty:</th><th class="rq-num">Cost:</th><th class="rq-num">Ext<br>Cost:</th>' +
@@ -1562,6 +1571,8 @@ function printHtml(innerHtml, title) {
         '.rpt-boxed thead th{background:#eef2fb;color:#17306e;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;vertical-align:bottom;}' +
         '.rpt-boxed tbody tr:nth-child(even) td{background:#f6f8fc;}' +
         '.rpt-boxed td.rpt-desc{white-space:normal;}' +
+        // the longest skus break onto a second line rather than print cut off, since a sku missing its tail is a different sku
+        '.rpt-boxed td.rpt-skuto{white-space:normal;word-break:break-all;}' +
         '.rpt-totals{display:flex;justify-content:flex-end;gap:2.2rem;margin:12px 0 2px;font-weight:bold;font-size:12px;font-variant-numeric:tabular-nums;}' +
         '.rpt-totals .rpt-ital{margin-right:.3rem;}' +
         '.rpt-cmtline{margin-top:8px;font-size:11px;color:#5b6371;}' +

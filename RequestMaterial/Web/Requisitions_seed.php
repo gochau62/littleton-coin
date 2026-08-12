@@ -175,15 +175,15 @@ foreach ($picked as $up) {
     // validation for this table
     $checks = array(
         'RQSREQHDRT' => array(
-            "COUNT(*)  [expect 14,073]"          => "SELECT COUNT(*) AS V FROM RQSREQHDRT",
+            "COUNT(*)  [expect 14,120]"          => "SELECT COUNT(*) AS V FROM RQSREQHDRT",
             "authorized=Y  [expect 46]"          => "SELECT COUNT(*) AS V FROM RQSREQHDRT WHERE RHAUTF='Y'",
-            "rush=Y  [expect 2,349]"             => "SELECT COUNT(*) AS V FROM RQSREQHDRT WHERE RHRUSH='Y'",
-            "MAX(req#)  [expect 17,178]"         => "SELECT MAX(RHREQ#) AS V FROM RQSREQHDRT",
+            "rush=Y  [expect 2,352]"             => "SELECT COUNT(*) AS V FROM RQSREQHDRT WHERE RHRUSH='Y'",
+            "MAX(req#)  [expect 17,225]"         => "SELECT MAX(RHREQ#) AS V FROM RQSREQHDRT",
         ),
         'RQSREQDTLT' => array(
-            "COUNT(*)  [expect 50,063]"          => "SELECT COUNT(*) AS V FROM RQSREQDTLT",
-            "open lines  [expect 741]"           => "SELECT COUNT(*) AS V FROM RQSREQDTLT WHERE RDRTNF='N'",
-            "SUM(qty)  [expect 33,464,119]"      => "SELECT SUM(RDQTY) AS V FROM RQSREQDTLT",
+            "COUNT(*)  [expect 50,167]"          => "SELECT COUNT(*) AS V FROM RQSREQDTLT",
+            "open lines  [expect 758]"           => "SELECT COUNT(*) AS V FROM RQSREQDTLT WHERE RDRTNF='N'",
+            "SUM(qty)  [expect 33,478,850]"      => "SELECT SUM(RDQTY) AS V FROM RQSREQDTLT",
         ),
         'RQSCODEFLT' => array(
             "COUNT(*)  [expect 90]"              => "SELECT COUNT(*) AS V FROM RQSCODEFLT",

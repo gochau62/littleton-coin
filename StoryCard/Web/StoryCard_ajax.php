@@ -31,7 +31,7 @@ $password = $_SESSION['password'] ?? '';
 require_once __DIR__ . '/StoryCard_model.php';
 
 $conn = null;
-if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
+if (function_exists('getDB2PConn') && $user !== '') { $conn = getDB2PConn($user, $password); }
 
 while (ob_get_level() > 0) { ob_end_clean(); }
 header('Content-Type: application/json');
@@ -45,6 +45,12 @@ function stcOutFail($msg = '') {
 
 if (!$conn) {
     stcOutFail("No database connection - sign in to LCC Online first.");
+}
+
+// the screen's gate only decides what is drawn; this one decides what can actually be done, so posting straight
+// at this endpoint meets the same level the screen asks for
+if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 10) != "yes") {
+    stcOutFail("Current user profile is not authorized to use this tool.");
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
