@@ -42,7 +42,6 @@
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
     function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
     var SBL_LABELS = {};
     var sblPreviewImg = '';
@@ -1064,9 +1063,8 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    // the message box lives in the display file, which never renders here - give the message its own box
-    echo '<div id="errorMsg" style="padding:1rem; color:#c0392b; font-weight:bold;"></div>';
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
