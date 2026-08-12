@@ -76,6 +76,16 @@ function setUserProfile($conn, $user, $pass) {
 
 	}
 }
+// a usable return address is a local path on this site, and never index, this processor, or the log out
+// page, so the sign on redirect cannot loop, cannot sign the person straight back out, and cannot be
+// aimed off the box
+function rtUsable($rt) {
+	return $rt !== '' && substr($rt, 0, 1) === '/' && substr($rt, 0, 2) !== '//'
+	    && stripos($rt, 'index.php') === false
+	    && stripos($rt, 'LogOnProcess') === false
+	    && stripos($rt, 'LogOut') === false;
+}
+
 //kjr 220182
 $user = strtoupper(trim(  (is_null($_POST['username']) ? '' : $_POST['username'])  ));
 $pass = strtoupper(trim(  (is_null($_POST['password']) ? '' : $_POST['password'])  ));
@@ -120,15 +130,16 @@ if (!$user or !$pass) {
 
 			setUserProfile($conn, $user, $pass);
 
-			// land back on the page the person signed in from, when the sign-in form carried one
-			// only a local path on this site is honored, and never index, this processor, or the log out
-			// page, so the redirect cannot loop, cannot sign the person straight back out, and cannot be
-			// aimed off the box
+			// land back where the person was headed: the form carries the page the sign in happened on, and
+			// when the sign in happened on index after a bounced bookmark, the page the bookmark pointed at
+			// left its address in the session on the way past - the form wins when both are usable
 			$returnTo = isset($_POST['return_to']) ? trim($_POST['return_to']) : '';
-			if ($returnTo !== '' && substr($returnTo, 0, 1) === '/' && substr($returnTo, 0, 2) !== '//'
-			    && stripos($returnTo, 'index.php') === false
-			    && stripos($returnTo, 'LogOnProcess') === false
-			    && stripos($returnTo, 'LogOut') === false) {
+			if (!rtUsable($returnTo)) {
+				$returnTo = isset($_SESSION['return_after_logon']) ? trim($_SESSION['return_after_logon']) : '';
+			}
+			// one shot either way, so a stale address never ambushes a later sign in
+			unset($_SESSION['return_after_logon']);
+			if (rtUsable($returnTo)) {
 				header("Location: ".$returnTo);
 			} else {
 				header("Location: ".$_SESSION['dftPage']);

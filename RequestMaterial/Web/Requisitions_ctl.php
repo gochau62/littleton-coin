@@ -41,6 +41,11 @@ if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'
 // this is settled before the authority check because the two screens are not open to the same people
 $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
 
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
 // the two levels are separate grants rather than a ladder, so holding the requisitions group does not also satisfy the general one
 // the entry form therefore passes on either: the work floor reaches it on the general level, and whoever runs the station screen reaches it on the requisitions group
 // the station screen asks for the requisitions group alone, because that is where a requisition is authorized, corrected and reported on
