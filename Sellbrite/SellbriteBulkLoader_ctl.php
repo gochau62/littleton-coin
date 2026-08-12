@@ -1052,10 +1052,6 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// an unsigned visit is about to be refused, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page
-if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
-
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     if ($user === '') {
