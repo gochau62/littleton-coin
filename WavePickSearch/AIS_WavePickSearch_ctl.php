@@ -122,7 +122,15 @@ $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
 
 // check authority level
 if ( $authorized != "yes") {
- 		showNotAuthorized();
+    // the framework's standard refusal page where the framework provides the call, and the same page drawn right here where it
+    // does not, so a profile that is turned away always sees the message on the address it asked for and is never carried off it
+    if (function_exists('showNotAuthorized')) {
+        showNotAuthorized();
+    } else {
+        echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
+             'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
+             'You are not authorized to view the page requested</div>';
+    }
  } else {
 	// display the screen
 	include("AIS_WavePickSearch_dsp.php"); 

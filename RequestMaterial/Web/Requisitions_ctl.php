@@ -29,19 +29,10 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
-<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Requisition Material";
-
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
-
-
-    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
 </script>
-
-<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
 
 </script>
 
@@ -68,8 +59,15 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    // the framework's standard refusal page, the same call the older LCC tools make
-    showNotAuthorized();
+    // the framework's standard refusal page where the framework provides the call, and the same page drawn right here where it
+    // does not, so a profile that is turned away always sees the message on the address it asked for and is never carried off it
+    if (function_exists('showNotAuthorized')) {
+        showNotAuthorized();
+    } else {
+        echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
+             'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
+             'You are not authorized to view the page requested</div>';
+    }
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';
