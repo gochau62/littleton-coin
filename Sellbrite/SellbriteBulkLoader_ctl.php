@@ -42,7 +42,7 @@
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
     function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
 
     var SBL_LABELS = {};
     var sblPreviewImg = '';
@@ -1100,7 +1100,8 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';

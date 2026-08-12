@@ -29,6 +29,7 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
+<link href="jQuery/jquery-ui-custom.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
     document.title = "Time Payment Items Maintenance";
@@ -37,10 +38,10 @@
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
 
 
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
 </script>
 
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
@@ -53,7 +54,8 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/TimePayment_model.php';

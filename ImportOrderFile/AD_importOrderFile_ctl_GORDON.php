@@ -55,7 +55,7 @@
 
 	function showNotAuthorized() {
 		// alert("Current user profile is not authorized\nto view selected documents");
-		showErrorMessage("Current user profile is not authorized to view selected document.");
+		showErrorMessage("You are not authorized to view the page requested");
 	}
 
 	// file extension check
