@@ -15,12 +15,21 @@
 		echo "<a href='LogOut.php' action='logout()' name='Log Out'>Log Out</a>";
 	} else {
 ?>
+	<?php
+		// the page to return to after sign in: normally the page this form sits on, but when the framework has
+		// bounced an unsigned bookmark or shortcut to index, the bounce passes the original address along as
+		// ?from= and that wins, so the sign in still lands on the page the bookmark pointed at
+		// only a local path is seeded here; LogOnProcess checks it again before redirecting
+		$rtSeed = isset($_GET['from']) ? $_GET['from']
+		        : (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '');
+		if ($rtSeed === '' || substr($rtSeed, 0, 1) !== '/' || substr($rtSeed, 0, 2) === '//') { $rtSeed = ''; }
+	?>
 	<form id="form1" action="LogOnProcess.php" method="post">
 		<fieldset>
 			<legend>Sign-In</legend>
 			<!-- the page the person is signing in from, so LogOnProcess can land them back on it instead of the home page -->
 			<input type="hidden" name="return_to"
-			       value="<?php echo htmlspecialchars(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '', ENT_QUOTES); ?>" />
+			       value="<?php echo htmlspecialchars($rtSeed, ENT_QUOTES); ?>" />
 			<label for="inputtext1">User Name:</label>
 			<input id="inputtext1" type="text" maxlength="10" name="username" value="" />
 			<label for="inputtext2">Password:</label>
