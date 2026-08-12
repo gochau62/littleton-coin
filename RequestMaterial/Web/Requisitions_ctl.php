@@ -18,19 +18,6 @@
 ?>
 
 <?php
-    // the work floor entry form signs itself in: opened in entry mode with nobody signed on, the session is filled with
-    // the kiosk profile BEFORE the framework's sign on check runs, so the shared terminal never sees the sign on screen
-    // or the welcome page detour; somebody already signed in as themselves passes through untouched
-    if (($_GET['mode'] ?? '') === 'entry') {
-        foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
-            if (file_exists($f)) { require_once $f; }
-        }
-        if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
-        if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
-        require_once __DIR__ . '/Requisitions_model.php';
-        rqsKioskSignOn();
-    }
-
     // retrieves and sets password and username
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
@@ -1509,9 +1496,9 @@ function reqPrintHtml(rows) {
 
     return head +
         '<table class="rpt-boxed">' +
-        // Sku To carries a real sku up to sixteen characters, so it gets width like the Sku # column rather than the sliver it had
-        '<colgroup><col style="width:9%"><col style="width:4%"><col style="width:7%">' +
-        '<col style="width:22%"><col style="width:5%"><col style="width:7%">' +
+        // Sku # and Sku To hold the same sixteen character field, so the two columns get the same width
+        '<colgroup><col style="width:10%"><col style="width:4%"><col style="width:7%">' +
+        '<col style="width:21%"><col style="width:5%"><col style="width:7%">' +
         '<col style="width:7%"><col style="width:7%"><col style="width:7%">' +
         '<col style="width:6%"><col style="width:10%"><col style="width:9%"></colgroup>' +
         '<thead><tr>' +
