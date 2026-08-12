@@ -1500,7 +1500,7 @@ function reqPrintHtml(rows) {
             '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
             '<td class="rq-num">' + money(er) + '</td>' +
             '<td class="rq-num">' + money(r.RDACST) + '</td>' +
-            '<td>' + esc(r.RDSKUT) + '</td>' +
+            '<td class="rpt-skuto">' + esc(r.RDSKUT) + '</td>' +
             '<td class="rpt-ret">' + rptReturned(r) + '</td></tr>';
     });
     if (body === '') {
@@ -1509,10 +1509,11 @@ function reqPrintHtml(rows) {
 
     return head +
         '<table class="rpt-boxed">' +
+        // Sku To carries a real sku up to sixteen characters, so it gets width like the Sku # column rather than the sliver it had
         '<colgroup><col style="width:9%"><col style="width:4%"><col style="width:7%">' +
-        '<col style="width:23%"><col style="width:5%"><col style="width:7%">' +
+        '<col style="width:22%"><col style="width:5%"><col style="width:7%">' +
         '<col style="width:7%"><col style="width:7%"><col style="width:7%">' +
-        '<col style="width:6%"><col style="width:6%"><col style="width:12%"></colgroup>' +
+        '<col style="width:6%"><col style="width:10%"><col style="width:9%"></colgroup>' +
         '<thead><tr>' +
         '<th>Sku #:</th><th>Loc:</th><th>Coin<br>Date:</th><th>Description:</th>' +
         '<th class="rq-num">Qty:</th><th class="rq-num">Cost:</th><th class="rq-num">Ext<br>Cost:</th>' +
@@ -1572,6 +1573,8 @@ function printHtml(innerHtml, title) {
         '.rpt-boxed thead th{background:#eef2fb;color:#17306e;font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;vertical-align:bottom;}' +
         '.rpt-boxed tbody tr:nth-child(even) td{background:#f6f8fc;}' +
         '.rpt-boxed td.rpt-desc{white-space:normal;}' +
+        // the longest skus break onto a second line rather than print cut off, since a sku missing its tail is a different sku
+        '.rpt-boxed td.rpt-skuto{white-space:normal;word-break:break-all;}' +
         '.rpt-totals{display:flex;justify-content:flex-end;gap:2.2rem;margin:12px 0 2px;font-weight:bold;font-size:12px;font-variant-numeric:tabular-nums;}' +
         '.rpt-totals .rpt-ital{margin-right:.3rem;}' +
         '.rpt-cmtline{margin-top:8px;font-size:11px;color:#5b6371;}' +
