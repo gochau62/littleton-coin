@@ -52,11 +52,16 @@ if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ??
 // taking mode entry off the address no longer opens the station screen, it just puts the higher grant in front of it
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn = getDB2PConn($user, $password);
-    if ($rqMode === 'entry') {
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } elseif ($rqMode === 'entry') {
+        $authConn = getDB2PConn($user, $password);
         $authorized = (chkAutUsr($authConn, $user, "LCCONLINE", 10) == "yes" ||
                        chkAutUsr($authConn, $user, "LCCONLINE", 41) == "yes") ? "yes" : "no";
     } else {
+        $authConn = getDB2PConn($user, $password);
         $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 41);
     }
 }

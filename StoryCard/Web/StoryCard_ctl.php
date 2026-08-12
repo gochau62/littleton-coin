@@ -624,8 +624,14 @@ if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ??
 // check users authority (10 is the minimum to use LCCOnline)
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } else {
+        $authConn   = getDB2PConn($user, $password);
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    }
 }
 
 if ($authorized != "yes") {

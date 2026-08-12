@@ -32,28 +32,31 @@
 <script type="text/javascript">
 
     document.title = "Time Payment Items Maintenance";
-
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
-
-
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
-
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// check users authority (10 is the minimum to use LCCOnline; 50 here because the upload writes a production pricing file, same as the other loaders)
+// an unsigned visit is about to be refused, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
+// check users authority (50 here because the upload writes a production pricing file, same as the other loaders)
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } else {
+        $authConn   = getDB2PConn($user, $password);
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
+    }
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/TimePayment_model.php';
