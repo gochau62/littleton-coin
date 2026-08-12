@@ -244,9 +244,8 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 #addDate { background: #f0f2f1; min-width: 240px; }
 .rq-formrow input[type=text], .rq-formrow select { min-width: 190px; }
 /* line grid looks like a spreadsheet: the cell draws the box, the input shows none */
-.rq-lines { table-layout: fixed; border-collapse: collapse; min-width: 720px; }
-/* headers may wrap to a second line rather than clip when the window squeezes the fixed columns */
-.rq-lines th { padding: .3rem .45rem; white-space: normal; }
+.rq-lines { table-layout: fixed; border-collapse: collapse; min-width: 900px; }
+.rq-lines th { padding: .3rem .45rem; }
 .rq-lines tbody td { border: 1px solid #c9d2cc; padding: 0; overflow: hidden; background: #fff; }
 
 .rq-lines tbody tr:nth-child(even) td:not(:last-child) { background: #f5f6f6; }
@@ -455,9 +454,10 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
               <!-- widths follow what the columns actually hold: an item number runs to sixteen characters and a description to fifty, while a location is only three -->
-              <col style="width:16%"><col style="width:5%"><col style="width:8%">
-              <col style="width:30%"><col style="width:6%"><col style="width:7%">
-              <col style="width:7%"><col style="width:7%"><col style="width:11%">
+              <!-- every heading fits its column on one line at the table's minimum width, so nothing clips and nothing wraps -->
+              <col style="width:15%"><col style="width:5%"><col style="width:9%">
+              <col style="width:27%"><col style="width:5%"><col style="width:7%">
+              <col style="width:8%"><col style="width:9%"><col style="width:12%">
               <col style="width:3%">
             </colgroup>
             <thead>
