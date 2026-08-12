@@ -186,7 +186,7 @@ foreach ($picked as $up) {
             "SUM(qty)  [expect 33,478,850]"      => "SELECT SUM(RDQTY) AS V FROM RQSREQDTLT",
         ),
         'RQSCODEFLT' => array(
-            "COUNT(*)  [expect 91]"              => "SELECT COUNT(*) AS V FROM RQSCODEFLT",
+            "COUNT(*)  [expect 90]"              => "SELECT COUNT(*) AS V FROM RQSCODEFLT",
             "by type  [expect 4 types]"          => "SELECT COUNT(DISTINCT CDTYPE) AS V FROM RQSCODEFLT",
         ),
     );
