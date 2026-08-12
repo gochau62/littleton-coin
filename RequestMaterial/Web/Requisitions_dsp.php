@@ -453,11 +453,12 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lines" id="tblLines">
             <colgroup>
-              <!-- widths follow what the columns actually hold: item number and SKU To are the same sixteen character field so they get the same width, and at the table's minimum width the description column holds the full fifty characters the longest stored descriptions actually use -->
-              <!-- every heading fits its column on one line at that width too, so nothing clips and nothing wraps -->
-              <col style="width:12%"><col style="width:4%"><col style="width:7%">
-              <col style="width:34%"><col style="width:5%"><col style="width:7%">
-              <col style="width:7%"><col style="width:9%"><col style="width:12%">
+              <!-- the columns hold what the legacy entry form's boxes held: item number and SKU To equal at twelve characters and up,
+                   location and item date eight, description the full fifty, and the dollar boxes six or more -->
+              <!-- every heading fits its column on one line at the table's minimum width, so nothing clips and nothing wraps -->
+              <col style="width:12%"><col style="width:6%"><col style="width:7%">
+              <col style="width:35%"><col style="width:5%"><col style="width:6%">
+              <col style="width:6%"><col style="width:8%"><col style="width:12%">
               <col style="width:3%">
             </colgroup>
             <thead>
