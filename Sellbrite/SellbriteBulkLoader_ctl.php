@@ -1053,11 +1053,14 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-//***--- Check users authority (50 like time payment and story card - this loader writes production staging data) ---***
+//***--- Check users authority (10 is the minimum to use LCCOnline) ---***
+//*** any level above 10 makes chkAutUsr read the auth records through the
+//*** PHP0002S procedure - raise this to 50 like time payment once that
+//*** procedure exists on this box (missing = SQLCODE -204 and a refusal)
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
 }
 
 if ($authorized != "yes") {
