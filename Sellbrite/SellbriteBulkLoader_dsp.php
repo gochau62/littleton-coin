@@ -341,9 +341,6 @@ details.group summary::-webkit-details-marker { display:none; }
     </header>
     <h1>Sellbrite Bulk Loader</h1>
 
-    <div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden" style="display:none"></div>
-    <div id="successMsg" class="ui-state-highlight ui-corner-all ui-helper-hidden" style="display:none"></div>
-
     <!-- ============ INVENTORY VIEW ============ -->
     <div id="listView">
         <div class="sbl-tools">

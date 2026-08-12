@@ -37,13 +37,33 @@
 <script type="text/javascript">
     
     document.title = "Sellbrite Bulk Loader";
+</script>
 
-    /* ---- message helpers (jQuery-UI state boxes, LCC convention) ---- */
-    function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
-    function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
-    function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
-    function showNotAuthorized(){ showErrorMessage("You are not authorized to view the page requested"); }
+<!--  Begin Content Here -->
+<?php
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
+//***--- Check users authority (10 is the minimum to use LCCOnline) ---***
+$authorized = "yes";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    $authConn   = getDB2PConn($user, $password);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+}
+
+if ($authorized != "yes") {
+    showNotAuthorized();
+} else {
+
+    require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
+    require_once __DIR__ . '/SellbriteBulkLoader_model.php';
+
+    $screenData = ['skus' => sblGetAll($_GET['q'] ?? '')];
+
+    include "SellbriteBulkLoader_dsp.php";
+    dspBulkLoader($screenData);
+?>
+
+<script type="text/javascript">
     var SBL_LABELS = {};
     var sblPreviewImg = '';
     var sblAutofilled = false;
@@ -118,10 +138,6 @@
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
         sblShellFocus(view === 'form');
-    /* ---- view switching ---- */
-    function sblShow(view){
-        $("#listView").toggle(view === 'list');
-        $("#formView").toggle(view === 'form');
     }
 
     function sblBackToList(){ sblShow('list'); }
@@ -984,12 +1000,6 @@
         // listing for a coin nothing has been read about.
         if (res.returnClass === 'notfound'){
             swal("GreySheet doesn't have this coin", 'Fill the listing in by hand.', 'info');
-        if (res.returnClass === 'notfound'){
-            swal({ title:"GreySheet doesn't have this coin",
-                   text:'Would you like the AI to generate this listing?',
-                   type:'info', showCancelButton:true,
-                   confirmButtonText:'Generate with AI', cancelButtonText:'Cancel', closeOnConfirm:true },
-            function(go){ if (go) sblGsGenerate(hint); });
             return;
         }
         if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
@@ -997,15 +1007,6 @@
         sblFillFromRow(res.row);
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
-    }
-
-    function sblGsGenerate(hint){
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
-            if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
-            sblFillFromRow(res.row);
-            swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
-                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
-        }, 'json');
     }
 
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
@@ -1081,36 +1082,9 @@
         sblLoadRoots();
         if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete();
                                 sblLccAutocomplete(); sblFieldCombos(); }
-
-        // Tree -> Series -> Year -> Coin drill-down
-        sblLoadRoots();
-        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
     });
 </script>
 
-<!--  Begin Content Here -->
-<?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-//***--- Check users authority (10 is the minimum to use LCCOnline) ---***
-$authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
-}
-
-if ($authorized != "yes") {
-    showNotAuthorized();
-} else {
-
-    require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
-    require_once __DIR__ . '/SellbriteBulkLoader_model.php';
-
-    $screenData = ['skus' => sblGetAll($_GET['q'] ?? '')];
-
-    include "SellbriteBulkLoader_dsp.php";
-    dspBulkLoader($screenData);
-?>
 <!--  End Content Here -->
 <?php
 } // end authority check
