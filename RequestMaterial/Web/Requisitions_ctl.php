@@ -62,21 +62,8 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    if ($user === '') {
-        // nobody is signed in, so this is a sign on matter rather than a refusal: hand them to the sign on screen,
-        // and the address stashed above brings them straight back here the moment they sign in
-        // the page is already part drawn by the framework blocks, so the browser is moved by script with the header
-        // as a bonus when it can still be sent, and a plain link stands for anyone with scripting off
-        if (!headers_sent()) { header('Location: index.php', true, 302); }
-        echo '<script>window.location.replace("index.php");</script>' .
-             '<p style="padding:1rem;"><a href="index.php">Sign in to LCC Online</a> to open this page.</p>';
-    } else {
-        // signed in but without the level this screen asks for: the standard refusal, drawn right here rather than
-        // through the framework's call because that call renders on one instance and redirects on another
-        echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
-             'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
-             'You are not authorized to view the page requested</div>';
-    }
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';
