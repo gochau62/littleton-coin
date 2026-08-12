@@ -388,10 +388,10 @@ $(document).ready(function () {
         if (item === '') { return; }
         postAjax({ action: 'itemlookup', item: item }, function (resp) {
             if (!resp.row) { return; }
-            if (row.find('.ln-desc').val().trim() === '') { row.find('.ln-desc').val(resp.row.RDDESC); }
-            if (row.find('.ln-cndt').val().trim() === '') { row.find('.ln-cndt').val(resp.row.RDCNDT); }
-            if (!parseFloat(row.find('.ln-cost').val())) { row.find('.ln-cost').val(resp.row.RDCOST); }
-            if (!parseFloat(row.find('.ln-retail').val())) { row.find('.ln-retail').val(resp.row.RDRETL); }
+            if (row.find('.ln-desc').val().trim() === '') { row.find('.ln-desc').val($.trim(resp.row.RDDESC)); }
+            if (row.find('.ln-cndt').val().trim() === '') { row.find('.ln-cndt').val($.trim(resp.row.RDCNDT)); }
+            if (!parseFloat(row.find('.ln-cost').val())) { row.find('.ln-cost').val(fillNum(resp.row.RDCOST)); }
+            if (!parseFloat(row.find('.ln-retail').val())) { row.find('.ln-retail').val(fillNum(resp.row.RDRETL)); }
         }, true);
         row.find('.ln-loc').trigger('focus');
     });
@@ -596,6 +596,14 @@ function parseDateMDY(s) {
     var d = new Date(yr, mo - 1, dy);
     if (d.getFullYear() !== yr || d.getMonth() !== mo - 1 || d.getDate() !== dy) { return 0; }
     return yr * 10000 + mo * 100 + dy;
+}
+
+
+// autofill for the dollar boxes: the table stores four decimal places, so 14.5000 comes back as 14.5 and a zero
+// stays blank instead of filling the box with .0000, which reads as a price and hides that nothing is known
+function fillNum(v) {
+    v = parseFloat(v) || 0;
+    return v ? String(v) : '';
 }
 
 
@@ -1287,10 +1295,10 @@ function showSuggest(inp, rows) {
         var r = $(this).data('row');
         var row = inp.closest('tr');
         inp.val(r.RDITEM);
-        row.find('.ln-desc').val(r.RDDESC);
-        row.find('.ln-cndt').val(r.RDCNDT);
-        row.find('.ln-cost').val(r.RDCOST);
-        row.find('.ln-retail').val(r.RDRETL);
+        row.find('.ln-desc').val($.trim(r.RDDESC));
+        row.find('.ln-cndt').val($.trim(r.RDCNDT));
+        row.find('.ln-cost').val(fillNum(r.RDCOST));
+        row.find('.ln-retail').val(fillNum(r.RDRETL));
         hideSuggest();
         row.find('.ln-loc').trigger('focus');
     });
