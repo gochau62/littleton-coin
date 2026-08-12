@@ -1527,6 +1527,11 @@ function printRequisition() {
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
 // mode entry is the workfloor entry only shortcut; the plain URL is the full station
 // this is settled before the authority check because the two screens are not open to the same people
 $rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
