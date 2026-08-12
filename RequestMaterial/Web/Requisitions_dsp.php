@@ -16,7 +16,7 @@
 <!--  * Project   - 260074                              *  -->
 <!--  ***************************************************   */
 
-function dspRequisitions($user, $rqLookups = null, $mode = '', $rqName = '', $rqMyBadge = '') {
+function dspRequisitions($user, $rqLookups = null, $mode = '') {
 ?>
 
 <style>
@@ -556,18 +556,5 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
   </div>
 
 </div>
-
-<script type="text/javascript">
-// the data the head script builds the screen from, prepared after the authority check and handed over here
-var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
-// entry mode comes from the workfloor shortcut link and is checked all through the head script
-var RQ_MODE = '<?php echo $mode; ?>';
-// the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
-var RQ_NAME = <?php echo json_encode($rqName); ?>;
-// the signed on person's own badge, empty when they have none on file
-var RQ_MYBADGE = <?php echo json_encode($rqMyBadge); ?>;
-// the sign on name itself, which stands in when no employee matched it, so the box shows who is at the keyboard either way
-var RQ_USER = <?php echo json_encode($user); ?>;
-</script>
 
 <?php } ?>
