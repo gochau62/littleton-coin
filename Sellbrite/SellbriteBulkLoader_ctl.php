@@ -42,7 +42,6 @@
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
     function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
     var SBL_LABELS = {};
     var sblPreviewImg = '';
@@ -74,10 +73,50 @@
         });
     }
 
+    // any collapsed section that just received a value opens itself - filled
+    // boxes hidden behind a folded section read as "nothing happened"
+    function sblRevealFilled(){
+        $('details.group:not([open])').each(function(){
+            var d = this;
+            $(d).find('[data-name]').each(function(){
+                if (String(this.value || '').trim() !== ''){ d.open = true; return false; }
+            });
+        });
+    }
+
     /* ---- view switching ---- */
+    // The SKU form needs the whole screen, and the shell's sidebar squeezes it.
+    // Focus mode hides everything that sits BESIDE the loader at each level up
+    // to <body> - whatever the shell calls its menu, it is one of those - and
+    // puts it all back on the way out.  Only elements visible at the moment of
+    // hiding are touched, so popups and menus created later are never caught.
+    var sblShellHidden = [];
+    function sblShellFocus(on){
+        if (on){
+            if (sblShellHidden.length) return;
+            var el = document.getElementById('stdPage');
+            while (el && el.parentElement && el !== document.body){
+                $(el).siblings(':visible').not('script,style,link').each(function(){
+                    // only in-flow elements squeeze the form; fixed/absolute ones
+                    // are overlays and spinners - transient, and re-showing one on
+                    // the way back would resurrect it stuck
+                    var pos = window.getComputedStyle(this).position;
+                    if (pos === 'fixed' || pos === 'absolute') return;
+                    sblShellHidden.push(this);
+                    $(this).hide();
+                });
+                el = el.parentElement;
+            }
+        } else {
+            $(sblShellHidden).show();
+            sblShellHidden = [];
+        }
+    }
+
     function sblShow(view){
         $("#listView").toggle(view === 'list');
         $("#formView").toggle(view === 'form');
+        sblShellFocus(view === 'form');
     }
 
     function sblBackToList(){ sblShow('list'); }
@@ -110,6 +149,7 @@
                 if (el && v && (cur === '' || cur.indexOf('***') === 0)){ el.value = v; wrote.push(k); }
             });
             $('#genai-msg').text(wrote.length ? 'Wrote ' + wrote.join(', ') + '.' : 'Nothing came back - fill manually.');
+            sblRevealFilled();
             sblRecompute();
         }, 'json').fail(function(){
             $('#genai-btn').prop('disabled', false);
@@ -134,6 +174,10 @@
         var pv = document.getElementById('pv-img'); if (pv){ pv.removeAttribute('src'); pv.classList.add('broken'); }
         $('#f_marketplace').val('');
         sblAutofilled = false;
+        // the Item by SKU bar resets with the rest of the form
+        $('#lcc-sku').val('');
+        $('#lcc-item-info').empty();
+        sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
@@ -143,7 +187,6 @@
         sblClearForm();
         // market starts as All; picked with the form's own Market picker
         sblMarketApply();
-        $('#formTitle').text('New SKU');
         sblShow('form');
         sblRecompute();
     }
@@ -205,8 +248,18 @@
             });
             $('#f_id').val(res.row.id);
             $('#f_marketplace').val(res.row.marketplace || '');
+            // the finder bars come back the way they were saved
+            if (res.row.lcc_sku){ $('#lcc-sku').val(res.row.lcc_sku); sblLccSku = res.row.lcc_sku; }
+            if (res.row.gs_path){
+                sblLccDrill({ path: res.row.gs_path });
+                if (res.row.gs_gsid){
+                    sblPendingGsId = parseInt(res.row.gs_gsid, 10) || 0;
+                    $('#gs-coin').prop('disabled', false).data('sblPicked', 1).val(res.row.gs_coin || '');
+                    $('#gs-autofill').prop('disabled', !sblPendingGsId);
+                    sblMarkGsFields(!!sblPendingGsId);
+                }
+            }
             sblMarketApply();
-            $('#formTitle').text('Edit SKU - ' + (res.row.sku || ''));
             sblShow('form');
             sblRecompute();
         }, 'json');
@@ -261,8 +314,8 @@
         var mkt = row.marketplace ? row.marketplace.charAt(0).toUpperCase() + row.marketplace.slice(1) : 'All';
         var cells = '<td>' + sblEsc(mkt) + '</td>'
                   + '<td><span class="sku-link" onclick="sblEdit(' + row.id + ')">' + sblEsc(row.sku) + '</span></td>'
-                  + '<td>' + sblEsc(row.category_name || '') + '</td>'
-                  + '<td>' + sblEsc(row.name || '') + '</td>'
+                  + '<td>' + sblEsc(sblCut(row.category_name, 28)) + '</td>'
+                  + '<td title="' + sblEsc(row.name || '') + '">' + sblEsc(sblCut(row.name, 35)) + '</td>'
                   + '<td>' + sblEsc(row.grade || '') + '</td>'
                   + '<td class="num">' + price + '</td><td class="num">' + qty + '</td>'
                   + '<td>' + sblEsc(row.updated_at || '') + '</td>'
@@ -277,6 +330,9 @@
 
     /* ---- coin finder: memory dropdown -> API auto-fill ---- */
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    // grid text cuts at a hard length so one long title can never stretch a row
+    function sblCut(s, n){ s = s == null ? '' : String(s); return s.length > n ? s.slice(0, n) + '...' : s; }
     
     // cert number only exists once a grading service is picked (server sends the yellow nudge)
     function sblCertNumGate(clearIt){
@@ -295,8 +351,8 @@
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
 
-            // Country is set ONCE by the tree - autofill never overwrites it.
-            if (k === 'country_of_manufacture' && el && String(el.value || '').trim() !== '') return;
+            // anything already filled is left alone - typed, LCC or a previous import
+            if (el && String(el.value || '').trim() !== '') return;
             if (el && v !== null && v !== '') {
 
                  // selects: add missing options so unmatched names still land
@@ -310,6 +366,8 @@
         sblFieldVisibility();              // show only this category's boxes
         sblMarketApply();                  // and only the chosen market's boxes
         sblCertNumGate(false);             // lock/unlock Cert Number for this row
+        sblLccApply();                     // LCC values fill only what GreySheet left blank
+        sblRevealFilled();
         sblAutofilled = true;              // AUTO badges now track what actually filled
         sblRecompute();
     }
@@ -409,7 +467,9 @@
                 var el = document.querySelector('#sku-form [data-name="' + n + '"]');
                 if (!el) return;
                 var f = el.closest('.field');
-                if (f) f.style.display = show[group] ? '' : 'none';
+                // a box holding a value stays visible no matter the category rules -
+                // hiding filled data reads as "autofill did nothing"
+                if (f) f.style.display = (show[group] || String(el.value || '').trim() !== '') ? '' : 'none';
             });
         });
         // The whole "Other product types" section only exists when one applies.
@@ -538,6 +598,15 @@
         sblCurYear = y;
         $('#gs-coin').val('').data('sblPicked', 0);
         sblPendingGsId = 0; $('#gs-autofill').prop('disabled', true); sblMarkGsFields(false);
+        sblBarsRecord('');   // no coin picked any more
+    }
+
+    // the finder-bar state rides along in hidden form fields, so Save keeps it
+    // and Edit puts both bars back the way they were
+    function sblBarsRecord(label){
+        $('#f_gs_gsid').val(sblPendingGsId || '');
+        $('#f_gs_coin').val(sblPendingGsId ? (label || '') : '');
+        $('#f_gs_path').val(sblCurPath || '');
     }
 
     function sblYearAutocomplete(){
@@ -571,6 +640,14 @@
         $('#gs-coin').autocomplete({
             minLength: 0, delay: 200,
             source: function(req, resp){
+                // an LCC lookup already picked the candidates - offer those instead of the tree's coins
+                if (sblLccMatches.length){
+                    var t = (req.term || '').toLowerCase();
+                    resp(sblCoinDisplays($.map(sblLccMatches, function(c){
+                        return { label: c.label, value: c.label, gs_id: c.gs_id };
+                    })).filter(function(it){ return !t || it.label.toLowerCase().indexOf(t) !== -1; }));
+                    return;
+                }
                 if (!sblCurPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php',
                     { action:'gsCoins', path:sblCurPath, year:sblCurYear, q:req.term }, function(res){
@@ -588,13 +665,14 @@
                 $('#gs-coin').data('sblPicked', 1).val(ui.item.display || ui.item.label).autocomplete('close');
                 $('#gs-autofill').prop('disabled', !sblPendingGsId);
                 sblMarkGsFields(!!sblPendingGsId);
+                sblBarsRecord(ui.item.label);   // the pick saves with the row
                 return false;
             }
         }).autocomplete('instance')._renderItem = function(ul, item){
             return $('<li>').append('<div>' + sblEsc(item.display || item.label) + '</div>').appendTo(ul);
         };
         $('#gs-coin').on('focus', function(){
-            if (sblCurPath && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
+            if ((sblCurPath || sblLccMatches.length) && !$(this).data('sblPicked')) $(this).autocomplete('search', $(this).val());
         });
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
@@ -659,23 +737,198 @@
     }
 
     function sblResetBelowSeries(){
-        sblCurYear = ''; sblPendingGsId = 0; sblYearList = [];
+        sblCurYear = ''; sblPendingGsId = 0; sblYearList = []; sblLccMatches = []; sblLccData = null;
         $('#gs-year').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-coin').val('').data('sblPicked', 0).prop('disabled', true);
         $('#gs-autofill').prop('disabled', true);
         sblMarkGsFields(false);
+        sblBarsRecord('');
+    }
+
+    /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
+    var sblLccMatches = [], sblLccData = null, sblLccFields = {}, sblLccSku = '', sblLccRoot = '';
+
+    /* The item master fills EMPTY boxes only - it never edits the LCC SKU box,
+       never touches the PCC SKU, and never overwrites anything already typed or
+       filled by GreySheet. Runs once at lookup and again after Autofill, since
+       Autofill clears the form and GreySheet may leave these blank. */
+    function sblLccApply(){
+        if (!sblLccData) return;
+        var fill = { name:               sblLccData.description,        // IIDESC
+                     year:               sblLccData.year,               // IICDAT
+                     condition_note:     sblLccData.comment,            // IIICMT
+                     original_retail:    sblLccData.retail,             // IIPRCE
+                     cost:               sblLccData.cost,               // IIAVGC
+                     quantity:           sblLccData.quantity };         // IIQTOH
+        // whatever the AI read out of the inventory description, under the same rule
+        $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
+        $.each(fill, function(name, val){
+            if (!val) return;
+            var el = document.getElementById('f_' + name);
+            if (!el || String(el.value || '').trim() !== '') return;
+            // a select needs the option to exist before the value will take
+            if (el.tagName === 'SELECT' && !el.querySelector('option[value="' + CSS.escape(String(val)) + '"]')){
+                var o = document.createElement('option'); o.value = o.textContent = val; el.appendChild(o);
+            }
+            el.value = val;
+        });
+    }
+
+    // SKU box type-ahead: item numbers straight from the LCC item master
+    function sblLccAutocomplete(){
+        $('#lcc-sku').autocomplete({
+            minLength: 0, delay: 250,
+            source: function(req, resp){
+                $.post('SellbriteBulkLoader_ajax.php', { action:'lccSearch', q:req.term }, function(res){
+                    // swallow a late answer so the menu cannot reopen after a pick
+                    if ($('#lcc-sku').data('sblPicked')){ resp([]); return; }
+                    resp($.map(res.matches || [], function(r){
+                        return { label: r.sku, value: r.sku, desc: r.description, date: r.date };
+                    }));
+                }, 'json');
+            },
+            select: function(e, ui){
+                $('#lcc-sku').data('sblPicked', 1).val(ui.item.value).autocomplete('close');
+                sblLccLookup();
+                return false;
+            }
+        }).autocomplete('instance')._renderItem = function(ul, item){
+            return $('<li>').append('<div>' + sblEsc(item.label)
+                     + (item.desc ? '<span class="lcc-desc">' + sblEsc(item.desc)
+                                  + (item.date ? '  &middot; ' + sblEsc(item.date) : '') + '</span>' : '')
+                     + '</div>').appendTo(ul);
+        };
+        $('#lcc-sku').autocomplete('widget').addClass('sbl-combo');
+        $('#lcc-sku').on('input', function(){ $(this).data('sblPicked', 0); });
+        // clicking or tabbing into the box opens the list, empty or not.
+        // click, not mousedown - the widget closes the menu on a document
+        // mousedown, which would shut a menu opened in the same event.
+        $('#lcc-sku').on('click focus', function(){
+            var $i = $(this);
+            if ($i.autocomplete('widget').is(':visible')) return;
+            $i.data('sblPicked', 0);
+            $i.autocomplete('search', $i.val());
+        });
+    }
+
+    // Walk the GreySheet drill-down to where the matched coin lives, so the
+    // operator is not left to find the tree, series and year by hand.  Skipped
+    // when a series is already picked, and the form boxes (category, country)
+    // fill only when empty - nothing the LCC item set is overwritten.
+    function sblLccDrill(m){
+        var path = m.path || '';
+        if (!path || String($('#gs-series').val() || '').trim() !== '') return;
+        var seg = path.split(' > ');
+
+        // tree: the root option the path starts with
+        $('#gs-root option').each(function(){
+            if (this.value && path.indexOf(this.value) === 0){
+                $('#gs-root').val(this.value); sblRootPath = this.value; return false;
+            }
+        });
+
+        // series: the node the coin lives under
+        sblCurPath = path;
+        $('#gs-series').prop('disabled', false)
+                       .data('sblPicked', 1)
+                       .val(seg[seg.length - 1] || '');
+        var cat = sblCleanCategory(seg[seg.length - 1] || '');
+        var cel = document.getElementById('f_category_name');
+        if (cat && cel && String(cel.value || '').trim() === ''){
+            if (cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(cat) + '"]')){
+                var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
+            }
+            $('#f_category_name').val(cat).trigger('change');
+        }
+
+        // country from the path, into an empty box only
+        var country = '';
+        if (/^world/i.test(seg[0] || '')) country = (seg[1] || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+        else if (/^u\.?s\.?/i.test(seg[0] || '')) country = 'United States';
+        var uel = document.getElementById('f_country_of_manufacture');
+        if (country && uel && String(uel.value || '').trim() === '') $(uel).val(country);
+
+        sblLoadYears();
+        $('#gs-year, #gs-coin').prop('disabled', false);
+        // the LCC coin date is the year the pricing call should use
+        var y = (sblLccData && sblLccData.year) || '';
+        if (y){ sblCurYear = y; $('#gs-year').data('sblPicked', 1).val(y); }
+        sblFieldVisibility();
+        sblMarketApply();
+    }
+
+    // the item master's record, word for word, beside the SKU box - what the coin
+    // originally was, for review against whatever GreySheet fills in
+    function sblLccShowItem(it){
+        var el = $('#lcc-item-info').empty();
+        if (!it || !it.description) return;
+        el.append($('<b>').text(it.description));
+        var bits = [];
+        if (it.date)       bits.push(it.date);
+        if (it.grade_hint) bits.push('grade ' + it.grade_hint);
+        if (it.comment)    bits.push(it.comment);
+        if (it.quantity)   bits.push('qty ' + it.quantity);
+        if (bits.length) el.append(document.createTextNode('  ·  ' + bits.join('  ·  ')));
+    }
+
+    function sblLccLookup(){
+        var sku = String($('#lcc-sku').val() || '').trim();
+        sblLccMatches = []; sblLccData = null; sblLccFields = {};
+        $('#lcc-item-info').empty();
+        if (!sku) return;
+        // a DIFFERENT SKU is a new entry: the form clears first, so the lookup
+        // and the Autofill after it land on clean boxes and nothing from the
+        // last coin bleeds in.  The same SKU again keeps the work so far.
+        if (sku !== sblLccSku){
+            var id = $('#f_id').val();
+            sblClearForm();
+            if (id) { $('#f_id').val(id); }
+            $('#lcc-sku').val(sku);   // the reset empties the box; the lookup keeps its SKU
+        }
+        // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
+        // and say when the server itself failed, instead of looking frozen
+        $('#lcc-item-info').text('Looking up ' + sku + '\u2026');
+        $('#f_lcc_sku').val(sku);   // the Item-by-SKU bar saves with the row
+        $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
+            if (res.returnClass !== 'success'){ $('#lcc-item-info').empty(); return; }
+            sblLccData = res.item || {};
+            sblLccShowItem(sblLccData);
+            sblLccFields = res.fields || {};
+            sblLccMatches = res.matches || [];
+            sblLccApply();
+            sblRevealFilled();
+            sblRecompute();
+            if (!sblLccMatches.length) return;
+            // suggestions fill the drill-down too - the operator sees the shelf
+            // the candidates came from; only the auto-import stays off for them
+            sblLccDrill(sblLccMatches[0]);
+            $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
+            if ((sblLccMatches.length === 1 || res.picked) && res.via !== 'suggest'){
+                // one coin fits, or the judge named one: pick it and light up
+                // Autofill - the operator always presses it, nothing runs itself
+                var m0 = sblLccMatches[0];
+                sblPendingGsId = m0.gs_id;
+                $('#gs-coin').data('sblPicked', 1).val(m0.label);
+                $('#gs-autofill').prop('disabled', false);
+                sblMarkGsFields(true);
+                sblBarsRecord(m0.label);   // the pick saves with the row
+
+            } else if (res.via !== 'suggest') {
+                // real candidates: put the operator in the coin box to pick
+                setTimeout(function(){ $('#gs-coin').focus(); }, 0);
+            }
+            // suggestions stay quiet: the box is enabled, the list waits for a click
+        }, 'json').fail(function(){
+            $('#lcc-item-info').text('Lookup failed - the server returned an error (check the agent file).');
+        });
     }
 
     // Autofill: pull collectible + pricing from GreySheet and fill the form
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
-        // start CLEAN: wipe everything except the operator-owned fields
+        // Autofill ADDS, it never removes: anything already in a box stays put,
+        // so an LCC lookup or a typed correction survives the import.
         var grade = $('#f_grade').val() || '';
-        var keep = ['sku', 'marketplace', 'quantity', 'category_name', 'country_of_manufacture', 'condition',
-                    'certification', 'certification_number'];
-        $('#sku-form [data-name]').each(function(){
-            if (keep.indexOf(this.getAttribute('data-name')) < 0) this.value = '';
-        });
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
         sblResetAutoBadges();
@@ -705,12 +958,10 @@
     }
 
     function sblGsHandle(res, hint){
+        // no catalog entry: say so and stop. The AI is not asked to invent a
+        // listing for a coin nothing has been read about.
         if (res.returnClass === 'notfound'){
-            swal({ title:"GreySheet doesn't have this coin",
-                   text:'Would you like the AI to generate this listing?',
-                   type:'info', showCancelButton:true,
-                   confirmButtonText:'Generate with AI', cancelButtonText:'Cancel', closeOnConfirm:true },
-            function(go){ if (go) sblGsGenerate(hint); });
+            swal("GreySheet doesn't have this coin", 'Fill the listing in by hand.', 'info');
             return;
         }
         if (res.returnClass === 'error'){ swal('Import failed', res.message || 'GreySheet returned nothing.', 'error'); return; }
@@ -718,15 +969,6 @@
         sblFillFromRow(res.row);
         swal({ title:'Imported', text:'Review the highlighted fields, then Save.',
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
-    }
-
-    function sblGsGenerate(hint){
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsGenerate', hint:hint }, function(res){
-            if (res.returnClass === 'error'){ swal('Generation failed', res.message || 'The AI returned nothing.', 'error'); return; }
-            sblFillFromRow(res.row);
-            swal({ title:'AI draft ready', text:'Double-check the facts, then Save.',
-                   type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
-        }, 'json');
     }
 
     /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
@@ -794,9 +1036,15 @@
         $('#sku-form').on('input',  '#f_certification', function(){ sblCertNumGate(false); });
         sblCertNumGate(false);
 
+        // LCC SKU box: Enter or leaving the box runs the lookup
+        $('#lcc-sku').on('change', sblLccLookup)
+                     .on('keydown', function(e){ if (e.which === 13){ e.preventDefault(); sblLccLookup(); } });
+
         // Tree -> Series -> Year -> Coin drill-down
         sblLoadRoots();
-        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete(); sblFieldCombos(); }
+        if ($.fn.autocomplete){ sblSeriesAutocomplete(); sblYearAutocomplete(); sblCoinAutocomplete();
+                                sblLccAutocomplete(); sblFieldCombos(); }
+
     });
 </script>
 
@@ -804,15 +1052,21 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-//***--- Check users authority (10 is the minimum to use LCCOnline) ---***
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } else {
+        $authConn   = getDB2PConn($user, $password);
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    }
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
