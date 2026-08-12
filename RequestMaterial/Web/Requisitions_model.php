@@ -22,6 +22,21 @@ $GLOBALS['rqsErr'] = '';
 // activity log path: the LCCOnline_logs folder beside the PHP is writable by the web profile while the docroot itself is not, so this is where the file actually appears, and keeping it relative to __DIR__ means it stays correct on every instance
 define('RQS_ACT_LOG', __DIR__ . '/LCCOnline_logs/requisition_activity.log');
 
+// the entry form signs an empty session in as the kiosk profile, so the shared work floor terminal never sees the sign on screen
+// the profile name and password live in a two line conf file OUTSIDE the web root (user = / pass =), readable only by the web
+// server profile, so nothing secret sits in this source or in change management and no browser can fetch it
+// a session that already belongs to somebody is never touched, and with no conf file nothing happens at all - the framework
+// asks for a sign on the same as it always did
+function rqsKioskSignOn() {
+    if (!empty($_SESSION['username'])) { return; }
+    $conf  = dirname(__DIR__) . '/conf/rqskiosk.conf';
+    $kiosk = is_readable($conf) ? parse_ini_file($conf) : false;
+    if ($kiosk && !empty($kiosk['user']) && isset($kiosk['pass'])) {
+        $_SESSION['username'] = trim($kiosk['user']);
+        $_SESSION['password'] = $kiosk['pass'];
+    }
+}
+
 // append one line to the activity log, with the write suppressed so a bad one never takes the app down, and if it still fails (usually the web profile lacking authority to the folder) the reason and the line fall to php.log so nothing is lost
 function rqsActLog($user, $action, $detail = '') {
     $line = date('Y-m-d H:i:s') . ' ' .

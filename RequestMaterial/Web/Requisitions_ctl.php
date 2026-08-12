@@ -18,6 +18,19 @@
 ?>
 
 <?php
+    // the work floor entry form signs itself in: opened in entry mode with nobody signed on, the session is filled with
+    // the kiosk profile BEFORE the framework's sign on check runs, so the shared terminal never sees the sign on screen
+    // or the welcome page detour; somebody already signed in as themselves passes through untouched
+    if (($_GET['mode'] ?? '') === 'entry') {
+        foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
+            if (file_exists($f)) { require_once $f; }
+        }
+        if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
+        if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+        require_once __DIR__ . '/Requisitions_model.php';
+        rqsKioskSignOn();
+    }
+
     // retrieves and sets password and username
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';

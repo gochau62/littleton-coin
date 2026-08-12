@@ -25,10 +25,19 @@ foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
 if (defined('SESSION_NAME')) { session_name(SESSION_NAME); }
 if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
 
+require_once __DIR__ . '/Requisitions_model.php';
+
+// raising a requisition and the lists the entry form needs, named once here for the sign on refill and the authority split below
+$rqEntryActions = array('insert', 'lookups', 'itemlookup', 'itemsearch');
+
+// the kiosk terminal's session can idle out with the form still open, so an entry action arriving on an empty session is
+// signed back in the same way the entry page signs itself in, and what was typed is not lost to a timeout
+if (empty($_SESSION['username']) && in_array($_POST['action'] ?? '', $rqEntryActions)) {
+    rqsKioskSignOn();
+}
+
 $user     = $_SESSION['username'] ?? '';
 $password = $_SESSION['password'] ?? '';
-
-require_once __DIR__ . '/Requisitions_model.php';
 
 $conn = null;
 if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
@@ -55,7 +64,6 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // everything else belongs to the station screen, where a requisition is authorized, corrected and reported on, and asks for the requisitions group
 // this is checked here and not only on the screen, because the screen only decides what is drawn while this decides what can actually be done
 // an entry action passes on either level, because whoever runs the station screen must be able to raise a requisition too, and the two levels are separate grants rather than a ladder
-$rqEntryActions = array('insert', 'lookups', 'itemlookup', 'itemsearch');
 $rqOk = "no";
 if (function_exists('chkAutUsr')) {
     if (in_array($action, $rqEntryActions)) {
