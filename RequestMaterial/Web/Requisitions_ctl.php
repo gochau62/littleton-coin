@@ -57,15 +57,11 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    // the framework's standard refusal page where the framework provides the call, and the same page drawn right here where it
-    // does not, so a profile that is turned away always sees the message on the address it asked for and is never carried off it
-    if (function_exists('showNotAuthorized')) {
-        showNotAuthorized();
-    } else {
-        echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
-             'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
-             'You are not authorized to view the page requested</div>';
-    }
+    // the standard refusal, drawn right here rather than through the framework's call, because that call renders the message
+    // on one instance and redirects to index on another; drawn in place it reads the same everywhere, on the address asked for
+    echo '<div style="background:#eef0fa;padding:1.5rem 1.75rem;margin:.5rem 0;' .
+         'color:#e01b24;font-style:italic;font-weight:bold;font-size:1.5rem;">' .
+         'You are not authorized to view the page requested</div>';
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';
