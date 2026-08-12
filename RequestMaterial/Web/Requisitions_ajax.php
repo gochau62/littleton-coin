@@ -31,7 +31,7 @@ $password = $_SESSION['password'] ?? '';
 require_once __DIR__ . '/Requisitions_model.php';
 
 $conn = null;
-if (function_exists('getDB2PConn') && $user !== '') { $conn = getDB2PConn($user, $password); }
+if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
 
 while (ob_get_level() > 0) { ob_end_clean(); }
 header('Content-Type: application/json');

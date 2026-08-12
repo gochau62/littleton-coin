@@ -613,6 +613,7 @@ function tickClock() {
 }
 </script>
 
+<!--  Begin Content Here -->
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 

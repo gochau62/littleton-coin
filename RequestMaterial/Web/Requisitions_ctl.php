@@ -32,90 +32,8 @@
 <script type="text/javascript">
 
     document.title = "Requisition Material";
-</script>
 
-<?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-// mode entry is the workfloor entry only shortcut; the plain URL is the full station
-// this is settled before the authority check because the two screens are not open to the same people
-$rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
-
-// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
-// to this page work even when the sign on itself happens over on index
-if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
-
-// the two levels are separate grants rather than a ladder, so holding the requisitions group does not also satisfy the general one
-// the entry form therefore passes on either: the work floor reaches it on the general level, and whoever runs the station screen reaches it on the requisitions group
-// the station screen asks for the requisitions group alone, because that is where a requisition is authorized, corrected and reported on
-// taking mode entry off the address no longer opens the station screen, it just puts the higher grant in front of it
-$authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn = getDB2PConn($user, $password);
-    if ($rqMode === 'entry') {
-        $authorized = (chkAutUsr($authConn, $user, "LCCONLINE", 10) == "yes" ||
-                       chkAutUsr($authConn, $user, "LCCONLINE", 41) == "yes") ? "yes" : "no";
-    } else {
-        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 41);
-    }
-}
-
-if ($authorized != "yes") {
-    // the framework's standard refusal page, the same call the older LCC tools make
-    showNotAuthorized();
-} else {
-
-    require_once __DIR__ . '/Requisitions_model.php';
-
-    // preload the dropdown lists with the page; the ajax lookups action is the fallback
-    $rqLookups = null;
-    if (isset($authConn) && $authConn) {
-        $names  = rqsLookup($authConn, "NAMES");
-        $codes  = rqsLookup($authConn, "AREACODE");
-        $types  = rqsLookup($authConn, "AREATYPE");
-        $auth   = rqsLookup($authConn, "AUTHBY");
-        $badges = rqsLookup($authConn, "BADGE");
-        if ($names !== false && $codes !== false && $types !== false &&
-            $auth !== false && $badges !== false) {
-            $rqLookups = array("ok" => true, "names" => $names, "areaCodes" => $codes,
-                               "areaTypes" => $types, "authBy" => $auth,
-                               "badges" => $badges);
-        }
-    }
-
-    // the entry form never shows a badge, so the employee list is not sent to it at all
-    // the work floor reaches this screen, and a list that never leaves the server cannot be read out of the page either
-    if ($rqMode === 'entry' && is_array($rqLookups)) { unset($rqLookups['badges']); }
-
-    // the full name behind the sign on name, so the requestor box opens on whoever is at the keyboard instead of making them find themselves in the list
-    // only the name is taken from this; the badge that comes back with it stays on the server, because the entry form is not meant to show one
-    $rqMe   = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
-    $rqName = ($rqMe && $rqMe['name'] !== '') ? $rqMe['name'] : '';
-
-    // the signed on person's own badge, for the station grid only, so it can sit at the top of the badge list
-    // the entry form never receives it, the same as the rest of the badges, because the work floor is not shown badges at all
-    $rqMyBadge = ($rqMode !== 'entry' && $rqMe && $rqMe['badge'] !== '') ? $rqMe['badge'] : '';
-
-    include "Requisitions_dsp.php";
-
-    dspRequisitions($user, $rqLookups, $rqMode);
-?>
-
-<script>
 // Requisition Material frontend logic (grid, add/entry, view, reports)
-var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
-// entry mode comes from the workfloor shortcut link and is checked all through this script
-var RQ_MODE = '<?php echo $rqMode; ?>';
-
-
-// the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
-var RQ_NAME = <?php echo json_encode($rqName); ?>;
-// the signed on person's own badge, empty when they have none on file
-var RQ_MYBADGE = <?php echo json_encode($rqMyBadge); ?>;
-// the sign on name itself, which stands in when no employee matched it, so the box shows who is at the keyboard either way
-var RQ_USER = <?php echo json_encode($user); ?>;
-
 var gridRows = [];
 var lastGridJson = '';
 // which lines the grid shows: O open (default), R returned, A all
@@ -138,6 +56,9 @@ var pendingBadges = {};
 var sheetNavMove = false;
 
 $(document).ready(function () {
+    // this script is on the page whether or not the screen is, so when a profile is turned away there is nothing here to wire up
+    if (typeof RQ_MODE === 'undefined') { return; }
+
     loadLookups();
     tickClock();
     setInterval(tickClock, 1000);
@@ -1600,6 +1521,90 @@ function printRequisition() {
     if (!lastReqRows || !lastReqRows.length) { return; }
     printHtml(reqPrintHtml(lastReqRows), 'Requisition ' + $('#viewReqNum').text());
 }
+</script>
+
+<!--  Begin Content Here -->
+<?php
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
+// mode entry is the workfloor entry only shortcut; the plain URL is the full station
+// this is settled before the authority check because the two screens are not open to the same people
+$rqMode = (($_GET['mode'] ?? '') === 'entry') ? 'entry' : '';
+
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
+// the two levels are separate grants rather than a ladder, so holding the requisitions group does not also satisfy the general one
+// the entry form therefore passes on either: the work floor reaches it on the general level, and whoever runs the station screen reaches it on the requisitions group
+// the station screen asks for the requisitions group alone, because that is where a requisition is authorized, corrected and reported on
+// taking mode entry off the address no longer opens the station screen, it just puts the higher grant in front of it
+$authorized = "yes";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    $authConn = getDB2PConn($user, $password);
+    if ($rqMode === 'entry') {
+        $authorized = (chkAutUsr($authConn, $user, "LCCONLINE", 10) == "yes" ||
+                       chkAutUsr($authConn, $user, "LCCONLINE", 41) == "yes") ? "yes" : "no";
+    } else {
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 41);
+    }
+}
+
+if ($authorized != "yes") {
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
+} else {
+
+    require_once __DIR__ . '/Requisitions_model.php';
+
+    // preload the dropdown lists with the page; the ajax lookups action is the fallback
+    $rqLookups = null;
+    if (isset($authConn) && $authConn) {
+        $names  = rqsLookup($authConn, "NAMES");
+        $codes  = rqsLookup($authConn, "AREACODE");
+        $types  = rqsLookup($authConn, "AREATYPE");
+        $auth   = rqsLookup($authConn, "AUTHBY");
+        $badges = rqsLookup($authConn, "BADGE");
+        if ($names !== false && $codes !== false && $types !== false &&
+            $auth !== false && $badges !== false) {
+            $rqLookups = array("ok" => true, "names" => $names, "areaCodes" => $codes,
+                               "areaTypes" => $types, "authBy" => $auth,
+                               "badges" => $badges);
+        }
+    }
+
+    // the entry form never shows a badge, so the employee list is not sent to it at all
+    // the work floor reaches this screen, and a list that never leaves the server cannot be read out of the page either
+    if ($rqMode === 'entry' && is_array($rqLookups)) { unset($rqLookups['badges']); }
+
+    // the full name behind the sign on name, so the requestor box opens on whoever is at the keyboard instead of making them find themselves in the list
+    // only the name is taken from this; the badge that comes back with it stays on the server, because the entry form is not meant to show one
+    $rqMe   = (isset($authConn) && $authConn) ? rqsWhoAmI($authConn, $user) : null;
+    $rqName = ($rqMe && $rqMe['name'] !== '') ? $rqMe['name'] : '';
+
+    // the signed on person's own badge, for the station grid only, so it can sit at the top of the badge list
+    // the entry form never receives it, the same as the rest of the badges, because the work floor is not shown badges at all
+    $rqMyBadge = ($rqMode !== 'entry' && $rqMe && $rqMe['badge'] !== '') ? $rqMe['badge'] : '';
+
+    include "Requisitions_dsp.php";
+
+    dspRequisitions($user, $rqLookups, $rqMode);
+?>
+
+<script type="text/javascript">
+// the data the head script builds the screen from, prepared once the authority check has passed
+var RQ_PRELOAD = <?php echo $rqLookups ? json_encode($rqLookups) : 'null'; ?>;
+// entry mode comes from the workfloor shortcut link and is checked all through this script
+var RQ_MODE = '<?php echo $rqMode; ?>';
+
+
+// the full name of whoever is signed on, empty when the sign on name matched nobody on file; the name only, never the badge
+var RQ_NAME = <?php echo json_encode($rqName); ?>;
+// the signed on person's own badge, empty when they have none on file
+var RQ_MYBADGE = <?php echo json_encode($rqMyBadge); ?>;
+// the sign on name itself, which stands in when no employee matched it, so the box shows who is at the keyboard either way
+var RQ_USER = <?php echo json_encode($user); ?>;
 </script>
 
 <!--  End Content Here -->
