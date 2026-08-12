@@ -32,7 +32,76 @@
 <script type="text/javascript">
 
     document.title = "Story Card Maintenance";
+</script>
 
+<?php
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
+// check users authority (10 is the minimum to use LCCOnline)
+$authorized = "yes";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    $authConn   = getDB2PConn($user, $password);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+}
+
+if ($authorized != "yes") {
+    showNotAuthorized();
+} else {
+
+    require_once __DIR__ . '/StoryCard_model.php';
+
+    // preload the card the URL asked for and the shared footer, so the page
+    // arrives ready instead of opening empty and then fetching twice. The ajax
+    // card and footer actions are the fallback
+    $stcPreload = null;
+    if (isset($authConn) && $authConn) {
+        $sku      = stcCleanSku($_GET['sku'] ?? '');
+        $footer   = stcGetFooter($authConn);
+        $footKeys = stcFooterKeys($authConn);
+
+        $card = null;
+        if ($sku !== '') {
+            $item = stcGetSku($authConn, $sku);
+            if ($item !== false && $item !== null) {
+                $rows = stcGetCard($authConn, $sku);
+                if ($rows !== false) {
+                    $card = stcCardToSides($rows);
+                    $card['sku']  = rtrim($item['SCSKU']);
+                    $card['desc'] = rtrim($item['SCDESC']);
+                    $card['isNew'] = (count($rows) === 0);
+                }
+            }
+        }
+
+        if ($footer !== false) {
+            $foot = array();
+            foreach ($footer as $f) { $foot[] = rtrim($f['SCFTXT']); }
+            // the key list failing must not cost the page its preload
+            $keyList = array();
+            if ($footKeys === false) {
+                error_log('StoryCard footer keys unavailable (' . $GLOBALS['stcErr'] .
+                          ') - is STYCRD001S built with the KEYS type?');
+                $keyList[] = STC_FOOT_KEY;
+            } else {
+                foreach ($footKeys as $k) { $keyList[] = intval($k['SCFSKY']); }
+            }
+            $stcPreload = array("ok" => true, "sky" => STC_FOOT_KEY,
+                                "footer" => $foot, "keys" => $keyList,
+                                "card" => $card);
+        }
+    }
+
+    // mode footer opens straight on the footer editor, the old FootMaintenance
+    // form; the plain URL is the body screen the work actually happens on
+    $stcMode = (($_GET['mode'] ?? '') === 'footer') ? 'footer' : '';
+
+    stcActLog($user, 'OPEN', $stcMode === 'footer' ? 'footer editor' : 'card editor');
+
+    include "StoryCard_dsp.php";
+    dspStoryCard($user, $stcPreload, $stcMode);
+?>
+
+<script>
 // Story Card Maintenance frontend logic (SKU picker, both sides, footer editor)
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
@@ -48,8 +117,6 @@ var suggestTimer = null;
 var suggestSeq = 0;
 
 $(document).ready(function () {
-    // this script is on the page whether or not the screen is, so when a profile is turned away there is nothing here to wire up
-    if (typeof S1_FIRST === 'undefined') { return; }
 
     buildSide('#side1Lines', S1_FIRST, S1_LAST);
     buildSide('#side2Lines', S2_FIRST, S2_LAST);
@@ -613,72 +680,6 @@ function tickClock() {
 }
 </script>
 
-<?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-// check users authority (10 is the minimum to use LCCOnline)
-$authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
-}
-
-if ($authorized != "yes") {
-    showNotAuthorized();
-} else {
-
-    require_once __DIR__ . '/StoryCard_model.php';
-
-    // preload the card the URL asked for and the shared footer, so the page
-    // arrives ready instead of opening empty and then fetching twice. The ajax
-    // card and footer actions are the fallback
-    $stcPreload = null;
-    if (isset($authConn) && $authConn) {
-        $sku      = stcCleanSku($_GET['sku'] ?? '');
-        $footer   = stcGetFooter($authConn);
-        $footKeys = stcFooterKeys($authConn);
-
-        $card = null;
-        if ($sku !== '') {
-            $item = stcGetSku($authConn, $sku);
-            if ($item !== false && $item !== null) {
-                $rows = stcGetCard($authConn, $sku);
-                if ($rows !== false) {
-                    $card = stcCardToSides($rows);
-                    $card['sku']  = rtrim($item['SCSKU']);
-                    $card['desc'] = rtrim($item['SCDESC']);
-                    $card['isNew'] = (count($rows) === 0);
-                }
-            }
-        }
-
-        if ($footer !== false) {
-            $foot = array();
-            foreach ($footer as $f) { $foot[] = rtrim($f['SCFTXT']); }
-            // the key list failing must not cost the page its preload
-            $keyList = array();
-            if ($footKeys === false) {
-                error_log('StoryCard footer keys unavailable (' . $GLOBALS['stcErr'] .
-                          ') - is STYCRD001S built with the KEYS type?');
-                $keyList[] = STC_FOOT_KEY;
-            } else {
-                foreach ($footKeys as $k) { $keyList[] = intval($k['SCFSKY']); }
-            }
-            $stcPreload = array("ok" => true, "sky" => STC_FOOT_KEY,
-                                "footer" => $foot, "keys" => $keyList,
-                                "card" => $card);
-        }
-    }
-
-    // mode footer opens straight on the footer editor, the old FootMaintenance
-    // form; the plain URL is the body screen the work actually happens on
-    $stcMode = (($_GET['mode'] ?? '') === 'footer') ? 'footer' : '';
-
-    stcActLog($user, 'OPEN', $stcMode === 'footer' ? 'footer editor' : 'card editor');
-
-    include "StoryCard_dsp.php";
-    dspStoryCard($user, $stcPreload, $stcMode);
-?>
 <!--  End Content Here -->
 <?php
 // end authority check
