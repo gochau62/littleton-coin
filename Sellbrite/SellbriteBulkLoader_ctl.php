@@ -181,6 +181,7 @@
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         $('#sku-form .badge.lcc').remove();
         $('#pv-lccretail').text('');
+        $('#gsref-card').hide(); $('#gsref-body').empty();
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
@@ -954,6 +955,7 @@
         $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:grade }, function(res){
             sblRenderCalls(res.calls, res.total_calls);
             sblRenderRaw(res.raw);
+            sblRenderGsRef(res.raw);
             sblGsHandle(res, $('#gs-coin').val());
         }, 'json');
     }
@@ -961,6 +963,38 @@
     // full GreySheet response for the raw panel
     function sblRenderRaw(raw){
         $('#gs-raw').text(raw ? JSON.stringify(raw, null, 2) : 'No data returned.');
+    }
+
+    // the reference card: GreySheet's key facts and copyrighted text, there to
+    // read while writing your own copy - none of it enters the listing itself
+    function sblRenderGsRef(raw){
+        var c = raw && raw.collectible ? raw.collectible : null;
+        var box = $('#gsref-body').empty();
+        if (!c){ $('#gsref-card').hide(); return; }
+        function row(lbl, v){
+            if (v === undefined || v === null || String(v).trim() === '') return;
+            box.append($('<div class="gsref-row">').append($('<b>').text(lbl + ': '))
+                                                   .append(document.createTextNode(String(v))));
+        }
+        row('Name', c.Name);
+        row('General Notes', c.GeneralNotes);
+        row('Obverse', c.ObverseDescription);
+        row('Obverse Lettering', c.ObverseLettering);
+        row('Reverse', c.ReverseDescription);
+        row('Reverse Lettering', c.ReverseLettering);
+        row('Designer', c.Designer);
+        row('Edge', c.Edge);
+        row('Mintage', c.Mintage);
+        row('Coinage Years', c.CoinageYears);
+        row('Mint Location', c.MintLocation);
+        row('Composition', c.Composition);
+        row('Weight', c.WeightGrams ? c.WeightGrams + ' g' : '');
+        row('Diameter', c.Diameter ? c.Diameter + ' mm' : '');
+        row('Rarity', c.Rarity);
+        row('PCGS #', c.PcgsNumber);
+        row('NGC #', c.Ngc);
+        row('CPG price range', (c.PriceLow || c.PriceHigh) ? '$' + (c.PriceLow || '?') + ' - $' + (c.PriceHigh || '?') : '');
+        $('#gsref-card').toggle(box.children().length > 0);
     }
     
     // the API calls Autofill made + the running session total
