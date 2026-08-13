@@ -511,6 +511,19 @@
         }
     }
 
+    // path-derived fills (country, category) carry the GREY tag too - the
+    // value comes off GreySheet's catalog path, not a formula
+    function sblTagGrey(name){
+        var el = document.querySelector('#sku-form [data-name="' + name + '"]');
+        if (!el || String(el.value || '').trim() === '') return;
+        var f = el.closest('.field'), l = f && f.querySelector('label');
+        if (!l || l.querySelector('.badge.lcc') || l.querySelector('.badge.gsauto') || l.querySelector('.badge.auto')) return;
+        var b = document.createElement('span'); b.className = 'badge gsauto'; b.textContent = 'GREY';
+        b.title = 'From the GreySheet catalog path.';
+        l.appendChild(document.createTextNode(' ')); l.appendChild(b);
+        if (f) f.classList.add('is-gsauto');
+    }
+
     // tags are never painted in advance - the GREY badge lands on a box the
     // moment GreySheet actually fills it (sblFillFromRow); this only clears
     function sblMarkGsFields(on){
@@ -551,6 +564,7 @@
 
            // country set ONCE from the tree; world trees get it from the series pick
             if (sblRootPath) $('#f_country_of_manufacture').val(/world/i.test(sblRootPath) ? '' : 'United States');
+            sblTagGrey('country_of_manufacture');
             sblFieldVisibility();   // Currency trees swap in the paper-money boxes right away
             sblMarketApply();       // and drop the coin-only market fields
             if (sblRootPath) $('#gs-series').focus();
@@ -592,6 +606,8 @@
                 if (country) $('#f_country_of_manufacture').val(country);
                 sblResetBelowSeries();
                 sblLoadYears();
+                sblTagGrey('category_name');
+                sblTagGrey('country_of_manufacture');
                 $('#gs-year, #gs-coin').prop('disabled', false);
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
                 return false;
@@ -883,6 +899,8 @@
         // the LCC coin date is the year the pricing call should use
         var y = (sblLccData && sblLccData.year) || '';
         if (y){ sblCurYear = y; $('#gs-year').data('sblPicked', 1).val(y); }
+        sblTagGrey('category_name');
+        sblTagGrey('country_of_manufacture');
         sblFieldVisibility();
         sblMarketApply();
     }
