@@ -39,15 +39,44 @@
 
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 
+</script>
+
+<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+
+<?php
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
+// check users authority (10 is the minimum to use LCCOnline; 50 here because the upload writes a production pricing file, same as the other loaders)
+$authorized = "yes";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    $authConn   = getDB2PConn($user, $password);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
+}
+
+if ($authorized != "yes") {
+    echo '<script>showNotAuthorized();</script>';
+} else {
+
+    require_once __DIR__ . '/TimePayment_model.php';
+
+    tpyActLog($user, 'OPEN');
+
+    include "TimePayment_dsp.php";
+    dspTimePayment();
+?>
+
+<script>
 // Item Time Payment upload frontend logic (upload, results report, review grid)
 var gridToday = 0;
 // brief pause before the search runs, so it does not fire on every keystroke
 var gridSearchTimer = null;
 
 $(document).ready(function () {
-    // this script is on the page whether or not the screen is, so when a profile is turned away there is nothing here to wire up
-    if (!document.getElementById('gridBody')) { return; }
-
     loadGrid();
 
     $('#btnUpload').on('click', uploadFile);
@@ -207,31 +236,6 @@ function renderGrid(rows) {
     $('#lblCount').text(rows.length + ' record' + (rows.length === 1 ? '' : 's'));
 }
 </script>
-
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
-
-<!--  Begin Content Here -->
-<?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-// check users authority (10 is the minimum to use LCCOnline; 50 here because the upload writes a production pricing file, same as the other loaders)
-$authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 50);
-}
-
-if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
-} else {
-
-    require_once __DIR__ . '/TimePayment_model.php';
-
-    tpyActLog($user, 'OPEN');
-
-    include "TimePayment_dsp.php";
-    dspTimePayment();
-?>
 <!--  End Content Here -->
 <?php
 // end authority check
