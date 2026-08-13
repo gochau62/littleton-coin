@@ -223,10 +223,16 @@ details.group summary::-webkit-details-marker { display:none; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#f0a71b; background-color:#fffaf0; } .field.is-action .field-msg { color:#93540b; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
-/* the GreySheet reference card: read-only facts and copyrighted text */
-.gsref { font-size:12px; color:#475467; line-height:1.5; max-height:340px; overflow:auto; }
+/* the Reference card: read-only source records, LCC green and GreySheet blue */
+.gsref { font-size:12px; color:#475467; line-height:1.5; max-height:280px; overflow:auto; }
 .gsref .gsref-row { margin-bottom:6px; }
 .gsref b { color:#101828; }
+.gsref-sec { border-left:3px solid #d0d5dd; padding-left:10px; margin-bottom:12px; }
+.gsref-lcc { border-left-color:#1e6e43; }
+.gsref-gs  { border-left-color:#0056b3; }
+.gsref-hd { font-size:10.5px; font-weight:700; letter-spacing:.5px; margin-bottom:4px; }
+.gsref-lcc .gsref-hd { color:#1e6e43; }
+.gsref-gs .gsref-hd { color:#0056b3; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#101828; }
 .preview-img { aspect-ratio:1/1; border-radius:8px; overflow:hidden; background:#f7faf8; display:grid; place-items:center; margin-bottom:10px; border:1px solid #d0d5dd; position:relative; }
 .preview-img img { width:100%; height:100%; object-fit:cover; } .preview-img img.broken { display:none; }
@@ -439,10 +445,16 @@ details.group summary::-webkit-details-marker { display:none; }
             </form>
 
             <aside class="preview-col">
-                <div class="card" id="lcc-card"><h3>LCC Item</h3>
-                    <div id="lcc-card-body" class="gsref">
-                        <div class="gsref-row" style="color:#667085">Look up an Item by SKU and its record shows here.</div>
-                    </div></div>
+                <div class="card" id="ref-card"><h3>Reference</h3>
+                    <div class="gsref-sec gsref-lcc"><div class="gsref-hd">LCC ITEM</div>
+                        <div id="lcc-card-body" class="gsref">
+                            <div class="gsref-row" style="color:#667085">Look up an Item by SKU and its record shows here.</div>
+                        </div></div>
+                    <div class="gsref-sec gsref-gs"><div class="gsref-hd">GREYSHEET</div>
+                        <div id="gsref-body" class="gsref">
+                            <div class="gsref-row" style="color:#667085">Autofill a coin and the GreySheet record shows here.</div>
+                        </div></div>
+                    <div class="field-msg">Reference only - nothing here writes into the listing, and GreySheet's text is copyrighted.</div></div>
                 <div class="card preview"><h3>Listing preview</h3>
                     <div class="preview-img"><img id="pv-img" src="" alt="" onerror="this.classList.add('broken')">
                         <span class="img-fallback">&#9673; image preview</span></div>
@@ -450,9 +462,6 @@ details.group summary::-webkit-details-marker { display:none; }
                     <div><span class="pv-price" id="pv-price"></span><span class="pv-qty" id="pv-qty"></span></div>
                     <p class="pv-desc" id="pv-desc"></p>
                 </div>
-                <div class="card" id="gsref-card" style="display:none"><h3>GreySheet Reference</h3>
-                    <div id="gsref-body" class="gsref"></div>
-                    <div class="field-msg">Reference only - GreySheet's text is copyrighted and never enters the listing.</div></div>
                 <?php if (true) { /* the API-call log + raw GreySheet panel; false hides them for testing */ ?>
                 <div class="card apilog"><h3>API calls <span id="gs-total" class="gs-total"><?php
                     $__calls = (int) ($_SESSION['gs_api_calls'] ?? 0);

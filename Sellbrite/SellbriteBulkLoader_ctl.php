@@ -181,7 +181,7 @@
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         $('#sku-form .badge.lcc').remove();
         sblLccCard(null);
-        $('#gsref-card').hide(); $('#gsref-body').empty();
+        sblRenderGsRef(null);
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
@@ -1001,9 +1001,8 @@
     // the reference card: GreySheet's key facts and copyrighted text, there to
     // read while writing your own copy - none of it enters the listing itself
     function sblRenderGsRef(raw){
-        var c = raw && raw.collectible ? raw.collectible : null;
+        var c = raw && raw.collectible ? raw.collectible : {};
         var box = $('#gsref-body').empty();
-        if (!c){ $('#gsref-card').hide(); return; }
         function row(lbl, v){
             if (v === undefined || v === null || String(v).trim() === '') return;
             box.append($('<div class="gsref-row">').append($('<b>').text(lbl + ': '))
@@ -1027,7 +1026,10 @@
         row('PCGS #', c.PcgsNumber);
         row('NGC #', c.Ngc);
         row('CPG price range', (c.PriceLow || c.PriceHigh) ? '$' + (c.PriceLow || '?') + ' - $' + (c.PriceHigh || '?') : '');
-        $('#gsref-card').toggle(box.children().length > 0);
+        if (!box.children().length){
+            box.append($('<div class="gsref-row" style="color:#667085">')
+                .text('Autofill a coin and the GreySheet record shows here.'));
+        }
     }
     
     // the API calls Autofill made + the running session total
