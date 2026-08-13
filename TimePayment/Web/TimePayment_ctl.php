@@ -32,16 +32,7 @@
 <script type="text/javascript">
 
     document.title = "Time Payment Items Maintenance";
-
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
-
-
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
-
 </script>
-
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
@@ -59,7 +50,8 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/TimePayment_model.php';
