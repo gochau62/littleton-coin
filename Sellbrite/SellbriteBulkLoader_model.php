@@ -24,6 +24,46 @@ if (!defined('SBL_TABLE')) {
     // SQL naming (schema.table). Matches how the other LCC tools reference DB2 objects.
     define('SBL_TABLE', 'LSCDEVLIBP.SBLPRODUCT');
 }
+if (!defined('SBL_CFG_TABLE')) {
+    // staff-managed overrides (valid values, category copy, market columns)
+    define('SBL_CFG_TABLE', 'LSCDEVLIBP.SBLCONFIGT');
+}
+
+// all override rows of one kind as [key => value]; [] when the table is absent
+function sblCfgAll($kind)
+{
+    static $cache = [];
+    if (isset($cache[$kind])) { return $cache[$kind]; }
+    $out = [];
+    foreach (sbl_select('SELECT "K", "V" FROM ' . SBL_CFG_TABLE . ' WHERE "KIND" = ?', [$kind]) as $r) {
+        $out[trim((string) ($r['k'] ?? ''))] = (string) ($r['v'] ?? '');
+    }
+    return $cache[$kind] = $out;
+}
+
+// write one override row (replace on the same key)
+function sblCfgPut($kind, $k, $v)
+{
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    $st = db2_prepare($conn, 'DELETE FROM ' . SBL_CFG_TABLE . ' WHERE "KIND" = ? AND "K" = ?');
+    if (!$st || !db2_execute($st, [$kind, $k])) { return (bool) sbl_db_err('cfg delete'); }
+    $st = db2_prepare($conn, 'INSERT INTO ' . SBL_CFG_TABLE . ' ("KIND", "K", "V", "UPDATED_BY") VALUES (?, ?, ?, ?)');
+    if (!$st || !db2_execute($st, [$kind, $k, $v, sbl_current_user()])) { return (bool) sbl_db_err('cfg insert'); }
+    if (!sbl_commit($conn)) { return (bool) sbl_db_err('cfg commit'); }
+    return true;
+}
+
+// drop one override row - the built-in value takes over again
+function sblCfgDel($kind, $k)
+{
+    $conn = sbl_conn();
+    if (!$conn) { return false; }
+    $st = db2_prepare($conn, 'DELETE FROM ' . SBL_CFG_TABLE . ' WHERE "KIND" = ? AND "K" = ?');
+    if (!$st || !db2_execute($st, [$kind, $k])) { return (bool) sbl_db_err('cfg del'); }
+    if (!sbl_commit($conn)) { return (bool) sbl_db_err('cfg del commit'); }
+    return true;
+}
 
 if (!defined('SBL_ITEM_PROC')) {
     // Qualified for the same reason: an unqualified CALL depends on the job's library list.

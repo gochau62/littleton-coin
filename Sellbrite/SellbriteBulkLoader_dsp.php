@@ -292,6 +292,8 @@ details.group summary::-webkit-details-marker { display:none; }
             <span class="spacer"></span>
             <span class="btn-stack">
                 <button type="button" class="btn btn-blue" onclick="sblNew()">+ New SKU</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="window.location='SellbriteBulkLoaderAdmin_ctl.php'"
+                        title="Edit dropdown values, category copy and market columns">Manage Data</button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="sblDeleteAll()" title="Permanently delete every SKU">Delete All</button>
             </span>
         </div>

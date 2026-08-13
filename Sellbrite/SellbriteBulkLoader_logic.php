@@ -73,9 +73,40 @@ final class Schema
         return self::$values;
     }
     // "what should THIS box's dropdown menu show?"
+    // Des's per-category listing copy: an admin override wins, his generated
+    // file is the base; [] when the category has neither
+    public static function categoryCopy(string $cat): array
+    {
+        $cat = trim($cat);
+        if ($cat === '') { return []; }
+        if (function_exists('sblCfgAll')) {
+            static $ov = null;
+            if ($ov === null) { $ov = sblCfgAll('COPY'); }
+            if (isset($ov[$cat])) {
+                $d = json_decode($ov[$cat], true);
+                if (is_array($d)) { return $d; }
+            }
+        }
+        static $file = null;
+        if ($file === null) {
+            $f = __DIR__ . '/SellbriteBulkLoader_copy.php';
+            $file = is_file($f) ? (include $f) : [];
+        }
+        return $file[$cat] ?? [];
+    }
+
     public static function optionsFor(array $col): array
     {
         if (empty($col['dropdown'])) { return []; }
+        // a staff-managed list from the admin screen wins over the built-in one
+        if (function_exists('sblCfgAll')) {
+            static $ovValues = null;
+            if ($ovValues === null) { $ovValues = sblCfgAll('VALUES'); }
+            if (isset($ovValues[$col['name']])) {
+                $d = json_decode($ovValues[$col['name']], true);
+                if (is_array($d) && $d) { return array_map('strval', $d); }
+            }
+        }
         if ($col['dropdown'] === 'store_category') {
             // Des's full Sellbrite store category list; the --- rows are section
             // markers and never render as options
@@ -343,6 +374,15 @@ final class Computer
         // money boxes: strip thousands commas ("6,250.00" -> "6250.00")
         foreach (['price', 'cost', 'original_retail'] as $pf) {
             if (strpos($g($pf), ',') !== false) { $row[$pf] = str_replace(',', '', $g($pf)); }
+        }
+
+        // Des's per-category copy fills the Extended Description when empty
+        if ($g('extended_description') === '') {
+            $dc = Schema::categoryCopy($category);
+            $txt = trim((string) ($dc['copy'] ?? ''));
+            if ($txt === '') { $txt = trim((string) ($dc['alt1'] ?? '')); }
+            if ($txt === '') { $txt = trim((string) ($dc['alt2'] ?? '')); }
+            if ($txt !== '') { $row['extended_description'] = $txt; }
         }
 
         // Search Terms are Amazon-specific: only auto-build when amazon
@@ -622,15 +662,30 @@ final class Exporter
     // Which columns survive a market's export (eBay drops the Amazon-only ones, and vice versa).
     private static function keepIndexes(string $market): array
     {
-        $drop = [];
-        if ($market === 'amazon')  { $drop = self::EBAY_ONLY; }
-        if ($market === 'ebay')    { $drop = self::AMAZON_ONLY; }
-        if ($market === 'walmart') { $drop = array_merge(self::AMAZON_ONLY, self::EBAY_ONLY); }
+        // staff overrides from the admin screen move a column between markets
+        $ov = function_exists('sblCfgAll') ? sblCfgAll('MARKET') : [];
         $keep = [];
         foreach (self::LAYOUT as $i => $name) {
-            if (!in_array($name, $drop, true)) { $keep[] = $i; }
+            $home = in_array($name, self::AMAZON_ONLY, true) ? 'amazon'
+                  : (in_array($name, self::EBAY_ONLY, true) ? 'ebay' : 'all');
+            $set = strtolower(trim((string) ($ov[$name] ?? '')));
+            if (in_array($set, ['all', 'amazon', 'ebay', 'walmart'], true)) { $home = $set; }
+            if ($market !== 'all' && $home !== 'all' && $home !== $market) { continue; }
+            $keep[] = $i;
         }
         return $keep;
+    }
+
+    // the admin screen lists every upload column with its home market
+    public static function layout(): array
+    {
+        $out = [];
+        foreach (self::LAYOUT as $i => $n) {
+            $out[] = ['name' => $n, 'label' => self::LAYOUT_HUMAN[$i],
+                      'home' => in_array($n, self::AMAZON_ONLY, true) ? 'amazon'
+                              : (in_array($n, self::EBAY_ONLY, true) ? 'ebay' : 'all')];
+        }
+        return $out;
     }
 
     // Internal working fields with no Sellbrite header

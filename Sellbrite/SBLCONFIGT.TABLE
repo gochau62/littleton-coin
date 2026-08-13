@@ -1,0 +1,33 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - SBLCONFIGT.TABLE                              */
+/*                                                                   */
+/* Program Narrative - Sellbrite Bulk Loader staff-managed data:     */
+/*                     valid-value lists, per-category listing copy  */
+/*                     and column-to-market assignments.  One row =  */
+/*                     one override; the built-in value stands when  */
+/*                     no row exists.                                */
+/*                                                                   */
+/* Author            - Gordon Chau                                   */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 08/13/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(SBLCONFIGT) COMMIT(*NONE)              */
+/*                                                                   */
+/*********************************************************************/
+
+CREATE TABLE LSCDEVLIBP.SBLCONFIGT (
+   id         INTEGER GENERATED ALWAYS AS IDENTITY
+              (START WITH 1, INCREMENT BY 1) NOT NULL,
+   kind       VARCHAR(10)   CCSID 1208 NOT NULL,
+   k          VARCHAR(160)  CCSID 1208 NOT NULL,
+   v          VARCHAR(4000) CCSID 1208 DEFAULT NULL,
+   updated_by FOR COLUMN UPDBY VARCHAR(10) CCSID 1208 DEFAULT NULL,
+   updated_at FOR COLUMN UPDTS TIMESTAMP NOT NULL
+              GENERATED ALWAYS FOR EACH ROW ON UPDATE AS ROW CHANGE TIMESTAMP,
+   CONSTRAINT SBLCONFIGT_PK PRIMARY KEY (id),
+   CONSTRAINT SBLCONFIGT_KK UNIQUE (kind, k)
+);
+
+LABEL ON TABLE LSCDEVLIBP.SBLCONFIGT IS 'Sellbrite Bulk Loader Staff Config';
