@@ -779,7 +779,7 @@
         var fill = { name:               sblLccData.description,        // IIDESC
                      year:               sblLccData.year,               // IICDAT
                      condition_note:     sblLccData.comment,            // IIICMT
-                     cost:               sblLccData.cost,               // IIAVGC
+                     price:              sblLccData.retail,             // IIPRCE - the item's own retail, not avg cost
                      quantity:           sblLccData.quantity };         // IIQTOH
         sblLccCard(sblLccData);
         // whatever the AI read out of the inventory description, under the same rule
