@@ -180,7 +180,7 @@
         $('#lcc-item-info').empty();
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         $('#sku-form .badge.lcc').remove();
-        $('#pv-lccretail').text('');
+        sblLccCard(null);
         $('#gsref-card').hide(); $('#gsref-body').empty();
         sblResetAutoBadges();
         sblFieldVisibility();
@@ -771,8 +771,7 @@
                      condition_note:     sblLccData.comment,            // IIICMT
                      cost:               sblLccData.cost,               // IIAVGC
                      quantity:           sblLccData.quantity };         // IIQTOH
-        // the item's own retail is reference only - it shows in the preview card
-        $('#pv-lccretail').text(sblLccData.retail ? 'LCC retail (reference): $' + sblLccData.retail : '');
+        sblLccCard(sblLccData);
         // whatever the AI read out of the inventory description, under the same rule
         $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
         $.each(fill, function(name, val){
@@ -875,6 +874,30 @@
         if (y){ sblCurYear = y; $('#gs-year').data('sblPicked', 1).val(y); }
         sblFieldVisibility();
         sblMarketApply();
+    }
+
+    // the LCC Item card on the right: every value the SKU lookup returned,
+    // labeled, always on screen - the retail is reference only, never a fill
+    function sblLccCard(it){
+        var box = $('#lcc-card-body').empty();
+        function row(lbl, v){
+            if (v === undefined || v === null || String(v).trim() === '') return;
+            box.append($('<div class="gsref-row">').append($('<b>').text(lbl + ': '))
+                                                   .append(document.createTextNode(String(v))));
+        }
+        if (it){
+            row('Description', it.description);
+            row('Coin Date', it.date);
+            row('Grade Code', it.grade_hint);
+            row('Comment', it.comment);
+            row('Quantity On Hand', it.quantity);
+            row('Retail (Original Retail)', it.retail !== '' && it.retail != null ? '$' + it.retail : '');
+            row('Avg Cost', it.cost !== '' && it.cost != null ? '$' + it.cost : '');
+        }
+        if (!box.children().length){
+            box.append($('<div class="gsref-row" style="color:#667085">')
+                .text('Look up an Item by SKU and its record shows here.'));
+        }
     }
 
     // the item master's record, word for word, beside the SKU box - what the coin

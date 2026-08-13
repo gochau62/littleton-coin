@@ -439,19 +439,20 @@ details.group summary::-webkit-details-marker { display:none; }
             </form>
 
             <aside class="preview-col">
+                <div class="card" id="lcc-card"><h3>LCC Item</h3>
+                    <div id="lcc-card-body" class="gsref">
+                        <div class="gsref-row" style="color:#667085">Look up an Item by SKU and its record shows here.</div>
+                    </div></div>
                 <div class="card preview"><h3>Listing preview</h3>
                     <div class="preview-img"><img id="pv-img" src="" alt="" onerror="this.classList.add('broken')">
                         <span class="img-fallback">&#9673; image preview</span></div>
                     <div class="pv-title" id="pv-title">Product title appears here</div>
                     <div><span class="pv-price" id="pv-price"></span><span class="pv-qty" id="pv-qty"></span></div>
-                    <div class="pv-lccretail" id="pv-lccretail" style="font-size:12px;color:#667085;margin-top:4px;"></div>
                     <p class="pv-desc" id="pv-desc"></p>
                 </div>
                 <div class="card" id="gsref-card" style="display:none"><h3>GreySheet Reference</h3>
                     <div id="gsref-body" class="gsref"></div>
                     <div class="field-msg">Reference only - GreySheet's text is copyrighted and never enters the listing.</div></div>
-                <div class="card checklist"><h3>Validation</h3>
-                    <ul id="issue-list"><li style="color:#667085">Live as you type&hellip;</li></ul></div>
                 <?php if (true) { /* the API-call log + raw GreySheet panel; false hides them for testing */ ?>
                 <div class="card apilog"><h3>API calls <span id="gs-total" class="gs-total"><?php
                     $__calls = (int) ($_SESSION['gs_api_calls'] ?? 0);
