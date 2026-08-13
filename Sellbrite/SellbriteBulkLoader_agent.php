@@ -1311,9 +1311,12 @@ function lccLookup(string $sku): array
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
                        'date' => trim((string) ($row['item_date'] ?? '')),
+                       'grade' => trim((string) ($row['item_grade'] ?? '')),
+                       'grade2' => trim((string) ($row['item_grade2'] ?? '')),
                        'grade_hint' => $hint, 'comment' => $note,
                        'root' => trim((string) ($row['item_root'] ?? '')),
                        'link' => trim((string) ($row['item_link'] ?? '')),
+                       'roll' => $count($row['item_roll'] ?? 0),
                        'retail' => $retail, 'cost' => $cost, 'quantity' => $qoh],
             'matches' => $matches, 'picked' => $picked, 'sure' => $sure, 'via' => $via];
 }

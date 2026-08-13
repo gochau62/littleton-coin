@@ -896,11 +896,16 @@
                                                    .append(document.createTextNode(String(v))));
         }
         if (it){
+            row('SKU', it.sku);
             row('Description', it.description);
             row('Coin Date', it.date);
-            row('Grade Code', it.grade_hint);
+            row('Grade Code', it.grade || it.grade_hint);
+            row('Grade 2', it.grade2);
             row('Comment', it.comment);
+            row('Root SKU', it.root);
+            row('SKU Link', it.link);
             row('Quantity On Hand', it.quantity);
+            row('Roll Count', it.roll);
             row('Retail (Original Retail)', it.retail !== '' && it.retail != null ? '$' + it.retail : '');
             row('Avg Cost', it.cost !== '' && it.cost != null ? '$' + it.cost : '');
         }
