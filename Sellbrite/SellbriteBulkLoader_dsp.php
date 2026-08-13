@@ -346,6 +346,8 @@ details.group summary::-webkit-details-marker { display:none; }
                 <input type="hidden" name="id" id="f_id" value="">
                 <!-- hidden GreySheet coin weight (troy oz): packaging recomputes from it after the Certification pick -->
                 <input type="hidden" name="weight" id="f_weight" value="" data-name="weight">
+                <!-- the collector's note lives in the side panel; this hidden field keeps it in the form and the export -->
+                <input type="hidden" name="feature_4" id="f_feature_4" value="" data-name="feature_4" data-auto="1">
                 <!-- the finder bars save with the row and restore on edit -->
                 <input type="hidden" name="lcc_sku" id="f_lcc_sku" value="">
                 <input type="hidden" name="gs_path" id="f_gs_path" value="">
@@ -359,7 +361,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     // fields in the example workbook's column order
                     'Coin details' => ['open' => true, 'fields' => [
                         'sku','category_name','brand','country_of_manufacture',
-                        'price','original_retail','creation_date',
+                        'price','creation_date',
                         'coin_type','denomination','year','mint_mark','mint_location',
                         'coin_variety_1','coin_variety_2','coin_design','grade',
                         'designation_abbrivation','title_suffix','circulated_or_uncirculated',
@@ -388,7 +390,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'package_weight','package_height','package_length','package_width','condition_note']],
                     'Listing content' => ['open' => false, 'ai' => true, 'fields' => [
                         'name','description','extended_description',
-                        'feature_1','feature_2','feature_3','feature_4','feature_5']],
+                        'feature_1','feature_2','feature_3','feature_5']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
                         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
@@ -414,7 +416,7 @@ details.group summary::-webkit-details-marker { display:none; }
                                    'country_of_manufacture','brand',
                                    'package_weight','package_height','package_length','package_width'];
                     // operator-owned picks: autofill suggests, no badge
-                    $noBadge = ['coin_type', 'grade', 'brand', 'original_retail'];
+                    $noBadge = ['coin_type', 'grade', 'brand'];
                     // fully manual: no badge, no formula refresh; Cert Number unlocks with Certification
                     $manualAlways = ['title_suffix', 'certification', 'certification_number'];
                     foreach ($sec['fields'] as $n) {
@@ -438,8 +440,13 @@ details.group summary::-webkit-details-marker { display:none; }
                         <span class="img-fallback">&#9673; image preview</span></div>
                     <div class="pv-title" id="pv-title">Product title appears here</div>
                     <div><span class="pv-price" id="pv-price"></span><span class="pv-qty" id="pv-qty"></span></div>
+                    <div class="pv-lccretail" id="pv-lccretail" style="font-size:12px;color:#667085;margin-top:4px;"></div>
                     <p class="pv-desc" id="pv-desc"></p>
                 </div>
+                <div class="card" id="cn-card"><h3>Collector's Note</h3>
+                    <textarea id="cn-view" rows="5" style="width:100%;background:#fff;border:1px solid #d0d5dd;border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit;"
+                              placeholder="Written by Generate Product details with AI, or type your own&hellip;"></textarea>
+                    <div class="field-msg">Exports as Feature 4 with the COLLECTOR'S NOTE label.</div></div>
                 <div class="card checklist"><h3>Validation</h3>
                     <ul id="issue-list"><li style="color:#667085">Live as you type&hellip;</li></ul></div>
                 <?php if (true) { /* the API-call log + raw GreySheet panel; false hides them for testing */ ?>

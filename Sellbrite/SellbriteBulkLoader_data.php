@@ -259,7 +259,7 @@ return [
     // one row per Sellbrite column, workbook order; 'dropdown' names the values list
     'schema' => [
         ['name' => 'sku', 'label' => 'SKU', 'required' => true, 'auto' => false],
-        ['name' => 'category_name', 'label' => 'SKU of Parent Product', 'dropdown' => 'store_category', 'required' => false, 'auto' => false],
+        ['name' => 'category_name', 'label' => 'Store Category', 'dropdown' => 'store_category', 'required' => false, 'auto' => false],
         ['name' => 'year', 'label' => 'Year', 'required' => false, 'auto' => false],
         ['name' => 'mint_mark', 'label' => 'Mint Mark', 'required' => false, 'auto' => false, 'dropdown' => 'mint_mark'],
         ['name' => 'mint_location', 'label' => 'Mint Location', 'required' => false, 'auto' => false, 'dropdown' => 'mint_location'],
@@ -283,7 +283,7 @@ return [
         ['name' => 'weight', 'label' => 'Weight', 'required' => false, 'auto' => true],
         ['name' => 'single_coin_or_set', 'label' => 'Single Coin or Set', 'required' => false, 'auto' => false, 'dropdown' => 'single_coin_or_set'],
         ['name' => 'set_count', 'label' => 'Set Count', 'required' => false, 'auto' => false],
-        ['name' => 'country_of_manufacture', 'label' => 'Country of Manufacture', 'required' => false, 'auto' => true, 'dropdown' => 'country_of_manufacture'],
+        ['name' => 'country_of_manufacture', 'label' => 'Country of Origin', 'required' => false, 'auto' => true, 'dropdown' => 'country_of_manufacture'],
         ['name' => 'brand', 'label' => 'Brand Name', 'required' => false, 'auto' => true, 'dropdown' => 'brand'],
         ['name' => 'condition', 'label' => 'Condition', 'required' => false, 'auto' => true, 'dropdown' => 'condition'],
         ['name' => 'ebay_coin_condition_type', 'label' => 'eBay Coin Condition Type', 'required' => false, 'auto' => true],

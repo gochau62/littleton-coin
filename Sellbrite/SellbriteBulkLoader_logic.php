@@ -85,6 +85,13 @@ final class Schema
         static $small = [
             // Sellbrite condition; collectible coins list as "used" (default).
             'condition' => ['new', 'used'],
+            // Des's catch-all: details grades, errors, slab labels, packaging, hoards
+            'title_suffix' => ['Details', 'Cleaned Details', 'Harshly Cleaned', 'Damaged Details',
+                'Holed Details', 'Scratched', 'Corroded', 'Bent', 'Environmental Damage',
+                'Mint Error', 'Off-Center', 'Clipped Planchet', 'Doubled Die',
+                'First Strike', 'Early Releases', 'First Releases',
+                'GSA Hoard', 'Redfield Collection', 'Binion Collection', 'Hoard Coin',
+                'w/ Box & COA', 'Original Government Packaging', 'Sealed Mint Packaging'],
             'composition' => ['Silver', 'Gold', 'Platinum', 'Palladium', 'Copper', 'Copper-Nickel',
                               'Copper-Nickel Clad', 'Copper-Plated Zinc', 'Silver Clad', 'Sterling Silver',
                               'Bronze', 'Brass', 'Manganese-Brass', 'Aluminum-Bronze', 'Zinc-Coated Steel',
@@ -274,10 +281,12 @@ final class Computer
         if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
             $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
         }
-        // Condition follows circulated/uncirculated: Uncirculated lists as new,
-        // everything else as used - off the screen but still in the spreadsheet
-        $circ = trim((string) ($row['circulated_or_uncirculated'] ?? ''));
-        $row['condition'] = stripos($circ, 'uncirc') !== false ? 'new' : 'used';
+        // Condition follows certification: a certified coin lists as new, an
+        // uncertified one as used - off the screen but still in the spreadsheet
+        $condCert = $g('certification');
+        $row['condition'] = ($condCert !== '' && strcasecmp($condCert, 'Uncertified') !== 0) ? 'new' : 'used';
+        // "1 Dollar" reads as just "Dollar"; multiples ("10 Kreuzer") keep their number
+        if (preg_match('/^1\s+(\S.*)$/', $g('denomination'), $dm)) { $row['denomination'] = $dm[1]; }
 
         // Package weight = the coin's own weight FROM GREYSHEET
         // auto adjusted for certification wrap and slabs from GSA
@@ -372,8 +381,10 @@ final class Computer
                 $row['ebay_graded_coin_numerical_grade'] = $gm[0];
             }
         } elseif ($g('z_ebay_ungraded_coin_condition') === '') {
-            $row['z_ebay_ungraded_coin_condition'] = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0
-                ? $grade : $g('circulated_or_uncirculated');
+            // eBay refuses numerical grades on raw coins - MS/PR numbers list as Uncirculated
+            $zc = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0 ? $grade : $g('circulated_or_uncirculated');
+            if (preg_match('/^(MS|PR|PF|SP)\s*-?\s*\d/i', $zc)) { $zc = 'Uncirculated'; }
+            $row['z_ebay_ungraded_coin_condition'] = $zc;
         }
 
         $exact = trim((string) ($row['exact_image'] ?? ''));
@@ -399,10 +410,12 @@ final class Computer
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
         if ($g('category_name') === '') { return ''; }
+        // the coin is named by its Coin Type; the store category stands in without one
+        $catName = $g('coin_type') !== '' ? $g('coin_type') : $g('category_name');
         $parts = [
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
-            $g('category_name'),
+            $catName,
             $g('coin_variety_1'),   // the distinguishing issue ("Anna May Wong")
             $g('coin_variety_2'),
             $g('denomination'),
@@ -424,7 +437,7 @@ final class Computer
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
             $g('coin_variety_1'),
             $g('coin_variety_2'),
-            $g('category_name'),
+            $g('coin_type') !== '' ? $g('coin_type') : $g('category_name'),
             $g('denomination'),
         ]))));
         $d = 'A genuine ' . $specs . ' Coin';
@@ -539,9 +552,9 @@ final class Exporter
 
     // exact Sellbrite product_data excel spreadsheet layout
     private const LAYOUT = [
-        'sku','parent_sku','name','description','red_book_description',
+        'sku','name','description','red_book_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5',
-        'brand','country_of_manufacture','price','original_retail','creation_date',
+        'brand','country_of_origin','price','original_retail','creation_date',
         'condition','condition_note','package_weight','package_height','package_length','package_width',
         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
         'product_image_5','product_image_6','product_image_7','product_image_8','search_terms',
@@ -561,9 +574,9 @@ final class Exporter
         'watch_water_resistance','stamp_color','stamp_quality','stamp_type','nativity_item_type',
     ];
     private const LAYOUT_HUMAN = [
-        'SKU*','SKU of Parent Product','Product Name','Product Description','Red Book Description',
+        'SKU*','Product Name','Product Description','Red Book Description',
         'Feature 1','Feature 2','Feature 3','Feature 4','Feature 5',
-        'Brand Name','Country of Manufacture','Price','Original Retail','Creation Date',
+        'Brand Name','Country of Origin','Price','Original Retail','Creation Date',
         'Condition (new, used, reconditioned)','Condition Note','Package Weight (pounds)',
         'Package Height (inches)','Package Length (inches)','Package Width (inches)',
         'Exact Image','Product Image URL 1','Product Image URL 2','Product Image URL 3','Product Image URL 4',
@@ -604,17 +617,17 @@ final class Exporter
     {
         $f = [];
         $paint = static function ($a, $b, $c) use (&$f) { for ($i = $a; $i <= $b; $i++) { $f[$i] = $c; } };
-        $paint(0, 30, 'FFFFDBB6');   // mandatory for all (peach)
-        $paint(31, 51, 'FFFFF5CE');  // coin block (yellow)
-        $paint(52, 52, 'FFDEDCE6');  // style (purple)
-        $paint(53, 54, 'FFDDE8CB');  // modified pair (green)
-        $paint(55, 59, 'FFFFD8CE');  // eBay mandatory (pink)
-        $paint(60, 60, 'FFFFDBB6');  // bullion
-        $paint(61, 63, 'FFFFF5CE');  // paper money
-        $paint(64, 73, 'FFDEDCE6');  // advent
-        $paint(74, 83, 'FFDDE8CB');  // watch
-        $paint(84, 86, 'FFFFDBB6');  // stamp
-        $paint(87, 87, 'FFFFF5CE');  // nativity
+        $paint(0, 29, 'FFFFDBB6');   // mandatory for all (peach)
+        $paint(30, 50, 'FFFFF5CE');  // coin block (yellow)
+        $paint(51, 51, 'FFDEDCE6');  // style (purple)
+        $paint(52, 53, 'FFDDE8CB');  // modified pair (green)
+        $paint(54, 58, 'FFFFD8CE');  // eBay mandatory (pink)
+        $paint(59, 59, 'FFFFDBB6');  // bullion
+        $paint(60, 62, 'FFFFF5CE');  // paper money
+        $paint(63, 72, 'FFDEDCE6');  // advent
+        $paint(73, 82, 'FFDDE8CB');  // watch
+        $paint(83, 85, 'FFFFDBB6');  // stamp
+        $paint(86, 86, 'FFFFF5CE');  // nativity
         return $f;
     }
 
@@ -653,7 +666,7 @@ final class Exporter
             foreach ($keep as $i => $orig) {
                 $name = self::LAYOUT[$orig];
                 $src  = $name;
-                if ($name === 'parent_sku')           { $src = 'category_name'; }
+                if ($name === 'country_of_origin')    { $src = 'country_of_manufacture'; }
                 if ($name === 'red_book_description') { $src = 'extended_description'; }
                 $v = (string) ($row[$src] ?? '');
                 // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
@@ -700,7 +713,7 @@ final class Exporter
                 $name = self::LAYOUT[$orig];
                 // Internal names differ for two Sellbrite headers.
                 $src = $name;
-                if ($name === 'parent_sku')           { $src = 'category_name'; }         // store category
+                if ($name === 'country_of_origin')    { $src = 'country_of_manufacture'; }
                 if ($name === 'red_book_description') { $src = 'extended_description'; }  // renamed internally
                 $v = (string) ($row[$src] ?? '');
                 // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.

@@ -179,6 +179,8 @@
         $('#lcc-sku').val('');
         $('#lcc-item-info').empty();
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
+        $('#cn-view').val('');
+        $('#pv-lccretail').text('');
         sblResetAutoBadges();
         sblFieldVisibility();
         sblMarketApply();
@@ -348,12 +350,16 @@
         // wipe only when the operator switches back to raw
         if (!certified && clearIt && box.val()) box.val('');
     }
+    // GreySheet's standardized wording beats the AS400 text for these two
+    var SBL_GS_OVERRIDES = ['coin_variety_1', 'coin_variety_2'];
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
 
-            // anything already filled is left alone - typed, LCC or a previous import
-            if (el && String(el.value || '').trim() !== '') return;
+            // anything already filled is left alone - typed, LCC or a previous
+            // import - except the varieties, where GreySheet's wording wins
+            if (el && String(el.value || '').trim() !== ''
+                && (SBL_GS_OVERRIDES.indexOf(k) < 0 || v === null || v === '')) return;
             if (el && v !== null && v !== '') {
 
                  // selects: add missing options so unmatched names still land
@@ -758,9 +764,10 @@
         var fill = { name:               sblLccData.description,        // IIDESC
                      year:               sblLccData.year,               // IICDAT
                      condition_note:     sblLccData.comment,            // IIICMT
-                     original_retail:    sblLccData.retail,             // IIPRCE
                      cost:               sblLccData.cost,               // IIAVGC
                      quantity:           sblLccData.quantity };         // IIQTOH
+        // the item's own retail is reference only - it shows in the preview card
+        $('#pv-lccretail').text(sblLccData.retail ? 'LCC retail (reference): $' + sblLccData.retail : '');
         // whatever the AI read out of the inventory description, under the same rule
         $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
         $.each(fill, function(name, val){
@@ -992,6 +999,10 @@
             });
             sblPreview(res.fields);
             sblValidity(res);
+            // the side-panel Collector's Note mirrors the hidden feature_4 field
+            if (document.activeElement !== document.getElementById('cn-view')){
+                $('#cn-view').val($('#f_feature_4').val() || '');
+            }
             if (sblAutofilled) sblSyncAutoBadges();
         }, 'json');
     }
@@ -1030,6 +1041,11 @@
             SBL_LABELS[this.name] = lbl;
         });
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
+        // typing in the side-panel note writes the hidden field and recomputes
+        $('#cn-view').on('input', function(){
+            $('#f_feature_4').val(this.value);
+            clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250);
+        });
         $('#sku-form').on('change', sblRecompute);
 
         // certification opens/locks the Cert Number box
