@@ -1021,6 +1021,7 @@
         row('CPG Retail' + (p.GradeLabel ? ' (' + p.GradeLabel + ')' : ''),
             p.CpgVal != null && p.CpgVal !== '' ? '$' + p.CpgVal : '');
         row('Wholesale (GreySheet)', p.GreyVal != null && p.GreyVal !== '' ? '$' + p.GreyVal : '');
+        row('Blue Book', p.BlueBookVal != null && p.BlueBookVal !== '' ? '$' + p.BlueBookVal : '');
         row('General Notes', c.GeneralNotes);
         row('Obverse', c.ObverseDescription);
         row('Obverse Lettering', c.ObverseLettering);
