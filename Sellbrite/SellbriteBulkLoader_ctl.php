@@ -779,8 +779,9 @@
         var fill = { name:               sblLccData.description,        // IIDESC
                      year:               sblLccData.year,               // IICDAT
                      condition_note:     sblLccData.comment,            // IIICMT
-                     price:              sblLccData.retail,             // IIPRCE - the item's own retail, not avg cost
-                     quantity:           sblLccData.quantity };         // IIQTOH
+                     original_retail:    sblLccData.retail,             // IIPRCE - the item's own retail
+                     cost:               sblLccData.cost,               // IIAVGC
+                     quantity:           sblLccData.quantity };         // IIQTOH - Retail stays blank for the operator
         sblLccCard(sblLccData);
         // whatever the AI read out of the inventory description, under the same rule
         $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
@@ -896,19 +897,31 @@
                        .append($('<b>').text(lbl + ': '))
                        .append(document.createTextNode(String(v))));
         }
+        // a sub-group header only stays when rows actually land under it
+        function subgroup(title, fn){
+            var hd = $('<div class="gsref-sub">').text(title);
+            box.append(hd);
+            var before = box.children().length;
+            fn();
+            if (box.children().length === before) hd.remove();
+        }
         if (it){
-            row('SKU', it.sku);
-            row('Description', it.description);
-            row('Coin Date', it.date);
-            row('Grade Code', it.grade || it.grade_hint);
-            row('Grade 2', it.grade2);
-            row('Comment', it.comment);
-            row('Root SKU', it.root);
-            row('SKU Link', it.link);
-            row('Quantity On Hand', it.quantity);
-            row('Roll Count', it.roll);
-            row('Retail (Original Retail)', it.retail !== '' && it.retail != null ? '$' + it.retail : '');
-            row('Avg Cost', it.cost !== '' && it.cost != null ? '$' + it.cost : '');
+            subgroup('Information', function(){
+                row('SKU', it.sku);
+                row('Description', it.description);
+                row('Coin Date', it.date);
+                row('Grade Code', it.grade || it.grade_hint);
+                row('Grade 2', it.grade2);
+                row('Comment', it.comment);
+                row('Root SKU', it.root);
+                row('SKU Link', it.link);
+                row('Quantity On Hand', it.quantity);
+                row('Roll Count', it.roll);
+            });
+            subgroup('Price', function(){
+                row('Retail (Original Retail)', it.retail !== '' && it.retail != null ? '$' + it.retail : '');
+                row('Avg Cost', it.cost !== '' && it.cost != null ? '$' + it.cost : '');
+            });
         }
         if (!box.children().length){
             box.append($('<div class="gsref-row" style="color:#667085">')
@@ -1015,43 +1028,54 @@
                        .append($('<b>').text(lbl + ': '))
                        .append(document.createTextNode(String(v))));
         }
-        row('Name', c.Name);
-        // the pricing call's answer, at the grade GreySheet actually priced
+        // a sub-group header only stays when rows actually land under it
+        function subgroup(title, fn){
+            var hd = $('<div class="gsref-sub">').text(title);
+            box.append(hd);
+            var before = box.children().length;
+            fn();
+            if (box.children().length === before) hd.remove();
+        }
         var p = raw && raw.pricing ? raw.pricing : {};
-        row('CPG Retail' + (p.GradeLabel ? ' (' + p.GradeLabel + ')' : ''),
-            p.CpgVal != null && p.CpgVal !== '' ? '$' + p.CpgVal : '');
-        row('Wholesale (GreySheet)', p.GreyVal != null && p.GreyVal !== '' ? '$' + p.GreyVal : '');
-        row('Blue Book', p.BlueBookVal != null && p.BlueBookVal !== '' ? '$' + p.BlueBookVal : '');
-        row('General Notes', c.GeneralNotes);
-        row('Obverse', c.ObverseDescription);
-        row('Obverse Lettering', c.ObverseLettering);
-        row('Reverse', c.ReverseDescription);
-        row('Reverse Lettering', c.ReverseLettering);
-        row('Coin Date', c.CoinDate);
-        row('Denomination', c.DenominationLong || c.DenominationShort);
-        row('Variety', c.Variety);
-        row('Variety 2', c.Variety2);
-        row('Designation', c.Desg);
-        row('Mint Mark', c.MintMark);
-        row('Mint Location', c.MintLocation);
-        row('Strike Type', c.StrikeType);
-        row('Designer', c.Designer);
-        row('Edge', c.Edge);
-        row('Shape', c.CoinShape);
-        row('Mintage', c.Mintage);
-        row('Coinage Years', c.CoinageYears);
-        row('Composition', c.Composition);
-        row('Fineness', c.Fineness);
-        row('Weight', c.WeightGrams ? c.WeightGrams + ' g' : '');
-        row('Diameter', c.Diameter ? c.Diameter + ' mm' : '');
-        row('Rarity', c.Rarity);
-        // paper money facts ride along when the record has them
-        row('Friedberg #', c.FriedbergNumber);
-        row('Pick #', c.PickNumber);
-        row('Printer', c.Printer);
-        row('Watermark', c.Watermark);
-        row('Signatures', [c.BnbSignatureName1, c.BnbSignatureName2, c.BnbSignatureName3]
-            .filter(function(x){ return x && String(x).trim() !== ''; }).join(', '));
+        subgroup('Information', function(){
+            row('Name', c.Name);
+            row('Coin Date', c.CoinDate);
+            row('Denomination', c.DenominationLong || c.DenominationShort);
+            row('Variety', c.Variety);
+            row('Variety 2', c.Variety2);
+            row('Designation', c.Desg);
+            row('Mint Mark', c.MintMark);
+            row('Mint Location', c.MintLocation);
+            row('Strike Type', c.StrikeType);
+            row('Designer', c.Designer);
+            row('Edge', c.Edge);
+            row('Shape', c.CoinShape);
+            row('Mintage', c.Mintage);
+            row('Coinage Years', c.CoinageYears);
+            row('Composition', c.Composition);
+            row('Fineness', c.Fineness);
+            row('Weight', c.WeightGrams ? c.WeightGrams + ' g' : '');
+            row('Diameter', c.Diameter ? c.Diameter + ' mm' : '');
+            row('Rarity', c.Rarity);
+            row('General Notes', c.GeneralNotes);
+            row('Obverse', c.ObverseDescription);
+            row('Obverse Lettering', c.ObverseLettering);
+            row('Reverse', c.ReverseDescription);
+            row('Reverse Lettering', c.ReverseLettering);
+            // paper money facts ride along when the record has them
+            row('Friedberg #', c.FriedbergNumber);
+            row('Pick #', c.PickNumber);
+            row('Printer', c.Printer);
+            row('Watermark', c.Watermark);
+            row('Signatures', [c.BnbSignatureName1, c.BnbSignatureName2, c.BnbSignatureName3]
+                .filter(function(x){ return x && String(x).trim() !== ''; }).join(', '));
+        });
+        subgroup('Price', function(){
+            row('CPG Retail' + (p.GradeLabel ? ' (' + p.GradeLabel + ')' : ''),
+                p.CpgVal != null && p.CpgVal !== '' ? '$' + p.CpgVal : '');
+            row('Wholesale (GreySheet)', p.GreyVal != null && p.GreyVal !== '' ? '$' + p.GreyVal : '');
+            row('Blue Book', p.BlueBookVal != null && p.BlueBookVal !== '' ? '$' + p.BlueBookVal : '');
+        });
         if (!box.children().length){
             box.append($('<div class="gsref-row" style="color:#667085">')
                 .text('Autofill a coin and the GreySheet record shows here.'));

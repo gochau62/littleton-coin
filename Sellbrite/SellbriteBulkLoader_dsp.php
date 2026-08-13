@@ -235,6 +235,9 @@ details.group summary::-webkit-details-marker { display:none; }
 .gsref-lcc { border-left-color:#1e6e43; }
 .gsref-gs  { border-left-color:#0056b3; }
 .gsref-hd { font-size:10px; font-weight:700; letter-spacing:.5px; margin-bottom:2px; }
+.gsref-sub { font-size:9.5px; font-weight:700; letter-spacing:.5px; color:#98a2b3;
+             text-transform:uppercase; margin:6px 0 2px; }
+.gsref-sub:first-child { margin-top:0; }
 .gsref-lcc .gsref-hd { color:#1e6e43; }
 .gsref-gs .gsref-hd { color:#0056b3; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#101828; }
@@ -362,6 +365,9 @@ details.group summary::-webkit-details-marker { display:none; }
                 <input type="hidden" name="id" id="f_id" value="">
                 <!-- hidden GreySheet coin weight (troy oz): packaging recomputes from it after the Certification pick -->
                 <input type="hidden" name="weight" id="f_weight" value="" data-name="weight">
+                <!-- Original Retail has no box (Des) but still saves and exports:
+                     LCC's price lands here, GreySheet wholesale as the backup -->
+                <input type="hidden" name="original_retail" id="f_original_retail" value="" data-name="original_retail">
                 <!-- the finder bars save with the row and restore on edit -->
                 <input type="hidden" name="lcc_sku" id="f_lcc_sku" value="">
                 <input type="hidden" name="gs_path" id="f_gs_path" value="">

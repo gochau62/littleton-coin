@@ -413,7 +413,7 @@ final class Computer
             $row['package_width']  = $w < 0.5 ? '8' : ($w < 1 ? '9' : '10');
             $row['package_height'] = $w < 0.17 ? '1' : ($w < 1 ? '2' : '4');
         }
-        if (stripos($sku, '.WS') !== false && $g('price') !== '') { $row['original_retail'] = $g('price'); }
+        if (stripos($sku, '.WS') !== false && $g('price') !== '' && $g('original_retail') === '') { $row['original_retail'] = $g('price'); }
 
         // keep whatever is in the box when there is not enough yet to compose a title,
         // so the LCC inventory description stands in until the parts arrive

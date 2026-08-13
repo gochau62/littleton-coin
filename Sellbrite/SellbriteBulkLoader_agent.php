@@ -1535,6 +1535,8 @@ function gsImport(array $params): array
     // strip commas etc. from whatever landed in price/cost
     foreach (['price', 'cost'] as $pf) { if (($row[$pf] ?? '') !== '') { $row[$pf] = gsPriceNum($row[$pf]); } }
     $row['price'] = '';   // the Retail box stays empty - the operator types the price
+    // GreySheet wholesale backs up Original Retail (the client only takes it when LCC left it empty)
+    if (($coin['GreyVal'] ?? '') !== '' && ($row['original_retail'] ?? '') === '') { $row['original_retail'] = gsPriceNum($coin['GreyVal']); }
     if (($coin['GreyVal'] ?? '') !== '' && ($row['cost'] ?? '') === '') { $row['cost'] = gsPriceNum($coin['GreyVal']); }
 
     // Pricing names the grade it priced (GradeLabel): autofill Grade with it,
