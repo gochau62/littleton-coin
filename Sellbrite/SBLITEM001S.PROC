@@ -72,8 +72,7 @@ CREATE OR REPLACE PROCEDURE SBLITEM001S (
                    I.IIPRCE       AS ITEM_RETAIL,
                    I.IIAVGC       AS ITEM_COST,
                    I.IIQTOH       AS ITEM_QOH,
-                   I.IIROLL       AS ITEM_ROLL,
-                   I.*
+                   I.IIROLL       AS ITEM_ROLL
               FROM LSCPRDLIB/ITMMSTP I
              WHERE I.IISKU# = INKEY
              FETCH FIRST 1 ROW ONLY;

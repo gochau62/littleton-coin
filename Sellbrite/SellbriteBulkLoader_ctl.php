@@ -935,12 +935,6 @@
                 row('SKU Link', it.link);
                 row('Quantity On Hand', it.quantity);
                 row('Roll Count', it.roll);
-                // every OTHER raw item-master column, under its own header name
-                var shown = ['IISKU#','IIDESC','IICDAT','IIGRAD','IIGRD2','IIICMT',
-                             'IIROOT','IISLNK','IIPRCE','IIAVGC','IIQTOH','IIROLL'];
-                $.each(it.all || {}, function(k, v){
-                    if (shown.indexOf(k) < 0) row(k, v);
-                });
             });
             subgroup('Price', function(){
                 row('Retail (Original Retail)', it.retail !== '' && it.retail != null ? '$' + it.retail : '');

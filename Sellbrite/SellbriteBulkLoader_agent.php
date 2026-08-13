@@ -1308,18 +1308,8 @@ function lccLookup(string $sku): array
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
         . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
 
-    // every raw item-master column rides along for the reference card; the
-    // widened SBLITEM001S returns them all, an older build just has none extra
-    $rawAll = [];
-    foreach ($row as $rk => $rv) {
-        if (strpos((string) $rk, 'ii') !== 0) { continue; }
-        $rv = trim((string) $rv);
-        if ($rv === '' || (is_numeric($rv) && (float) $rv == 0)) { continue; }
-        $rawAll[strtoupper((string) $rk)] = $rv;
-    }
     return ['ok' => true, 'error' => '', 'fields' => $parsed,
             'item' => ['sku' => (string) ($row['item_sku'] ?? $sku), 'description' => $desc, 'year' => $year,
-                       'all' => $rawAll,
                        'date' => trim((string) ($row['item_date'] ?? '')),
                        'grade' => trim((string) ($row['item_grade'] ?? '')),
                        'grade2' => trim((string) ($row['item_grade2'] ?? '')),
