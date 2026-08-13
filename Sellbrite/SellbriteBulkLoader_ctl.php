@@ -179,6 +179,7 @@
         $('#lcc-sku').val('');
         $('#lcc-item-info').empty();
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
+        $('#sku-form .badge.lcc').remove();
         $('#cn-view').val('');
         $('#pv-lccretail').text('');
         sblResetAutoBadges();
@@ -367,6 +368,18 @@
                     var o = document.createElement('option'); o.value = o.textContent = v; el.appendChild(o);
                 }
                 el.value = v;
+                var xf = el.closest('.field'), xl = xf && xf.querySelector('label');
+                // a GreySheet overwrite drops the green LCC tag - the value is GreySheet's now
+                if (SBL_GS_OVERRIDES.indexOf(k) >= 0 && xl){
+                    var xb = xl.querySelector('.badge.lcc'); if (xb) xb.remove();
+                }
+                // the blue GREY tag lands as the box is filled
+                if (xl && !xl.querySelector('.badge.auto') && !xl.querySelector('.badge.lcc') && !xl.querySelector('.badge.gsauto')){
+                    var gb = document.createElement('span'); gb.className = 'badge gsauto'; gb.textContent = 'GREY';
+                    gb.title = 'Filled from GreySheet.';
+                    xl.appendChild(document.createTextNode(' ')); xl.appendChild(gb);
+                    if (xf) xf.classList.add('is-gsauto');
+                }
             }
         });
         sblYearRefresh(row && row.year);   // constrain Year to the series' real years
@@ -488,20 +501,12 @@
         }
     }
 
+    // tags are never painted in advance - the GREY badge lands on a box the
+    // moment GreySheet actually fills it (sblFillFromRow); this only clears
     function sblMarkGsFields(on){
-        $.each(SBL_GS_FIELDS, function(i, name){
-            var el = document.querySelector('#sku-form [data-name="' + name + '"]');
-            if (!el) return;
-            var f = el.closest('.field'); if (!f) return;
-            f.classList.toggle('is-gsauto', !!on);
-            var lbl = f.querySelector('label'); if (!lbl) return;
-            var b = lbl.querySelector('.badge.gsauto');
-            if (on && !b && !lbl.querySelector('.badge.auto')){   // don't double-badge formula-auto fields
-                b = document.createElement('span'); b.className = 'badge gsauto'; b.textContent = 'AUTO';
-                b.title = 'Auto-filled from GreySheet when you click Autofill.';
-                lbl.appendChild(document.createTextNode(' ')); lbl.appendChild(b);
-            } else if (!on && b){ b.remove(); }
-        });
+        if (on) return;
+        $('#sku-form .badge.gsauto').remove();
+        $('#sku-form .field.is-gsauto').removeClass('is-gsauto');
     }
 
     // strip shared leading words so the coin menu shows only what differs
@@ -779,6 +784,13 @@
                 var o = document.createElement('option'); o.value = o.textContent = val; el.appendChild(o);
             }
             el.value = val;
+            // the green LCC tag marks what the item master filled
+            var fld = el.closest('.field'), lbl = fld && fld.querySelector('label');
+            if (lbl && !lbl.querySelector('.badge.lcc') && !lbl.querySelector('.badge.auto')){
+                var b = document.createElement('span'); b.className = 'badge lcc'; b.textContent = 'LCC';
+                b.title = 'Filled from the LCC item master.';
+                lbl.appendChild(document.createTextNode(' ')); lbl.appendChild(b);
+            }
         });
     }
 
@@ -1003,7 +1015,7 @@
             if (document.activeElement !== document.getElementById('cn-view')){
                 $('#cn-view').val($('#f_feature_4').val() || '');
             }
-            if (sblAutofilled) sblSyncAutoBadges();
+            sblSyncAutoBadges();   // badges track what is actually filled
         }, 'json');
     }
 

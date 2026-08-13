@@ -211,8 +211,9 @@ details.group summary::-webkit-details-marker { display:none; }
     background-repeat:no-repeat; background-position:right 11px center; }
 
 
-/* auto inputs stay plain - only the blue AUTO badge marks them */
-.badge.auto,.badge.gsauto { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
+/* source tags: blue for formulas and GreySheet, LCC green for the item master */
+.badge.auto,.badge.gsauto,.badge.lcc { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
+.badge.lcc { background:#e8f2ec; color:#1e6e43; }
 .field-msg { font-size:11px; min-height:13px; color:#667085; }
 .genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
 #genai-btn { font-size:13.5px; padding:9px 22px; }
