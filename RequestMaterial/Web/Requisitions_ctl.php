@@ -33,6 +33,23 @@
 
     document.title = "Requisition Material";
 
+    // the framework supplies this on most instances; the fallback keeps the message visible where it does not
+    if (typeof showErrorMessage !== "function") {
+        function showErrorMessage(m) {
+            var d = document.getElementById("errorMsg");
+            d.innerHTML = m;
+            d.className = "ui-state-error ui-corner-all";
+            d.style.display = "block";
+        }
+    }
+
+
+    // the same not authorized message the other LCC tools show, an alert first and then the red box left on the page behind it
+    function showNotAuthorized() {
+        alert("Current user profile is not authorized\nto use this tool");
+        showErrorMessage("Current user profile is not authorized to use this tool.");
+    }
+
 // Requisition Material frontend logic (grid, add/entry, view, reports)
 var gridRows = [];
 var lastGridJson = '';
@@ -1523,14 +1540,11 @@ function printRequisition() {
 }
 </script>
 
+<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
+
 <!--  Begin Content Here -->
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
-// to this page work even when the sign on itself happens over on index
-if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // mode entry is the workfloor entry only shortcut; the plain URL is the full station
 // this is settled before the authority check because the two screens are not open to the same people
@@ -1552,8 +1566,7 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    // the framework's standard refusal page, the same call the older LCC tools make
-    showNotAuthorized();
+    echo '<script>showNotAuthorized();</script>';
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';

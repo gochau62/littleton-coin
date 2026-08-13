@@ -33,6 +33,11 @@
 
     document.title = "Story Card Maintenance";
 
+    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
+    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+
+    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+
 // Story Card Maintenance frontend logic (SKU picker, both sides, footer editor)
 // the card as it came back from the server, so Revert has something to go to
 var loadedCard = null;
@@ -613,14 +618,11 @@ function tickClock() {
 }
 </script>
 
+<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+
 <!--  Begin Content Here -->
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
-// to this page work even when the sign on itself happens over on index
-if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // check users authority (10 is the minimum to use LCCOnline)
 $authorized = "yes";
@@ -630,8 +632,7 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    // the framework's standard refusal page, the same call the older LCC tools make
-    showNotAuthorized();
+    echo '<script>showNotAuthorized();</script>';
 } else {
 
     require_once __DIR__ . '/StoryCard_model.php';
