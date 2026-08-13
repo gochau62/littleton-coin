@@ -42,7 +42,44 @@
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
     function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
+</script>
 
+<?php
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
+$authorized = "yes";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } else {
+        $authConn   = getDB2PConn($user, $password);
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    }
+}
+
+if ($authorized != "yes") {
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
+} else {
+
+    require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
+    require_once __DIR__ . '/SellbriteBulkLoader_model.php';
+
+    $screenData = ['skus' => sblGetAll($_GET['q'] ?? '')];
+
+    include "SellbriteBulkLoader_dsp.php";
+    dspBulkLoader($screenData);
+?>
+
+<script type="text/javascript">
+// Sellbrite Bulk Loader frontend logic (SKU form, autofill, drill-down lookups, review grid)
     var SBL_LABELS = {};
     var sblPreviewImg = '';
     var sblAutofilled = false;
@@ -1047,41 +1084,6 @@
 
     });
 </script>
-
-<!--  Begin Content Here -->
-<?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
-// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
-// to this page work even when the sign on itself happens over on index
-if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
-
-$authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    if ($user === '') {
-        // nobody signed in: checking an empty profile just prints the framework's
-        // auth-recs error across the page - refuse quietly instead
-        $authorized = "no";
-    } else {
-        $authConn   = getDB2PConn($user, $password);
-        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
-    }
-}
-
-if ($authorized != "yes") {
-    // the framework's standard refusal page, the same call the older LCC tools make
-    showNotAuthorized();
-} else {
-
-    require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
-    require_once __DIR__ . '/SellbriteBulkLoader_model.php';
-
-    $screenData = ['skus' => sblGetAll($_GET['q'] ?? '')];
-
-    include "SellbriteBulkLoader_dsp.php";
-    dspBulkLoader($screenData);
-?>
 <!--  End Content Here -->
 <?php
 } // end authority check
