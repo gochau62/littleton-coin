@@ -223,14 +223,18 @@ details.group summary::-webkit-details-marker { display:none; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#f0a71b; background-color:#fffaf0; } .field.is-action .field-msg { color:#93540b; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
-/* the Reference card: read-only source records, LCC green and GreySheet blue */
-.gsref { font-size:12px; color:#475467; line-height:1.5; max-height:280px; overflow:auto; }
-.gsref .gsref-row { margin-bottom:6px; }
-.gsref b { color:#101828; }
-.gsref-sec { border-left:3px solid #d0d5dd; padding-left:10px; margin-bottom:12px; }
+/* the Reference card: read-only source records, LCC green and GreySheet blue.
+   Compact rows; long passages clamp to two lines and open on a click. */
+.gsref { font-size:11.5px; color:#475467; line-height:1.45; max-height:240px; overflow:auto; }
+.gsref .gsref-row { margin-bottom:2px; }
+.gsref b { color:#344054; font-weight:600; }
+.gsref .gsref-long { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+                     overflow:hidden; cursor:pointer; }
+.gsref .gsref-long.open { -webkit-line-clamp:unset; }
+.gsref-sec { border-left:2px solid #d0d5dd; padding-left:8px; margin-bottom:8px; }
 .gsref-lcc { border-left-color:#1e6e43; }
 .gsref-gs  { border-left-color:#0056b3; }
-.gsref-hd { font-size:10.5px; font-weight:700; letter-spacing:.5px; margin-bottom:4px; }
+.gsref-hd { font-size:10px; font-weight:700; letter-spacing:.5px; margin-bottom:2px; }
 .gsref-lcc .gsref-hd { color:#1e6e43; }
 .gsref-gs .gsref-hd { color:#0056b3; }
 .preview h3,.checklist h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:#101828; }
@@ -454,7 +458,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         <div id="gsref-body" class="gsref">
                             <div class="gsref-row" style="color:#667085">Autofill a coin and the GreySheet record shows here.</div>
                         </div></div>
-                    <div class="field-msg">Reference only - nothing here writes into the listing, and GreySheet's text is copyrighted.</div></div>
+                    <div class="field-msg">Reference only - GreySheet text is copyrighted.</div></div>
                 <div class="card preview"><h3>Listing preview</h3>
                     <div class="preview-img"><img id="pv-img" src="" alt="" onerror="this.classList.add('broken')">
                         <span class="img-fallback">&#9673; image preview</span></div>

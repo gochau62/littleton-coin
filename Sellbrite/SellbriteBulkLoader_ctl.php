@@ -892,8 +892,9 @@
         var box = $('#lcc-card-body').empty();
         function row(lbl, v){
             if (v === undefined || v === null || String(v).trim() === '') return;
-            box.append($('<div class="gsref-row">').append($('<b>').text(lbl + ': '))
-                                                   .append(document.createTextNode(String(v))));
+            box.append($('<div class="gsref-row">').toggleClass('gsref-long', String(v).length > 90)
+                       .append($('<b>').text(lbl + ': '))
+                       .append(document.createTextNode(String(v))));
         }
         if (it){
             row('SKU', it.sku);
@@ -1010,8 +1011,9 @@
         var box = $('#gsref-body').empty();
         function row(lbl, v){
             if (v === undefined || v === null || String(v).trim() === '') return;
-            box.append($('<div class="gsref-row">').append($('<b>').text(lbl + ': '))
-                                                   .append(document.createTextNode(String(v))));
+            box.append($('<div class="gsref-row">').toggleClass('gsref-long', String(v).length > 90)
+                       .append($('<b>').text(lbl + ': '))
+                       .append(document.createTextNode(String(v))));
         }
         row('Name', c.Name);
         row('General Notes', c.GeneralNotes);
@@ -1128,6 +1130,9 @@
         $('#sku-form').on('change', '#f_certification', function(){ sblCertNumGate(true); });
         $('#sku-form').on('input',  '#f_certification', function(){ sblCertNumGate(false); });
         sblCertNumGate(false);
+
+        // clamped reference passages open and close on a click
+        $('#ref-card').on('click', '.gsref-long', function(){ $(this).toggleClass('open'); });
 
         // LCC SKU box: Enter or leaving the box runs the lookup
         $('#lcc-sku').on('change', sblLccLookup)
