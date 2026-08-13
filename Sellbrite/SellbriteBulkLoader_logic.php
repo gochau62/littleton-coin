@@ -87,12 +87,8 @@ final class Schema
                 if (is_array($d)) { return $d; }
             }
         }
-        static $file = null;
-        if ($file === null) {
-            $f = __DIR__ . '/SellbriteBulkLoader_copy.php';
-            $file = is_file($f) ? (include $f) : [];
-        }
-        return $file[$cat] ?? [];
+        $base = self::data()['category_copy'] ?? [];
+        return $base[$cat] ?? [];
     }
 
     public static function optionsFor(array $col): array

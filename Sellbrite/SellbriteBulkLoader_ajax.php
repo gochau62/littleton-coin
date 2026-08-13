@@ -208,6 +208,80 @@ switch ($action) {
                           'row' => $r['row'], 'message' => $r['error']]);
         break;
 
+    /* ---- the Sellbrite Data screen (staff-managed overrides in SBLCONFIGT) ---- */
+
+    case 'cfgLoad':
+        // everything the data screen shows, with the overrides already applied
+        $fields = [];
+        foreach (Schema::columns() as $col) {
+            $opts = Schema::optionsFor($col);
+            if (!$opts) { continue; }
+            $fields[] = ['name' => $col['name'], 'label' => $col['label'], 'options' => $opts];
+        }
+        $cats = [];
+        foreach (Schema::optionsFor(['name' => 'category_name', 'dropdown' => 'store_category']) as $c) {
+            if (preg_match('/^-{2,}/', $c)) { continue; }
+            $cats[] = array_merge(['category' => $c],
+                array_merge(['copy' => '', 'alt1' => '', 'alt2' => ''], Schema::categoryCopy($c)));
+        }
+        $mkOv = sblCfgAll('MARKET');
+        $cols = [];
+        foreach (Exporter::layout() as $c) {
+            $c['set'] = strtolower(trim((string) ($mkOv[$c['name']] ?? '')));
+            $cols[] = $c;
+        }
+        echo json_encode(['returnClass' => 'success', 'fields' => $fields, 'cats' => $cats,
+                          'cols' => $cols, 'valueOverrides' => array_keys(sblCfgAll('VALUES'))]);
+        break;
+
+    case 'cfgSaveValues':
+        $name  = trim((string) ($_POST['field'] ?? ''));
+        $lines = array_values(array_filter(array_map('trim',
+                     preg_split('/\r\n|\r|\n/', (string) ($_POST['values'] ?? ''))),
+                     static fn($x) => $x !== ''));
+        if ($name === '' || !$lines) {
+            echo json_encode(['returnClass' => 'error', 'message' => 'A field name and at least one value are needed.']); break;
+        }
+        echo json_encode(sblCfgPut('VALUES', $name, json_encode($lines))
+            ? ['returnClass' => 'success']
+            : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        break;
+
+    case 'cfgResetValues':
+        echo json_encode(sblCfgDel('VALUES', trim((string) ($_POST['field'] ?? '')))
+            ? ['returnClass' => 'success'] : ['returnClass' => 'error', 'message' => 'Reset failed.']);
+        break;
+
+    case 'cfgSaveCopy':
+        $cat = trim((string) ($_POST['category'] ?? ''));
+        if ($cat === '') { echo json_encode(['returnClass' => 'error', 'message' => 'Pick a category.']); break; }
+        $v = json_encode(['copy' => (string) ($_POST['copy'] ?? ''),
+                          'alt1' => (string) ($_POST['alt1'] ?? ''),
+                          'alt2' => (string) ($_POST['alt2'] ?? '')]);
+        echo json_encode(sblCfgPut('COPY', $cat, $v)
+            ? ['returnClass' => 'success']
+            : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        break;
+
+    case 'cfgResetCopy':
+        echo json_encode(sblCfgDel('COPY', trim((string) ($_POST['category'] ?? '')))
+            ? ['returnClass' => 'success'] : ['returnClass' => 'error', 'message' => 'Reset failed.']);
+        break;
+
+    case 'cfgSaveMarket':
+        $colName = trim((string) ($_POST['column'] ?? ''));
+        $mkt = strtolower(trim((string) ($_POST['market'] ?? '')));
+        if ($colName === '') { echo json_encode(['returnClass' => 'error', 'message' => 'Pick a column.']); break; }
+        if ($mkt === 'base') {
+            echo json_encode(sblCfgDel('MARKET', $colName)
+                ? ['returnClass' => 'success'] : ['returnClass' => 'error', 'message' => 'Reset failed.']);
+        } elseif (in_array($mkt, ['all', 'amazon', 'ebay', 'walmart'], true)) {
+            echo json_encode(sblCfgPut('MARKET', $colName, $mkt)
+                ? ['returnClass' => 'success']
+                : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        } else { echo json_encode(['returnClass' => 'error', 'message' => 'Unknown market.']); }
+        break;
+
     default:
         echo json_encode(['returnClass' => 'error', 'message' => 'Unknown action']);
 }
