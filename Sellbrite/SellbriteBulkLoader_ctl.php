@@ -353,6 +353,14 @@
     }
     // GreySheet's standardized wording beats the AS400 text for these two
     var SBL_GS_OVERRIDES = ['coin_variety_1', 'coin_variety_2'];
+    // only these carry real GreySheet DATA - the rest of an import (packaging
+    // math, house feature texts, Exact Image) is formula work and gets no tag
+    var SBL_GS_DATA = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
+        'coin_variety_1','coin_variety_2','designation_abbrivation','strike_type',
+        'circulated_or_uncirculated','composition','fineness','diameter','weight',
+        'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
+        'country_of_manufacture','bullion_shape','coin_design','grade','cost',
+        'paper_money_grade_designation','paper_money_type','paper_money_series_designation'];
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
@@ -373,8 +381,10 @@
                 if (SBL_GS_OVERRIDES.indexOf(k) >= 0 && xl){
                     var xb = xl.querySelector('.badge.lcc'); if (xb) xb.remove();
                 }
-                // the blue GREY tag lands as the box is filled
-                if (xl && !xl.querySelector('.badge.auto') && !xl.querySelector('.badge.lcc') && !xl.querySelector('.badge.gsauto')){
+                // the blue GREY tag lands as the box is filled - but only on real
+                // GreySheet data, never on the formula-computed boxes
+                if (xl && SBL_GS_DATA.indexOf(k) >= 0
+                    && !xl.querySelector('.badge.auto') && !xl.querySelector('.badge.lcc') && !xl.querySelector('.badge.gsauto')){
                     var gb = document.createElement('span'); gb.className = 'badge gsauto'; gb.textContent = 'GREY';
                     gb.title = 'Filled from GreySheet.';
                     xl.appendChild(document.createTextNode(' ')); xl.appendChild(gb);
