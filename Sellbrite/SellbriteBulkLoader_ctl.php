@@ -1035,9 +1035,6 @@
         row('Weight', c.WeightGrams ? c.WeightGrams + ' g' : '');
         row('Diameter', c.Diameter ? c.Diameter + ' mm' : '');
         row('Rarity', c.Rarity);
-        row('PCGS #', c.PcgsNumber);
-        row('NGC #', c.Ngc);
-        row('CPG price range', (c.PriceLow || c.PriceHigh) ? '$' + (c.PriceLow || '?') + ' - $' + (c.PriceHigh || '?') : '');
         if (!box.children().length){
             box.append($('<div class="gsref-row" style="color:#667085">')
                 .text('Autofill a coin and the GreySheet record shows here.'));
