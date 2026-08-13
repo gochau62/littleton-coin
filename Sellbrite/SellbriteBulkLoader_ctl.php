@@ -1027,15 +1027,31 @@
         row('Obverse Lettering', c.ObverseLettering);
         row('Reverse', c.ReverseDescription);
         row('Reverse Lettering', c.ReverseLettering);
+        row('Coin Date', c.CoinDate);
+        row('Denomination', c.DenominationLong || c.DenominationShort);
+        row('Variety', c.Variety);
+        row('Variety 2', c.Variety2);
+        row('Designation', c.Desg);
+        row('Mint Mark', c.MintMark);
+        row('Mint Location', c.MintLocation);
+        row('Strike Type', c.StrikeType);
         row('Designer', c.Designer);
         row('Edge', c.Edge);
+        row('Shape', c.CoinShape);
         row('Mintage', c.Mintage);
         row('Coinage Years', c.CoinageYears);
-        row('Mint Location', c.MintLocation);
         row('Composition', c.Composition);
+        row('Fineness', c.Fineness);
         row('Weight', c.WeightGrams ? c.WeightGrams + ' g' : '');
         row('Diameter', c.Diameter ? c.Diameter + ' mm' : '');
         row('Rarity', c.Rarity);
+        // paper money facts ride along when the record has them
+        row('Friedberg #', c.FriedbergNumber);
+        row('Pick #', c.PickNumber);
+        row('Printer', c.Printer);
+        row('Watermark', c.Watermark);
+        row('Signatures', [c.BnbSignatureName1, c.BnbSignatureName2, c.BnbSignatureName3]
+            .filter(function(x){ return x && String(x).trim() !== ''; }).join(', '));
         if (!box.children().length){
             box.append($('<div class="gsref-row" style="color:#667085">')
                 .text('Autofill a coin and the GreySheet record shows here.'));
