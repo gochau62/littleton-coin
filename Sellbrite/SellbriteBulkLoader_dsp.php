@@ -33,8 +33,9 @@ function dspBulkLoader(&$screenData)
     // One form control.
     $renderField = function (array $col) use ($textareas): string {
         $name = $col['name']; $auto = !empty($col['auto']); $req = !empty($col['required']);
-        // data-auto wiring without a badge = operator-owned field
-        $badge = $auto && empty($col['nobadge']);
+        // no formula badge any more - tags are only the green LCC / blue GREY
+        // source marks that land when a box is filled
+        $badge = false;
         $opts = Schema::optionsFor($col);
         $cls = 'field' . ($badge ? ' is-auto' : '');
         $h  = '<div class="' . $cls . '" data-field="' . sbl_e($name) . '">';
@@ -347,8 +348,6 @@ details.group summary::-webkit-details-marker { display:none; }
                 <input type="hidden" name="id" id="f_id" value="">
                 <!-- hidden GreySheet coin weight (troy oz): packaging recomputes from it after the Certification pick -->
                 <input type="hidden" name="weight" id="f_weight" value="" data-name="weight">
-                <!-- the collector's note lives in the side panel; this hidden field keeps it in the form and the export -->
-                <input type="hidden" name="feature_4" id="f_feature_4" value="" data-name="feature_4" data-auto="1">
                 <!-- the finder bars save with the row and restore on edit -->
                 <input type="hidden" name="lcc_sku" id="f_lcc_sku" value="">
                 <input type="hidden" name="gs_path" id="f_gs_path" value="">
@@ -391,7 +390,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'package_weight','package_height','package_length','package_width','condition_note']],
                     'Listing content' => ['open' => false, 'ai' => true, 'fields' => [
                         'name','description','extended_description',
-                        'feature_1','feature_2','feature_3','feature_5']],
+                        'feature_1','feature_2','feature_3','feature_4','feature_5']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
                         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
@@ -444,10 +443,6 @@ details.group summary::-webkit-details-marker { display:none; }
                     <div class="pv-lccretail" id="pv-lccretail" style="font-size:12px;color:#667085;margin-top:4px;"></div>
                     <p class="pv-desc" id="pv-desc"></p>
                 </div>
-                <div class="card" id="cn-card"><h3>Collector's Note</h3>
-                    <textarea id="cn-view" rows="5" style="width:100%;background:#fff;border:1px solid #d0d5dd;border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit;"
-                              placeholder="Written by Generate Product details with AI, or type your own&hellip;"></textarea>
-                    <div class="field-msg">Exports as Feature 4 with the COLLECTOR'S NOTE label.</div></div>
                 <div class="card checklist"><h3>Validation</h3>
                     <ul id="issue-list"><li style="color:#667085">Live as you type&hellip;</li></ul></div>
                 <?php if (true) { /* the API-call log + raw GreySheet panel; false hides them for testing */ ?>

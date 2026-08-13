@@ -180,7 +180,6 @@
         $('#lcc-item-info').empty();
         sblLccData = null; sblLccFields = {}; sblLccSku = ''; sblLccRoot = '';
         $('#sku-form .badge.lcc').remove();
-        $('#cn-view').val('');
         $('#pv-lccretail').text('');
         sblResetAutoBadges();
         sblFieldVisibility();
@@ -1011,10 +1010,6 @@
             });
             sblPreview(res.fields);
             sblValidity(res);
-            // the side-panel Collector's Note mirrors the hidden feature_4 field
-            if (document.activeElement !== document.getElementById('cn-view')){
-                $('#cn-view').val($('#f_feature_4').val() || '');
-            }
             sblSyncAutoBadges();   // badges track what is actually filled
         }, 'json');
     }
@@ -1053,11 +1048,6 @@
             SBL_LABELS[this.name] = lbl;
         });
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
-        // typing in the side-panel note writes the hidden field and recomputes
-        $('#cn-view').on('input', function(){
-            $('#f_feature_4').val(this.value);
-            clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250);
-        });
         $('#sku-form').on('change', sblRecompute);
 
         // certification opens/locks the Cert Number box
