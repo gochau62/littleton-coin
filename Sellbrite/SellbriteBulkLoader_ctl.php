@@ -1016,6 +1016,11 @@
                        .append(document.createTextNode(String(v))));
         }
         row('Name', c.Name);
+        // the pricing call's answer, at the grade GreySheet actually priced
+        var p = raw && raw.pricing ? raw.pricing : {};
+        row('CPG Retail' + (p.GradeLabel ? ' (' + p.GradeLabel + ')' : ''),
+            p.CpgVal != null && p.CpgVal !== '' ? '$' + p.CpgVal : '');
+        row('Wholesale (GreySheet)', p.GreyVal != null && p.GreyVal !== '' ? '$' + p.GreyVal : '');
         row('General Notes', c.GeneralNotes);
         row('Obverse', c.ObverseDescription);
         row('Obverse Lettering', c.ObverseLettering);
