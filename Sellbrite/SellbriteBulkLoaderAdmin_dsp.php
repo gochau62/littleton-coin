@@ -72,7 +72,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
     <!-- one value per line; saving replaces the whole list for that field -->
     <div class="sba-card" id="tab-values">
         <p class="sba-note">The choices each dropdown on the loader offers. One value per line - saving
-           replaces the whole list for that field, Reset returns the built-in list. Operators can always
+           replaces the whole list for that field, Reset returns the standard list. Operators can always
            type values that are not listed; these lists are the suggestions.</p>
         <div class="sba-row">
             <select id="v-field" class="sba-pick"></select>
@@ -82,7 +82,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <textarea id="v-ta" class="sba-ta" spellcheck="false"></textarea>
         <div style="margin-top:10px">
             <button type="button" class="sba-btn" onclick="saveValues()">Save List</button>
-            <button type="button" class="sba-btn ghost" onclick="resetValues()">Reset to Built-in</button>
+            <button type="button" class="sba-btn ghost" onclick="resetValues()">Reset to Standard</button>
             <span class="sba-msg" id="v-msg"></span>
         </div>
     </div>
@@ -110,10 +110,10 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <!-- which upload columns each market's spreadsheet carries -->
     <div class="sba-card" id="tab-markets" style="display:none">
-        <p class="sba-note">Which markets each upload column exports to. "Built-in" follows the standard
-           layout; picking a market sends that column only to that market's spreadsheet; All sends it to
-           every one. Changes apply to the next export immediately.</p>
-        <table class="sba-grid"><thead><tr><th>Column</th><th>Header</th><th>Built-in</th><th>Exports To</th></tr></thead>
+        <p class="sba-note">Which markets each upload column exports to. Picking a market sends that column
+           only to that market's spreadsheet; All sends it to every one. Changes apply to the next export
+           immediately.</p>
+        <table class="sba-grid"><thead><tr><th>Column</th><th>Header</th><th>Exports To</th></tr></thead>
             <tbody id="m-body"></tbody></table>
         <span class="sba-msg" id="m-msg"></span>
     </div>

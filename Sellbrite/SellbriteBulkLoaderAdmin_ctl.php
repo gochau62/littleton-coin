@@ -104,7 +104,7 @@ function saveValues(){
 }
 function resetValues(){
     postA({ action:'cfgResetValues', field:$('#v-field').val() }, function(){
-        $('#v-msg').text('Back to the built-in list.'); loadAll();
+        $('#v-msg').text('Back to the standard list.'); loadAll();
     });
 }
 
@@ -129,16 +129,14 @@ function resetCopy(){
 function fillMarkets(){
     var tb = $('#m-body').empty();
     $.each(sbaCols, function(i, c){
-        var sel = $('<select>').attr('data-col', c.name)
-            .append($('<option>').val('base').text('Built-in (' + c.home + ')'))
+        var sel = $('<select>').attr('data-col', c.name).attr('data-home', c.home)
             .append($('<option>').val('all').text('All'))
             .append($('<option>').val('amazon').text('Amazon only'))
             .append($('<option>').val('ebay').text('eBay only'))
             .append($('<option>').val('walmart').text('Walmart only'));
-        sel.val(c.set || 'base');
+        sel.val(c.set || c.home);
         tb.append($('<tr>').append($('<td>').text(c.name))
                            .append($('<td>').text(c.label))
-                           .append($('<td>').text(c.home))
                            .append($('<td>').append(sel)));
     });
 }
@@ -154,10 +152,11 @@ $(document).ready(function(){
     });
     $('#v-field').on('change', fillValues);
     $('#c-cat').on('change', fillCopy);
-    // a market pick saves the moment it is made
+    // a market pick saves the moment it is made; picking the standard value clears the override
     $('#m-body').on('change', 'select', function(){
         var sel = $(this);
-        postA({ action:'cfgSaveMarket', column:sel.data('col'), market:sel.val() }, function(){
+        var v = sel.val() === sel.data('home') ? 'base' : sel.val();
+        postA({ action:'cfgSaveMarket', column:sel.data('col'), market:v }, function(){
             $('#m-msg').text(sel.data('col') + ' saved.');
         });
     });
