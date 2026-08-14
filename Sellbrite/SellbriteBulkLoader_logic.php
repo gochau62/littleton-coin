@@ -665,11 +665,27 @@ final class Exporter
             $home = in_array($name, self::AMAZON_ONLY, true) ? 'amazon'
                   : (in_array($name, self::EBAY_ONLY, true) ? 'ebay' : 'all');
             $set = strtolower(trim((string) ($ov[$name] ?? '')));
+            if ($set === 'none') { continue; }
             if (in_array($set, ['all', 'amazon', 'ebay', 'walmart'], true)) { $home = $set; }
             if ($market !== 'all' && $home !== 'all' && $home !== $market) { continue; }
             $keep[] = $i;
         }
         return $keep;
+    }
+
+    // Staff-added columns (data screen): appended after the standard layout on every export.
+    private static function customCols(string $market): array
+    {
+        $out = [];
+        $all = function_exists('sblCfgAll') ? sblCfgAll('COL') : [];
+        foreach ($all as $name => $json) {
+            $c = json_decode((string) $json, true) ?: [];
+            $home = strtolower(trim((string) ($c['market'] ?? 'all')));
+            if ($market !== 'all' && $home !== 'all' && $home !== $market) { continue; }
+            $out[] = ['name' => (string) $name, 'label' => (string) ($c['label'] ?? $name),
+                      'value' => (string) ($c['value'] ?? '')];
+        }
+        return $out;
     }
 
     // the admin screen lists every upload column with its home market
@@ -782,6 +798,13 @@ final class Exporter
         $ws->setTitle('product_data');
         $ws->setCellValue('A1', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
             . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 2. *Required Fields.');
+        // staff-added columns follow the standard layout
+        $extra = self::customCols($market);
+        $base  = count($keep);
+        foreach ($extra as $j => $c) {
+            $ws->setCellValue($cell($base + $j, 2), $c['label']);
+            $ws->setCellValue($cell($base + $j, 3), $c['name']);
+        }
         foreach ($keep as $i => $orig) {
             $ws->setCellValue($cell($i, 2), self::LAYOUT_HUMAN[$orig]);
             $ws->setCellValue($cell($i, 3), self::LAYOUT[$orig]);
@@ -797,6 +820,7 @@ final class Exporter
         // the copy-heavy columns (description, features) stay readable.
         $widths = [];
         foreach ($keep as $i => $orig) { $widths[$i] = strlen(self::LAYOUT_HUMAN[$orig]); }
+        foreach ($extra as $j => $c) { $widths[$base + $j] = strlen($c['label']); }
         $r = 4;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
@@ -816,6 +840,12 @@ final class Exporter
                     foreach (explode("\n", $v) as $ln) { $widths[$i] = max($widths[$i], strlen($ln)); }
                 }
             }
+            foreach ($extra as $j => $c) {
+                if ($c['value'] === '') { continue; }
+                $ws->setCellValueExplicit($cell($base + $j, $r), $c['value'],
+                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $widths[$base + $j] = max($widths[$base + $j], strlen($c['value']));
+            }
             $r++;
         }
         foreach ($widths as $i => $w) {
@@ -830,7 +860,8 @@ final class Exporter
     public static function csv(array $rows, string $market = 'all'): string
     {
         $keep = self::keepIndexes($market);
-        $n = count($keep);
+        $extra = self::customCols($market);
+        $n = count($keep) + count($extra);
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 2. *Required Fields.';
@@ -840,6 +871,7 @@ final class Exporter
             $human[]   = self::LAYOUT_HUMAN[$orig];
             $machine[] = self::LAYOUT[$orig];
         }
+        foreach ($extra as $c) { $human[] = $c['label']; $machine[] = $c['name']; }
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
         fputcsv($fh, $bannerRow);
         fputcsv($fh, $human); fputcsv($fh, $machine);
@@ -857,6 +889,7 @@ final class Exporter
                 if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
                 $line[] = $v;
             }
+            foreach ($extra as $c) { $line[] = $c['value']; }
             fputcsv($fh, $line);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);

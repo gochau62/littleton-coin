@@ -230,8 +230,15 @@ switch ($action) {
             $c['set'] = strtolower(trim((string) ($mkOv[$c['name']] ?? '')));
             $cols[] = $c;
         }
+        $custom = [];
+        foreach (sblCfgAll('COL') as $k => $j) {
+            $c = json_decode((string) $j, true) ?: [];
+            $custom[] = ['name' => (string) $k, 'label' => (string) ($c['label'] ?? $k),
+                         'market' => (string) ($c['market'] ?? 'all'), 'value' => (string) ($c['value'] ?? '')];
+        }
         echo json_encode(['returnClass' => 'success', 'fields' => $fields, 'cats' => $cats,
-                          'cols' => $cols, 'valueOverrides' => array_keys(sblCfgAll('VALUES'))]);
+                          'cols' => $cols, 'custom' => $custom,
+                          'valueOverrides' => array_keys(sblCfgAll('VALUES'))]);
         break;
 
     case 'cfgSaveValues':
@@ -275,11 +282,36 @@ switch ($action) {
         if ($mkt === 'base') {
             echo json_encode(sblCfgDel('MARKET', $colName)
                 ? ['returnClass' => 'success'] : ['returnClass' => 'error', 'message' => 'Reset failed.']);
-        } elseif (in_array($mkt, ['all', 'amazon', 'ebay', 'walmart'], true)) {
+        } elseif (in_array($mkt, ['all', 'amazon', 'ebay', 'walmart', 'none'], true)) {
             echo json_encode(sblCfgPut('MARKET', $colName, $mkt)
                 ? ['returnClass' => 'success']
                 : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
         } else { echo json_encode(['returnClass' => 'error', 'message' => 'Unknown market.']); }
+        break;
+
+    case 'cfgAddCol':
+        // a staff-added export column: header label, market, optional fixed text for every row
+        $label = trim((string) ($_POST['label'] ?? ''));
+        $mkt   = strtolower(trim((string) ($_POST['market'] ?? 'all')));
+        $val   = trim((string) ($_POST['value'] ?? ''));
+        $name  = strtolower(trim(preg_replace('/[^A-Za-z0-9]+/', '_', $label), '_'));
+        if ($label === '' || $name === '') {
+            echo json_encode(['returnClass' => 'error', 'message' => 'A column header is needed.']); break;
+        }
+        $clash = false;
+        foreach (Exporter::layout() as $c) { if ($c['name'] === $name) { $clash = true; break; } }
+        if ($clash) {
+            echo json_encode(['returnClass' => 'error', 'message' => 'That column is already in the standard layout.']); break;
+        }
+        if (!in_array($mkt, ['all', 'amazon', 'ebay', 'walmart'], true)) { $mkt = 'all'; }
+        echo json_encode(sblCfgPut('COL', $name, json_encode(['label' => $label, 'market' => $mkt, 'value' => $val]))
+            ? ['returnClass' => 'success']
+            : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        break;
+
+    case 'cfgDelCol':
+        echo json_encode(sblCfgDel('COL', trim((string) ($_POST['column'] ?? '')))
+            ? ['returnClass' => 'success'] : ['returnClass' => 'error', 'message' => 'Remove failed.']);
         break;
 
     default:

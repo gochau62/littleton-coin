@@ -68,7 +68,7 @@ if ($authorized === "signin") {
 <script>
 // Sellbrite Data frontend: three tabs over the SBLCONFIGT override rows,
 // talking to the loader's own service (the cfg* actions)
-var sbaFields = [], sbaCats = [], sbaCols = [], sbaOvValues = [];
+var sbaFields = [], sbaCats = [], sbaCols = [], sbaCustom = [], sbaOvValues = [];
 
 function postA(data, onOk){
     $.post('SellbriteBulkLoader_ajax.php', data, function(r){
@@ -80,7 +80,7 @@ function postA(data, onOk){
 function loadAll(){
     postA({ action:'cfgLoad' }, function(r){
         sbaFields = r.fields || []; sbaCats = r.cats || []; sbaCols = r.cols || [];
-        sbaOvValues = r.valueOverrides || [];
+        sbaCustom = r.custom || []; sbaOvValues = r.valueOverrides || [];
         var vf = $('#v-field').empty();
         $.each(sbaFields, function(i, f){ vf.append($('<option>').val(f.name).text(f.label)); });
         var cc = $('#c-cat').empty();
@@ -133,11 +133,33 @@ function fillMarkets(){
             .append($('<option>').val('all').text('All'))
             .append($('<option>').val('amazon').text('Amazon only'))
             .append($('<option>').val('ebay').text('eBay only'))
-            .append($('<option>').val('walmart').text('Walmart only'));
+            .append($('<option>').val('walmart').text('Walmart only'))
+            .append($('<option>').val('none').text('Not exported'));
         sel.val(c.set || c.home);
         tb.append($('<tr>').append($('<td>').text(c.name))
                            .append($('<td>').text(c.label))
                            .append($('<td>').append(sel)));
+    });
+    // staff-added columns list after the standard ones with a Remove button
+    $.each(sbaCustom, function(i, c){
+        var del = $('<button>').attr('type', 'button').addClass('sba-btn ghost')
+            .text('Remove').on('click', function(){ delCol(c.name); });
+        var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
+        tb.append($('<tr>').append($('<td>').text(c.name))
+                           .append($('<td>').text(c.label + (c.value ? ' = "' + c.value + '"' : '')))
+                           .append($('<td>').text(m + ' ').append(del)));
+    });
+}
+
+function addCol(){
+    postA({ action:'cfgAddCol', label:$('#m-new-label').val(), market:$('#m-new-market').val(),
+            value:$('#m-new-value').val() }, function(){
+        $('#m-msg').text('Column added.'); $('#m-new-label').val(''); $('#m-new-value').val(''); loadAll();
+    });
+}
+function delCol(name){
+    postA({ action:'cfgDelCol', column:name }, function(){
+        $('#m-msg').text(name + ' removed.'); loadAll();
     });
 }
 

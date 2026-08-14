@@ -65,7 +65,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <div class="sba-tabs">
         <button type="button" class="sba-tab on" data-tab="values">Dropdown Values</button>
-        <button type="button" class="sba-tab" data-tab="copy">Category Copy</button>
+        <button type="button" class="sba-tab" data-tab="copy">Category Descriptions</button>
         <button type="button" class="sba-tab" data-tab="markets">Market Columns</button>
     </div>
 
@@ -89,7 +89,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <!-- Des's per-category descriptions; the Extended Description fills from these -->
     <div class="sba-card" id="tab-copy" style="display:none">
-        <p class="sba-note">The listing copy per store category, from Des's sheet. The Extended
+        <p class="sba-note">The reusable listing description per store category, from Des's sheet. The Extended
            Description box fills with the Description below when it is empty; the alternates stand in
            when the main one is blank. Saving stores your version; Reset returns Des's original.</p>
         <div class="sba-row">
@@ -102,7 +102,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <label class="sba-lbl">Alternate 2</label>
         <textarea id="c-alt2" class="sba-ta copy"></textarea>
         <div style="margin-top:10px">
-            <button type="button" class="sba-btn" onclick="saveCopy()">Save Copy</button>
+            <button type="button" class="sba-btn" onclick="saveCopy()">Save Descriptions</button>
             <button type="button" class="sba-btn ghost" onclick="resetCopy()">Reset to Original</button>
             <span class="sba-msg" id="c-msg"></span>
         </div>
@@ -110,11 +110,21 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <!-- which upload columns each market's spreadsheet carries -->
     <div class="sba-card" id="tab-markets" style="display:none">
-        <p class="sba-note">Which markets each upload column exports to. Picking a market sends that column
-           only to that market's spreadsheet; All sends it to every one. Changes apply to the next export
-           immediately.</p>
+        <p class="sba-note">Where each upload column exports to. Picking a market sends that column only to
+           that market's spreadsheet, All sends it to every one, and Not exported drops the column from every
+           spreadsheet. Add your own column below - it lands at the end of the export, filled with the fixed
+           text if one is given. Changes apply to the next export immediately.</p>
         <table class="sba-grid"><thead><tr><th>Column</th><th>Header</th><th>Exports To</th></tr></thead>
             <tbody id="m-body"></tbody></table>
+        <div class="sba-row" style="margin-top:12px">
+            <input class="sba-pick" id="m-new-label" placeholder="New column header">
+            <select class="sba-pick" id="m-new-market">
+                <option value="all">All</option><option value="amazon">Amazon only</option>
+                <option value="ebay">eBay only</option><option value="walmart">Walmart only</option>
+            </select>
+            <input class="sba-pick" id="m-new-value" placeholder="Fill every row with (optional)">
+            <button type="button" class="sba-btn" onclick="addCol()">Add Column</button>
+        </div>
         <span class="sba-msg" id="m-msg"></span>
     </div>
 </div>
