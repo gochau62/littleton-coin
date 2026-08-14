@@ -7,9 +7,12 @@
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 08/13/2026                         *  -->
 <!--  ***************************************************  -->
-<!--  * The Sellbrite Data screen layout: three tabs    *  -->
-<!--  * over the staff-managed overrides (values, copy, *  -->
-<!--  * market columns).                                *  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
 <!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 ?>

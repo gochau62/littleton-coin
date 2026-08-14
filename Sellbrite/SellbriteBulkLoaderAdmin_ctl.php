@@ -7,12 +7,12 @@
 <!--  *             Littleton NH                        *  -->
 <!--  * Date Written 08/13/2026                         *  -->
 <!--  ***************************************************  -->
-<!--  * The Sellbrite Data screen: staff edit the       *  -->
-<!--  * dropdown value lists, the per-category listing  *  -->
-<!--  * copy, and which upload columns go to which      *  -->
-<!--  * market.  Reads and writes go through the        *  -->
-<!--  * loader's own service (SellbriteBulkLoader_ajax) *  -->
-<!--  * into LSCDEVLIBP/SBLCONFIGT.                     *  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
 <!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 ?>
