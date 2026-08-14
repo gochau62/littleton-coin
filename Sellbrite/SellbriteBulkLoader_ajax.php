@@ -224,9 +224,10 @@ switch ($action) {
             if (!in_array($k, $catNames, true)) { $catNames[] = $k; }
         }
         sort($catNames, SORT_NATURAL | SORT_FLAG_CASE);
+        $baseCats = Schema::categoryCopyAll();
         $cats = [];
         foreach ($catNames as $c) {
-            $cats[] = array_merge(['category' => $c],
+            $cats[] = array_merge(['category' => $c, 'base' => isset($baseCats[$c])],
                 array_merge(['copy' => '', 'alt1' => '', 'alt2' => ''], Schema::categoryCopy($c)));
         }
         $mkOv = sblCfgAll('MARKET');

@@ -71,9 +71,9 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <!-- one value per line; saving replaces the whole list for that field -->
     <div class="sba-card" id="tab-values">
-        <p class="sba-note">The choices each dropdown on the loader offers. One value per line - saving
-           replaces the whole list for that field, Reset returns the standard list. Operators can always
-           type values that are not listed; these lists are the suggestions.</p>
+        <p class="sba-note">The choices each dropdown on the loader offers. One value per line - add or
+           delete lines and Save; the list replaces the standard one. Operators can always type values
+           that are not listed; these lists are the suggestions.</p>
         <div class="sba-row">
             <select id="v-field" class="sba-pick"></select>
             <span id="v-ov"></span>
@@ -82,7 +82,6 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <textarea id="v-ta" class="sba-ta" spellcheck="false"></textarea>
         <div style="margin-top:10px">
             <button type="button" class="sba-btn" onclick="saveValues()">Save List</button>
-            <button type="button" class="sba-btn ghost" onclick="resetValues()">Reset to Standard</button>
             <span class="sba-msg" id="v-msg"></span>
         </div>
     </div>
@@ -91,9 +90,11 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
     <div class="sba-card" id="tab-copy" style="display:none">
         <p class="sba-note">The reusable listing description per coin/category, from Des's sheet. The Extended
            Description box fills with the Description below when it is empty; the alternates stand in
-           when the main one is blank. Saving stores your version; Reset returns Des's original.</p>
+           when the main one is blank. Add a category for anything new, delete one you no longer want.</p>
         <div class="sba-row">
             <select id="c-cat" class="sba-pick"></select>
+            <input class="sba-pick" id="c-new" placeholder="New category name">
+            <button type="button" class="sba-btn ghost" onclick="addCat()">Add Category</button>
         </div>
         <label class="sba-lbl">Description</label>
         <textarea id="c-copy" class="sba-ta copy"></textarea>
@@ -103,7 +104,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <textarea id="c-alt2" class="sba-ta copy"></textarea>
         <div style="margin-top:10px">
             <button type="button" class="sba-btn" onclick="saveCopy()">Save Descriptions</button>
-            <button type="button" class="sba-btn ghost" onclick="resetCopy()">Reset to Original</button>
+            <button type="button" class="sba-btn ghost" onclick="delCat()">Delete Category</button>
             <span class="sba-msg" id="c-msg"></span>
         </div>
     </div>

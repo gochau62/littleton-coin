@@ -77,7 +77,7 @@ function postA(data, onOk){
     }, 'json').fail(function(){ swal('Error', 'Server error - see the log.', 'error'); });
 }
 
-function loadAll(){
+function loadAll(done){
     postA({ action:'cfgLoad' }, function(r){
         sbaFields = r.fields || []; sbaCats = r.cats || []; sbaCols = r.cols || [];
         sbaCustom = r.custom || []; sbaOvValues = r.valueOverrides || [];
@@ -86,6 +86,7 @@ function loadAll(){
         var cc = $('#c-cat').empty();
         $.each(sbaCats, function(i, c){ cc.append($('<option>').val(c.category).text(c.category)); });
         fillValues(); fillCopy(); fillMarkets();
+        if (done) { done(); }
     });
 }
 
@@ -102,11 +103,6 @@ function saveValues(){
         $('#v-msg').text('Saved - the loader uses this list now.'); loadAll();
     });
 }
-function resetValues(){
-    postA({ action:'cfgResetValues', field:$('#v-field').val() }, function(){
-        $('#v-msg').text('Back to the standard list.'); loadAll();
-    });
-}
 
 function fillCopy(){
     var c = null, cat = $('#c-cat').val();
@@ -120,10 +116,30 @@ function saveCopy(){
         $('#c-msg').text('Saved - new listings use this copy.'); loadAll();
     });
 }
-function resetCopy(){
-    postA({ action:'cfgResetCopy', category:$('#c-cat').val() }, function(){
-        $('#c-msg').text("Back to Des's original."); loadAll();
+function addCat(){
+    var name = $.trim($('#c-new').val() || '');
+    if (!name) { $('#c-msg').text('Type a category name first.'); return; }
+    postA({ action:'cfgSaveCopy', category:name, copy:'', alt1:'', alt2:'' }, function(){
+        $('#c-new').val('');
+        loadAll(function(){
+            $('#c-cat').val(name); fillCopy();
+            $('#c-msg').text('Added - type the description and Save.');
+        });
     });
+}
+function delCat(){
+    var cat = $('#c-cat').val(), base = false;
+    $.each(sbaCats, function(i, x){ if (x.category === cat) base = !!x.base; });
+    if (base) {
+        // one of Des's originals: clearing stops the autofill but the row stays
+        postA({ action:'cfgSaveCopy', category:cat, copy:'', alt1:'', alt2:'' }, function(){
+            loadAll(function(){ $('#c-msg').text(cat + ' cleared - nothing will autofill for it.'); });
+        });
+    } else {
+        postA({ action:'cfgResetCopy', category:cat }, function(){
+            loadAll(function(){ $('#c-msg').text(cat + ' deleted.'); });
+        });
+    }
 }
 
 function fillMarkets(){
