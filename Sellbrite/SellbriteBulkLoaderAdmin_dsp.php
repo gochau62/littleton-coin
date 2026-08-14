@@ -89,7 +89,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 
     <!-- Des's per-category descriptions; the Extended Description fills from these -->
     <div class="sba-card" id="tab-copy" style="display:none">
-        <p class="sba-note">The reusable listing description per store category, from Des's sheet. The Extended
+        <p class="sba-note">The reusable listing description per coin/category, from Des's sheet. The Extended
            Description box fills with the Description below when it is empty; the alternates stand in
            when the main one is blank. Saving stores your version; Reset returns Des's original.</p>
         <div class="sba-row">

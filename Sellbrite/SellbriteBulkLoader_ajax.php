@@ -218,9 +218,14 @@ switch ($action) {
             if (!$opts) { continue; }
             $fields[] = ['name' => $col['name'], 'label' => $col['label'], 'options' => $opts];
         }
+        // the Descriptions tab lists Des's copy categories plus any staff-added ones
+        $catNames = array_keys(Schema::categoryCopyAll());
+        foreach (array_keys(sblCfgAll('COPY')) as $k) {
+            if (!in_array($k, $catNames, true)) { $catNames[] = $k; }
+        }
+        sort($catNames, SORT_NATURAL | SORT_FLAG_CASE);
         $cats = [];
-        foreach (Schema::optionsFor(['name' => 'category_name', 'dropdown' => 'store_category']) as $c) {
-            if (preg_match('/^-{2,}/', $c)) { continue; }
+        foreach ($catNames as $c) {
             $cats[] = array_merge(['category' => $c],
                 array_merge(['copy' => '', 'alt1' => '', 'alt2' => ''], Schema::categoryCopy($c)));
         }

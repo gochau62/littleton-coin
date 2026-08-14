@@ -75,6 +75,12 @@ final class Schema
     // "what should THIS box's dropdown menu show?"
     // Des's per-category listing copy: an admin override wins, his generated
     // file is the base; [] when the category has neither
+    // every category in Des's copy file (the Descriptions tab lists these)
+    public static function categoryCopyAll(): array
+    {
+        return self::data()['category_copy'] ?? [];
+    }
+
     public static function categoryCopy(string $cat): array
     {
         $cat = trim($cat);
@@ -104,95 +110,11 @@ final class Schema
             }
         }
         if ($col['dropdown'] === 'store_category') {
-            // Des's full Sellbrite store category list; the --- rows are section
-            // markers and never render as options
-            return [
-                    '--- US COINS ---', 'America the Beautiful Quarter', 'American Innovation Dollar',
-                    'American Women Quarter', 'Barber Dime', 'Barber Half Dollar',
-                    'Barber Quarter', 'Braided Hair Half Cent', 'Braided Hair Large Cent',
-                    'Buffalo Nickel', 'Capped Bust Dime', 'Capped Bust Half Dime',
-                    'Capped Bust Half Dollar', 'Capped Bust Quarter', 'Classic Head Half Cent',
-                    'Classic Head Large Cent', 'Coronet Head Large Cent', 'DC & US Territories Quarter',
-                    'Draped Bust Dime', 'Draped Bust Dollar', 'Draped Bust Half Cent',
-                    'Draped Bust Half Dime', 'Draped Bust Half Dollar', 'Draped Bust Large Cent',
-                    'Draped Bust Quarter', 'Eisenhower Dollar', 'Flowing Hair Half Dime',
-                    'Flowing Hair Large Cent', 'Flying Eagle Small Cent', 'Franklin Half Dollar',
-                    'Indian Head Small Cent', 'Jefferson Nickel', 'Kennedy Half Dollar',
-                    'Liberty Cap Half Cent', 'Liberty Cap Large Cent', 'Liberty Nickel',
-                    'Liberty Walking Half Dollar', 'Lincoln Bicentennial Small Cent', 'Lincoln Memorial Small Cent',
-                    'Lincoln Shield Small Cent', 'Lincoln Wheat Small Cent', 'Mercury Dime',
-                    'Morgan Dollar', 'Morgan Dollar Toned', 'Native American Dollar',
-                    'Peace Dollar', 'Presidential Dollar', 'Roosevelt Dime',
-                    'Seated Half Dime', 'Seated Liberty Dime', 'Seated Liberty Dollar',
-                    'Seated Liberty Half Dollar', 'Seated Liberty Quarter', 'Semiquincentennial Dime',
-                    'Semiquincentennial Half Dollar', 'Semiquincentennial Quarter', 'Shield Nickel',
-                    'Standing Liberty Quarter', 'State Quarter', 'Susan B Anthony Dollar',
-                    'Three Cent Nickel', 'Three Cent Silver', 'Trade Dollar',
-                    'Twenty Cent', 'Two Cent', 'Washington Quarter',
-                    'Gold $1', 'Gold $2.50 Quarter Eagle', 'Gold $3',
-                    'Gold $5 Half Eagle', 'Gold $10 Eagle', 'Gold $20 Double Eagle',
-                    'Fractional Pioneer Gold', 'Colonial', 'Post Colonial',
-                    'U.S. Philippine Coin', 'Other US Coin', '--- COMMEMORATIVES ---',
-                    'Classic Silver Commemorative', 'Classic Gold Commemorative', 'Modern Silver/Clad Commemorative',
-                    'Modern Gold Commemorative', '--- BULLION ---', 'Silver Bullion Coin',
-                    'Silver Bar or Round', 'Other Silver Bullion', 'Gold Bullion Coin',
-                    'Gold Bar or Round', 'Gold Leaf or Flake', 'Gold Nugget',
-                    'Platinum Bullion Coin', 'Platinum Bar or Round', 'Palladium Bullion Coin',
-                    'Titanium Bar or Round', 'Copper Bar or Round', 'Other Bullion',
-                    '--- SETS ---', 'Proof Set', 'Mint Set',
-                    '--- MIXED LOTS / ROLLS ---', 'US Small Cent Mixed Lot', 'US Nickel Mixed Lot',
-                    'US Half Dollar Mixed Lot', 'US Dollar Mixed Lot', 'US Gold Mixed Lot',
-                    'US Coin Mixed Lot', 'US Rolls', '--- PAPER CURRENCY ---',
-                    'Large Size Federal Reserve Bank Note', 'Large Size Federal Reserve Note', 'Large Size Gold Certificate',
-                    'Large Size Legal Tender Note', 'Large Size National Banknote', 'Large Size Silver Certificate',
-                    'Small Size Federal Reserve Bank Note', 'Small Size Federal Reserve Note', 'Small Size Gold Certificate',
-                    'Small Size Legal Tender Note', 'Small Size National Banknote', 'Small Size Silver Certificate',
-                    'Small Size WWII Emergency Note', 'Colonial Currency', 'Confederate Currency',
-                    'Fractional Currency', 'Military Payment Certificate', 'Obsolete Currency',
-                    'Obsolete Bank Check', 'Treasury Note', 'Other US Paper Money',
-                    '--- PAPER MONEY MIXED LOTS ---', 'Large Size Paper Money Mixed Lot', 'Small Size Paper Money Mixed Lot',
-                    'Paper Money Mixed Lot', '--- FOREIGN COINS ---', 'Australia Collection',
-                    'Australia Commemorative', 'Australia Proof Set', 'Austria Coin',
-                    'British India Coin', 'Cameroon Coin', 'Canada Large Cent',
-                    'Canada Small Cent', 'Canada Five Cent Silver', 'Canada Five Cent',
-                    'Canada Ten Cent', 'Canada Twenty Cent', 'Canada Twenty Five Cent',
-                    'Canada Fifty Cent', 'Canada Dollar', 'Canada Two Dollar',
-                    'Canada Commemorative', 'Canada Mint Set', 'Canada Proof Set',
-                    'Canada Specimen Set', 'Canada Pre-Confederation Coin', 'Canada Token',
-                    'Other Canada Coin', 'Canada Mixed Lot', 'Cayman Islands Coin',
-                    'Cook Islands Coin', 'East Germany Coin', 'Egypt Coin',
-                    'Fiji Coin', 'German Empire Coin', 'German States Coin',
-                    'Germany Third Reich Coin', 'Germany Weimar Republic Coin', 'Germany West & Unified Coin',
-                    'Ghana Coin', 'Hawaiian Coin', 'Indonesia Coin',
-                    'Isle of Man Coin', 'Italy Coin', 'Liberia Coin',
-                    'Maldives Coin', 'Malta Coin', 'Mexico Colonial Coin',
-                    'Mexico War of Independence Coin', 'Mexico Empire of Iturbide Coin', 'Mexico First Republic Coin',
-                    'Mexico Empire of Maximilian Coin', 'Mexico Second Republic Coin', 'Mexico Modern Coin',
-                    'Mexico Mixed Lot', 'Nepal Coin', 'Netherlands Coin',
-                    'Russia Empire Coin', 'Russia Federation Coin', 'Russia USSR Coin',
-                    'Solomon Islands Coin', 'Spanish Coin', 'Sweden Coin',
-                    'Swiss Coin', 'Tuvalu Coin', 'UK / Great Britain Commemorative',
-                    'UK / Great Britain Penny', 'UK / Great Britain Sixpence', 'UK / Great Britain Threepence',
-                    'Other UK / Great Britain Coin', 'Vanuatu Coin', 'Other Asia Coin',
-                    'World Coin Mixed Lot', '--- FOREIGN PAPER MONEY ---', 'China Paper Money',
-                    'France Allied Military Currency', 'Italy Allied Military Currency', 'Japan Allied Military Currency',
-                    '--- EXONUMIA ---', 'Car Wash Token', 'Civil War Token',
-                    'Good Luck Token', 'Hard Times Token', 'Love Token',
-                    'Parking Token', 'Recovery Program Token', 'Tax Token',
-                    'Transit Token', 'US Trade Token', 'Other Token',
-                    'Hobo Nickel', 'Medal', 'Native American Coin',
-                    'Snuff Opium Coin', 'So-Called Dollar', 'Other Exonumia',
-                    '--- ANCIENT COINS ---', 'Ancient Byzantine Coin', 'Ancient Gaulish Coin',
-                    'Ancient Greek Coin', 'Ancient Roman Imperial Coin', 'Ancient Roman Provincial Coin',
-                    'Ancient Roman Republic Coin', 'Other Ancient Coin', '--- SUPPLIES ---',
-                    'Coin Album', 'Other Coin & Money Supplies', '--- NOVELTIES / OTHER ---',
-                    'Advent Calendar', 'Challenge Coin', 'Christmas Nativity Items',
-                    'Christmas Tree Ornaments', 'Disney Dollars', 'Earring',
-                    'Gift Box', 'Keychain', 'Necklace',
-                    'Novelty US Paper Money', 'Other Historical Memorabilia', 'Other Star Trek Collectible',
-                    'Palm Stone', 'Postcards', 'Role Playing Game Accessories',
-                    'United States Postage Stamp', 'Wristwatches',
-            ];
+            // Store Category is the parent-product picker for offers NOT on GreySheet
+            // (watches, calendars, stamps, nativity, albums...); the granular coin
+            // names live in coin_type so this menu keeps its section-opening job
+            return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
+                    'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'];
         }
 
         static $small = [
@@ -372,9 +294,15 @@ final class Computer
             if (strpos($g($pf), ',') !== false) { $row[$pf] = str_replace(',', '', $g($pf)); }
         }
 
-        // Des's per-category copy fills the Extended Description when empty
+        // Des's per-category copy fills the Extended Description when empty;
+        // his sheet keys by granular names, so coins match on coin_type (+ denomination)
         if ($g('extended_description') === '') {
-            $dc = Schema::categoryCopy($category);
+            $dc = [];
+            foreach ([$category, $g('coin_type'),
+                      trim($g('coin_type') . ' ' . $g('denomination'))] as $ck) {
+                if ($ck !== '') { $dc = Schema::categoryCopy($ck); }
+                if ($dc) { break; }
+            }
             $txt = trim((string) ($dc['copy'] ?? ''));
             if ($txt === '') { $txt = trim((string) ($dc['alt1'] ?? '')); }
             if ($txt === '') { $txt = trim((string) ($dc['alt2'] ?? '')); }
