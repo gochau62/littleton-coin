@@ -75,6 +75,19 @@ final class Schema
     // "what should THIS box's dropdown menu show?"
     // Des's per-category listing copy: an admin override wins, his generated
     // file is the base; [] when the category has neither
+    // staff-added dropdown fields (data screen): a box on the form + a column in the export
+    public static function customFields(): array
+    {
+        $out = [];
+        $all = function_exists('sblCfgAll') ? sblCfgAll('FIELD') : [];
+        foreach ($all as $name => $json) {
+            $c = json_decode((string) $json, true) ?: [];
+            $out[] = ['name' => (string) $name, 'label' => (string) ($c['label'] ?? $name),
+                      'dropdown' => (string) $name, 'required' => false, 'auto' => false];
+        }
+        return $out;
+    }
+
     // every category in Des's copy file (the Descriptions tab lists these)
     public static function categoryCopyAll(): array
     {
@@ -611,7 +624,11 @@ final class Exporter
             $home = strtolower(trim((string) ($c['market'] ?? 'all')));
             if ($market !== 'all' && $home !== 'all' && $home !== $market) { continue; }
             $out[] = ['name' => (string) $name, 'label' => (string) ($c['label'] ?? $name),
-                      'value' => (string) ($c['value'] ?? '')];
+                      'value' => (string) ($c['value'] ?? ''), 'src' => ''];
+        }
+        // staff-added dropdown fields export whatever the operator typed in their box
+        foreach (Schema::customFields() as $f) {
+            $out[] = ['name' => $f['name'], 'label' => $f['label'], 'value' => '', 'src' => $f['name']];
         }
         return $out;
     }
@@ -769,10 +786,11 @@ final class Exporter
                 }
             }
             foreach ($extra as $j => $c) {
-                if ($c['value'] === '') { continue; }
-                $ws->setCellValueExplicit($cell($base + $j, $r), $c['value'],
+                $v = $c['src'] !== '' ? (string) ($row[$c['src']] ?? '') : $c['value'];
+                if ($v === '') { continue; }
+                $ws->setCellValueExplicit($cell($base + $j, $r), $v,
                     \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-                $widths[$base + $j] = max($widths[$base + $j], strlen($c['value']));
+                $widths[$base + $j] = max($widths[$base + $j], strlen($v));
             }
             $r++;
         }
@@ -817,7 +835,7 @@ final class Exporter
                 if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
                 $line[] = $v;
             }
-            foreach ($extra as $c) { $line[] = $c['value']; }
+            foreach ($extra as $c) { $line[] = $c['src'] !== '' ? (string) ($row[$c['src']] ?? '') : $c['value']; }
             fputcsv($fh, $line);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);

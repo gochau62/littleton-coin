@@ -218,6 +218,11 @@ switch ($action) {
             if (!$opts) { continue; }
             $fields[] = ['name' => $col['name'], 'label' => $col['label'], 'options' => $opts];
         }
+        // staff-added fields always list, even before any values are saved
+        foreach (Schema::customFields() as $col) {
+            $fields[] = ['name' => $col['name'], 'label' => $col['label'],
+                         'options' => Schema::optionsFor($col), 'custom' => true];
+        }
         // the Descriptions tab lists Des's copy categories plus any staff-added ones
         $catNames = array_keys(Schema::categoryCopyAll());
         foreach (array_keys(sblCfgAll('COPY')) as $k) {
@@ -318,6 +323,34 @@ switch ($action) {
     case 'cfgDelCol':
         echo json_encode(sblCfgDel('COL', trim((string) ($_POST['column'] ?? '')))
             ? ['returnClass' => 'success'] : ['returnClass' => 'error', 'message' => 'Remove failed.']);
+        break;
+
+    case 'cfgAddField':
+        // a staff-added dropdown: a box on the loader form AND a column in the export
+        $label = trim((string) ($_POST['label'] ?? ''));
+        $name  = strtolower(trim(preg_replace('/[^A-Za-z0-9]+/', '_', $label), '_'));
+        if ($label === '' || $name === '') {
+            echo json_encode(['returnClass' => 'error', 'message' => 'A header name is needed.']); break;
+        }
+        $clash = isset(Schema::byName()[$name]);
+        foreach (Exporter::layout() as $c) { if ($c['name'] === $name) { $clash = true; break; } }
+        if ($clash) {
+            echo json_encode(['returnClass' => 'error', 'message' => 'That header already exists.']); break;
+        }
+        echo json_encode(sblCfgPut('FIELD', $name, json_encode(['label' => $label]))
+            ? ['returnClass' => 'success']
+            : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        break;
+
+    case 'cfgDelField':
+        $name = trim((string) ($_POST['field'] ?? ''));
+        if ($name === '') { echo json_encode(['returnClass' => 'error', 'message' => 'Pick a header.']); break; }
+        // the field, its value list and any market override go together
+        $ok = sblCfgDel('FIELD', $name);
+        sblCfgDel('VALUES', $name);
+        sblCfgDel('MARKET', $name);
+        echo json_encode($ok ? ['returnClass' => 'success']
+                             : ['returnClass' => 'error', 'message' => 'Delete failed.']);
         break;
 
     default:

@@ -95,7 +95,29 @@ function fillValues(){
     $.each(sbaFields, function(i, x){ if (x.name === name) f = x; });
     $('#v-ta').val(f ? f.options.join('\n') : '');
     $('#v-ov').html(sbaOvValues.indexOf(name) >= 0 ? '<span class="sba-ovtag">staff list</span>' : '');
+    $('#v-del').toggle(!!(f && f.custom));
     $('#v-msg').text('');
+}
+
+function addField(){
+    var label = $.trim($('#v-new').val() || '');
+    if (!label) { $('#v-msg').text('Type a header name first.'); return; }
+    postA({ action:'cfgAddField', label:label }, function(){
+        $('#v-new').val('');
+        loadAll(function(){
+            $.each(sbaFields, function(i, f){ if (f.label === label) $('#v-field').val(f.name); });
+            fillValues();
+            $('#v-msg').text('Added - it is now a box on the loader and a column in the export. Type its values and Save.');
+        });
+    });
+}
+function delField(){
+    var name = $('#v-field').val(), isCustom = false;
+    $.each(sbaFields, function(i, f){ if (f.name === name) isCustom = !!f.custom; });
+    if (!isCustom) { $('#v-msg').text('Standard boxes cannot be deleted - use Market Columns / Not exported to drop their column.'); return; }
+    postA({ action:'cfgDelField', field:name }, function(){
+        loadAll(function(){ $('#v-msg').text(name + ' deleted.'); });
+    });
 }
 
 function saveValues(){

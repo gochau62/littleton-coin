@@ -417,6 +417,13 @@ details.group summary::-webkit-details-marker { display:none; }
                         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
                 ];
+                // staff-added fields from the data screen get their own section
+                $customFields = Schema::customFields();
+                if ($customFields) {
+                    $sections['Custom fields'] = ['open' => false, 'id' => 'custom-fields-sec',
+                        'fields' => array_column($customFields, 'name')];
+                    foreach ($customFields as $cf) { $byName[$cf['name']] = $cf; }
+                }
                 foreach ($sections as $title => $sec) {
                     echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '')
                        . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
@@ -430,7 +437,8 @@ details.group summary::-webkit-details-marker { display:none; }
                            . '<span id="genai-msg"></span></div>';
                     }
                     echo '<div class="field-grid">';
-                    $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
+                    $manual = !empty($sec['id'])
+                        && in_array($sec['id'], ['other-products-sec', 'custom-fields-sec'], true);   // GreySheet has nothing for these
                     // computed fields keep updating live even though required
                     $autoAlways = ['name','description','extended_description',
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',

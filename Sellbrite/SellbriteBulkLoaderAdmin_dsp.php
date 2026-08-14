@@ -73,15 +73,19 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
     <div class="sba-card" id="tab-values">
         <p class="sba-note">The choices each dropdown on the loader offers. One value per line - add or
            delete lines and Save; the list replaces the standard one. Operators can always type values
-           that are not listed; these lists are the suggestions.</p>
+           that are not listed; these lists are the suggestions. Adding a header creates a new box on
+           the loader AND a new column in the export spreadsheet.</p>
         <div class="sba-row">
             <select id="v-field" class="sba-pick"></select>
+            <input class="sba-pick" id="v-new" placeholder="New header name">
+            <button type="button" class="sba-btn ghost" onclick="addField()">Add Header</button>
             <span id="v-ov"></span>
         </div>
         <label class="sba-lbl">Values (one per line)</label>
         <textarea id="v-ta" class="sba-ta" spellcheck="false"></textarea>
         <div style="margin-top:10px">
             <button type="button" class="sba-btn" onclick="saveValues()">Save List</button>
+            <button type="button" class="sba-btn ghost" id="v-del" onclick="delField()" style="display:none">Delete Header</button>
             <span class="sba-msg" id="v-msg"></span>
         </div>
     </div>

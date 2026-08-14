@@ -184,9 +184,37 @@ function sbl_writable_columns()
     $cols[] = 'created_by';    // row owner (signed-on user); not a Sellbrite header
     // the finder bars save with the row (columns exist after the ALTER; filtered out before)
     foreach (['lcc_sku', 'gs_path', 'gs_gsid', 'gs_coin'] as $bc) { $cols[] = $bc; }
+    $cols[] = 'extra';         // staff-added field values ride as JSON (column exists after its ALTER)
     $tcols = sbl_table_columns();
     if (count($tcols) < 5) { return $cols; }   // lookup failed - don't over-filter
     return array_values(array_filter($cols, static fn($c) => isset($tcols[$c])));
+}
+
+// staff-added field values pack into the EXTRA json column before a save
+function sbl_pack_extra(array &$row)
+{
+    if (!function_exists('sblCfgAll')) { return; }
+    $vals = [];
+    foreach (array_keys(sblCfgAll('FIELD')) as $f) {
+        $v = trim((string) ($row[$f] ?? ''));
+        if ($v !== '') { $vals[$f] = $v; }
+    }
+    $row['extra'] = $vals ? json_encode($vals) : '';
+}
+
+// and unpack back into plain row keys for the form and the exports
+function sbl_unpack_extra(array $row): array
+{
+    $j = (string) ($row['extra'] ?? '');
+    if ($j !== '') {
+        $d = json_decode($j, true);
+        if (is_array($d)) {
+            foreach ($d as $k => $v) {
+                if (!isset($row[$k]) || $row[$k] === '') { $row[$k] = (string) $v; }
+            }
+        }
+    }
+    return $row;
 }
 
 // run a prepared SELECT, return rows as lowercase-keyed arrays
@@ -284,7 +312,7 @@ function sblGetAllFull()
     $sql = 'SELECT * FROM ' . SBL_TABLE; $params = [];
     // the export also only carries the signed-on user's rows
     if (sbl_own_filter()) { $sql .= ' WHERE created_by = ? OR created_by IS NULL'; $params[] = sbl_current_user(); }
-    return sbl_select($sql . ' ORDER BY updated_at DESC', $params);
+    return array_map('sbl_unpack_extra', sbl_select($sql . ' ORDER BY updated_at DESC', $params));
 }
 
 // one full row for the edit form, false if not found
@@ -296,7 +324,7 @@ function sblFind($id)
     // you can only open your own rows (or unowned pre-ALTER rows)
     if (sbl_own_filter()) { $sql .= ' AND (created_by = ? OR created_by IS NULL)'; $params[] = sbl_current_user(); }
     $rows = sbl_select($sql, $params);
-    return $rows[0] ?? false;
+    return isset($rows[0]) ? sbl_unpack_extra($rows[0]) : false;
 }
 
 // insert a new row; returns the new id or false
@@ -308,6 +336,7 @@ function sblInsert(array $row)
     // Delimited uppercase identifiers: safe for reserved-ish names (condition, year).
     $qcols = array_map(static fn($c) => '"' . strtoupper($c) . '"', $cols);
     $row['created_by'] = sbl_current_user();   // new rows belong to whoever is signed on
+    sbl_pack_extra($row);
     $sql  = 'INSERT INTO ' . SBL_TABLE . ' (' . implode(', ', $qcols) . ') VALUES ('
           . implode(', ', array_fill(0, count($cols), '?')) . ')';
     $stmt = db2_prepare($conn, $sql);
@@ -327,6 +356,7 @@ function sblUpdate($id, array $row)
     if (!$conn) { return false; }
     $cols = sbl_writable_columns();
     $row['created_by'] = sbl_current_user();   // saving claims unowned pre-ALTER rows
+    sbl_pack_extra($row);
     $set  = implode(', ', array_map(static fn($c) => '"' . strtoupper($c) . '" = ?', $cols));
     $sql  = 'UPDATE ' . SBL_TABLE . ' SET ' . $set . ' WHERE id = ?';
     if (sbl_own_filter()) { $sql .= " AND (created_by = ? OR created_by IS NULL)"; }
