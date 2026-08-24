@@ -219,6 +219,60 @@ switch ($action) {
                   ($dateRet > 0 ? ' dated ' . $dateRet : ''));
         rqsOut(array("ok" => true));
 
+    // correct one line of an existing requisition from the maintenance screen's line sheet
+    case 'updateline':
+        $reqNum  = intval($_POST['reqNum'] ?? 0);
+        $lineNum = intval($_POST['lineNum'] ?? 0);
+        if ($reqNum <= 0 || $lineNum <= 0) { rqsOutFail("No requisition line was named."); }
+
+        // only the boxes that were actually changed are sent, and anything absent is left exactly as it stands on the file
+        $item     = array_key_exists('item', $_POST)     ? substr(trim($_POST['item']), 0, 16)     : null;
+        $loc      = array_key_exists('loc', $_POST)      ? substr(trim($_POST['loc']), 0, 3)       : null;
+        $coinDate = array_key_exists('coinDate', $_POST) ? substr(trim($_POST['coinDate']), 0, 10) : null;
+        $desc     = array_key_exists('desc', $_POST)     ? substr(trim($_POST['desc']), 0, 50)     : null;
+        $skuTo    = array_key_exists('skuTo', $_POST)    ? substr(trim($_POST['skuTo']), 0, 16)    : null;
+
+        // the item number is what the line is, so it can be corrected but not emptied
+        if ($item !== null && $item === '') { rqsOutFail("Line " . $lineNum . " needs an item number."); }
+
+        // the typed number boxes are checked here instead of reaching Db2 as a silent zero
+        $nums = array('qty' => null, 'cost' => null, 'retail' => null, 'addCost' => null);
+        $labels = array('qty' => 'quantity', 'cost' => 'cost',
+                        'retail' => 'retail', 'addCost' => 'additional cost');
+        foreach ($labels as $fld => $label) {
+            if (!array_key_exists($fld, $_POST)) { continue; }
+            $raw = str_replace(',', '', trim($_POST[$fld]));
+            if (!is_numeric($raw)) {
+                rqsOutFail("The " . $label . " on line " . $lineNum . " is not a number.");
+            }
+            if (floatval($raw) < 0) {
+                rqsOutFail("The " . $label . " on line " . $lineNum . " cannot be less than zero.");
+            }
+            $nums[$fld] = floatval($raw);
+        }
+        if ($nums['qty'] !== null && $nums['qty'] < 1) {
+            rqsOutFail("Line " . $lineNum . " needs a quantity of at least one.");
+        }
+
+        if (!rqsUpdateLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate, $desc,
+                           $nums['qty'], $nums['cost'], $nums['retail'],
+                           $nums['addCost'], $skuTo)) {
+            rqsOutFail();
+        }
+
+        // every box the correction carried is named, so a question later about a changed item number or price is answered by the log by itself
+        rqsActLog($user, 'UPDATELINE', 'req ' . $reqNum . ' line ' . $lineNum .
+                  ($item            !== null ? ' item ' . $item              : '') .
+                  ($loc             !== null ? ' loc ' . $loc                : '') .
+                  ($coinDate        !== null ? ' coindate ' . $coinDate      : '') .
+                  ($desc            !== null ? ' desc "' . $desc . '"'       : '') .
+                  ($nums['qty']     !== null ? ' qty ' . $nums['qty']        : '') .
+                  ($nums['cost']    !== null ? ' cost ' . $nums['cost']      : '') .
+                  ($nums['retail']  !== null ? ' retail ' . $nums['retail']  : '') .
+                  ($nums['addCost'] !== null ? ' addcost ' . $nums['addCost'] : '') .
+                  ($skuTo           !== null ? ' skuto ' . $skuTo            : ''));
+        rqsOut(array("ok" => true));
+
     default:
         rqsOutFail("Unknown action.");
 }

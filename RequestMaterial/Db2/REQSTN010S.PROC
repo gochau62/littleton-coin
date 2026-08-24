@@ -1,0 +1,68 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN010S                                    */
+/*                                                                   */
+/* Program Narrative - Update one Requisition Detail Line.           */
+/*                     The maintenance screen's line sheet sends a   */
+/*                     corrected item, location, coin date,          */
+/*                     description, quantity, cost, retail,          */
+/*                     additional cost or SKU To, the way the        */
+/*                     Access frmMain subform let a line be typed    */
+/*                     over. A NULL parameter leaves that column     */
+/*                     unchanged, so a caller sends only what it     */
+/*                     actually changed.                             */
+/*                     The returned flag and its date are not here:  */
+/*                     REQSTN006S owns those.                        */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 08/24/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN010S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN010S (
+        IN INREQ#  DECIMAL(9, 0),
+        IN INLIN#  DECIMAL(3, 0),
+        IN INITEM  VARCHAR(16),
+        IN INLOC   VARCHAR(3),
+        IN INCNDT  VARCHAR(10),
+        IN INDESC  VARCHAR(50),
+        IN INQTY   DECIMAL(9, 0),
+        IN INCOST  DECIMAL(13, 4),
+        IN INRETL  DECIMAL(13, 4),
+        IN INACST  DECIMAL(13, 2),
+        IN INSKUT  VARCHAR(16)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        UPDATE RQSREQDTLT
+           SET RDITEM = COALESCE(INITEM, RDITEM),
+               RDLOC  = COALESCE(INLOC,  RDLOC),
+               RDCNDT = COALESCE(INCNDT, RDCNDT),
+               RDDESC = COALESCE(INDESC, RDDESC),
+               RDQTY  = COALESCE(INQTY,  RDQTY),
+               RDCOST = COALESCE(INCOST, RDCOST),
+               RDRETL = COALESCE(INRETL, RDRETL),
+               RDACST = COALESCE(INACST, RDACST),
+               RDSKUT = COALESCE(INSKUT, RDSKUT)
+         WHERE RDREQ# = INREQ#
+           AND RDLIN# = INLIN#;
+    END;

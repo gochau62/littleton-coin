@@ -218,4 +218,29 @@ function rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet = 0) {
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN006S"); }
     return true;
 }
+
+// PROGRAM NAME REQSTN010S: correct one detail line from the maintenance screen, where a null leaves that column as it stands
+function rqsUpdateLine($conn, $reqNum, $lineNum, $item = null, $loc = null,
+                       $coinDate = null, $desc = null, $qty = null, $cost = null,
+                       $retail = null, $addCost = null, $skuTo = null) {
+    $sql = "CALL REQSTN010S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    $stmt = db2_prepare($conn, $sql);
+    if (!$stmt) { return rqsFail("prepare REQSTN010S"); }
+
+    db2_bind_param($stmt, 1,  "reqNum", DB2_PARAM_IN);
+    db2_bind_param($stmt, 2,  "lineNum", DB2_PARAM_IN);
+    db2_bind_param($stmt, 3,  "item", DB2_PARAM_IN);
+    db2_bind_param($stmt, 4,  "loc", DB2_PARAM_IN);
+    db2_bind_param($stmt, 5,  "coinDate", DB2_PARAM_IN);
+    db2_bind_param($stmt, 6,  "desc", DB2_PARAM_IN);
+    db2_bind_param($stmt, 7,  "qty", DB2_PARAM_IN);
+    db2_bind_param($stmt, 8,  "cost", DB2_PARAM_IN);
+    db2_bind_param($stmt, 9,  "retail", DB2_PARAM_IN);
+    db2_bind_param($stmt, 10, "addCost", DB2_PARAM_IN);
+    db2_bind_param($stmt, 11, "skuTo", DB2_PARAM_IN);
+
+    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN010S"); }
+    return true;
+}
 ?>

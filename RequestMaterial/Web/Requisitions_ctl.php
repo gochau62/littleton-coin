@@ -233,7 +233,9 @@ $(document).ready(function () {
 
     // X and Cancel buttons close whichever window they sit in
     $('[data-close]').on('click', function () {
-        $('#' + $(this).data('close')).prop('hidden', true);
+        var id = $(this).data('close');
+        if (id === 'mdlView') { closeViewWindow(); return; }
+        $('#' + id).prop('hidden', true);
     });
 
     // clicking a row selects it (the ▶ gutter), it does not open it
@@ -380,10 +382,33 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
+    // a box typed over on the line sheet colours itself until Update saves it, so nothing sits corrected on screen and unsaved on the file
+    $('#viewLineBody').on('input', '.rq-ln', function () {
+        var inp = $(this);
+        inp.closest('td').toggleClass('rq-pending',
+            $.trim(inp.val()) !== $.trim(String(inp.data('orig'))));
+    });
+
+    // correcting an item number on the line sheet fills the boxes it left empty, the same rule the entry form follows: a price already there is never written over
+    $('#viewLineBody').on('change', '.rq-ln[data-field="item"]', function () {
+        var row = $(this).closest('tr');
+        var item = $.trim($(this).val());
+        if (item === '') { return; }
+        postAjax({ action: 'itemlookup', item: item }, function (resp) {
+            if (!resp.row) { return; }
+            fillIfEmpty(row, 'desc', $.trim(resp.row.RDDESC));
+            fillIfEmpty(row, 'coinDate', $.trim(resp.row.RDCNDT));
+            fillIfEmpty(row, 'cost', fillNum(resp.row.RDCOST));
+            fillIfEmpty(row, 'retail', fillNum(resp.row.RDRETL));
+        }, true);
+    });
+
     // ESC closes the topmost window (never the entry mode form)
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape' && RQ_MODE !== 'entry') {
-            $('.rq-overlay').not('[hidden]').last().prop('hidden', true);
+            var top = $('.rq-overlay').not('[hidden]').last();
+            if (top.attr('id') === 'mdlView') { closeViewWindow(); return; }
+            top.prop('hidden', true);
         }
     });
 
@@ -621,6 +646,12 @@ function fillNum(v) {
 // HTML escape for element text
 function esc(s) {
     return $('<span>').text(s == null ? '' : String(s)).html();
+}
+
+
+// esc() for a value going inside an attribute, where a quote in a description would otherwise close the attribute early
+function escAttr(s) {
+    return esc(s).replace(/"/g, '&quot;');
 }
 
 
@@ -1020,6 +1051,75 @@ function submitRequisition() {
 
 // view and update
 
+// one typed cell of the line sheet, holding what it started as so only the boxes actually changed are sent back
+// every box takes exactly what its column on the entry form takes, so a correction cannot be longer than the file allows
+function lnCell(field, val, max, num) {
+    var v = (val == null ? '' : String(val));
+    return '<td' + (num ? ' class="rq-num"' : '') + '>' +
+           '<input class="rq-ln" data-field="' + field + '" data-orig="' + escAttr(v) + '"' +
+           ' maxlength="' + max + '" value="' + escAttr(v) + '"></td>';
+}
+
+
+// autofill only fills what the line does not already say: an empty box, or a price still sitting at zero
+function fillIfEmpty(row, field, val) {
+    if (val === '') { return; }
+    var inp = row.find('.rq-ln[data-field="' + field + '"]');
+    var now = $.trim(inp.val());
+    var isPrice = (field === 'cost' || field === 'retail');
+    if (now === '' || (isPrice && !parseFloat(now.replace(/,/g, '')))) {
+        inp.val(val).trigger('input');
+    }
+}
+
+
+// closing the view window with corrections still on it asks first, so a typed over line is not lost to a stray Escape
+function closeViewWindow() {
+    if ($('#viewLineBody td.rq-pending').length === 0) {
+        $('#mdlView').prop('hidden', true);
+        return;
+    }
+    ask('Leave without saving?',
+        'Boxes on the line sheet were typed over and have not been saved. Update saves them.',
+        'Leave them', 'Stay here',
+        function () { $('#mdlView').prop('hidden', true); });
+}
+
+
+// the lines that have been typed over, one request each, so a line that was left alone is never rewritten
+function changedLines() {
+    var reqNum = $('#mdlView').data('req');
+    var out = [];
+    $('#viewLineBody tr').each(function () {
+        var tr = $(this);
+        var data = { action: 'updateline', reqNum: reqNum, lineNum: tr.data('line') };
+        var any = false;
+        tr.find('.rq-ln').each(function () {
+            var inp = $(this);
+            if ($.trim(inp.val()) !== $.trim(String(inp.data('orig')))) {
+                data[inp.data('field')] = $.trim(inp.val());
+                any = true;
+            }
+        });
+        if (any) { out.push({ tr: tr, data: data }); }
+    });
+    return out;
+}
+
+
+// corrected lines save one at a time, so a box Db2 refuses names its own line and the lines already saved stay saved
+function saveLines(list, i, done) {
+    if (i >= list.length) { done(list.length); return; }
+    postAjax(list[i].data, function () {
+        list[i].tr.find('.rq-ln').each(function () {
+            $(this).data('orig', $.trim($(this).val()));
+        });
+        list[i].tr.find('td').removeClass('rq-pending');
+        saveLines(list, i + 1, done);
+    });
+}
+
+
 function openViewModal(reqNum) {
     postAjax({ action: 'get', reqNum: reqNum }, function (resp) {
         if (!resp.rows.length) {
@@ -1057,19 +1157,21 @@ function openViewModal(reqNum) {
         $('#authBy').val(h.RHAUTB || 'Authorization = None');
         $('#authComments').val(h.RHCMNT);
 
+        // the line sheet is typed into here the way the Access subform was, so a requisition can be corrected after it was raised without keying it again
         var html = '';
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] == null) { return; }
-            html += '<tr>' +
-                '<td>' + esc(r.RDITEM) + '</td>' +
-                '<td>' + esc(r.RDLOC) + '</td>' +
-                '<td>' + esc(r.RDCNDT) + '</td>' +
-                '<td>' + esc(r.RDDESC) + '</td>' +
-                '<td class="rq-num">' + esc(r.RDQTY) + '</td>' +
-                '<td class="rq-num">' + money(r.RDCOST) + '</td>' +
-                '<td class="rq-num">' + money(r.RDRETL) + '</td>' +
-                '<td class="rq-num">' + money(r.RDACST) + '</td>' +
-                '<td>' + esc(r.RDSKUT) + '</td>' +
+            html += '<tr data-line="' + esc(r['RDLIN#']) + '">' +
+                lnCell('item',     r.RDITEM, 16) +
+                lnCell('loc',      r.RDLOC, 3) +
+                lnCell('coinDate', r.RDCNDT, 10) +
+                lnCell('desc',     r.RDDESC, 50) +
+                lnCell('qty',      parseFloat(r.RDQTY) || 0, 7, true) +
+                // the money boxes take ten here rather than the entry form's eight, so a stored price already past that can still be typed over
+                lnCell('cost',     money(r.RDCOST), 10, true) +
+                lnCell('retail',   money(r.RDRETL), 10, true) +
+                lnCell('addCost',  money(r.RDACST), 10, true) +
+                lnCell('skuTo',    r.RDSKUT, 16) +
                 '<td class="rq-nobox"><input type="checkbox" class="rq-returned"' +
                 ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
                 (r.RDRTNF === 'Y' ? ' checked' : '') + '></td>' +
@@ -1105,9 +1207,14 @@ function updateCurrent() {
         areaCode: $('#v_acode').val(),
         areaType: $('#v_atype').val()
     }, function () {
-        $('#mdlView').prop('hidden', true);
-        swal('Updated', 'Record req_num=' + reqNum + ' has been updated.', 'success');
-        loadGrid();
+        // the header goes first, then the corrected lines; the window only closes once everything it was holding is saved
+        saveLines(changedLines(), 0, function (saved) {
+            $('#mdlView').prop('hidden', true);
+            swal('Updated', 'Record req_num=' + reqNum + ' has been updated' +
+                 (saved ? ' (' + saved + (saved === 1 ? ' line' : ' lines') + ' corrected)' : '') + '.',
+                 'success');
+            loadGrid();
+        });
     });
 }
 

@@ -294,6 +294,16 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
+/* the line sheet is typed straight into, the way the Access subform was: the cell is already the box, so the input sits inside it rather than drawing a second one */
+#tblViewLines { table-layout: fixed; }
+.rq-lgcytable tbody td .rq-ln { width: 100%; box-sizing: border-box; border: 0; background: none;
+                                margin: 0; padding: 0; font: inherit; color: inherit; }
+.rq-lgcytable tbody td .rq-ln:focus { outline: 2px solid var(--rq-blue); outline-offset: 2px; }
+.rq-lgcytable tbody td.rq-num .rq-ln { text-align: right; }
+
+/* a box typed over but not saved yet, in the same amber the grid's badge box waits in */
+.rq-lgcytable tbody td.rq-pending { background: #fdf8ee; }
+
 /* entry only mode: the work floor form fills the page and cannot be closed */
 .rq-entry .rq-toolbar, .rq-entry .rq-card, .rq-entry #addAuthByRow { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x, .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
@@ -521,6 +531,12 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lgcytable" id="tblViewLines">
+            <colgroup>
+              <col style="width:12%"><col style="width:4.5%"><col style="width:8%">
+              <col style="width:25%"><col style="width:5.5%"><col style="width:7%">
+              <col style="width:7%"><col style="width:7%"><col style="width:12%">
+              <col style="width:5%"><col style="width:7%">
+            </colgroup>
             <thead>
               <tr>
                 <th>Item#:</th><th>Location:</th><th>Date:</th><th>Description:</th>
