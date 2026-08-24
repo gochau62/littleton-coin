@@ -281,28 +281,6 @@ $(document).ready(function () {
         }
     });
 
-    // the requestor saves as soon as the box is left; it belongs to the requisition rather than to one line, so it goes through the header and lands on every line of that requisition at once
-    $('#gridBody').on('change', '.rq-headcell', function () {
-        var inp = $(this);
-        var was = String(inp.data('was'));
-        var val = inp.val().trim();
-        if (val === was) { return; }
-
-        var reqNum = String(inp.data('req'));
-        postAjax({ action: 'update', reqNum: reqNum, reqName: val }, function () {
-            inp.data('was', val);
-            $.each(gridRows, function (i, r) {
-                if (String(r['RHREQ#']) === reqNum) { r.RHNAME = val; }
-            });
-            lastGridJson = JSON.stringify(gridRows);
-            $('#gridBody .rq-headcell').each(function () {
-                if (this !== inp[0] && String($(this).data('req')) === reqNum) {
-                    $(this).val(val).data('was', val);
-                }
-            });
-        });
-    });
-
     // the badge box saves as soon as you leave it; every line of the requisition shares it
     $('#gridBody').on('change', '.rq-badge', function () {
         var inp = $(this);
@@ -789,11 +767,8 @@ function renderGrid() {
             '<td><span class="rq-reqlink" title="Open requisition ' + esc(r['RHREQ#']) + '">' +
                 esc(r['RHREQ#']) + '</span></td>' +
             '<td>' + fmtDate(r.RHRQDT) + '</td>' +
-            '<td title="' + attr(r.RHNAME) + '">' +
-                '<input class="rq-cell rq-headcell" data-field="reqName" maxlength="50"' +
-                ' data-req="' + esc(r['RHREQ#']) + '"' +
-                ' data-was="' + attr(r.RHNAME) + '" value="' + attr(r.RHNAME) + '">' + '</td>' +
-            // the item number, the location and the quantity are read here and corrected in the requisition window, where the whole line is in front of you rather than one box of it
+            '<td title="' + attr(r.RHNAME) + '">' + esc(r.RHNAME) + '</td>' +
+            // the grid is a list to read: the requestor, the item number, the location and the quantity are all corrected by opening the requisition, where the whole of it is in front of you rather than one box of it
             '<td title="' + attr(r.RDITEM) + '">' + esc(r.RDITEM) + '</td>' +
             '<td>' + esc(r.RDLOC) + '</td>' +
             // the column holds five digits, which covers all but a handful of old bulk orders; the full figure is on the cell for hovering over

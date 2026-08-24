@@ -109,7 +109,7 @@ function dspRequisitions($user, $rqLookups = null, $mode = '') {
                     padding: .35rem .3rem; }
 
 /* a cell holding an editable box gives up its own padding, because the box inside already has some and the two together were eating a quarter of the column and cutting the text off */
-#tblGrid tbody td:has(.rq-cell), #tblGrid tbody td:has(.rq-badgewrap) { padding: 0; }
+#tblGrid tbody td:has(.rq-badgewrap) { padding: 0; }
 
 #tblGrid .rq-ret { font-size: .78rem; color: var(--rq-muted); text-align: right; }
 #tblGrid .rq-ret input { vertical-align: middle; }
@@ -167,20 +167,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 /* a badge that has been set reads as plain text, with no box around it, because there is nothing left to type into */
 .rq-badgeset { display: inline-block; padding: 0 .3rem; }
 
-
-/* item, location, quantity and description edit in place; the box stays invisible until pointed at so the grid still reads as a list rather than a form */
-.rq-grid .rq-cell { width: 100%; box-sizing: border-box; padding: .3rem .25rem; font: inherit;
-                    color: inherit; background: transparent; border: 1px solid transparent;
-                    border-radius: 4px; }
-
-.rq-grid .rq-cell:hover { border-color: var(--rq-line); background: #fff; }
-
-.rq-grid .rq-cell:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px;
-                          border-color: var(--rq-blue); background: #fff; }
-
-
-/* the description keeps its quieter look while it is only being read */
-#tblGrid .rq-desc .rq-cell { color: var(--rq-muted); font-size: .78rem; }
 
 /* the small arrow that opens the employee list, like the old Access badge box */
 .rq-badgedd { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); border: 0;
