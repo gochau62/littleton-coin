@@ -649,12 +649,6 @@ function esc(s) {
 }
 
 
-// esc() for a value going inside an attribute, where a quote in a description would otherwise close the attribute early
-function escAttr(s) {
-    return esc(s).replace(/"/g, '&quot;');
-}
-
-
 // esc() for attribute values (quotes escaped too)
 function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
@@ -1056,8 +1050,8 @@ function submitRequisition() {
 function lnCell(field, val, max, num) {
     var v = (val == null ? '' : String(val));
     return '<td' + (num ? ' class="rq-num"' : '') + '>' +
-           '<input class="rq-ln" data-field="' + field + '" data-orig="' + escAttr(v) + '"' +
-           ' maxlength="' + max + '" value="' + escAttr(v) + '"></td>';
+           '<input class="rq-ln" data-field="' + field + '" data-orig="' + attr(v) + '"' +
+           ' maxlength="' + max + '" value="' + attr(v) + '"></td>';
 }
 
 
