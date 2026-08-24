@@ -417,12 +417,11 @@ details.group summary::-webkit-details-marker { display:none; }
                         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
                 ];
-                // staff-added fields from the data screen get their own section
-                $customFields = Schema::customFields();
-                if ($customFields) {
-                    $sections['Custom fields'] = ['open' => false, 'id' => 'custom-fields-sec',
-                        'fields' => array_column($customFields, 'name')];
-                    foreach ($customFields as $cf) { $byName[$cf['name']] = $cf; }
+                // staff-added fields land in the section picked on the data screen
+                foreach (Schema::customFields() as $cf) {
+                    $sec = isset($sections[$cf['section']]) ? $cf['section'] : 'Coin details';
+                    $sections[$sec]['fields'][] = $cf['name'];
+                    $byName[$cf['name']] = $cf;
                 }
                 foreach ($sections as $title => $sec) {
                     echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '')
@@ -437,8 +436,7 @@ details.group summary::-webkit-details-marker { display:none; }
                            . '<span id="genai-msg"></span></div>';
                     }
                     echo '<div class="field-grid">';
-                    $manual = !empty($sec['id'])
-                        && in_array($sec['id'], ['other-products-sec', 'custom-fields-sec'], true);   // GreySheet has nothing for these
+                    $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
                     // computed fields keep updating live even though required
                     $autoAlways = ['name','description','extended_description',
                                    'feature_1','feature_2','feature_3','feature_4','feature_5',
@@ -457,6 +455,8 @@ details.group summary::-webkit-details-marker { display:none; }
                         $col['auto'] = !empty($sec['images']) || in_array($n, $manualAlways, true) ? false
                             : (!$manual && (!$col['required'] || in_array($n, $autoAlways, true)));
                         $col['nobadge'] = in_array($n, $noBadge, true);
+                        // staff boxes have no formula - AI or operator fill only
+                        if (!empty($col['custom'])) { $col['auto'] = false; }
                         echo $renderField($col);
                     }
                     echo '</div></details>';

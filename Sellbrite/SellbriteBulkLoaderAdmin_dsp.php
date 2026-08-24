@@ -78,6 +78,13 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <div class="sba-row">
             <select id="v-field" class="sba-pick"></select>
             <input class="sba-pick" id="v-new" placeholder="New header name">
+            <select class="sba-pick" id="v-sec">
+                <option value="Coin details">Coin details</option>
+                <option value="Market specific fields">Market specific fields</option>
+                <option value="Other product types (advent calendar / watch / stamp / nativity)">Other product types</option>
+                <option value="Packaging">Packaging</option>
+                <option value="Listing content">Listing content</option>
+            </select>
             <button type="button" class="sba-btn ghost" onclick="addField()">Add Header</button>
             <span id="v-ov"></span>
         </div>

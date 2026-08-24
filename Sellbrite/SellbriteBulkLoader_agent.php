@@ -980,6 +980,10 @@ function gs_coin_facts(array $c): array
 function sbl_field_options(string $name): array
 {
     $col = Schema::byName()[$name] ?? null;
+    if (!$col) {
+        // staff-added fields carry their own dropdown key
+        foreach (Schema::customFields() as $cf) { if ($cf['name'] === $name) { $col = $cf; break; } }
+    }
     $opts = $col ? Schema::optionsFor($col) : [];
     if (!$opts) { $opts = sbl_field_guide()[$name]['opts'] ?? []; }
     return array_values(array_filter($opts, static fn($o) => !preg_match('/^\s*(-{2,}|\*{3})/', (string) $o)));
@@ -1009,6 +1013,14 @@ function sbl_field_spec(): string
         }
         $lines[] = $line;
     }
+    // staff-added fields: filled ONLY when the coin facts clearly provide the value
+    foreach (Schema::customFields() as $cf) {
+        $line = '- ' . $cf['name'] . ' (' . $cf['label'] . '): staff-defined box. Fill ONLY when the '
+              . 'coin facts clearly provide this value; otherwise omit the field entirely - never guess.';
+        $opts = sbl_field_options($cf['name']);
+        if ($opts && count($opts) <= 80) { $line .= '  MUST be one of: ' . implode(' | ', $opts); }
+        $lines[] = $line;
+    }
     return $spec = implode("\n", $lines);
 }
 
@@ -1017,6 +1029,7 @@ function sbl_clean_ai_row($data): array
 {
     if (!is_array($data)) { return []; }
     $valid = array_flip(array_column(Schema::columns(), 'name'));
+    foreach (Schema::customFields() as $cf) { $valid[$cf['name']] = true; }
     $row = [];
     foreach ($data as $k => $v) {
         if (isset($valid[$k]) && (is_scalar($v) || $v === null)) { $row[$k] = trim((string) $v); }
@@ -1032,6 +1045,11 @@ function sbl_snap_row(array $row): array
     }
     foreach (array_keys(sbl_field_guide()) as $f) {
         $opts = sbl_field_options($f);
+        if ($opts && isset($row[$f]) && $row[$f] !== '') { $row[$f] = sbl_snap($row[$f], $opts); }
+    }
+    // staff-added fields snap onto their staff value list too
+    foreach (Schema::customFields() as $cf) {
+        $f = $cf['name']; $opts = sbl_field_options($f);
         if ($opts && isset($row[$f]) && $row[$f] !== '') { $row[$f] = sbl_snap($row[$f], $opts); }
     }
     return $row;

@@ -221,7 +221,8 @@ switch ($action) {
         // staff-added fields always list, even before any values are saved
         foreach (Schema::customFields() as $col) {
             $fields[] = ['name' => $col['name'], 'label' => $col['label'],
-                         'options' => Schema::optionsFor($col), 'custom' => true];
+                         'options' => Schema::optionsFor($col), 'custom' => true,
+                         'section' => $col['section']];
         }
         // the Descriptions tab lists Des's copy categories plus any staff-added ones
         $catNames = array_keys(Schema::categoryCopyAll());
@@ -337,7 +338,12 @@ switch ($action) {
         if ($clash) {
             echo json_encode(['returnClass' => 'error', 'message' => 'That header already exists.']); break;
         }
-        echo json_encode(sblCfgPut('FIELD', $name, json_encode(['label' => $label]))
+        $sec = trim((string) ($_POST['section'] ?? ''));
+        $secs = ['Coin details', 'Market specific fields',
+                 'Other product types (advent calendar / watch / stamp / nativity)',
+                 'Packaging', 'Listing content'];
+        if (!in_array($sec, $secs, true)) { $sec = 'Coin details'; }
+        echo json_encode(sblCfgPut('FIELD', $name, json_encode(['label' => $label, 'section' => $sec]))
             ? ['returnClass' => 'success']
             : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
         break;

@@ -351,6 +351,8 @@
         // wipe only when the operator switches back to raw
         if (!certified && clearIt && box.val()) box.val('');
     }
+    // staff-added boxes: AI-filled from GreySheet data, so they tag and badge like it
+    var SBL_CUSTOM_FIELDS = <?php echo json_encode(array_column(Schema::customFields(), 'name')); ?>;
     // GreySheet's standardized wording beats the AS400 text for these two
     var SBL_GS_OVERRIDES = ['coin_variety_1', 'coin_variety_2'];
     // only these carry real GreySheet DATA - the rest of an import (packaging
@@ -360,7 +362,8 @@
         'circulated_or_uncirculated','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
         'country_of_manufacture','bullion_shape','coin_design','grade','cost',
-        'paper_money_grade_designation','paper_money_type','paper_money_series_designation'];
+        'paper_money_grade_designation','paper_money_type','paper_money_series_designation']
+        .concat(SBL_CUSTOM_FIELDS);
     function sblFillFromRow(row){
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
@@ -454,7 +457,8 @@
         'package_weight','exact_image','name','description','extended_description',
         'feature_1','feature_2','feature_3','feature_4','feature_5','search_terms',
         'ebay_coin_condition_type','ebay_graded_coin_letter_grade','ebay_graded_coin_numerical_grade',
-        'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition'];
+        'ebay_graded_coin_professional_grader','z_ebay_ungraded_coin_condition']
+        .concat(SBL_CUSTOM_FIELDS);
 
      // category-specific boxes: only show the fields that apply to the picked tree/series
     var SBL_CAT_FIELDS = {

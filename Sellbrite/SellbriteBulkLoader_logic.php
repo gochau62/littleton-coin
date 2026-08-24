@@ -83,7 +83,8 @@ final class Schema
         foreach ($all as $name => $json) {
             $c = json_decode((string) $json, true) ?: [];
             $out[] = ['name' => (string) $name, 'label' => (string) ($c['label'] ?? $name),
-                      'dropdown' => (string) $name, 'required' => false, 'auto' => false];
+                      'dropdown' => (string) $name, 'required' => false, 'auto' => false,
+                      'custom' => true, 'section' => (string) ($c['section'] ?? 'Coin details')];
         }
         return $out;
     }

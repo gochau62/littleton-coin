@@ -102,12 +102,12 @@ function fillValues(){
 function addField(){
     var label = $.trim($('#v-new').val() || '');
     if (!label) { $('#v-msg').text('Type a header name first.'); return; }
-    postA({ action:'cfgAddField', label:label }, function(){
+    postA({ action:'cfgAddField', label:label, section:$('#v-sec').val() }, function(){
         $('#v-new').val('');
         loadAll(function(){
             $.each(sbaFields, function(i, f){ if (f.label === label) $('#v-field').val(f.name); });
             fillValues();
-            $('#v-msg').text('Added - it is now a box on the loader and a column in the export. Type its values and Save.');
+            $('#v-msg').text('Added to ' + $('#v-sec').val() + ' - it is now a box on the loader and a column in the export. Type its values and Save.');
         });
     });
 }
