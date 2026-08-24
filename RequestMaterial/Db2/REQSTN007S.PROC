@@ -10,11 +10,10 @@
 /*                         + name) from the production employee      */
 /*                         file; always current, nothing to seed     */
 /*                       ITEM - entry-form autofill for INKEY:       */
-/*                         description, coin year, average cost and  */
-/*                         price from the ITMMSTP item master, with  */
-/*                         the item's last requisitioned cost,       */
-/*                         retail and coin-date string standing in   */
-/*                         where the master has none                 */
+/*                         description, coin date, average cost and  */
+/*                         price, all of it straight off the ITMMSTP */
+/*                         item master, which is the one source for  */
+/*                         what an item is and what it is worth      */
 /*                       ITEMSRCH - type-ahead search over the       */
 /*                         ITMMSTP item master (every inventory      */
 /*                         item, not just previously requisitioned) */
@@ -58,41 +57,21 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
              ORDER BY CDDESC, CDCODE;
 
         DECLARE C2 CURSOR WITH RETURN FOR
-            SELECT COALESCE(I.IIDESC, H.RDDESC) AS RDDESC,
-                   COALESCE(H.RDCNDT,
-                            NULLIF(TRIM(CHAR(I.IICDAT)), '0'),
-                            '') AS RDCNDT,
-                   COALESCE(NULLIF(I.IIAVGC, 0), H.RDCOST, 0) AS RDCOST,
-                   COALESCE(NULLIF(I.IIPRCE, 0), H.RDRETL, 0) AS RDRETL
-              FROM (VALUES 1) X (N)
-              LEFT JOIN LSCPRDLIB/ITMMSTP I
-                ON I.IISKU# = INKEY
-              LEFT JOIN LATERAL
-                   (SELECT D.RDDESC, D.RDCNDT, D.RDCOST, D.RDRETL
-                      FROM RQSREQDTLT D
-                     WHERE D.RDITEM = INKEY
-                     ORDER BY D.RDREQ# DESC, D.RDLIN# DESC
-                     FETCH FIRST 1 ROW ONLY) H
-                ON 1 = 1
-             WHERE I.IISKU# IS NOT NULL
-                OR H.RDDESC IS NOT NULL;
+            SELECT TRIM(I.IIDESC) AS RDDESC,
+                   COALESCE(NULLIF(TRIM(CHAR(I.IICDAT)), '0'), '') AS RDCNDT,
+                   I.IIAVGC AS RDCOST,
+                   I.IIPRCE AS RDRETL
+              FROM LSCPRDLIB/ITMMSTP I
+             WHERE I.IISKU# = INKEY
+             FETCH FIRST 1 ROW ONLY;
 
         DECLARE C3 CURSOR WITH RETURN FOR
-            SELECT I.IISKU# AS RDITEM,
-                   I.IIDESC AS RDDESC,
-                   COALESCE(H.RDCNDT,
-                            NULLIF(TRIM(CHAR(I.IICDAT)), '0'),
-                            '') AS RDCNDT,
-                   COALESCE(NULLIF(I.IIAVGC, 0), H.RDCOST, 0) AS RDCOST,
-                   COALESCE(NULLIF(I.IIPRCE, 0), H.RDRETL, 0) AS RDRETL
+            SELECT TRIM(I.IISKU#) AS RDITEM,
+                   TRIM(I.IIDESC) AS RDDESC,
+                   COALESCE(NULLIF(TRIM(CHAR(I.IICDAT)), '0'), '') AS RDCNDT,
+                   I.IIAVGC AS RDCOST,
+                   I.IIPRCE AS RDRETL
               FROM LSCPRDLIB/ITMMSTP I
-              LEFT JOIN LATERAL
-                   (SELECT D.RDCNDT, D.RDCOST, D.RDRETL
-                      FROM RQSREQDTLT D
-                     WHERE D.RDITEM = I.IISKU#
-                     ORDER BY D.RDREQ# DESC, D.RDLIN# DESC
-                     FETCH FIRST 1 ROW ONLY) H
-                ON 1 = 1
              WHERE UPPER(I.IISKU#) LIKE UPPER(INKEY) || '%'
              ORDER BY I.IISKU#
              FETCH FIRST 200 ROWS ONLY;
