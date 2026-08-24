@@ -10,11 +10,11 @@
 /*                         + name) from the production employee      */
 /*                         file; always current, nothing to seed     */
 /*                       ITEM - entry-form autofill for INKEY:       */
-/*                         description and coin year from the        */
-/*                         ITMMSTP item master, last-used cost,      */
-/*                         retail and coin-date string from          */
-/*                         requisition history (the master carries   */
-/*                         no pricing)                               */
+/*                         description, coin year, average cost and  */
+/*                         price from the ITMMSTP item master, with  */
+/*                         the item's last requisitioned cost,       */
+/*                         retail and coin-date string standing in   */
+/*                         where the master has none                 */
 /*                       ITEMSRCH - type-ahead search over the       */
 /*                         ITMMSTP item master (every inventory      */
 /*                         item, not just previously requisitioned) */
@@ -60,10 +60,10 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT COALESCE(I.IIDESC, H.RDDESC) AS RDDESC,
                    COALESCE(H.RDCNDT,
-                            TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))),
+                            NULLIF(TRIM(CHAR(I.IICDAT)), '0'),
                             '') AS RDCNDT,
-                   COALESCE(H.RDCOST, 0) AS RDCOST,
-                   COALESCE(H.RDRETL, 0) AS RDRETL
+                   COALESCE(NULLIF(I.IIAVGC, 0), H.RDCOST, 0) AS RDCOST,
+                   COALESCE(NULLIF(I.IIPRCE, 0), H.RDRETL, 0) AS RDRETL
               FROM (VALUES 1) X (N)
               LEFT JOIN LSCPRDLIB/ITMMSTP I
                 ON I.IISKU# = INKEY
@@ -81,10 +81,10 @@ CREATE OR REPLACE PROCEDURE REQSTN007S (
             SELECT I.IISKU# AS RDITEM,
                    I.IIDESC AS RDDESC,
                    COALESCE(H.RDCNDT,
-                            TRIM(CHAR(INT(NULLIF(I.IICDAT, 0)))),
+                            NULLIF(TRIM(CHAR(I.IICDAT)), '0'),
                             '') AS RDCNDT,
-                   COALESCE(H.RDCOST, 0) AS RDCOST,
-                   COALESCE(H.RDRETL, 0) AS RDRETL
+                   COALESCE(NULLIF(I.IIAVGC, 0), H.RDCOST, 0) AS RDCOST,
+                   COALESCE(NULLIF(I.IIPRCE, 0), H.RDRETL, 0) AS RDRETL
               FROM LSCPRDLIB/ITMMSTP I
               LEFT JOIN LATERAL
                    (SELECT D.RDCNDT, D.RDCOST, D.RDRETL
