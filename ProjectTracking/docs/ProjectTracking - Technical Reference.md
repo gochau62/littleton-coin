@@ -11,7 +11,7 @@ entry screen (`Picture2.png`) is a later phase and is not part of this work.
 |---|---|---|
 | Overview dashboard | `Web/ProjectTracking_ctl.php` | Stat tiles (open / new / awaiting SC review / unassigned), steering-committee pipeline, programmer-load bar chart, projects-by-status donut, weekly AI summary card, and a sortable/filterable project table |
 | Dashboard display | `Web/ProjectTracking_dsp.php` | Markup + the stylesheet shared by both screens |
-| Projects by developer | `Web/ProjectTracking_Assignments_ctl.php` / `_Assignments_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
+| Projects by developer | `Web/ProjectTracking_ByDeveloper_ctl.php` / `_ByDeveloper_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
 | Data + logic | `Web/ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Claude API call |
 | JSON/Excel endpoint | `Web/ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
 | Db2 procedure | `Db2/PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR` |
@@ -22,17 +22,14 @@ screen, and the legacy list stays reachable from the header nav.
 
 ## Deploying
 
-1. Copy the four `Web/*.php` files into the LCCOnline docroot (the same
-   folder as `PROJ_list_ctl.php` and `TimePayment_ctl.php` today). They use
-   the same `StartBlockScriptA/B` + `EndBlock` frame and root-relative
+1. Copy the `Web/*.php` files into the LCCOnline docroot (the same folder
+   as `PROJ_list_ctl.php` and `TimePayment_ctl.php` today). They use the
+   same `StartBlockScriptA/B` + `EndBlock` frame and root-relative
    includes (`jQuery/jquery.js`) as TimePayment, so they must sit in the root.
 2. Compile the procedure:
    `RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(PRJTRK001S)`.
-   **Before compiling, tie the file and field names out against
-   `PROJ_model.php` / `webNotesModel.php` on the server** — the names in the
-   source were reconstructed from the legacy page reads (`PRPROJP`,
-   `PRESTMTP`, the `PT*` time fields, the `WN*` WebNotes fields) and any that
-   differ only need renaming; the cursor shapes stay the same.
+   The file and field names are compile-verified (08/25/26) — the PRTIMEP
+   columns are `PT#`, `PTPGMR`, `PTDATE`, `PTTIME` per SYSCOLUMNS.
 3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
    the same PMS level as the legacy `PROJ_*` pages.
 4. The Excel download uses the vendored PhpSpreadsheet at
