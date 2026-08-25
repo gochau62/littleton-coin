@@ -182,6 +182,12 @@ $(document).ready(function () {
         window.open('Requisitions_ctl.php?mode=entry', '_blank');
     });
     $('#btnAddLine').on('click', addLineRow);
+    $('#btnMine').on('click', openMineModal);
+
+    // Print on a row prints that requisition, the same copy the station screen prints
+    $('#mineBody').on('click', '.rq-mineprint', function () {
+        printMyRequisition($(this).closest('tr').data('req'));
+    });
     $('#btnSubmit').on('click', submitRequisition);
     $('#btnUpdate').on('click', updateCurrent);
 
@@ -1483,6 +1489,75 @@ function showSuggest(inp, rows) {
         row.find('.ln-loc').trigger('focus');
     });
 }
+
+// My Requisitions: the entry form's own look-up, so the work floor can find what it asked for and
+// print a copy of it without the maintenance screen, which it has no authority for
+
+function openMineModal() {
+    var reqName = $.trim($('#addName').val());
+    if (reqName === '') {
+        swal('Which name?',
+             'Put the requestor name in first, then My Requisitions lists what that name has raised.',
+             'info');
+        $('#addName').trigger('focus');
+        return;
+    }
+
+    $('#mineFor').text('for ' + reqName);
+    $('#mineBody').html('<tr><td colspan="9" class="rq-empty">Loading...</td></tr>');
+    $('#mdlMine').data('name', reqName).prop('hidden', false);
+
+    postAjax({ action: 'mylist', reqName: reqName }, function (resp) {
+        renderMine(resp.rows || []);
+    });
+}
+
+
+function renderMine(rows) {
+    if (!rows.length) {
+        $('#mineBody').html('<tr><td colspan="9" class="rq-empty">' +
+            'Nothing has been raised under that name yet.</td></tr>');
+        return;
+    }
+
+    var html = '';
+    $.each(rows, function (i, r) {
+        // a requisition with nothing still out has come back in full; until then it counts what is open
+        var open = parseInt(r.RDOPEN, 10) || 0;
+        var status = open > 0
+            ? '<span class="rq-mineopen">' + open + ' still out</span>'
+            : '<span class="rq-minedone">All returned</span>';
+        var authName = $.trim(r.RHAUTB || '');
+        html += '<tr data-req="' + esc(r['RHREQ#']) + '">' +
+            '<td>' + esc(r['RHREQ#']) + '</td>' +
+            '<td>' + fmtDate(r.RHRQDT) + '</td>' +
+            '<td>' + esc(r.RHARCD) + '</td>' +
+            '<td>' + esc(r.RHARTY) + '</td>' +
+            '<td class="rq-num">' + esc(r.RDLINES) + '</td>' +
+            '<td>' + status + '</td>' +
+            '<td>' + (r.RHRUSH === 'Y' ? '<span class="rq-pill rq-rushpill">RUSH</span>' : '') + '</td>' +
+            '<td>' + esc(authName === 'Authorization = None' ? 'None' : authName) + '</td>' +
+            '<td><button type="button" class="rq-btn rq-mineprint"' +
+                ' title="Print this requisition, or save it as a PDF">&#128424; Print</button></td>' +
+            '</tr>';
+    });
+    $('#mineBody').html(html);
+}
+
+
+// the printed copy carries the requisition number in its title, so saving it as a PDF from the print
+// window names the file after the requisition rather than after the page it came from
+function printMyRequisition(reqNum) {
+    postAjax({ action: 'myget', reqNum: reqNum, reqName: $('#mdlMine').data('name') },
+        function (resp) {
+            if (!resp.rows || !resp.rows.length) {
+                swal('Not found', 'Requisition ' + reqNum + ' was not found.', 'warning');
+                return;
+            }
+            printHtml(reqPrintHtml(resp.rows), 'Requisition ' + reqNum);
+        });
+}
+
 
 // reports
 
