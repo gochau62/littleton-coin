@@ -15,11 +15,10 @@
 /*                     SRCMBR(PRJTRK001S)                            */
 /*********************************************************************/
 /*                                                                   */
-/* The file and field names were verified by the 08/25/26 compile -  */
-/* everything resolved except the PRTIMEP user column (SQL0205 on    */
-/* PTUSER). It is set to PTPGMR below, matching how PRESTMTP names   */
-/* its developer column; if DSPFFD LSCPRDLIB/PRTIMEP says otherwise, */
-/* that one name in cursor C2 is the only thing to change.           */
+/* PRTIMEP field names confirmed from QSYS2.SYSCOLUMNS 08/25/26:     */
+/* PT# (project #), PTPGMR (programmer), PTDATE (ccyymmdd) and       */
+/* PTTIME (hours, xx.xx). The project column is PT#, matching the    */
+/* PR# style of PRPROJP rather than PRESTMTP's PRPROJ#.              */
 /*                                                                   */
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
@@ -85,11 +84,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                 ON E.PRPROJ# = P.PR#
                AND E.RN = 1
               LEFT JOIN (
-                   SELECT PTPROJ#, SUM(PTTIME) AS PJHOURS
+                   SELECT PT#, SUM(PTTIME) AS PJHOURS
                      FROM LSCPRDLIB/PRTIMEP
-                    GROUP BY PTPROJ#
+                    GROUP BY PT#
                    ) T
-                ON T.PTPROJ# = P.PR#
+                ON T.PT# = P.PR#
              WHERE P.PR# NOT BETWEEN 90000 AND 90999
                AND (WKALL = 'Y'
                     OR (P.PRACOM = 0 AND RTRIM(P.PRRESCOD) <> 'REJ'))
@@ -100,14 +99,14 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
            The internal 90000-90999 buckets are excluded to match C1/C4 -
            the digest covers project work, not vacation/meeting time. */
         DECLARE C2 CURSOR WITH RETURN FOR
-            SELECT T.PTPROJ# AS TMPROJ,
+            SELECT T.PT# AS TMPROJ,
                    RTRIM(T.PTPGMR) AS TMUSER,
                    T.PTDATE AS TMDATE,
                    T.PTTIME AS TMHOURS
               FROM LSCPRDLIB/PRTIMEP T
              WHERE T.PTDATE BETWEEN WKFROM AND WKTO
-               AND T.PTPROJ# NOT BETWEEN 90000 AND 90999
-             ORDER BY T.PTPGMR, T.PTPROJ#;
+               AND T.PT# NOT BETWEEN 90000 AND 90999
+             ORDER BY T.PTPGMR, T.PT#;
 
         /* WebNotes comment index rows for project comments in a date
            range - the comment text itself lives in IFS files, so only
