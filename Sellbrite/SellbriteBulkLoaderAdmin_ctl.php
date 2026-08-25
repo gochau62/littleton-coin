@@ -33,7 +33,7 @@
 
     document.title = "Sellbrite Data";
 
-    /* ---- message helpers (LCC convention) ---- */
+    // message helpers
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
@@ -44,9 +44,7 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// check users authority (10 is the minimum to use LCCOnline)
-// nobody signed in: skip the check - chkAutUsr prints its raw error for an
-// empty profile, and the shell's Sign In header is the login screen
+// user authority (10 = signed on; skip the check when nobody is signed in)
 $authorized = "yes";
 if ($user === '') {
     $authorized = "signin";
@@ -66,8 +64,7 @@ if ($authorized === "signin") {
 ?>
 
 <script>
-// Sellbrite Data frontend: three tabs over the SBLCONFIGT override rows,
-// talking to the loader's own service (the cfg* actions)
+// three tabs over SBLCONFIGT, served by the loader's cfg* actions
 var sbaFields = [], sbaCats = [], sbaCols = [], sbaCustom = [], sbaOrder = [], sbaOvValues = [];
 
 function postA(data, onOk){
@@ -97,7 +94,7 @@ function fillValues(){
     $.each(sbaFields, function(i, x){ if (x.name === name) f = x; });
     $('#v-ta').val(f ? f.options.join('\n') : '');
     $('#v-ov').html(sbaOvValues.indexOf(name) >= 0 ? '<span class="sba-ovtag">staff list</span>' : '');
-    // the button always shows; what it does depends on the header
+    // button label follows the header type
     var btn = $('#v-del').show();
     if (f && f.custom)       { btn.text('Delete This Header'); }
     else if (f && f.hidden)  { btn.text('Restore This Header'); }
@@ -122,19 +119,19 @@ function delField(){
     $.each(sbaFields, function(i, x){ if (x.name === name) f = x; });
     if (!f) { return; }
     if (f.custom) {
-        // staff-added header: gone entirely (field, values, market override)
+        // staff header: delete outright
         postA({ action:'cfgDelField', field:name }, function(){
             loadAll(function(){ $('#v-msg').text(f.label + ' deleted.'); });
         });
     } else if (f.hidden) {
-        // deleted standard header: bring the box and its column back
+        // restore a deleted standard header
         postA({ action:'cfgUnhideField', field:name }, function(){
             loadAll(function(){ $('#v-msg').text(f.label + ' restored.'); });
         });
     } else if (f.req) {
         $('#v-msg').text(f.label + ' is required by Sellbrite and cannot be deleted.');
     } else {
-        // standard header: box off the loader, column out of every export; restorable here
+        // standard header: hide the box and drop its column
         postA({ action:'cfgHideField', field:name }, function(){
             loadAll(function(){ $('#v-msg').text(f.label + ' deleted - box and column removed. Pick it again to restore.'); });
         });
@@ -174,7 +171,7 @@ function delCat(){
     var cat = $('#c-cat').val(), base = false;
     $.each(sbaCats, function(i, x){ if (x.category === cat) base = !!x.base; });
     if (base) {
-        // one of Des's originals: clearing stops the autofill but the row stays
+        // Des's originals clear instead of delete
         postA({ action:'cfgSaveCopy', category:cat, copy:'', alt1:'', alt2:'' }, function(){
             loadAll(function(){ $('#c-msg').text(cat + ' cleared - nothing will autofill for it.'); });
         });
@@ -187,7 +184,7 @@ function delCat(){
 
 function fillMarkets(){
     var tb = $('#m-body').empty();
-    // one merged list (staff-added + standard) shown in the saved export order
+    // staff + standard rows in the saved export order
     var items = [];
     $.each(sbaCustom, function(i, c){ items.push({ staff:true, d:c, name:c.name }); });
     $.each(sbaCols, function(i, c){ items.push({ staff:false, d:c, name:c.name }); });
@@ -219,7 +216,7 @@ function fillMarkets(){
                 .append($('<option>').val('none').text('Not exported'));
             sel.val(c.set || c.home);
             if ((c.set || c.home) === 'none') { tr.addClass('off'); }
-            // the x = Not exported for standard columns (they cannot leave the layout)
+            // x = Not exported for standard columns
             var x = $('<button>').attr('type', 'button').addClass('sba-x')
                 .attr('title', 'Remove from every export (sets Not exported)').html('&times;')
                 .on('click', function(){ sel.val('none').trigger('change'); tr.addClass('off'); });
@@ -255,7 +252,7 @@ $(document).ready(function(){
     });
     $('#v-field').on('change', fillValues);
     $('#c-cat').on('change', fillCopy);
-    // only the handle arms a drag - selects and buttons stay plain clicks
+    // only the handle arms a drag
     var dragRow = null;
     $('#m-body').on('mousedown', '.sba-handle', function(){
         $(this).closest('tr').attr('draggable', true);
@@ -288,7 +285,7 @@ $(document).ready(function(){
             $('#m-msg').text('Column order saved - the next export uses it.');
         });
     });
-    // a market pick saves the moment it is made; picking the standard value clears the override
+    // picks save immediately; the standard value clears the override
     $('#m-body').on('change', 'select', function(){
         var sel = $(this);
         var v = sel.val() === sel.data('home') ? 'base' : sel.val();
