@@ -13,7 +13,7 @@
 <!--  * Date      -                                     *  -->
 <!--  * Purpose   -                                     *  -->
 <!--  *                                                 *  -->
-<!--  * Project   -                                     *  -->
+<!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 
 // the stylesheet is shared by the dashboard and the assignments page so the
