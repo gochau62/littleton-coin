@@ -89,11 +89,9 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <button type="button" class="sba-tab" data-tab="markets">Market Columns</button>
     </div>
 
-    <!-- each tab: an "add new" box on top, the editor for existing entries below -->
+    <!-- each tab: add box on top, editor below -->
     <div class="sba-card" id="tab-values">
-        <p class="sba-note">The choices each dropdown on the loader offers. Pick a dropdown, edit its
-           choices (one per line - add or delete lines) and Save. Operators can always type values
-           that are not listed; these lists are the suggestions.</p>
+        <p class="sba-note">The choices each dropdown on the loader offers - one per line, Save applies.</p>
         <div class="sba-new">
             <p class="sba-new-title">Add a new header</p>
             <div class="sba-row">
@@ -107,9 +105,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
                 </select>
                 <button type="button" class="sba-btn" onclick="addField()">Add Header</button>
             </div>
-            <p class="sba-note" style="margin:8px 0 0">Creates a new box on the loader (in the picked section)
-               AND a new column in the export spreadsheet. Autofill will fill it whenever the coin data
-               clearly provides a value.</p>
+            <p class="sba-note" style="margin:8px 0 0">Creates a box on the loader and a column in the export.</p>
         </div>
         <label class="sba-lbl">Edit a dropdown</label>
         <div class="sba-row">
@@ -126,11 +122,10 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         </div>
     </div>
 
-    <!-- Des's per-category descriptions; the Extended Description fills from these -->
+    <!-- per-category listing copy -->
     <div class="sba-card" id="tab-copy" style="display:none">
-        <p class="sba-note">The reusable listing description per coin/category, from Des's sheet. The Extended
-           Description box on the loader fills with the Description when it is empty; the alternates stand
-           in when the main one is blank.</p>
+        <p class="sba-note">Fills the loader's Extended Description when it is empty; alternates stand in
+           when the main one is blank.</p>
         <div class="sba-new">
             <p class="sba-new-title">Add a new category</p>
             <div class="sba-row">
@@ -156,12 +151,10 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         </div>
     </div>
 
-    <!-- which upload columns each market's spreadsheet carries -->
+    <!-- per-market export columns -->
     <div class="sba-card" id="tab-markets" style="display:none">
-        <p class="sba-note">Where each upload column exports to. Picking a market sends that column only to
-           that market's spreadsheet, All sends it to every one, and Not exported / Remove drops the column
-           from every spreadsheet. Drag a row up or down to reorder the columns in the spreadsheet.
-           Changes save the moment they are made and apply to the next export.</p>
+        <p class="sba-note">Where each column exports. Drag &#8942;&#8942; to reorder, &times; to remove.
+           Changes save immediately.</p>
         <div class="sba-new">
             <p class="sba-new-title">Add a new column</p>
             <div class="sba-row">
@@ -173,9 +166,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
                 <input class="sba-pick" id="m-new-value" placeholder="Fill every row with (optional)">
                 <button type="button" class="sba-btn" onclick="addCol()">Add Column</button>
             </div>
-            <p class="sba-note" style="margin:8px 0 0">The column lands at the end of the export with the fixed
-               text in every row. Drag the &#8942;&#8942; handle to reorder; the &times; removes a column
-               (a standard column becomes Not exported and can be turned back on).</p>
+            <p class="sba-note" style="margin:8px 0 0">Lands at the end of the export with the fixed text in every row.</p>
         </div>
         <table class="sba-grid">
             <thead><tr><th style="width:26px"></th><th>Column</th><th>Header</th>
