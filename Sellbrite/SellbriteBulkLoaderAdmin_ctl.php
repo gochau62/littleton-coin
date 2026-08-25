@@ -166,6 +166,16 @@ function delCat(){
 
 function fillMarkets(){
     var tb = $('#m-body').empty();
+    // staff-added columns first, right under the Add box, with their Remove button
+    $.each(sbaCustom, function(i, c){
+        var del = $('<button>').attr('type', 'button').addClass('sba-btn ghost')
+            .text('Remove').on('click', function(){ delCol(c.name); });
+        var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
+        tb.append($('<tr>').addClass('staff')
+                           .append($('<td>').text(c.name))
+                           .append($('<td>').text(c.label + (c.value ? ' = "' + c.value + '"' : '')))
+                           .append($('<td>').text(m + ' ').append(del)));
+    });
     $.each(sbaCols, function(i, c){
         var sel = $('<select>').attr('data-col', c.name).attr('data-home', c.home)
             .append($('<option>').val('all').text('All'))
@@ -177,15 +187,6 @@ function fillMarkets(){
         tb.append($('<tr>').append($('<td>').text(c.name))
                            .append($('<td>').text(c.label))
                            .append($('<td>').append(sel)));
-    });
-    // staff-added columns list after the standard ones with a Remove button
-    $.each(sbaCustom, function(i, c){
-        var del = $('<button>').attr('type', 'button').addClass('sba-btn ghost')
-            .text('Remove').on('click', function(){ delCol(c.name); });
-        var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
-        tb.append($('<tr>').append($('<td>').text(c.name))
-                           .append($('<td>').text(c.label + (c.value ? ' = "' + c.value + '"' : '')))
-                           .append($('<td>').text(m + ' ').append(del)));
     });
 }
 

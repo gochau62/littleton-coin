@@ -55,6 +55,10 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 .sba-grid td { padding:6px 10px; border-bottom:1px solid #eef1f4; }
 .sba-grid select { padding:5px 8px; border:1px solid #d0d5dd; border-radius:6px; font-size:12.5px; background:#fff; }
 .sba-msg { font-size:12px; color:#1e6e43; margin-left:10px; }
+.sba-new { background:#f4f8f5; border:1px dashed #b9cec2; border-radius:8px; padding:12px 14px; margin-bottom:16px; }
+.sba-new-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1e6e43; margin:0 0 8px; }
+.sba-new .sba-row { align-items:center; }
+.sba-grid tr.staff td { background:#fbfdfb; }
 </style>
 
 <div id='stdPage'>
@@ -69,30 +73,38 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <button type="button" class="sba-tab" data-tab="markets">Market Columns</button>
     </div>
 
-    <!-- one value per line; saving replaces the whole list for that field -->
+    <!-- each tab: an "add new" box on top, the editor for existing entries below -->
     <div class="sba-card" id="tab-values">
-        <p class="sba-note">The choices each dropdown on the loader offers. One value per line - add or
-           delete lines and Save; the list replaces the standard one. Operators can always type values
-           that are not listed; these lists are the suggestions. Adding a header creates a new box on
-           the loader AND a new column in the export spreadsheet.</p>
+        <p class="sba-note">The choices each dropdown on the loader offers. Pick a dropdown, edit its
+           choices (one per line - add or delete lines) and Save. Operators can always type values
+           that are not listed; these lists are the suggestions.</p>
+        <div class="sba-new">
+            <p class="sba-new-title">Add a new header</p>
+            <div class="sba-row">
+                <input class="sba-pick" id="v-new" placeholder="Header name (e.g. Ruler)">
+                <select class="sba-pick" id="v-sec">
+                    <option value="Coin details">Coin details</option>
+                    <option value="Market specific fields">Market specific fields</option>
+                    <option value="Other product types (advent calendar / watch / stamp / nativity)">Other product types</option>
+                    <option value="Packaging">Packaging</option>
+                    <option value="Listing content">Listing content</option>
+                </select>
+                <button type="button" class="sba-btn" onclick="addField()">Add Header</button>
+            </div>
+            <p class="sba-note" style="margin:8px 0 0">Creates a new box on the loader (in the picked section)
+               AND a new column in the export spreadsheet. Autofill will fill it whenever the coin data
+               clearly provides a value.</p>
+        </div>
+        <label class="sba-lbl">Edit a dropdown</label>
         <div class="sba-row">
             <select id="v-field" class="sba-pick"></select>
-            <input class="sba-pick" id="v-new" placeholder="New header name">
-            <select class="sba-pick" id="v-sec">
-                <option value="Coin details">Coin details</option>
-                <option value="Market specific fields">Market specific fields</option>
-                <option value="Other product types (advent calendar / watch / stamp / nativity)">Other product types</option>
-                <option value="Packaging">Packaging</option>
-                <option value="Listing content">Listing content</option>
-            </select>
-            <button type="button" class="sba-btn ghost" onclick="addField()">Add Header</button>
             <span id="v-ov"></span>
         </div>
-        <label class="sba-lbl">Values (one per line)</label>
+        <label class="sba-lbl">Choices (one per line)</label>
         <textarea id="v-ta" class="sba-ta" spellcheck="false"></textarea>
         <div style="margin-top:10px">
             <button type="button" class="sba-btn" onclick="saveValues()">Save List</button>
-            <button type="button" class="sba-btn ghost" id="v-del" onclick="delField()" style="display:none">Delete Header</button>
+            <button type="button" class="sba-btn ghost" id="v-del" onclick="delField()" style="display:none">Delete This Header</button>
             <span class="sba-msg" id="v-msg"></span>
         </div>
     </div>
@@ -100,12 +112,18 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
     <!-- Des's per-category descriptions; the Extended Description fills from these -->
     <div class="sba-card" id="tab-copy" style="display:none">
         <p class="sba-note">The reusable listing description per coin/category, from Des's sheet. The Extended
-           Description box fills with the Description below when it is empty; the alternates stand in
-           when the main one is blank. Add a category for anything new, delete one you no longer want.</p>
+           Description box on the loader fills with the Description when it is empty; the alternates stand
+           in when the main one is blank.</p>
+        <div class="sba-new">
+            <p class="sba-new-title">Add a new category</p>
+            <div class="sba-row">
+                <input class="sba-pick" id="c-new" placeholder="Category name (e.g. Morgan Dollar)">
+                <button type="button" class="sba-btn" onclick="addCat()">Add Category</button>
+            </div>
+        </div>
+        <label class="sba-lbl">Edit a category</label>
         <div class="sba-row">
             <select id="c-cat" class="sba-pick"></select>
-            <input class="sba-pick" id="c-new" placeholder="New category name">
-            <button type="button" class="sba-btn ghost" onclick="addCat()">Add Category</button>
         </div>
         <label class="sba-lbl">Description</label>
         <textarea id="c-copy" class="sba-ta copy"></textarea>
@@ -115,7 +133,7 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <textarea id="c-alt2" class="sba-ta copy"></textarea>
         <div style="margin-top:10px">
             <button type="button" class="sba-btn" onclick="saveCopy()">Save Descriptions</button>
-            <button type="button" class="sba-btn ghost" onclick="delCat()">Delete Category</button>
+            <button type="button" class="sba-btn ghost" onclick="delCat()">Delete This Category</button>
             <span class="sba-msg" id="c-msg"></span>
         </div>
     </div>
@@ -123,20 +141,25 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
     <!-- which upload columns each market's spreadsheet carries -->
     <div class="sba-card" id="tab-markets" style="display:none">
         <p class="sba-note">Where each upload column exports to. Picking a market sends that column only to
-           that market's spreadsheet, All sends it to every one, and Not exported drops the column from every
-           spreadsheet. Add your own column below - it lands at the end of the export, filled with the fixed
-           text if one is given. Changes apply to the next export immediately.</p>
+           that market's spreadsheet, All sends it to every one, and Not exported drops the column from
+           every spreadsheet. Changes save the moment a pick is made and apply to the next export.</p>
+        <div class="sba-new">
+            <p class="sba-new-title">Add a new column</p>
+            <div class="sba-row">
+                <input class="sba-pick" id="m-new-label" placeholder="Column header (e.g. Lot Code)">
+                <select class="sba-pick" id="m-new-market">
+                    <option value="all">All</option><option value="amazon">Amazon only</option>
+                    <option value="ebay">eBay only</option><option value="walmart">Walmart only</option>
+                </select>
+                <input class="sba-pick" id="m-new-value" placeholder="Fill every row with (optional)">
+                <button type="button" class="sba-btn" onclick="addCol()">Add Column</button>
+            </div>
+            <p class="sba-note" style="margin:8px 0 0">The column lands at the end of the export with the fixed
+               text in every row. Staff-added columns list first in the table with a Remove button; standard
+               columns cannot be removed - set them to Not exported instead.</p>
+        </div>
         <table class="sba-grid"><thead><tr><th>Column</th><th>Header</th><th>Exports To</th></tr></thead>
             <tbody id="m-body"></tbody></table>
-        <div class="sba-row" style="margin-top:12px">
-            <input class="sba-pick" id="m-new-label" placeholder="New column header">
-            <select class="sba-pick" id="m-new-market">
-                <option value="all">All</option><option value="amazon">Amazon only</option>
-                <option value="ebay">eBay only</option><option value="walmart">Walmart only</option>
-            </select>
-            <input class="sba-pick" id="m-new-value" placeholder="Fill every row with (optional)">
-            <button type="button" class="sba-btn" onclick="addCol()">Add Column</button>
-        </div>
         <span class="sba-msg" id="m-msg"></span>
     </div>
 </div>
