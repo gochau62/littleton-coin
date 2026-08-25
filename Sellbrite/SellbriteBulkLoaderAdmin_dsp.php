@@ -58,7 +58,10 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 .sba-new { background:#f4f8f5; border:1px dashed #b9cec2; border-radius:8px; padding:12px 14px; margin-bottom:16px; }
 .sba-new-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1e6e43; margin:0 0 8px; }
 .sba-new .sba-row { align-items:center; }
-.sba-grid tr.staff td { background:#fbfdfb; }
+#m-body tr:nth-child(even) td { background:#f6f8f9; }
+#m-body tr:hover td { background:#eef3ef; }
+.sba-grid tr.staff td { background:#f2f8f4; }
+#m-body tr.dragging td { background:#e3efe7; }
 .sba-grid td { white-space:nowrap; }
 .sba-grid td:nth-child(3) { white-space:normal; }
 .sba-handle { color:#b6bec9; cursor:grab; font-size:15px; letter-spacing:-2px; user-select:none; padding:0 3px; }
