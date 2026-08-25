@@ -59,8 +59,15 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 .sba-new-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1e6e43; margin:0 0 8px; }
 .sba-new .sba-row { align-items:center; }
 .sba-grid tr.staff td { background:#fbfdfb; }
-#m-body tr { cursor:grab; }
-#m-body tr:active { cursor:grabbing; }
+.sba-grid td { white-space:nowrap; }
+.sba-grid td:nth-child(3) { white-space:normal; }
+.sba-handle { color:#b6bec9; cursor:grab; font-size:15px; letter-spacing:-2px; user-select:none; padding:0 3px; }
+.sba-handle:hover { color:#667085; }
+.sba-x { width:22px; height:22px; border-radius:50%; border:none; background:transparent; color:#98a2b3;
+         font-size:15px; line-height:20px; text-align:center; padding:0; cursor:pointer; }
+.sba-x:hover { background:#fee4e2; color:#b42318; }
+#m-body tr.dragging { opacity:.55; background:#eef6f0; }
+#m-body tr.off td { color:#98a2b3; }
 .sba-actions { display:flex; align-items:center; gap:10px; margin-top:12px; }
 .sba-actions .spacer { flex:1; }
 .sba-btn.danger { background:#fff; color:#b42318; border:1px solid #e4b8b4; }
@@ -164,10 +171,12 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
                 <button type="button" class="sba-btn" onclick="addCol()">Add Column</button>
             </div>
             <p class="sba-note" style="margin:8px 0 0">The column lands at the end of the export with the fixed
-               text in every row. Staff-added columns list first in the table with a Remove button; standard
-               columns cannot be removed - set them to Not exported instead.</p>
+               text in every row. Drag the &#8942;&#8942; handle to reorder; the &times; removes a column
+               (a standard column becomes Not exported and can be turned back on).</p>
         </div>
-        <table class="sba-grid"><thead><tr><th>Column</th><th>Header</th><th>Exports To</th></tr></thead>
+        <table class="sba-grid">
+            <thead><tr><th style="width:26px"></th><th>Column</th><th>Header</th>
+                       <th style="width:150px">Exports To</th><th style="width:30px"></th></tr></thead>
             <tbody id="m-body"></tbody></table>
         <span class="sba-msg" id="m-msg"></span>
     </div>

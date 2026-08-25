@@ -197,15 +197,19 @@ function fillMarkets(){
     items.sort(function(a, b){ return a.key - b.key || a.idx - b.idx; });
     $.each(items, function(i, it){
         var c = it.d;
-        var tr = $('<tr>').attr('draggable', true).attr('data-name', it.name);
+        var tr = $('<tr>').attr('data-name', it.name);
+        var handle = $('<span>').addClass('sba-handle').attr('title', 'Drag to reorder').html('&#8942;&#8942;');
+        tr.append($('<td>').append(handle));
         if (it.staff) {
-            var del = $('<button>').attr('type', 'button').addClass('sba-btn danger')
-                .text('Remove').on('click', function(){ delCol(c.name); });
             var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
+            var x = $('<button>').attr('type', 'button').addClass('sba-x')
+                .attr('title', 'Delete this column').html('&times;')
+                .on('click', function(){ delCol(c.name); });
             tr.addClass('staff')
               .append($('<td>').text(c.name))
               .append($('<td>').text(c.label + (c.value ? ' = "' + c.value + '"' : '')))
-              .append($('<td>').text(m + ' ').append(del));
+              .append($('<td>').text(m))
+              .append($('<td>').append(x));
         } else {
             var sel = $('<select>').attr('data-col', c.name).attr('data-home', c.home)
                 .append($('<option>').val('all').text('All'))
@@ -214,12 +218,15 @@ function fillMarkets(){
                 .append($('<option>').val('walmart').text('Walmart only'))
                 .append($('<option>').val('none').text('Not exported'));
             sel.val(c.set || c.home);
-            // Remove = set Not exported (standard columns cannot leave the layout)
-            var rm = $('<button>').attr('type', 'button').addClass('sba-btn danger')
-                .text('Remove').on('click', function(){ sel.val('none').trigger('change'); });
+            if ((c.set || c.home) === 'none') { tr.addClass('off'); }
+            // the x = Not exported for standard columns (they cannot leave the layout)
+            var x = $('<button>').attr('type', 'button').addClass('sba-x')
+                .attr('title', 'Remove from every export (sets Not exported)').html('&times;')
+                .on('click', function(){ sel.val('none').trigger('change'); tr.addClass('off'); });
             tr.append($('<td>').text(c.name))
               .append($('<td>').text(c.label))
-              .append($('<td>').append(sel).append(' ').append(rm));
+              .append($('<td>').append(sel))
+              .append($('<td>').append(x));
         }
         tb.append(tr);
     });
@@ -248,10 +255,17 @@ $(document).ready(function(){
     });
     $('#v-field').on('change', fillValues);
     $('#c-cat').on('change', fillCopy);
-    // drag a row to move the column; the new order saves on drop
+    // only the handle arms a drag - selects and buttons stay plain clicks
     var dragRow = null;
+    $('#m-body').on('mousedown', '.sba-handle', function(){
+        $(this).closest('tr').attr('draggable', true);
+    });
+    $(document).on('mouseup', function(){
+        if (!dragRow) { $('#m-body tr').removeAttr('draggable'); }
+    });
     $('#m-body').on('dragstart', 'tr', function(e){
         dragRow = this;
+        $(this).addClass('dragging');
         e.originalEvent.dataTransfer.effectAllowed = 'move';
     });
     $('#m-body').on('dragover', 'tr', function(e){
@@ -263,6 +277,8 @@ $(document).ready(function(){
     });
     $('#m-body').on('drop', 'tr', function(e){ e.preventDefault(); });
     $('#m-body').on('dragend', 'tr', function(){
+        $(this).removeClass('dragging');
+        $('#m-body tr').removeAttr('draggable');
         if (!dragRow) return;
         dragRow = null;
         var order = [];
