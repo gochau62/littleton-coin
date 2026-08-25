@@ -11,7 +11,7 @@ entry screen (`Picture2.png`) is a later phase and is not part of this work.
 |---|---|---|
 | Overview dashboard | `Web/ProjectTracking_ctl.php` | Stat tiles (open / new / awaiting SC review / unassigned), steering-committee pipeline, programmer-load bar chart, projects-by-status donut, weekly AI summary card, and a sortable/filterable project table |
 | Dashboard display | `Web/ProjectTracking_dsp.php` | Markup + the stylesheet shared by both screens |
-| Projects by developer | `Web/ProjectTracking_ByDeveloper_ctl.php` / `_ByDeveloper_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
+| Projects by developer | `Web/ProjectDevelopers_ctl.php` / `_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
 | Data + logic | `Web/ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Claude API call |
 | JSON/Excel endpoint | `Web/ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
 | Db2 procedure | `Db2/PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR` |

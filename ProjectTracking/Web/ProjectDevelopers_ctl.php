@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - ProjectTracking_ByDeveloper_ctl.php *  -->
+<!--  * Program Name - ProjectDevelopers_ctl.php        *  -->
 <!--  *                                                 *  -->
 <!--  * Author    -  G CHAU                             *  -->
 <!--  *              Littleton Coin Company             *  -->
@@ -59,8 +59,8 @@ if ($authorized != "yes") {
     prjActLog($user, 'OPEN', 'assignments');
 
     include "ProjectTracking_dsp.php";
-    include "ProjectTracking_ByDeveloper_dsp.php";
-    dspProjectTrackingByDeveloper();
+    include "ProjectDevelopers_dsp.php";
+    dspProjectDevelopers();
 ?>
 
 <script>
@@ -70,14 +70,14 @@ var asgData = null;
 var searchTimer = null;
 
 $(document).ready(function () {
-    loadByDeveloper();
+    loadProjectDevelopers();
 
     $('#txtSearch').on('input', function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderGroups, 250);
     });
     $('#selPgmr').on('change', renderGroups);
-    $('#chkComplete').on('change', loadByDeveloper);
+    $('#chkComplete').on('change', loadProjectDevelopers);
     $('#btnDownload').on('click', function () {
         // a plain navigation so the browser handles the workbook download
         window.location = 'ProjectTracking_ajax.php?action=download&complete=' +
@@ -103,7 +103,7 @@ function attr(s) {
 // overwrite a newer one when the checkbox is toggled quickly
 var loadSeq = 0;
 
-function loadByDeveloper() {
+function loadProjectDevelopers() {
     var seq = ++loadSeq;
     var complete = $('#chkComplete').is(':checked') ? 'Y' : 'N';
     $.post('ProjectTracking_ajax.php', { action: 'assignments', complete: complete },

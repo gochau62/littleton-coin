@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - ProjectTracking_ByDeveloper_dsp.php *  -->
+<!--  * Program Name - ProjectDevelopers_dsp.php        *  -->
 <!--  *                                                 *  -->
 <!--  * Author    -  G CHAU                             *  -->
 <!--  *              Littleton Coin Company             *  -->
@@ -17,7 +17,7 @@
 <!--  ***************************************************   */
 
 // the shared styles and header come from ProjectTracking_dsp.php
-function dspProjectTrackingByDeveloper() {
+function dspProjectDevelopers() {
     prjStyles();
 ?>
 <div class="pt-app">

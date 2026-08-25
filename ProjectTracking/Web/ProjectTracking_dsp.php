@@ -187,7 +187,7 @@ function prjHeader($title, $subtitle, $active) {
         <div class="pt-nav">
             <?php if ($active === 'dashboard') { ?>
                 Overview &nbsp;&middot;&nbsp;
-                <a href="ProjectTracking_ByDeveloper_ctl.php">Projects by developer</a>
+                <a href="ProjectDevelopers_ctl.php">Projects by developer</a>
                 &nbsp;&middot;&nbsp; <a href="PROJ_list_ctl.php">Legacy list</a>
             <?php } else { ?>
                 <a href="ProjectTracking_ctl.php">Overview</a>

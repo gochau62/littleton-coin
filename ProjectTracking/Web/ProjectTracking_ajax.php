@@ -238,7 +238,7 @@ switch ($action) {
 
         while (ob_get_level() > 0) { ob_end_clean(); }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="ProjectsByDeveloper_' .
+        header('Content-Disposition: attachment; filename="ProjectDevelopers_' .
                date('Ymd') . '.xlsx"');
         $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book, 'Xlsx');
         $writer->save('php://output');
