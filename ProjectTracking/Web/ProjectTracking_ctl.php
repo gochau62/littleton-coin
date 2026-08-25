@@ -73,6 +73,10 @@ var searchTimer = null;
 $(document).ready(function () {
     loadDashboard();
 
+    $('#lnkRefresh').on('click', function (e) {
+        e.preventDefault();
+        loadDashboard();
+    });
     $('#txtSearch').on('input', function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderTable, 250);
@@ -305,6 +309,10 @@ function generateWeekly() {
 
 
 function fillFilters(resp) {
+    // keep the current selections across a refresh
+    var curPgmr = $('#selPgmr').val() || '';
+    var curStage = $('#selStage').val() || '';
+
     var pgmrs = {};
     $.each(resp.projects, function (i, p) {
         pgmrs[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
@@ -313,13 +321,15 @@ function fillFilters(resp) {
     $.each(Object.keys(pgmrs).sort(), function (i, n) {
         opts += '<option value="' + attr(n) + '">' + esc(n) + '</option>';
     });
-    $('#selPgmr').html(opts);
+    $('#selPgmr').html(opts).val(curPgmr);
+    if ($('#selPgmr').val() === null) { $('#selPgmr').val(''); }
 
     opts = '<option value="">All stages</option>';
     $.each(resp.stages, function (key, label) {
         opts += '<option value="' + key + '">' + esc(label) + '</option>';
     });
-    $('#selStage').html(opts);
+    $('#selStage').html(opts).val(curStage);
+    if ($('#selStage').val() === null) { $('#selStage').val(''); }
 }
 
 

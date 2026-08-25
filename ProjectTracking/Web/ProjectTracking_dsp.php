@@ -50,6 +50,8 @@ function prjStyles() {
            font-weight: 700; font-size: 1.05rem; }
 .pt-head h1 { font-size: 1.15rem; font-weight: 650; margin: 0; }
 .pt-head .pt-sub { color: var(--pt-muted); font-size: .82rem; margin-top: .1rem; }
+.pt-head .pt-sub a { color: var(--pt-blue); text-decoration: none; }
+.pt-head .pt-sub a:hover { text-decoration: underline; }
 .pt-head .pt-nav { margin-left: auto; font-size: .85rem; white-space: nowrap; }
 .pt-head .pt-nav a { color: var(--pt-blue); text-decoration: none; }
 .pt-head .pt-nav a:hover { text-decoration: underline; }
@@ -188,11 +190,9 @@ function prjHeader($title, $subtitle, $active) {
             <?php if ($active === 'dashboard') { ?>
                 Overview &nbsp;&middot;&nbsp;
                 <a href="ProjectDevelopers_ctl.php">Projects by developer</a>
-                &nbsp;&middot;&nbsp; <a href="PROJ_list_ctl.php">Legacy list</a>
             <?php } else { ?>
                 <a href="ProjectTracking_ctl.php">Overview</a>
                 &nbsp;&middot;&nbsp; Projects by developer
-                &nbsp;&middot;&nbsp; <a href="PROJ_list_ctl.php">Legacy list</a>
             <?php } ?>
         </div>
     </div>
@@ -203,10 +203,14 @@ function prjHeader($title, $subtitle, $active) {
 function dspProjectTracking() {
     prjStyles();
 ?>
+<!-- stdPage is the shared layout hook that seats a page beside the nav menu,
+     same as every legacy PROJ_* screen -->
+<div id="stdPage">
 <div class="pt-app">
 
-    <?php prjHeader('Project tracking &mdash; overview',
-                    'IT project tracking system &middot; <span id="ptUpdated"></span>',
+    <?php prjHeader('Project Tracking',
+                    '<span id="ptUpdated"></span> &nbsp;&middot;&nbsp; ' .
+                    '<a href="#" id="lnkRefresh">refresh</a>',
                     'dashboard'); ?>
 
     <div class="pt-tiles">
@@ -259,7 +263,7 @@ function dspProjectTracking() {
     </div>
 
     <div class="pt-card">
-        <h2>Projects &mdash; assignee &amp; stage</h2>
+        <h2>Projects (Assignee &amp; Stage)</h2>
         <div class="pt-toolbar">
             <input type="text" id="txtSearch" placeholder="Search project # or description">
             <select id="selPgmr"><option value="">All assignees</option></select>
@@ -283,6 +287,7 @@ function dspProjectTracking() {
         </div>
     </div>
 
+</div>
 </div>
 <?php
 }

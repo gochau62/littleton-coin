@@ -20,11 +20,14 @@
 function dspProjectDevelopers() {
     prjStyles();
 ?>
+<!-- stdPage is the shared layout hook that seats a page beside the nav menu,
+     same as every legacy PROJ_* screen -->
+<div id="stdPage">
 <div class="pt-app">
 
-    <?php prjHeader('Projects by developer',
-                    'Who is carrying what, grouped the way the monthly ' .
-                    'spreadsheet lays it out &middot; <span id="ptUpdated"></span>',
+    <?php prjHeader('Projects by Developer',
+                    '<span id="ptUpdated"></span> &nbsp;&middot;&nbsp; ' .
+                    '<a href="#" id="lnkRefresh">refresh</a>',
                     'assignments'); ?>
 
     <div class="pt-card">
@@ -41,6 +44,7 @@ function dspProjectDevelopers() {
 
     <div id="groupList"></div>
 
+</div>
 </div>
 <?php
 }

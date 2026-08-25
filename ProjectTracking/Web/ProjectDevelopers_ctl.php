@@ -72,6 +72,10 @@ var searchTimer = null;
 $(document).ready(function () {
     loadProjectDevelopers();
 
+    $('#lnkRefresh').on('click', function (e) {
+        e.preventDefault();
+        loadProjectDevelopers();
+    });
     $('#txtSearch').on('input', function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderGroups, 250);

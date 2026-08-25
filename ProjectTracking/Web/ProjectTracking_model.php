@@ -103,11 +103,16 @@ function prjProjects($conn, $includeComplete = 'N') {
                         array('LIST', $includeComplete === 'Y' ? 'Y' : 'N', ''));
     if ($rows === false) { return false; }
 
-    foreach ($rows as $i => $row) {
-        $rows[$i]['STAGE']  = prjStage($row);
-        $rows[$i]['STATUS'] = prjStatus($row);
+    $out = array();
+    foreach ($rows as $row) {
+        // record 0 is a legacy catch-all bucket (no name, thousands of
+        // hours), not a project - keep it off every screen
+        if (intval($row['PJNUM']) <= 0) { continue; }
+        $row['STAGE']  = prjStage($row);
+        $row['STATUS'] = prjStatus($row);
+        $out[] = $row;
     }
-    return $rows;
+    return $out;
 }
 
 
@@ -266,6 +271,8 @@ function prjWeeklyDigest($conn, $from, $to) {
         $user = trim($t['TMUSER']);
         if ($user === '') { continue; }
         $num = intval($t['TMPROJ']);
+        // skip the legacy catch-all bucket, same as prjProjects
+        if ($num <= 0) { continue; }
         if (!isset($dev[$user])) { $dev[$user] = $blank; }
         if (!isset($dev[$user]['projects'][$num])) {
             $dev[$user]['projects'][$num] = array(
@@ -386,6 +393,10 @@ function prjClaudeSummary($digest) {
         return array(false, 'No Anthropic API key is configured - see the ' .
                      'weekly summary section of the technical reference.', '');
     }
+    if (!function_exists('curl_init')) {
+        return array(false, 'The PHP curl extension is not available on this ' .
+                     'server, so the API cannot be reached.', '');
+    }
 
     $system =
         "You write the weekly IT project status summary for Littleton Coin " .
@@ -415,12 +426,15 @@ function prjClaudeSummary($digest) {
         )),
     ));
 
+    // a box that cannot reach the API gives up in seconds and the caller
+    // falls back to the plain rollup, instead of the button looking hung
     $ch = curl_init(PRJ_AI_URL);
     curl_setopt_array($ch, array(
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $body,
-        CURLOPT_TIMEOUT => 120,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => 90,
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             'x-api-key: ' . $key,
