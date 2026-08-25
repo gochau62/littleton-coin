@@ -219,11 +219,6 @@ function rqsSetReturned($conn, $reqNum, $lineNum, $flag, $dateRet = 0) {
     return true;
 }
 
-// PROGRAM NAME REQSTN011S: the requisitions raised for one requestor, newest first, one row each, for My Requisitions on the entry form
-function rqsMyRequisitions($conn, $reqName) {
-    return rqsFetchAll($conn, "CALL REQSTN011S(?)", array(substr(trim($reqName), 0, 50)));
-}
-
 // PROGRAM NAME REQSTN010S: correct one detail line from the maintenance screen, where a null leaves that column as it stands
 function rqsUpdateLine($conn, $reqNum, $lineNum, $item = null, $loc = null,
                        $coinDate = null, $desc = null, $qty = null, $cost = null,

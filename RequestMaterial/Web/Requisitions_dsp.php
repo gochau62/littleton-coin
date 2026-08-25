@@ -321,15 +321,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
    - it sits after the striping so a corrected cell on a tinted row still shows as corrected */
 #tblViewLines tbody tr td.rq-pending { background: #fdf8ee; }
 
-/* My Requisitions belongs to the entry form: the station screen already has the whole grid */
-#btnMine { display: none; }
-.rq-entry #btnMine { display: inline-flex; }
-.rq-minefor { font-weight: 400; font-size: .9rem; color: var(--rq-muted); }
-#tblMine tbody tr:nth-child(even) td { background: #f7faf8; }
-#tblMine .rq-btn { padding: .2rem .7rem; font-size: .8rem; }
-#tblMine .rq-mineopen { color: var(--rq-amber); font-weight: 600; }
-#tblMine .rq-minedone { color: var(--rq-green); font-weight: 600; }
-
 /* entry only mode: the work floor form fills the page and cannot be closed */
 .rq-entry .rq-toolbar, .rq-entry .rq-card, .rq-entry #addAuthByRow { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x, .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
@@ -453,10 +444,7 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
     <div class="rq-modal rq-modal-wide">
       <div class="rq-modal-head">
         <h2>New Requisition</h2>
-        <div>
-          <button type="button" class="rq-btn" id="btnMine">My Requisitions</button>
-          <button type="button" class="rq-x" data-close="mdlAdd">&times;</button>
-        </div>
+        <button type="button" class="rq-x" data-close="mdlAdd">&times;</button>
       </div>
 
       <div class="rq-modal-body">
@@ -571,30 +559,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
             <tbody id="viewLineBody"></tbody>
           </table>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- My Requisitions, the entry form's own look-up: what this requestor has raised, and a copy of any of it -->
-  <div class="rq-overlay" id="mdlMine" hidden>
-    <div class="rq-modal rq-modal-wide">
-      <div class="rq-modal-head">
-        <h2>My Requisitions <span id="mineFor" class="rq-minefor"></span></h2>
-        <button type="button" class="rq-x" data-close="mdlMine">&times;</button>
-      </div>
-      <div class="rq-modal-body">
-        <table class="rq-grid" id="tblMine">
-          <thead>
-            <tr>
-              <th>Req #</th><th>Date</th><th>Area Code</th><th>Area Type</th>
-              <th class="rq-num">Lines</th><th>Status</th><th>Rush</th>
-              <th>Authorized By</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="mineBody">
-            <tr><td colspan="9" class="rq-empty">Loading...</td></tr>
-          </tbody>
-        </table>
       </div>
     </div>
   </div>

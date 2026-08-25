@@ -55,8 +55,7 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 // everything else belongs to the station screen, where a requisition is authorized, corrected and reported on, and asks for the requisitions group
 // this is checked here and not only on the screen, because the screen only decides what is drawn while this decides what can actually be done
 // an entry action passes on either level, because whoever runs the station screen must be able to raise a requisition too, and the two levels are separate grants rather than a ladder
-// mylist and myget are read only and scoped to one requestor's own requisitions, which is why the work floor may have them
-$rqEntryActions = array('insert', 'lookups', 'itemlookup', 'itemsearch', 'mylist', 'myget');
+$rqEntryActions = array('insert', 'lookups', 'itemlookup', 'itemsearch');
 $rqOk = "no";
 if (function_exists('chkAutUsr')) {
     if (in_array($action, $rqEntryActions)) {
@@ -271,32 +270,6 @@ switch ($action) {
                   ($nums['addCost'] !== null ? ' addcost ' . $nums['addCost'] : '') .
                   ($skuTo           !== null ? ' skuto ' . $skuTo            : ''));
         rqsOut(array("ok" => true));
-
-    // My Requisitions: what this requestor has raised, newest first, one row a requisition
-    case 'mylist':
-        $reqName = substr(trim($_POST['reqName'] ?? ''), 0, 50);
-        if ($reqName === '') { rqsOutFail("Pick a requestor name first."); }
-
-        $rows = rqsMyRequisitions($conn, $reqName);
-        if ($rows === false) { rqsOutFail(); }
-        rqsOut(array("ok" => true, "rows" => $rows));
-
-    // one of this requestor's own requisitions, header and lines, for printing a copy
-    case 'myget':
-        $reqNum  = intval($_POST['reqNum'] ?? 0);
-        $reqName = substr(trim($_POST['reqName'] ?? ''), 0, 50);
-        if ($reqNum <= 0 || $reqName === '') { rqsOutFail("No requisition was named."); }
-
-        $rows = rqsGet($conn, $reqNum);
-        if ($rows === false) { rqsOutFail(); }
-        if (!count($rows)) { rqsOutFail("Requisition " . $reqNum . " was not found."); }
-
-        // the entry form reaches this without the requisitions group, so it only ever gets back the
-        // requisitions raised under the name it asked for
-        if (strcasecmp(trim($rows[0]['RHNAME']), $reqName) !== 0) {
-            rqsOutFail("Requisition " . $reqNum . " was raised for somebody else.");
-        }
-        rqsOut(array("ok" => true, "rows" => $rows));
 
     default:
         rqsOutFail("Unknown action.");
