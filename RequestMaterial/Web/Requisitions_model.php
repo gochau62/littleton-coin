@@ -243,44 +243,4 @@ function rqsUpdateLine($conn, $reqNum, $lineNum, $item = null, $loc = null,
     if (!db2_execute($stmt)) { return rqsFail("execute REQSTN010S"); }
     return true;
 }
-
-// PROGRAM NAME REQSTN011S: add a line to a requisition already raised, the procedure numbering the line itself and handing that number back
-function rqsAddLine($conn, $reqNum, $item, $loc, $coinDate, $desc, $qty,
-                    $cost, $retail, $addCost, $badge, $skuTo) {
-    $sql = "CALL REQSTN011S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    $newLine = 0;
-
-    $stmt = db2_prepare($conn, $sql);
-    if (!$stmt) { return rqsFail("prepare REQSTN011S"); }
-
-    db2_bind_param($stmt, 1,  "reqNum", DB2_PARAM_IN);
-    db2_bind_param($stmt, 2,  "item", DB2_PARAM_IN);
-    db2_bind_param($stmt, 3,  "loc", DB2_PARAM_IN);
-    db2_bind_param($stmt, 4,  "coinDate", DB2_PARAM_IN);
-    db2_bind_param($stmt, 5,  "desc", DB2_PARAM_IN);
-    db2_bind_param($stmt, 6,  "qty", DB2_PARAM_IN);
-    db2_bind_param($stmt, 7,  "cost", DB2_PARAM_IN);
-    db2_bind_param($stmt, 8,  "retail", DB2_PARAM_IN);
-    db2_bind_param($stmt, 9,  "addCost", DB2_PARAM_IN);
-    db2_bind_param($stmt, 10, "badge", DB2_PARAM_IN);
-    db2_bind_param($stmt, 11, "skuTo", DB2_PARAM_IN);
-    db2_bind_param($stmt, 12, "newLine", DB2_PARAM_OUT);
-
-    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN011S"); }
-    return $newLine;
-}
-
-// PROGRAM NAME REQSTN012S: take one line off a requisition, leaving the header and every other line where they are
-function rqsDeleteLine($conn, $reqNum, $lineNum) {
-    $sql = "CALL REQSTN012S(?, ?)";
-
-    $stmt = db2_prepare($conn, $sql);
-    if (!$stmt) { return rqsFail("prepare REQSTN012S"); }
-
-    db2_bind_param($stmt, 1, "reqNum", DB2_PARAM_IN);
-    db2_bind_param($stmt, 2, "lineNum", DB2_PARAM_IN);
-
-    if (!db2_execute($stmt)) { return rqsFail("execute REQSTN012S"); }
-    return true;
-}
 ?>

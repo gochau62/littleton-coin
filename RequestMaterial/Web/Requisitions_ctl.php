@@ -367,15 +367,6 @@ $(document).ready(function () {
         td.toggleClass('rq-pending', lnText(td) !== lnOrig(td));
     });
 
-    $('#btnAddViewLine').on('click', addViewLine);
-
-    // the x strikes a line out, and pressing it again puts it back; a line never saved just goes
-    $('#viewLineBody').on('click', '.rq-linedel', function () {
-        var tr = $(this).closest('tr');
-        if (!tr.attr('data-line')) { tr.remove(); return; }
-        tr.toggleClass('rq-del');
-    });
-
     // the item list drops under the cell as it is typed in, the same list the entry form offers
     $('#viewLineBody').on('input', '.rq-ln[data-field="item"]', function () {
         var td = $(this);
@@ -1164,42 +1155,14 @@ function lnFill(row, field, val) {
 }
 
 
-// the last cell of every line, holding the x that takes the line off the requisition
-function lnDelCell() {
-    return '<td class="rq-nobox"><button type="button" class="rq-x rq-linedel"' +
-           ' title="Remove this line from the requisition">&times;</button></td>';
-}
-
-
-// a blank line to type into. It has no line number yet: Db2 gives it one when Update saves it,
-// counting on from the lines already there so two people adding at once cannot collide
-function addViewLine() {
-    $('#viewLineBody').append(
-        '<tr data-line="">' +
-        lnCell('item', '', 16) + lnCell('loc', '', 3) + lnCell('coinDate', '', 10) +
-        lnCell('desc', '', 50) + lnCell('qty', '', 7, true) + lnCell('cost', '', 10, true) +
-        lnCell('retail', '', 10, true) + lnCell('addCost', '', 10, true) +
-        lnCell('skuTo', '', 16) +
-        '<td class="rq-nobox"></td><td></td>' + lnDelCell() + '</tr>');
-    $('#viewLineBody tr:last').find('.rq-ln[data-field="item"]').trigger('focus');
-}
-
-
-// everything the window is holding that has not been saved: the lines struck out, the lines typed
-// over, and the lines added. Deletions go first so the numbering left behind is the one that stays
-function pendingWork() {
+// one request per line that was typed over, carrying the whole line as it now stands so nothing is
+// left to be guessed at the far end; a line nobody touched is never sent
+function changedLines() {
     var reqNum = $('#mdlView').data('req');
-    var jobs = [];
-
-    $('#viewLineBody tr.rq-del').each(function () {
-        var ln = $(this).attr('data-line');
-        if (ln) { jobs.push({ action: 'deleteline', reqNum: reqNum, lineNum: ln }); }
-    });
-
-    $('#viewLineBody tr').not('.rq-del').each(function () {
+    var out = [];
+    $('#viewLineBody tr').each(function () {
         var tr = $(this);
-        var ln = tr.attr('data-line');
-        var data = { reqNum: reqNum };
+        var data = { action: 'updateline', reqNum: reqNum, lineNum: tr.attr('data-line') };
         var changed = false;
         tr.find('.rq-ln').each(function () {
             var td = $(this);
@@ -1207,35 +1170,15 @@ function pendingWork() {
             if (now !== lnOrig(td)) { changed = true; }
             data[td.attr('data-field')] = now;
         });
-        if (ln) {
-            // a line already on the requisition is only sent when something on it was typed over
-            if (changed) { data.action = 'updateline'; data.lineNum = ln; jobs.push(data); }
-        } else if ($.trim(data.item || '') !== '') {
-            // a blank line nobody put an item number on is not a line at all
-            data.action = 'addline';
-            jobs.push(data);
-        }
+        if (changed) { out.push(data); }
     });
-    return jobs;
+    return out;
 }
 
 
-// what to tell the person once it is all saved
-function workSummary(jobs) {
-    var n = { addline: 0, updateline: 0, deleteline: 0 };
-    $.each(jobs, function (i, j) { n[j.action]++; });
-    var bits = [];
-    if (n.addline)    { bits.push(n.addline + (n.addline === 1 ? ' line added' : ' lines added')); }
-    if (n.updateline) { bits.push(n.updateline + (n.updateline === 1 ? ' line corrected' : ' lines corrected')); }
-    if (n.deleteline) { bits.push(n.deleteline + (n.deleteline === 1 ? ' line removed' : ' lines removed')); }
-    return bits.length ? ' (' + bits.join(', ') + ')' : '';
-}
-
-
-// the line work goes over one request at a time, so a cell Db2 refuses names its own line and
-// everything already sent stays saved
+// the changed lines save one at a time, so a cell Db2 refuses names its own line and the lines before it stay saved
 function saveLines(list, i, done) {
-    if (i >= list.length) { done(); return; }
+    if (i >= list.length) { done(list.length); return; }
     postAjax(list[i], function () { saveLines(list, i + 1, done); });
 }
 
@@ -1294,7 +1237,6 @@ function openViewModal(reqNum) {
                 ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
                 (r.RDRTNF === 'Y' ? ' checked' : '') + '></td>' +
                 '<td>' + (r.RDRTNF === 'Y' ? fmtDate(r.RDRTDT) : '') + '</td>' +
-                lnDelCell() +
                 '</tr>';
         });
         $('#viewLineBody').html(html);
@@ -1326,12 +1268,12 @@ function updateCurrent() {
         areaCode: $('#v_acode').val(),
         areaType: $('#v_atype').val()
     }, function () {
-        // the header goes first, then the line work; the window only closes once everything it was holding is saved
-        var jobs = pendingWork();
-        saveLines(jobs, 0, function () {
+        // the header goes first, then the corrected lines; the window only closes once everything it was holding is saved
+        saveLines(changedLines(), 0, function (saved) {
             $('#mdlView').prop('hidden', true);
             swal('Updated', 'Record req_num=' + reqNum + ' has been updated' +
-                 workSummary(jobs) + '.', 'success');
+                 (saved ? ' (' + saved + (saved === 1 ? ' line' : ' lines') + ' corrected)' : '') + '.',
+                 'success');
             loadGrid();
         });
     });

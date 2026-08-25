@@ -321,11 +321,6 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
    - it sits after the striping so a corrected cell on a tinted row still shows as corrected */
 #tblViewLines tbody tr td.rq-pending { background: #fdf8ee; }
 
-/* a line struck out is going when Update is pressed, and until then the x puts it back */
-#tblViewLines tbody tr.rq-del td { text-decoration: line-through; color: var(--rq-muted); }
-#tblViewLines .rq-linedel { padding: 0 .2rem; font-size: 1.05rem; line-height: 1; color: #b4b4b4; }
-#tblViewLines .rq-linedel:hover { color: var(--rq-red); }
-
 /* entry only mode: the work floor form fills the page and cannot be closed */
 .rq-entry .rq-toolbar, .rq-entry .rq-card, .rq-entry #addAuthByRow { display: none; }
 .rq-entry #mdlAdd .rq-modal-head .rq-x, .rq-entry #mdlAdd .rq-modal-foot [data-close] { display: none; }
@@ -558,13 +553,12 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
                 <th>Item#:</th><th>Location:</th><th>Date:</th><th>Description:</th>
                 <th class="rq-num">Qty:</th><th class="rq-num">Cost:</th>
                 <th class="rq-num">Retail:</th><th class="rq-num">Add. Cost</th>
-                <th>SKU To:</th><th>Returned</th><th>Date Ret.</th><th></th>
+                <th>SKU To:</th><th>Returned</th><th>Date Ret.</th>
               </tr>
             </thead>
             <tbody id="viewLineBody"></tbody>
           </table>
         </div>
-        <button type="button" class="rq-btn rq-btn-ghost" id="btnAddViewLine">+ Add line</button>
       </div>
     </div>
   </div>
