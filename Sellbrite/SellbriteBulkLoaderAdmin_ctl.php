@@ -168,7 +168,7 @@ function fillMarkets(){
     var tb = $('#m-body').empty();
     // staff-added columns first, right under the Add box, with their Remove button
     $.each(sbaCustom, function(i, c){
-        var del = $('<button>').attr('type', 'button').addClass('sba-btn ghost')
+        var del = $('<button>').attr('type', 'button').addClass('sba-btn danger')
             .text('Remove').on('click', function(){ delCol(c.name); });
         var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
         tb.append($('<tr>').addClass('staff')

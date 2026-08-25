@@ -59,6 +59,10 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 .sba-new-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1e6e43; margin:0 0 8px; }
 .sba-new .sba-row { align-items:center; }
 .sba-grid tr.staff td { background:#fbfdfb; }
+.sba-actions { display:flex; align-items:center; gap:10px; margin-top:12px; }
+.sba-actions .spacer { flex:1; }
+.sba-btn.danger { background:#fff; color:#b42318; border:1px solid #e4b8b4; }
+.sba-btn.danger:hover { background:#fef3f2; color:#912018; }
 </style>
 
 <div id='stdPage'>
@@ -102,10 +106,11 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         </div>
         <label class="sba-lbl">Choices (one per line)</label>
         <textarea id="v-ta" class="sba-ta" spellcheck="false"></textarea>
-        <div style="margin-top:10px">
+        <div class="sba-actions">
             <button type="button" class="sba-btn" onclick="saveValues()">Save List</button>
-            <button type="button" class="sba-btn ghost" id="v-del" onclick="delField()" style="display:none">Delete This Header</button>
             <span class="sba-msg" id="v-msg"></span>
+            <span class="spacer"></span>
+            <button type="button" class="sba-btn danger" id="v-del" onclick="delField()" style="display:none">Delete This Header</button>
         </div>
     </div>
 
@@ -131,10 +136,11 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
         <textarea id="c-alt1" class="sba-ta copy"></textarea>
         <label class="sba-lbl">Alternate 2</label>
         <textarea id="c-alt2" class="sba-ta copy"></textarea>
-        <div style="margin-top:10px">
+        <div class="sba-actions">
             <button type="button" class="sba-btn" onclick="saveCopy()">Save Descriptions</button>
-            <button type="button" class="sba-btn ghost" onclick="delCat()">Delete This Category</button>
             <span class="sba-msg" id="c-msg"></span>
+            <span class="spacer"></span>
+            <button type="button" class="sba-btn danger" onclick="delCat()">Delete This Category</button>
         </div>
     </div>
 
