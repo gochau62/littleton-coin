@@ -151,8 +151,14 @@ function stageChip(stage) {
 
 
 function groupTable(rows) {
+    // fixed column widths so every developer's table lines up with the next
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
-        '<table class="pt-grid"><thead><tr>' +
+        '<table class="pt-grid" style="table-layout:fixed">' +
+        '<colgroup><col style="width:6%"><col style="width:11%">' +
+        '<col style="width:5%"><col style="width:7%"><col style="width:6%">' +
+        '<col style="width:29%"><col style="width:4.5%"><col style="width:4.5%">' +
+        '<col style="width:6%"><col style="width:8.5%"><col style="width:8.5%">' +
+        '</colgroup><thead><tr>' +
         '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Dept</th>' +
         '<th class="pt-num">Dept prty</th><th class="pt-num">SC prty</th>' +
         '<th>Description</th><th class="pt-num">Low</th><th class="pt-num">Hi</th>' +

@@ -192,11 +192,11 @@ function renderLoad(load) {
 
         svg += '<g class="pt-bar" data-name="' + attr(label) + '" data-count="' + count + '">' +
                '<text x="' + (labelW - 8) + '" y="' + (y + barH - 2) +
-               '" text-anchor="end" font-size="11" fill="#5f6570">' + esc(label) + '</text>' +
+               '" text-anchor="end" font-size="11" fill="#667085">' + esc(label) + '</text>' +
                '<rect x="' + labelW + '" y="' + y + '" width="' + len +
                '" height="' + barH + '" rx="' + (barH / 2) + '" fill="' + color + '"></rect>' +
                '<text x="' + (labelW + len + 6) + '" y="' + (y + barH - 2) +
-               '" font-size="11" fill="#1c1e21">' + count + '</text>' +
+               '" font-size="11" font-weight="600" fill="#101828">' + count + '</text>' +
                '<rect x="0" y="' + (y - 4) + '" width="' + w + '" height="' + rowH +
                '" fill="transparent"></rect>' +
                '</g>';
@@ -219,7 +219,7 @@ function renderDonut(status, labels) {
     var total = 0;
     $.each(status, function (k, c) { total += c; });
 
-    var size = 150, stroke = 26, r = (size - stroke) / 2;
+    var size = 176, stroke = 28, r = (size - stroke) / 2;
     var c = size / 2, circ = 2 * Math.PI * r;
     var segs = 0;
     $.each(status, function (k, cnt) { if (cnt > 0) { segs += 1; } });
@@ -231,7 +231,7 @@ function renderDonut(status, labels) {
 
     if (total === 0) {
         svg += '<circle cx="' + c + '" cy="' + c + '" r="' + r +
-               '" fill="none" stroke="#eef0f2" stroke-width="' + stroke + '"></circle>';
+               '" fill="none" stroke="#eef0f4" stroke-width="' + stroke + '"></circle>';
     } else {
         var offset = 0;
         $.each(labels, function (key, label) {
@@ -251,9 +251,9 @@ function renderDonut(status, labels) {
         });
     }
     svg += '<text x="' + c + '" y="' + (c - 2) + '" text-anchor="middle"' +
-           ' font-size="22" font-weight="650" fill="#1c1e21">' + total + '</text>' +
+           ' font-size="22" font-weight="650" fill="#101828">' + total + '</text>' +
            '<text x="' + c + '" y="' + (c + 16) + '" text-anchor="middle"' +
-           ' font-size="10" fill="#5f6570">open</text></svg>';
+           ' font-size="10" fill="#667085">open</text></svg>';
     $('#statusDonut').html(svg);
 
     var leg = '';
@@ -342,6 +342,12 @@ function stageChip(stage) {
 
 function renderTable() {
     if (!dashData) { return; }
+
+    // mark the active sort column with a direction arrow
+    $('#tblProjects thead th').removeClass('pt-sort-asc pt-sort-desc');
+    $('#tblProjects thead th[data-k="' + sortKey + '"]')
+        .addClass(sortDir === 1 ? 'pt-sort-asc' : 'pt-sort-desc');
+
     var q = $('#txtSearch').val().trim().toLowerCase();
     var fPgmr = $('#selPgmr').val();
     var fStage = $('#selStage').val();
