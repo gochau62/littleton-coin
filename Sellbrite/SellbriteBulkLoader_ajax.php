@@ -212,11 +212,15 @@ switch ($action) {
 
     case 'cfgLoad':
         // everything the data screen shows, with the overrides already applied
+        $hid = sblCfgAll('HIDDEN');
+        $reqNames = Schema::requiredNames();
         $fields = [];
         foreach (Schema::columns() as $col) {
             $opts = Schema::optionsFor($col);
             if (!$opts) { continue; }
-            $fields[] = ['name' => $col['name'], 'label' => $col['label'], 'options' => $opts];
+            $fields[] = ['name' => $col['name'], 'label' => $col['label'], 'options' => $opts,
+                         'hidden' => isset($hid[$col['name']]),
+                         'req' => in_array($col['name'], $reqNames, true)];
         }
         // staff-added fields always list, even before any values are saved
         foreach (Schema::customFields() as $col) {
@@ -248,8 +252,10 @@ switch ($action) {
             $custom[] = ['name' => (string) $k, 'label' => (string) ($c['label'] ?? $k),
                          'market' => (string) ($c['market'] ?? 'all'), 'value' => (string) ($c['value'] ?? '')];
         }
+        $ord = json_decode((string) (sblCfgAll('ORDER')['columns'] ?? ''), true);
         echo json_encode(['returnClass' => 'success', 'fields' => $fields, 'cats' => $cats,
                           'cols' => $cols, 'custom' => $custom,
+                          'order' => is_array($ord) ? array_values($ord) : [],
                           'valueOverrides' => array_keys(sblCfgAll('VALUES'))]);
         break;
 
@@ -357,6 +363,38 @@ switch ($action) {
         sblCfgDel('MARKET', $name);
         echo json_encode($ok ? ['returnClass' => 'success']
                              : ['returnClass' => 'error', 'message' => 'Delete failed.']);
+        break;
+
+    case 'cfgHideField':
+        // deleting a STANDARD header = hide its box on the loader + drop its export column
+        $name = trim((string) ($_POST['field'] ?? ''));
+        if ($name === '') { echo json_encode(['returnClass' => 'error', 'message' => 'Pick a header.']); break; }
+        if ($name === 'sku' || in_array($name, Schema::requiredNames(), true)) {
+            echo json_encode(['returnClass' => 'error', 'message' => 'That header is required by Sellbrite and cannot be deleted.']); break;
+        }
+        $ok = sblCfgPut('HIDDEN', $name, '1');
+        if ($ok) { sblCfgPut('MARKET', $name, 'none'); }
+        echo json_encode($ok ? ['returnClass' => 'success']
+                             : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        break;
+
+    case 'cfgSaveOrder':
+        // drag order from the Market Columns tab: one global list of column names
+        $ord = json_decode((string) ($_POST['order'] ?? ''), true);
+        if (!is_array($ord) || !$ord) { echo json_encode(['returnClass' => 'error', 'message' => 'No order given.']); break; }
+        echo json_encode(sblCfgPut('ORDER', 'columns', json_encode(array_values(array_map('strval', $ord))))
+            ? ['returnClass' => 'success']
+            : ['returnClass' => 'error', 'message' => 'Save failed - is LSCDEVLIBP/SBLCONFIGT created and are you signed in?']);
+        break;
+
+    case 'cfgUnhideField':
+        // restore brings the box and its column back to the standard setup
+        $name = trim((string) ($_POST['field'] ?? ''));
+        if ($name === '') { echo json_encode(['returnClass' => 'error', 'message' => 'Pick a header.']); break; }
+        $ok = sblCfgDel('HIDDEN', $name);
+        sblCfgDel('MARKET', $name);
+        echo json_encode($ok ? ['returnClass' => 'success']
+                             : ['returnClass' => 'error', 'message' => 'Restore failed.']);
         break;
 
     default:

@@ -730,68 +730,86 @@ final class Exporter
         return $f;
     }
 
+    // one export column: header pair + where each row's value comes from
+    private static function plan(string $market): array
+    {
+        $cols = [];
+        foreach (self::keepIndexes($market) as $i) {
+            $name = self::LAYOUT[$i];
+            // Internal names differ for two Sellbrite headers.
+            $src = $name;
+            if ($name === 'country_of_origin')    { $src = 'country_of_manufacture'; }
+            if ($name === 'red_book_description') { $src = 'extended_description'; }
+            $cols[] = ['name' => $name, 'label' => self::LAYOUT_HUMAN[$i], 'src' => $src,
+                       'value' => '', 'orig' => $i];
+        }
+        foreach (self::customCols($market) as $c) {
+            $cols[] = ['name' => $c['name'], 'label' => $c['label'], 'src' => $c['src'],
+                       'value' => $c['value'], 'orig' => -1];
+        }
+        // the drag order saved on the data screen; unlisted columns keep their default place
+        $ov = function_exists('sblCfgAll') ? sblCfgAll('ORDER') : [];
+        $order = json_decode((string) ($ov['columns'] ?? ''), true);
+        if (is_array($order) && $order) {
+            $pos = array_flip(array_map('strval', array_values($order)));
+            $dec = [];
+            foreach ($cols as $idx => $c) { $dec[] = [$pos[$c['name']] ?? (100000 + $idx), $idx, $c]; }
+            usort($dec, static fn($a, $b) => $a[0] <=> $b[0] ?: $a[1] <=> $b[1]);
+            $cols = array_column($dec, 2);
+        }
+        return $cols;
+    }
+
+    // a row's cell for one planned column
+    private static function cellValue(array $c, array $row, string $mkt): string
+    {
+        $v = $c['src'] !== '' ? (string) ($row[$c['src']] ?? '') : $c['value'];
+        // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
+        if ($c['name'] === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
+        return $v;
+    }
+
     // Builds the real Excel download: 3 header rows, every cell as text, columns auto-sized.
     public static function xlsx(array $rows, string $market = 'all')
     {
-        if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) { return null; }
+        if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) { return null; }
         // "A5"-style addresses: works on every PhpSpreadsheet version (the [col,row] array form only exists from 1.23 up).
         $cell = static fn($i, $r) =>
             \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r;
-        $keep  = self::keepIndexes($market);
+        $plan  = self::plan($market);
         $fills = self::headerFills();
         $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $ws = $ss->getActiveSheet();
         $ws->setTitle('product_data');
         $ws->setCellValue('A1', 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
             . 'You MAY delete or change the order of columns, but do NOT alter the header names in row 2. *Required Fields.');
-        // staff-added columns follow the standard layout
-        $extra = self::customCols($market);
-        $base  = count($keep);
-        foreach ($extra as $j => $c) {
-            $ws->setCellValue($cell($base + $j, 2), $c['label']);
-            $ws->setCellValue($cell($base + $j, 3), $c['name']);
-        }
-        foreach ($keep as $i => $orig) {
-            $ws->setCellValue($cell($i, 2), self::LAYOUT_HUMAN[$orig]);
-            $ws->setCellValue($cell($i, 3), self::LAYOUT[$orig]);
-            if (isset($fills[$orig])) {
+        $widths = [];
+        foreach ($plan as $i => $c) {
+            $ws->setCellValue($cell($i, 2), $c['label']);
+            $ws->setCellValue($cell($i, 3), $c['name']);
+            if ($c['orig'] >= 0 && isset($fills[$c['orig']])) {
                 foreach ([2, 3] as $rowNo) {
                     $ws->getStyle($cell($i, $rowNo))->getFill()
                        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                       ->getStartColor()->setARGB($fills[$orig]);
+                       ->getStartColor()->setARGB($fills[$c['orig']]);
                 }
             }
+            // Column widths follow the content (header + widest cell), capped so
+            // the copy-heavy columns (description, features) stay readable.
+            $widths[$i] = strlen($c['label']);
         }
-        // Column widths follow the content (header + widest cell), capped so
-        // the copy-heavy columns (description, features) stay readable.
-        $widths = [];
-        foreach ($keep as $i => $orig) { $widths[$i] = strlen(self::LAYOUT_HUMAN[$orig]); }
-        foreach ($extra as $j => $c) { $widths[$base + $j] = strlen($c['label']); }
         $r = 4;
         foreach ($rows as $row) {
             $mkt = strtolower(trim((string) ($row['marketplace'] ?? '')));
-            foreach ($keep as $i => $orig) {
-                $name = self::LAYOUT[$orig];
-                $src  = $name;
-                if ($name === 'country_of_origin')    { $src = 'country_of_manufacture'; }
-                if ($name === 'red_book_description') { $src = 'extended_description'; }
-                $v = (string) ($row[$src] ?? '');
-                // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
-                if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
+            foreach ($plan as $i => $c) {
+                $v = self::cellValue($c, $row, $mkt);
                 if ($v !== '') {
-                     // "Explicitly TEXT" so Excel never mangles values like the SKU "255R.50" into numbers or dates.
+                    // "Explicitly TEXT" so Excel never mangles values like the SKU "255R.50" into numbers or dates.
                     $ws->setCellValueExplicit($cell($i, $r), $v,
                         \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
                     // Multi-line text: the longest line drives the width.
                     foreach (explode("\n", $v) as $ln) { $widths[$i] = max($widths[$i], strlen($ln)); }
                 }
-            }
-            foreach ($extra as $j => $c) {
-                $v = $c['src'] !== '' ? (string) ($row[$c['src']] ?? '') : $c['value'];
-                if ($v === '') { continue; }
-                $ws->setCellValueExplicit($cell($base + $j, $r), $v,
-                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-                $widths[$base + $j] = max($widths[$base + $j], strlen($v));
             }
             $r++;
         }
@@ -806,37 +824,21 @@ final class Exporter
     // The plain-text fallback when the Excel library is not installed.
     public static function csv(array $rows, string $market = 'all'): string
     {
-        $keep = self::keepIndexes($market);
-        $extra = self::customCols($market);
-        $n = count($keep) + count($extra);
+        $plan = self::plan($market);
+        $n = count($plan);
         $banner = 'SELLBRITE PRODUCT CSV TEMPLATE (Do NOT remove the first 3 rows). '
                 . 'You MAY delete or change the order of columns, but do NOT alter the '
                 . 'header names in row 2. *Required Fields.';
         $fh = fopen('php://temp', 'r+');
-        $human = $machine = [];
-        foreach ($keep as $orig) {
-            $human[]   = self::LAYOUT_HUMAN[$orig];
-            $machine[] = self::LAYOUT[$orig];
-        }
-        foreach ($extra as $c) { $human[] = $c['label']; $machine[] = $c['name']; }
+        $human   = array_column($plan, 'label');
+        $machine = array_column($plan, 'name');
         $bannerRow = array_fill(0, $n, ''); $bannerRow[0] = $banner;
         fputcsv($fh, $bannerRow);
         fputcsv($fh, $human); fputcsv($fh, $machine);
         foreach ($rows as $row) {
             $mkt  = strtolower(trim((string) ($row['marketplace'] ?? '')));
             $line = [];
-            foreach ($keep as $orig) {
-                $name = self::LAYOUT[$orig];
-                // Internal names differ for two Sellbrite headers.
-                $src = $name;
-                if ($name === 'country_of_origin')    { $src = 'country_of_manufacture'; }
-                if ($name === 'red_book_description') { $src = 'extended_description'; }  // renamed internally
-                $v = (string) ($row[$src] ?? '');
-                // Search Terms are Amazon-specific - blank for eBay/Walmart-only SKUs.
-                if ($name === 'search_terms' && $mkt !== '' && $mkt !== 'all' && $mkt !== 'amazon') { $v = ''; }
-                $line[] = $v;
-            }
-            foreach ($extra as $c) { $line[] = $c['src'] !== '' ? (string) ($row[$c['src']] ?? '') : $c['value']; }
+            foreach ($plan as $c) { $line[] = self::cellValue($c, $row, $mkt); }
             fputcsv($fh, $line);
         }
         rewind($fh); $out = stream_get_contents($fh); fclose($fh);

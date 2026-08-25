@@ -417,6 +417,8 @@ details.group summary::-webkit-details-marker { display:none; }
                         'exact_image','product_image_1','product_image_2','product_image_3','product_image_4',
                         'product_image_5','product_image_6','product_image_7','product_image_8']],
                 ];
+                // headers deleted on the data screen render nowhere
+                $hiddenF = function_exists('sblCfgAll') ? sblCfgAll('HIDDEN') : [];
                 // staff-added fields land in the section picked on the data screen
                 foreach (Schema::customFields() as $cf) {
                     $sec = isset($sections[$cf['section']]) ? $cf['section'] : 'Coin details';
@@ -448,7 +450,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     // fully manual: no badge, no formula refresh; Cert Number unlocks with Certification
                     $manualAlways = ['title_suffix', 'certification', 'certification_number'];
                     foreach ($sec['fields'] as $n) {
-                        if (!isset($byName[$n])) { continue; }
+                        if (!isset($byName[$n]) || isset($hiddenF[$n])) { continue; }
                         $col = $byName[$n];
                         $col['required'] = in_array($n, $required, true);
                         // image URLs are manual; other sections auto unless operator-owned

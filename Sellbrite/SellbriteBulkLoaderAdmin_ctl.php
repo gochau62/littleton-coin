@@ -68,7 +68,7 @@ if ($authorized === "signin") {
 <script>
 // Sellbrite Data frontend: three tabs over the SBLCONFIGT override rows,
 // talking to the loader's own service (the cfg* actions)
-var sbaFields = [], sbaCats = [], sbaCols = [], sbaCustom = [], sbaOvValues = [];
+var sbaFields = [], sbaCats = [], sbaCols = [], sbaCustom = [], sbaOrder = [], sbaOvValues = [];
 
 function postA(data, onOk){
     $.post('SellbriteBulkLoader_ajax.php', data, function(r){
@@ -80,9 +80,11 @@ function postA(data, onOk){
 function loadAll(done){
     postA({ action:'cfgLoad' }, function(r){
         sbaFields = r.fields || []; sbaCats = r.cats || []; sbaCols = r.cols || [];
-        sbaCustom = r.custom || []; sbaOvValues = r.valueOverrides || [];
+        sbaCustom = r.custom || []; sbaOrder = r.order || []; sbaOvValues = r.valueOverrides || [];
         var vf = $('#v-field').empty();
-        $.each(sbaFields, function(i, f){ vf.append($('<option>').val(f.name).text(f.label)); });
+        $.each(sbaFields, function(i, f){
+            vf.append($('<option>').val(f.name).text(f.label + (f.hidden ? ' (deleted)' : '')));
+        });
         var cc = $('#c-cat').empty();
         $.each(sbaCats, function(i, c){ cc.append($('<option>').val(c.category).text(c.category)); });
         fillValues(); fillCopy(); fillMarkets();
@@ -95,7 +97,11 @@ function fillValues(){
     $.each(sbaFields, function(i, x){ if (x.name === name) f = x; });
     $('#v-ta').val(f ? f.options.join('\n') : '');
     $('#v-ov').html(sbaOvValues.indexOf(name) >= 0 ? '<span class="sba-ovtag">staff list</span>' : '');
-    $('#v-del').toggle(!!(f && f.custom));
+    // the button always shows; what it does depends on the header
+    var btn = $('#v-del').show();
+    if (f && f.custom)       { btn.text('Delete This Header'); }
+    else if (f && f.hidden)  { btn.text('Restore This Header'); }
+    else                     { btn.text('Delete This Header'); }
     $('#v-msg').text('');
 }
 
@@ -112,12 +118,27 @@ function addField(){
     });
 }
 function delField(){
-    var name = $('#v-field').val(), isCustom = false;
-    $.each(sbaFields, function(i, f){ if (f.name === name) isCustom = !!f.custom; });
-    if (!isCustom) { $('#v-msg').text('Standard boxes cannot be deleted - use Market Columns / Not exported to drop their column.'); return; }
-    postA({ action:'cfgDelField', field:name }, function(){
-        loadAll(function(){ $('#v-msg').text(name + ' deleted.'); });
-    });
+    var name = $('#v-field').val(), f = null;
+    $.each(sbaFields, function(i, x){ if (x.name === name) f = x; });
+    if (!f) { return; }
+    if (f.custom) {
+        // staff-added header: gone entirely (field, values, market override)
+        postA({ action:'cfgDelField', field:name }, function(){
+            loadAll(function(){ $('#v-msg').text(f.label + ' deleted.'); });
+        });
+    } else if (f.hidden) {
+        // deleted standard header: bring the box and its column back
+        postA({ action:'cfgUnhideField', field:name }, function(){
+            loadAll(function(){ $('#v-msg').text(f.label + ' restored.'); });
+        });
+    } else if (f.req) {
+        $('#v-msg').text(f.label + ' is required by Sellbrite and cannot be deleted.');
+    } else {
+        // standard header: box off the loader, column out of every export; restorable here
+        postA({ action:'cfgHideField', field:name }, function(){
+            loadAll(function(){ $('#v-msg').text(f.label + ' deleted - box and column removed. Pick it again to restore.'); });
+        });
+    }
 }
 
 function saveValues(){
@@ -166,27 +187,41 @@ function delCat(){
 
 function fillMarkets(){
     var tb = $('#m-body').empty();
-    // staff-added columns first, right under the Add box, with their Remove button
-    $.each(sbaCustom, function(i, c){
-        var del = $('<button>').attr('type', 'button').addClass('sba-btn danger')
-            .text('Remove').on('click', function(){ delCol(c.name); });
-        var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
-        tb.append($('<tr>').addClass('staff')
-                           .append($('<td>').text(c.name))
-                           .append($('<td>').text(c.label + (c.value ? ' = "' + c.value + '"' : '')))
-                           .append($('<td>').text(m + ' ').append(del)));
-    });
-    $.each(sbaCols, function(i, c){
-        var sel = $('<select>').attr('data-col', c.name).attr('data-home', c.home)
-            .append($('<option>').val('all').text('All'))
-            .append($('<option>').val('amazon').text('Amazon only'))
-            .append($('<option>').val('ebay').text('eBay only'))
-            .append($('<option>').val('walmart').text('Walmart only'))
-            .append($('<option>').val('none').text('Not exported'));
-        sel.val(c.set || c.home);
-        tb.append($('<tr>').append($('<td>').text(c.name))
-                           .append($('<td>').text(c.label))
-                           .append($('<td>').append(sel)));
+    // one merged list (staff-added + standard) shown in the saved export order
+    var items = [];
+    $.each(sbaCustom, function(i, c){ items.push({ staff:true, d:c, name:c.name }); });
+    $.each(sbaCols, function(i, c){ items.push({ staff:false, d:c, name:c.name }); });
+    var pos = {};
+    $.each(sbaOrder, function(i, n){ pos[n] = i; });
+    $.each(items, function(i, it){ it.key = (pos[it.name] !== undefined) ? pos[it.name] : 100000 + i; it.idx = i; });
+    items.sort(function(a, b){ return a.key - b.key || a.idx - b.idx; });
+    $.each(items, function(i, it){
+        var c = it.d;
+        var tr = $('<tr>').attr('draggable', true).attr('data-name', it.name);
+        if (it.staff) {
+            var del = $('<button>').attr('type', 'button').addClass('sba-btn danger')
+                .text('Remove').on('click', function(){ delCol(c.name); });
+            var m = { all:'All', amazon:'Amazon only', ebay:'eBay only', walmart:'Walmart only' }[c.market] || 'All';
+            tr.addClass('staff')
+              .append($('<td>').text(c.name))
+              .append($('<td>').text(c.label + (c.value ? ' = "' + c.value + '"' : '')))
+              .append($('<td>').text(m + ' ').append(del));
+        } else {
+            var sel = $('<select>').attr('data-col', c.name).attr('data-home', c.home)
+                .append($('<option>').val('all').text('All'))
+                .append($('<option>').val('amazon').text('Amazon only'))
+                .append($('<option>').val('ebay').text('eBay only'))
+                .append($('<option>').val('walmart').text('Walmart only'))
+                .append($('<option>').val('none').text('Not exported'));
+            sel.val(c.set || c.home);
+            // Remove = set Not exported (standard columns cannot leave the layout)
+            var rm = $('<button>').attr('type', 'button').addClass('sba-btn danger')
+                .text('Remove').on('click', function(){ sel.val('none').trigger('change'); });
+            tr.append($('<td>').text(c.name))
+              .append($('<td>').text(c.label))
+              .append($('<td>').append(sel).append(' ').append(rm));
+        }
+        tb.append(tr);
     });
 }
 
@@ -213,6 +248,30 @@ $(document).ready(function(){
     });
     $('#v-field').on('change', fillValues);
     $('#c-cat').on('change', fillCopy);
+    // drag a row to move the column; the new order saves on drop
+    var dragRow = null;
+    $('#m-body').on('dragstart', 'tr', function(e){
+        dragRow = this;
+        e.originalEvent.dataTransfer.effectAllowed = 'move';
+    });
+    $('#m-body').on('dragover', 'tr', function(e){
+        e.preventDefault();
+        if (!dragRow || dragRow === this) return;
+        var rect = this.getBoundingClientRect();
+        if (e.originalEvent.clientY > rect.top + rect.height / 2) { $(this).after(dragRow); }
+        else { $(this).before(dragRow); }
+    });
+    $('#m-body').on('drop', 'tr', function(e){ e.preventDefault(); });
+    $('#m-body').on('dragend', 'tr', function(){
+        if (!dragRow) return;
+        dragRow = null;
+        var order = [];
+        $('#m-body tr').each(function(){ order.push($(this).attr('data-name')); });
+        postA({ action:'cfgSaveOrder', order:JSON.stringify(order) }, function(){
+            sbaOrder = order;
+            $('#m-msg').text('Column order saved - the next export uses it.');
+        });
+    });
     // a market pick saves the moment it is made; picking the standard value clears the override
     $('#m-body').on('change', 'select', function(){
         var sel = $(this);

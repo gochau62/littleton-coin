@@ -59,6 +59,8 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
 .sba-new-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1e6e43; margin:0 0 8px; }
 .sba-new .sba-row { align-items:center; }
 .sba-grid tr.staff td { background:#fbfdfb; }
+#m-body tr { cursor:grab; }
+#m-body tr:active { cursor:grabbing; }
 .sba-actions { display:flex; align-items:center; gap:10px; margin-top:12px; }
 .sba-actions .spacer { flex:1; }
 .sba-btn.danger { background:#fff; color:#b42318; border:1px solid #e4b8b4; }
@@ -147,8 +149,9 @@ table.sba-grid { width:100%; border-collapse:collapse; font-size:12.5px; }
     <!-- which upload columns each market's spreadsheet carries -->
     <div class="sba-card" id="tab-markets" style="display:none">
         <p class="sba-note">Where each upload column exports to. Picking a market sends that column only to
-           that market's spreadsheet, All sends it to every one, and Not exported drops the column from
-           every spreadsheet. Changes save the moment a pick is made and apply to the next export.</p>
+           that market's spreadsheet, All sends it to every one, and Not exported / Remove drops the column
+           from every spreadsheet. Drag a row up or down to reorder the columns in the spreadsheet.
+           Changes save the moment they are made and apply to the next export.</p>
         <div class="sba-new">
             <p class="sba-new-title">Add a new column</p>
             <div class="sba-row">
