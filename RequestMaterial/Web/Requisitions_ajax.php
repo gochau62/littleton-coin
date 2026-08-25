@@ -72,6 +72,27 @@ if ($rqOk != "yes") {
     rqsOutFail("Current user profile is not authorized to use this tool.");
 }
 
+// the typed number cells of a line, checked here instead of reaching Db2 as a silent zero; a cell
+// that was not sent at all comes back null, which the procedures read as leave this column alone
+function rqsLineNums($lineNum) {
+    $out    = array('qty' => null, 'cost' => null, 'retail' => null, 'addCost' => null);
+    $labels = array('qty' => 'quantity', 'cost' => 'cost',
+                    'retail' => 'retail', 'addCost' => 'additional cost');
+    foreach ($labels as $fld => $label) {
+        if (!array_key_exists($fld, $_POST)) { continue; }
+        $raw = str_replace(',', '', trim($_POST[$fld]));
+        if ($raw === '') { $raw = '0'; }
+        if (!is_numeric($raw)) {
+            rqsOutFail("The " . $label . " on line " . $lineNum . " is not a number.");
+        }
+        if (floatval($raw) < 0) {
+            rqsOutFail("The " . $label . " on line " . $lineNum . " cannot be less than zero.");
+        }
+        $out[$fld] = floatval($raw);
+    }
+    return $out;
+}
+
 switch ($action) {
 
     // main grid rows, show O open (default), R returned, A all; q searches
@@ -225,7 +246,7 @@ switch ($action) {
         $lineNum = intval($_POST['lineNum'] ?? 0);
         if ($reqNum <= 0 || $lineNum <= 0) { rqsOutFail("No requisition line was named."); }
 
-        // only the boxes that were actually changed are sent, and anything absent is left exactly as it stands on the file
+        // the whole line arrives as it stands on screen; anything absent all the same is left as it is on the file
         $item     = array_key_exists('item', $_POST)     ? substr(trim($_POST['item']), 0, 16)     : null;
         $loc      = array_key_exists('loc', $_POST)      ? substr(trim($_POST['loc']), 0, 3)       : null;
         $coinDate = array_key_exists('coinDate', $_POST) ? substr(trim($_POST['coinDate']), 0, 10) : null;
@@ -235,24 +256,7 @@ switch ($action) {
         // the item number is what the line is, so it can be corrected but not emptied
         if ($item !== null && $item === '') { rqsOutFail("Line " . $lineNum . " needs an item number."); }
 
-        // the typed number boxes are checked here instead of reaching Db2 as a silent zero
-        $nums = array('qty' => null, 'cost' => null, 'retail' => null, 'addCost' => null);
-        $labels = array('qty' => 'quantity', 'cost' => 'cost',
-                        'retail' => 'retail', 'addCost' => 'additional cost');
-        foreach ($labels as $fld => $label) {
-            if (!array_key_exists($fld, $_POST)) { continue; }
-            $raw = str_replace(',', '', trim($_POST[$fld]));
-            if (!is_numeric($raw)) {
-                rqsOutFail("The " . $label . " on line " . $lineNum . " is not a number.");
-            }
-            if (floatval($raw) < 0) {
-                rqsOutFail("The " . $label . " on line " . $lineNum . " cannot be less than zero.");
-            }
-            $nums[$fld] = floatval($raw);
-        }
-        if ($nums['qty'] !== null && $nums['qty'] < 1) {
-            rqsOutFail("Line " . $lineNum . " needs a quantity of at least one.");
-        }
+        $nums = rqsLineNums($lineNum);
 
         if (!rqsUpdateLine($conn, $reqNum, $lineNum, $item, $loc, $coinDate, $desc,
                            $nums['qty'], $nums['cost'], $nums['retail'],
@@ -260,7 +264,7 @@ switch ($action) {
             rqsOutFail();
         }
 
-        // every box the correction carried is named, so a question later about a changed item number or price is answered by the log by itself
+        // every field the correction carried is named, so a question later about a changed item number or price is answered by the log by itself
         rqsActLog($user, 'UPDATELINE', 'req ' . $reqNum . ' line ' . $lineNum .
                   ($item            !== null ? ' item ' . $item              : '') .
                   ($loc             !== null ? ' loc ' . $loc                : '') .
@@ -271,6 +275,45 @@ switch ($action) {
                   ($nums['retail']  !== null ? ' retail ' . $nums['retail']  : '') .
                   ($nums['addCost'] !== null ? ' addcost ' . $nums['addCost'] : '') .
                   ($skuTo           !== null ? ' skuto ' . $skuTo            : ''));
+        rqsOut(array("ok" => true));
+
+    // add a line to a requisition already raised, from the maintenance screen's line sheet
+    case 'addline':
+        $reqNum = intval($_POST['reqNum'] ?? 0);
+        if ($reqNum <= 0) { rqsOutFail("No requisition was named."); }
+
+        $item = substr(trim($_POST['item'] ?? ''), 0, 16);
+        if ($item === '') { rqsOutFail("A new line needs an item number."); }
+
+        $loc      = substr(trim($_POST['loc'] ?? ''), 0, 3);
+        $coinDate = substr(trim($_POST['coinDate'] ?? ''), 0, 10);
+        $desc     = substr(trim($_POST['desc'] ?? ''), 0, 50);
+        $skuTo    = substr(trim($_POST['skuTo'] ?? ''), 0, 16);
+        $nums     = rqsLineNums('being added');
+
+        // Entered By is whoever is signed on, the same as a line keyed on the entry form
+        $me     = rqsWhoAmI($conn, $user);
+        $deName = substr(trim(($me && $me['name'] !== '') ? $me['name'] : $user), 0, 50);
+
+        $newLine = rqsAddLine($conn, $reqNum, $item, $loc, $coinDate, $desc,
+                              $nums['qty'], $nums['cost'], $nums['retail'],
+                              $nums['addCost'], $deName, $skuTo);
+        if ($newLine === false) { rqsOutFail(); }
+
+        rqsActLog($user, 'ADDLINE', 'req ' . $reqNum . ' line ' . $newLine .
+                  ' item ' . $item . ' qty ' . $nums['qty'] .
+                  ' cost ' . $nums['cost'] . ' retail ' . $nums['retail']);
+        rqsOut(array("ok" => true, "lineNum" => $newLine));
+
+    // take one line off a requisition; the header and every other line stay as they are
+    case 'deleteline':
+        $reqNum  = intval($_POST['reqNum'] ?? 0);
+        $lineNum = intval($_POST['lineNum'] ?? 0);
+        if ($reqNum <= 0 || $lineNum <= 0) { rqsOutFail("No requisition line was named."); }
+
+        if (!rqsDeleteLine($conn, $reqNum, $lineNum)) { rqsOutFail(); }
+
+        rqsActLog($user, 'DELETELINE', 'req ' . $reqNum . ' line ' . $lineNum);
         rqsOut(array("ok" => true));
 
     default:

@@ -1,0 +1,72 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN011S                                    */
+/*                                                                   */
+/* Program Narrative - Add a line to a Requisition already raised.    */
+/*                     The maintenance screen sends the line as it    */
+/*                     was typed and the procedure numbers it         */
+/*                     itself, taking the next number after the       */
+/*                     ones already on that requisition, so two       */
+/*                     people adding at once cannot land on the same  */
+/*                     line number. The number it used comes back on  */
+/*                     OTLIN#.                                        */
+/*                     A new line starts not returned, the same as    */
+/*                     one keyed on the entry form.                   */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 08/24/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN011S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN011S (
+        IN  INREQ#  DECIMAL(9, 0),
+        IN  INITEM  VARCHAR(16),
+        IN  INLOC   VARCHAR(3),
+        IN  INCNDT  VARCHAR(10),
+        IN  INDESC  VARCHAR(50),
+        IN  INQTY   DECIMAL(9, 0),
+        IN  INCOST  DECIMAL(13, 4),
+        IN  INRETL  DECIMAL(13, 4),
+        IN  INACST  DECIMAL(13, 2),
+        IN  INBDGE  VARCHAR(50),
+        IN  INSKUT  VARCHAR(16),
+        OUT OTLIN#  DECIMAL(3, 0)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DECLARE NEXTLIN DECIMAL(3, 0);
+
+        SELECT COALESCE(MAX(RDLIN#), 0) + 1
+          INTO NEXTLIN
+          FROM RQSREQDTLT
+         WHERE RDREQ# = INREQ#;
+
+        INSERT INTO RQSREQDTLT
+            (RDREQ#, RDLIN#, RDITEM, RDLOC, RDCNDT, RDDESC,
+             RDQTY, RDCOST, RDRETL, RDACST, RDBDGE, RDSKUT,
+             RDRTNF, RDRTDT)
+        VALUES (INREQ#, NEXTLIN, INITEM, INLOC, INCNDT, INDESC,
+                INQTY, INCOST, INRETL, INACST, INBDGE, INSKUT,
+                'N', 0);
+
+        SET OTLIN# = NEXTLIN;
+    END;

@@ -294,15 +294,37 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
 .rq-lgcytable tbody td.rq-nobox { border: none; background: none; }
 
-/* the line sheet is typed straight into, the way the Access subform was: the cell is already the box, so the input sits inside it rather than drawing a second one */
-#tblViewLines { table-layout: fixed; }
-.rq-lgcytable tbody td .rq-ln { width: 100%; box-sizing: border-box; border: 0; background: none;
-                                margin: 0; padding: 0; font: inherit; color: inherit; }
-.rq-lgcytable tbody td .rq-ln:focus { outline: 2px solid var(--rq-blue); outline-offset: 2px; }
-.rq-lgcytable tbody td.rq-num .rq-ln { text-align: right; }
+/* the line sheet is typed straight into, the way the Access subform was. The cell itself takes the
+   typing rather than holding a box, so every column keeps the width, the wrapping and the look it
+   had when the lines could only be read */
+.rq-lgcytable tbody td.rq-ln:focus { outline: 2px solid var(--rq-blue); outline-offset: -1px; }
 
-/* a box typed over but not saved yet, in the same amber the grid's badge box waits in */
-.rq-lgcytable tbody td.rq-pending { background: #fdf8ee; }
+/* the coin date column holds shapes like 2025-DS, so it keeps one on a single line rather than
+   folding it in half; the column takes only what that needs and nothing is given a fixed width */
+#tblViewLines th:nth-child(3), #tblViewLines td:nth-child(3) { white-space: nowrap; }
+
+/* the description column keeps a readable width on a requisition of one short line, instead of
+   collapsing to whatever that line happens to say; a longer one still takes more as it always did */
+#tblViewLines td:nth-child(4) { min-width: 18rem; }
+
+/* the window scrolls once: the line sheet grows tall enough to hold every line of the requisition,
+   and the window itself is what scrolls, rather than a sheet scrolling inside a window that scrolls */
+#mdlView .rq-tablewrap { max-height: none; }
+
+/* a sheet of twenty lines reads as rows rather than a wall of boxes: the cells are given a little
+   more room, and every other line takes the same tint the grid stripes its rows with */
+#tblViewLines thead th { padding: .3rem .5rem; }
+#tblViewLines tbody td { padding: .35rem .5rem; }
+#tblViewLines tbody tr:nth-child(even) td { background: #f7faf8; }
+
+/* a cell typed over but not saved yet, in the same amber the grid's badge box waits in
+   - it sits after the striping so a corrected cell on a tinted row still shows as corrected */
+#tblViewLines tbody tr td.rq-pending { background: #fdf8ee; }
+
+/* a line struck out is going when Update is pressed, and until then the x puts it back */
+#tblViewLines tbody tr.rq-del td { text-decoration: line-through; color: var(--rq-muted); }
+#tblViewLines .rq-linedel { padding: 0 .2rem; font-size: 1.05rem; line-height: 1; color: #b4b4b4; }
+#tblViewLines .rq-linedel:hover { color: var(--rq-red); }
 
 /* entry only mode: the work floor form fills the page and cannot be closed */
 .rq-entry .rq-toolbar, .rq-entry .rq-card, .rq-entry #addAuthByRow { display: none; }
@@ -531,23 +553,18 @@ tr.rq-selected .rq-sel::before { content: '\25B6'; font-size: .7rem; }
 
         <div class="rq-tablewrap">
           <table class="rq-grid rq-lgcytable" id="tblViewLines">
-            <colgroup>
-              <col style="width:12%"><col style="width:4.5%"><col style="width:8%">
-              <col style="width:25%"><col style="width:5.5%"><col style="width:7%">
-              <col style="width:7%"><col style="width:7%"><col style="width:12%">
-              <col style="width:5%"><col style="width:7%">
-            </colgroup>
             <thead>
               <tr>
                 <th>Item#:</th><th>Location:</th><th>Date:</th><th>Description:</th>
                 <th class="rq-num">Qty:</th><th class="rq-num">Cost:</th>
                 <th class="rq-num">Retail:</th><th class="rq-num">Add. Cost</th>
-                <th>SKU To:</th><th>Returned</th><th>Date Ret.</th>
+                <th>SKU To:</th><th>Returned</th><th>Date Ret.</th><th></th>
               </tr>
             </thead>
             <tbody id="viewLineBody"></tbody>
           </table>
         </div>
+        <button type="button" class="rq-btn rq-btn-ghost" id="btnAddViewLine">+ Add line</button>
       </div>
     </div>
   </div>

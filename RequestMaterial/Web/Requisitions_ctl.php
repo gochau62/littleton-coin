@@ -32,27 +32,7 @@
 <script type="text/javascript">
 
     document.title = "Requisition Material";
-
-    // the framework supplies this on most instances; the fallback keeps the message visible where it does not
-    if (typeof showErrorMessage !== "function") {
-        function showErrorMessage(m) {
-            var d = document.getElementById("errorMsg");
-            d.innerHTML = m;
-            d.className = "ui-state-error ui-corner-all";
-            d.style.display = "block";
-        }
-    }
-
-
-    // the same not authorized message the other LCC tools show, an alert first and then the red box left on the page behind it
-    function showNotAuthorized() {
-        alert("Current user profile is not authorized\nto use this tool");
-        showErrorMessage("Current user profile is not authorized to use this tool.");
-    }
-
 </script>
-
-<div id="errorMsg" class="ui-state-error ui-corner-all ui-helper-hidden"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
@@ -82,7 +62,8 @@ if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
 }
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     require_once __DIR__ . '/Requisitions_model.php';
@@ -233,9 +214,7 @@ $(document).ready(function () {
 
     // X and Cancel buttons close whichever window they sit in
     $('[data-close]').on('click', function () {
-        var id = $(this).data('close');
-        if (id === 'mdlView') { closeViewWindow(); return; }
-        $('#' + id).prop('hidden', true);
+        $('#' + $(this).data('close')).prop('hidden', true);
     });
 
     // clicking a row selects it (the ▶ gutter), it does not open it
@@ -382,33 +361,77 @@ $(document).ready(function () {
         }, function () { loadGrid(); });
     });
 
-    // a box typed over on the line sheet colours itself until Update saves it, so nothing sits corrected on screen and unsaved on the file
+    // a cell typed over colours itself until Update saves it, so nothing sits corrected on screen and unsaved on the file
     $('#viewLineBody').on('input', '.rq-ln', function () {
-        var inp = $(this);
-        inp.closest('td').toggleClass('rq-pending',
-            $.trim(inp.val()) !== $.trim(String(inp.data('orig'))));
+        var td = $(this);
+        td.toggleClass('rq-pending', lnText(td) !== lnOrig(td));
     });
 
-    // correcting an item number on the line sheet fills the boxes it left empty, the same rule the entry form follows: a price already there is never written over
-    $('#viewLineBody').on('change', '.rq-ln[data-field="item"]', function () {
-        var row = $(this).closest('tr');
-        var item = $.trim($(this).val());
-        if (item === '') { return; }
-        postAjax({ action: 'itemlookup', item: item }, function (resp) {
-            if (!resp.row) { return; }
-            fillIfEmpty(row, 'desc', $.trim(resp.row.RDDESC));
-            fillIfEmpty(row, 'coinDate', $.trim(resp.row.RDCNDT));
-            fillIfEmpty(row, 'cost', fillNum(resp.row.RDCOST));
-            fillIfEmpty(row, 'retail', fillNum(resp.row.RDRETL));
-        }, true);
+    $('#btnAddViewLine').on('click', addViewLine);
+
+    // the x strikes a line out, and pressing it again puts it back; a line never saved just goes
+    $('#viewLineBody').on('click', '.rq-linedel', function () {
+        var tr = $(this).closest('tr');
+        if (!tr.attr('data-line')) { tr.remove(); return; }
+        tr.toggleClass('rq-del');
+    });
+
+    // the item list drops under the cell as it is typed in, the same list the entry form offers
+    $('#viewLineBody').on('input', '.rq-ln[data-field="item"]', function () {
+        var td = $(this);
+        clearTimeout(lnLookupTimer);
+        lnLookupTimer = setTimeout(function () { lnItemSearch(td); }, 250);
+    });
+
+    // and it opens on landing in the cell, so the list is there without typing anything
+    $('#viewLineBody').on('focusin', '.rq-ln[data-field="item"]', function () {
+        lnItemSearch($(this));
+    });
+
+    // leaving the cell closes the list and looks up whatever was left in it, so a typist who never
+    // touches the list still gets the rest of the line filled in
+    $('#viewLineBody').on('focusout', '.rq-ln[data-field="item"]', function () {
+        clearTimeout(lnLookupTimer);
+        setTimeout(hideSuggest, 150);
+        lnItemLookup($(this));
+    });
+
+    // the keys that work the list, and Enter finishing a cell instead of opening a second line in it
+    $('#viewLineBody').on('keydown', '.rq-ln', function (e) {
+        var box = ($(this).attr('data-field') === 'item') ? $('#rqSuggest') : $();
+        if (box.length) {
+            var items = box.children();
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                var i = items.index(box.children('.active'));
+                i = (e.key === 'ArrowDown') ? (i + 1) % items.length
+                                            : (i <= 0 ? items.length - 1 : i - 1);
+                items.removeClass('active').eq(i).addClass('active');
+                return;
+            }
+            if (e.key === 'Enter') {
+                var act = box.children('.active');
+                if (act.length) { e.preventDefault(); act.trigger('mousedown'); return; }
+            }
+            // the list closes on its own Escape rather than letting the window take it
+            if (e.key === 'Escape') { e.stopPropagation(); hideSuggest(); return; }
+        }
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+
+    // leaving a cell holds it to what the column can store, so nothing is quietly cut short on the way to Db2
+    $('#viewLineBody').on('focusout', '.rq-ln', function () {
+        var td = $(this);
+        var max = parseInt(td.attr('data-max'), 10) || 0;
+        var v = lnText(td);
+        if (max && v.length > max) { v = v.substr(0, max); }
+        if (v !== td.text()) { td.text(v); }
     });
 
     // ESC closes the topmost window (never the entry mode form)
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape' && RQ_MODE !== 'entry') {
-            var top = $('.rq-overlay').not('[hidden]').last();
-            if (top.attr('id') === 'mdlView') { closeViewWindow(); return; }
-            top.prop('hidden', true);
+            $('.rq-overlay').not('[hidden]').last().prop('hidden', true);
         }
     });
 
@@ -959,7 +982,6 @@ function openAddModal() {
 }
 
 
-// every box takes exactly as many characters as its column can display, so nothing typed can ever sit hidden past the edge
 function addLineRow() {
     var row = '<tr>' +
         '<td><input class="ln-item" size="12" maxlength="16"></td>' +
@@ -1045,72 +1067,176 @@ function submitRequisition() {
 
 // view and update
 
-// one typed cell of the line sheet, holding what it started as so only the boxes actually changed are sent back
-// every box takes exactly what its column on the entry form takes, so a correction cannot be longer than the file allows
+// one cell of the line sheet: the same cell the line has always drawn, holding the same text, only now
+// it takes typing. It keeps what it started as so only the cells actually changed are sent back
 function lnCell(field, val, max, num) {
     var v = (val == null ? '' : String(val));
-    return '<td' + (num ? ' class="rq-num"' : '') + '>' +
-           '<input class="rq-ln" data-field="' + field + '" data-orig="' + attr(v) + '"' +
-           ' maxlength="' + max + '" value="' + attr(v) + '"></td>';
+    return '<td class="rq-ln' + (num ? ' rq-num' : '') + '" contenteditable="true"' +
+           ' data-field="' + field + '" data-max="' + max + '"' +
+           ' data-orig="' + attr(v) + '">' + esc(v) + '</td>';
 }
 
 
-// autofill only fills what the line does not already say: an empty box, or a price still sitting at zero
-function fillIfEmpty(row, field, val) {
+// what a cell holds, with the blank a browser leaves behind while typing read as an ordinary space
+function lnText(td) {
+    return $.trim(td.text().replace(/\u00a0/g, ' '));
+}
+
+
+// what the cell held when the window opened, read straight off the attribute: jQuery's own data()
+// hands back 9015.60 as the number 9015.6, which would read as a change and write the SKU back short
+function lnOrig(td) {
+    return $.trim(String(td.attr('data-orig') || ''));
+}
+
+
+// brief pause before the item lookup runs, so it does not fire on every keystroke
+var lnLookupTimer = null;
+
+
+// the matching item numbers for whatever is in the cell, fed to the list below
+function lnItemSearch(td) {
+    postAjax({ action: 'itemsearch', q: lnText(td) }, function (resp) {
+        lnSuggest(td, resp.rows);
+    }, true);
+}
+
+
+// the list under the cell: the item number and its description, the same shape the entry form's list
+// takes. Picking one puts it in the cell and brings the rest of the line with it
+function lnSuggest(td, rows) {
+    hideSuggest();
+    if (!rows || !rows.length || !td.is(':focus')) { return; }
+
+    var box = $('<div id="rqSuggest" class="rq-suggest"></div>');
+    $.each(rows, function (i, r) {
+        $('<div></div>')
+            .html('<b>' + esc(r.RDITEM) + '</b> &nbsp; ' + esc(r.RDDESC))
+            .data('row', r)
+            .appendTo(box);
+    });
+
+    var rc = td[0].getBoundingClientRect();
+    box.css({ left: rc.left + 'px', top: (rc.bottom + 2) + 'px', minWidth: rc.width + 'px' });
+    $('body').append(box);
+
+    // mousedown, not click, so the pick lands before the cell loses focus
+    box.children().on('mousedown', function (e) {
+        e.preventDefault();
+        var r = $(this).data('row');
+        var row = td.closest('tr');
+        var sku = $.trim(r.RDITEM);
+        td.text(sku).attr('data-looked', sku).toggleClass('rq-pending', sku !== lnOrig(td));
+        lnFill(row, 'desc',     $.trim(r.RDDESC));
+        lnFill(row, 'coinDate', $.trim(r.RDCNDT));
+        lnFill(row, 'cost',     money(r.RDCOST));
+        lnFill(row, 'retail',   money(r.RDRETL));
+        hideSuggest();
+    });
+}
+
+
+// a corrected item number brings the rest of the line with it: the description, coin date and prices
+// sitting there describe the item that used to be on the line, so they are refilled from the item
+// master. Nothing is written until Update, and every cell it fills colours itself on the way in
+function lnItemLookup(td) {
+    var item = lnText(td);
+    if (item === '' || item === lnOrig(td) || item === td.attr('data-looked')) { return; }
+    td.attr('data-looked', item);
+
+    var row = td.closest('tr');
+    postAjax({ action: 'itemlookup', item: item }, function (resp) {
+        if (!resp || !resp.row) { return; }
+        lnFill(row, 'desc',     $.trim(resp.row.RDDESC));
+        lnFill(row, 'coinDate', $.trim(resp.row.RDCNDT));
+        lnFill(row, 'cost',     money(resp.row.RDCOST));
+        lnFill(row, 'retail',   money(resp.row.RDRETL));
+    }, true);
+}
+
+
+// put a looked up value into its cell, colouring it if it now differs from what the line arrived with
+function lnFill(row, field, val) {
     if (val === '') { return; }
-    var inp = row.find('.rq-ln[data-field="' + field + '"]');
-    var now = $.trim(inp.val());
-    var isPrice = (field === 'cost' || field === 'retail');
-    if (now === '' || (isPrice && !parseFloat(now.replace(/,/g, '')))) {
-        inp.val(val).trigger('input');
-    }
+    var td = row.find('.rq-ln[data-field="' + field + '"]');
+    if (!td.length || lnText(td) === val) { return; }
+    td.text(val).toggleClass('rq-pending', val !== lnOrig(td));
 }
 
 
-// closing the view window with corrections still on it asks first, so a typed over line is not lost to a stray Escape
-function closeViewWindow() {
-    if ($('#viewLineBody td.rq-pending').length === 0) {
-        $('#mdlView').prop('hidden', true);
-        return;
-    }
-    ask('Leave without saving?',
-        'Boxes on the line sheet were typed over and have not been saved. Update saves them.',
-        'Leave them', 'Stay here',
-        function () { $('#mdlView').prop('hidden', true); });
+// the last cell of every line, holding the x that takes the line off the requisition
+function lnDelCell() {
+    return '<td class="rq-nobox"><button type="button" class="rq-x rq-linedel"' +
+           ' title="Remove this line from the requisition">&times;</button></td>';
 }
 
 
-// the lines that have been typed over, one request each, so a line that was left alone is never rewritten
-function changedLines() {
+// a blank line to type into. It has no line number yet: Db2 gives it one when Update saves it,
+// counting on from the lines already there so two people adding at once cannot collide
+function addViewLine() {
+    $('#viewLineBody').append(
+        '<tr data-line="">' +
+        lnCell('item', '', 16) + lnCell('loc', '', 3) + lnCell('coinDate', '', 10) +
+        lnCell('desc', '', 50) + lnCell('qty', '', 7, true) + lnCell('cost', '', 10, true) +
+        lnCell('retail', '', 10, true) + lnCell('addCost', '', 10, true) +
+        lnCell('skuTo', '', 16) +
+        '<td class="rq-nobox"></td><td></td>' + lnDelCell() + '</tr>');
+    $('#viewLineBody tr:last').find('.rq-ln[data-field="item"]').trigger('focus');
+}
+
+
+// everything the window is holding that has not been saved: the lines struck out, the lines typed
+// over, and the lines added. Deletions go first so the numbering left behind is the one that stays
+function pendingWork() {
     var reqNum = $('#mdlView').data('req');
-    var out = [];
-    $('#viewLineBody tr').each(function () {
-        var tr = $(this);
-        var data = { action: 'updateline', reqNum: reqNum, lineNum: tr.data('line') };
-        var any = false;
-        tr.find('.rq-ln').each(function () {
-            var inp = $(this);
-            if ($.trim(inp.val()) !== $.trim(String(inp.data('orig')))) {
-                data[inp.data('field')] = $.trim(inp.val());
-                any = true;
-            }
-        });
-        if (any) { out.push({ tr: tr, data: data }); }
+    var jobs = [];
+
+    $('#viewLineBody tr.rq-del').each(function () {
+        var ln = $(this).attr('data-line');
+        if (ln) { jobs.push({ action: 'deleteline', reqNum: reqNum, lineNum: ln }); }
     });
-    return out;
+
+    $('#viewLineBody tr').not('.rq-del').each(function () {
+        var tr = $(this);
+        var ln = tr.attr('data-line');
+        var data = { reqNum: reqNum };
+        var changed = false;
+        tr.find('.rq-ln').each(function () {
+            var td = $(this);
+            var now = lnText(td);
+            if (now !== lnOrig(td)) { changed = true; }
+            data[td.attr('data-field')] = now;
+        });
+        if (ln) {
+            // a line already on the requisition is only sent when something on it was typed over
+            if (changed) { data.action = 'updateline'; data.lineNum = ln; jobs.push(data); }
+        } else if ($.trim(data.item || '') !== '') {
+            // a blank line nobody put an item number on is not a line at all
+            data.action = 'addline';
+            jobs.push(data);
+        }
+    });
+    return jobs;
 }
 
 
-// corrected lines save one at a time, so a box Db2 refuses names its own line and the lines already saved stay saved
+// what to tell the person once it is all saved
+function workSummary(jobs) {
+    var n = { addline: 0, updateline: 0, deleteline: 0 };
+    $.each(jobs, function (i, j) { n[j.action]++; });
+    var bits = [];
+    if (n.addline)    { bits.push(n.addline + (n.addline === 1 ? ' line added' : ' lines added')); }
+    if (n.updateline) { bits.push(n.updateline + (n.updateline === 1 ? ' line corrected' : ' lines corrected')); }
+    if (n.deleteline) { bits.push(n.deleteline + (n.deleteline === 1 ? ' line removed' : ' lines removed')); }
+    return bits.length ? ' (' + bits.join(', ') + ')' : '';
+}
+
+
+// the line work goes over one request at a time, so a cell Db2 refuses names its own line and
+// everything already sent stays saved
 function saveLines(list, i, done) {
-    if (i >= list.length) { done(list.length); return; }
-    postAjax(list[i].data, function () {
-        list[i].tr.find('.rq-ln').each(function () {
-            $(this).data('orig', $.trim($(this).val()));
-        });
-        list[i].tr.find('td').removeClass('rq-pending');
-        saveLines(list, i + 1, done);
-    });
+    if (i >= list.length) { done(); return; }
+    postAjax(list[i], function () { saveLines(list, i + 1, done); });
 }
 
 
@@ -1151,7 +1277,6 @@ function openViewModal(reqNum) {
         $('#authBy').val(h.RHAUTB || 'Authorization = None');
         $('#authComments').val(h.RHCMNT);
 
-        // the line sheet is typed into here the way the Access subform was, so a requisition can be corrected after it was raised without keying it again
         var html = '';
         $.each(resp.rows, function (i, r) {
             if (r['RDLIN#'] == null) { return; }
@@ -1160,8 +1285,7 @@ function openViewModal(reqNum) {
                 lnCell('loc',      r.RDLOC, 3) +
                 lnCell('coinDate', r.RDCNDT, 10) +
                 lnCell('desc',     r.RDDESC, 50) +
-                lnCell('qty',      parseFloat(r.RDQTY) || 0, 7, true) +
-                // the money boxes take ten here rather than the entry form's eight, so a stored price already past that can still be typed over
+                lnCell('qty',      r.RDQTY, 7, true) +
                 lnCell('cost',     money(r.RDCOST), 10, true) +
                 lnCell('retail',   money(r.RDRETL), 10, true) +
                 lnCell('addCost',  money(r.RDACST), 10, true) +
@@ -1170,6 +1294,7 @@ function openViewModal(reqNum) {
                 ' data-req="' + esc(h['RHREQ#']) + '" data-line="' + esc(r['RDLIN#']) + '"' +
                 (r.RDRTNF === 'Y' ? ' checked' : '') + '></td>' +
                 '<td>' + (r.RDRTNF === 'Y' ? fmtDate(r.RDRTDT) : '') + '</td>' +
+                lnDelCell() +
                 '</tr>';
         });
         $('#viewLineBody').html(html);
@@ -1201,12 +1326,12 @@ function updateCurrent() {
         areaCode: $('#v_acode').val(),
         areaType: $('#v_atype').val()
     }, function () {
-        // the header goes first, then the corrected lines; the window only closes once everything it was holding is saved
-        saveLines(changedLines(), 0, function (saved) {
+        // the header goes first, then the line work; the window only closes once everything it was holding is saved
+        var jobs = pendingWork();
+        saveLines(jobs, 0, function () {
             $('#mdlView').prop('hidden', true);
             swal('Updated', 'Record req_num=' + reqNum + ' has been updated' +
-                 (saved ? ' (' + saved + (saved === 1 ? ' line' : ' lines') + ' corrected)' : '') + '.',
-                 'success');
+                 workSummary(jobs) + '.', 'success');
             loadGrid();
         });
     });
@@ -1622,7 +1747,6 @@ function reqPrintHtml(rows) {
 
     return head +
         '<table class="rpt-boxed">' +
-        // Sku # and Sku To hold the same sixteen character field, so the two columns get the same width
         '<colgroup><col style="width:10%"><col style="width:4%"><col style="width:7%">' +
         '<col style="width:21%"><col style="width:5%"><col style="width:7%">' +
         '<col style="width:7%"><col style="width:7%"><col style="width:7%">' +

@@ -1,0 +1,49 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - REQSTN012S                                    */
+/*                                                                   */
+/* Program Narrative - Remove one line from a Requisition.            */
+/*                     The maintenance screen deletes a line that     */
+/*                     should never have been on the requisition.     */
+/*                     The header and the rest of the lines stay      */
+/*                     where they are; REQSTN009S is the one that     */
+/*                     takes a whole requisition away.                */
+/*                     The numbers already given to the other lines   */
+/*                     are left alone, so nothing that was printed    */
+/*                     or reported on changes its line number         */
+/*                     underneath it.                                 */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 08/24/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(REQSTN012S)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE REQSTN012S (
+        IN INREQ# DECIMAL(9, 0),
+        IN INLIN# DECIMAL(3, 0)
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        DELETE FROM RQSREQDTLT
+         WHERE RDREQ# = INREQ#
+           AND RDLIN# = INLIN#;
+    END;
