@@ -1,26 +1,26 @@
 # Project Tracking rewrite — Technical Reference
 
 New Project Tracking screens replacing the legacy `PROJ_list` landing page,
-built to the dashboard layout template (`ProjectTracking/Picture1.png`). The
-legacy `PROJ_*.php` files in the folder root stay as reference; the project
-entry screen (`Picture2.png`) is a later phase and is not part of this work.
+built to the dashboard layout template (`docs/Picture1.png`). The legacy
+`PROJ_*.php` files stay in `Legacy/` as reference; the project entry screen
+(`docs/Picture2.png`) is a later phase and is not part of this work.
 
 ## What was built
 
 | Piece | File | What it does |
 |---|---|---|
-| Overview dashboard | `Web/ProjectTracking_ctl.php` | Stat tiles (open / new / awaiting SC review / unassigned), steering-committee pipeline, programmer-load bar chart, projects-by-status donut, weekly AI summary card, and a sortable/filterable project table |
-| Dashboard display | `Web/ProjectTracking_dsp.php` | Markup + the stylesheet shared by both screens |
-| Projects by developer | `Web/ProjectDevelopers_ctl.php` / `_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
-| Data + logic | `Web/ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Claude API call |
-| JSON/Excel endpoint | `Web/ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
+| Overview dashboard | `ProjectTracking_ctl.php` | Stat tiles (open / new / awaiting SC review / unassigned), steering-committee pipeline, programmer-load bar chart, projects-by-status donut, weekly AI summary card, and a sortable/filterable project table |
+| Dashboard display | `ProjectTracking_dsp.php` | Markup + the stylesheet shared by both screens |
+| Projects by developer | `ProjectDevelopers_ctl.php` / `_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
+| Data + logic | `ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Claude API call |
+| JSON/Excel endpoint | `ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
 | Db2 procedure | `Db2/PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR` |
 
 Everything is **read-only** against the project files — the new screens change
 no data. Project numbers link back to the existing `PROJ_ctl.php` detail
 screen.
 
-The folder root also carries the live legacy sources for reference (copied
+The `Legacy/` folder carries the live legacy sources for reference (copied
 from the server 08/26/26): `PROJ_model.php`, `PROJ_ctl.php`,
 `PROJ_ajax_request.php`, `PROJ_ajax_request_post.php`,
 `PROJ_timeEntry_ctl.php`, `PROJ_saveTime.php`, `LCDEPTP_model.php`,
@@ -29,7 +29,8 @@ for the planned team/sub-department tagging.
 
 ## Deploying
 
-1. Copy the `Web/*.php` files into the LCCOnline docroot (the same folder
+1. Copy the six `ProjectTracking_*.php` / `ProjectDevelopers_*.php` files
+   from the folder root into the LCCOnline docroot (the same folder
    as `PROJ_list_ctl.php` and `TimePayment_ctl.php` today). They use the
    same `StartBlockScriptA/B` + `EndBlock` frame and root-relative
    includes (`jQuery/jquery.js`) as TimePayment, so they must sit in the root.
