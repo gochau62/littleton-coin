@@ -163,21 +163,26 @@ function prjStyles() {
 .pt-btn-primary:hover { background: var(--pt-blue-dk);
                         border-color: var(--pt-blue-dk); color: #fff; }
 
-/* the project table scrolls inside its card with the heading row staying put */
+/* the project table scrolls inside its card with the heading row staying put.
+   fixed layout with percentage columns and NO minimum width matters here:
+   the LCC Online frame floats the menu on the left, and any hard minimum
+   (a min-width, or an auto table of nowrap cells) makes the whole page too
+   wide to sit beside it, dropping the content below the menu. Long values
+   ellipsize inside their columns instead of forcing the page wider */
 .pt-tablewrap { overflow: auto; max-height: 30rem;
                 border: 1px solid var(--pt-line); border-radius: 8px; }
-.pt-grid { width: 100%; min-width: 760px; border-collapse: separate;
+.pt-grid { width: 100%; table-layout: fixed; border-collapse: separate;
            border-spacing: 0; font-size: .84rem; }
 .pt-grid thead th { position: sticky; top: 0; z-index: 5; background: #fafbfc;
            color: var(--pt-muted); font-size: .7rem; font-weight: 600;
            letter-spacing: .05em; text-transform: uppercase; text-align: left;
-           padding: .55rem .8rem; white-space: nowrap; cursor: pointer;
+           padding: .55rem .55rem; white-space: nowrap; cursor: pointer;
            border-bottom: 1px solid var(--pt-line); user-select: none; }
 .pt-grid thead th:hover { color: var(--pt-text); }
 .pt-grid thead th.pt-num { text-align: right; }
 .pt-grid thead th.pt-sort-asc::after  { content: " \2191"; color: var(--pt-blue); }
 .pt-grid thead th.pt-sort-desc::after { content: " \2193"; color: var(--pt-blue); }
-.pt-grid tbody td { padding: .5rem .8rem;
+.pt-grid tbody td { padding: .5rem .55rem;
            border-bottom: 1px solid var(--pt-line-soft); white-space: nowrap;
            overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
 .pt-grid tbody tr:last-child td { border-bottom: 0; }
@@ -330,6 +335,12 @@ function dspProjectTracking() {
         </div>
         <div class="pt-tablewrap">
             <table class="pt-grid" id="tblProjects">
+                <!-- numbers and dates get fixed pixel columns so they never
+                     ellipsize; the text columns absorb any squeeze -->
+                <colgroup><col style="width:76px"><col style="width:34%">
+                <col style="width:13%"><col style="width:16%">
+                <col style="width:9%"><col style="width:8%">
+                <col style="width:8%"><col style="width:96px"></colgroup>
                 <thead><tr>
                     <th data-k="num" class="pt-num">Project</th>
                     <th data-k="desc">Name</th>

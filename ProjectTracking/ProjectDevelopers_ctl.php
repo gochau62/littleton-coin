@@ -171,13 +171,15 @@ function stageChip(stage) {
 
 
 function groupTable(rows) {
-    // fixed column widths so every developer's table lines up with the next
+    // fixed column widths so every developer's table lines up with the next.
+    // Project numbers and dates get pixel columns so they never ellipsize;
+    // the text columns absorb any squeeze in a narrow window
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
-        '<table class="pt-grid" style="table-layout:fixed">' +
-        '<colgroup><col style="width:7%"><col style="width:11%">' +
-        '<col style="width:5%"><col style="width:7%"><col style="width:6%">' +
-        '<col style="width:28%"><col style="width:4.5%"><col style="width:4.5%">' +
-        '<col style="width:6%"><col style="width:8.5%"><col style="width:8.5%">' +
+        '<table class="pt-grid">' +
+        '<colgroup><col style="width:76px"><col style="width:13%">' +
+        '<col style="width:6%"><col style="width:8%"><col style="width:7%">' +
+        '<col style="width:34%"><col style="width:5%"><col style="width:5%">' +
+        '<col style="width:7%"><col style="width:96px"><col style="width:96px">' +
         '</colgroup><thead><tr>' +
         '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Dept</th>' +
         '<th class="pt-num">Dept prty</th><th class="pt-num">SC prty</th>' +

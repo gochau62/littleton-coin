@@ -197,8 +197,10 @@ function renderLoad(load) {
     var labelW = 110, valueW = 34, rowH = 26, barH = 12, w = 560;
     var plotW = w - labelW - valueW;
     var h = names.length * rowH + 6;
+    // width 100% + viewBox scales the chart to the card - no minimum width,
+    // so the page can always shrink to the space beside the LCC menu
     var svg = '<svg width="100%" viewBox="0 0 ' + w + ' ' + h +
-              '" style="min-width:420px" role="img" aria-label="Open projects per programmer">';
+              '" role="img" aria-label="Open projects per programmer">';
 
     $.each(names, function (i, name) {
         var count = load[name];
