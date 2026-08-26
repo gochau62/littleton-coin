@@ -20,6 +20,8 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
+<!-- PT build 2026-08-26-B - view-source and search "PT build" to confirm
+     the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
    shared stylesheet.
@@ -41,7 +43,9 @@ function prjStyles() {
         --pt-shadow: 0 1px 2px rgba(16, 24, 40, .05);
         --pt-mono: "Cascadia Mono", Consolas, "Courier New", monospace; }
 
-.pt-app { font-family: "Segoe UI", -apple-system, system-ui, Roboto,
+#stdPage { min-width: 0; max-width: 100%; }
+.pt-app { min-width: 0;
+          font-family: "Segoe UI", -apple-system, system-ui, Roboto,
           "Helvetica Neue", Arial, sans-serif;
           color: var(--pt-text); background: var(--pt-bg);
           padding: 1.25rem 1.5rem 2.5rem; max-width: 1240px;
