@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-26-B - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-26-C - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -43,14 +43,20 @@ function prjStyles() {
         --pt-shadow: 0 1px 2px rgba(16, 24, 40, .05);
         --pt-mono: "Cascadia Mono", Consolas, "Courier New", monospace; }
 
+/* the house rule the other tools follow (see the Requisitions screen): the
+   page sits inside the framework page beside the LCC sidebar, so it never
+   assumes the whole window - it takes the width it is given (roughly 700px
+   beside the menu) and everything inside stays within it */
 #stdPage { min-width: 0; max-width: 100%; }
-.pt-app { min-width: 0;
+.pt-app { min-width: 0; max-width: 100%; box-sizing: border-box;
+          container-type: inline-size;
           font-family: "Segoe UI", -apple-system, system-ui, Roboto,
           "Helvetica Neue", Arial, sans-serif;
           color: var(--pt-text); background: var(--pt-bg);
-          padding: 1.25rem 1.5rem 2.5rem; max-width: 1240px;
+          padding: 1.25rem 1.5rem 2.5rem;
           font-size: .875rem; line-height: 1.45;
           -webkit-font-smoothing: antialiased; }
+.pt-app > * { max-width: 100%; }
 
 /* every section sits in a white card on the gray page */
 .pt-card { background: var(--pt-card); border: 1px solid var(--pt-line);
@@ -229,6 +235,17 @@ function prjStyles() {
             font-weight: bold; }
 
 @media (max-width: 980px) {
+    .pt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pt-stat { padding: .3rem 1rem; }
+    .pt-stat:nth-child(odd) { border-left: 0; padding-left: .3rem; }
+    .pt-pipe { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pt-charts { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* the media query above sees the WINDOW, but beside the sidebar the page
+   only gets ~700px while the window is far wider - so the same restacking
+   also keys off the width the page itself was given */
+@container (max-width: 880px) {
     .pt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pt-stat { padding: .3rem 1rem; }
     .pt-stat:nth-child(odd) { border-left: 0; padding-left: .3rem; }
