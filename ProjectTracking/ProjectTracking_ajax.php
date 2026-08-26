@@ -129,7 +129,7 @@ switch ($action) {
     case 'dashboard':
         $projects = prjProjects($conn, 'N');
         if ($projects === false) { prjOutFail(); }
-        $pipe = prjPipelineNums($conn);
+        $pipe = prjPipelineCheck($projects, prjPipelineNums($conn, $projects));
         prjMarkPipeline($projects, $pipe);
         $rollup = prjDashboardRollup($projects);
 
@@ -144,7 +144,7 @@ switch ($action) {
         $weekly = prjWeeklyRead();
         if (is_array($weekly)) { unset($weekly['digest']); }
 
-        prjActLog($user, 'DASHBOARD');
+        prjActLog($user, 'DASHBOARD', $GLOBALS['prjPipeInfo'] ?? '');
         prjOut(array("ok" => true,
                      "tiles" => $rollup['tiles'],
                      "pipeline" => $rollup['pipeline'],
@@ -154,9 +154,11 @@ switch ($action) {
                      "statuses" => $GLOBALS['prjStatuses'],
                      "projects" => $out,
                      "weekly" => $weekly,
-                     // true when none of the PTS report procs could be read
-                     // and the dashboard fell back to counting all open work
+                     // true when the PTS report reads produced nothing usable
+                     // and the dashboard fell back to counting all open work;
+                     // pipeinfo says what each report proc returned
                      "pipenote" => ($pipe === null),
+                     "pipeinfo" => $GLOBALS['prjPipeInfo'] ?? '',
                      "updated" => date('M j, Y')));
 
     // the assignments page rows; complete=Y adds finished and rejected work.
@@ -166,7 +168,8 @@ switch ($action) {
         $includeComplete = (($_POST['complete'] ?? $_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
         if ($projects === false) { prjOutFail(); }
-        prjMarkPipeline($projects, prjPipelineNums($conn));
+        prjMarkPipeline($projects,
+            prjPipelineCheck($projects, prjPipelineNums($conn, $projects)));
 
         $out = array();
         foreach ($projects as $row) { $out[] = prjRowOut($row); }
@@ -199,7 +202,8 @@ switch ($action) {
         $includeStale    = (($_GET['stale'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
         if ($projects === false) { prjOutFail(); }
-        prjMarkPipeline($projects, prjPipelineNums($conn));
+        prjMarkPipeline($projects,
+            prjPipelineCheck($projects, prjPipelineNums($conn, $projects)));
 
         // stale open records stay out of the workbook unless asked for, the
         // same visibility rule the page applies; finished work already on

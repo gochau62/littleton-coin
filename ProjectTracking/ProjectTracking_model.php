@@ -189,52 +189,79 @@ function prjMeetingWindow() {
 }
 
 
-// pull the project number out of one report row. The four report procs return
-// different record layouts, but in every PTS file the project number column
-// ends in '#' (PR#, PT#, PRPROJ#, ...) - fall back to the first column
-function prjPipeProjNum($row) {
-    foreach ($row as $key => $val) {
-        $key = strtoupper(trim($key));
-        if (substr($key, -1) === '#' || strpos($key, 'PROJ') !== false) {
-            return intval($val);
-        }
-    }
-    $first = reset($row);
-    return intval($first);
-}
-
-
 // the set of project numbers on any of the four PTS report extracts, keyed
 // by number. These are the SAME stored procedures the legacy PROJ_Reports
 // screen downloads through, so the dashboard can never drift from the
-// spreadsheet. Returns null when none of the procs could be read - callers
-// then skip pipeline filtering instead of showing an empty dashboard.
+// spreadsheet. The four procs return different record layouts, so the
+// project-number column is found by VALIDATION: for each report, the column
+// whose values line up with the most real project numbers ($projects) wins.
+// A report whose columns match nothing contributes nothing. Returns null
+// when no usable numbers came back at all - callers then skip pipeline
+// filtering instead of showing an empty dashboard. What each report gave is
+// left in $GLOBALS['prjPipeInfo'] for the activity log.
 // Note: the workload file (PRWKLDP) is rebuilt by the Reports screen's
 // "Submit SC Reports" button, so that slice is as fresh as the last refresh
-function prjPipelineNums($conn) {
+function prjPipelineNums($conn, $projects) {
     list($from, $to) = prjMeetingWindow();
 
+    $known = array();
+    foreach ($projects as $p) { $known[intval($p['PJNUM'])] = true; }
+
     $reports = array(
-        array("CALL PTS0035S()", array()),                            // SC workload
-        array("CALL PTS0036S(?, ?)", array(strval($from), strval($to))), // submitted
-        array("CALL PTS0038S()", array()),                            // SC review
-        array("CALL PTS0039S()", array()),                            // Formula Friday
+        'PTS0035S' => array("CALL PTS0035S()", array()),          // SC workload
+        'PTS0036S' => array("CALL PTS0036S(?, ?)",                // submitted
+                            array(strval($from), strval($to))),
+        'PTS0038S' => array("CALL PTS0038S()", array()),          // SC review
+        'PTS0039S' => array("CALL PTS0039S()", array()),          // Formula Friday
     );
 
     $nums = array();
-    $anyRead = false;
-    foreach ($reports as $r) {
+    $info = array();
+    foreach ($reports as $name => $r) {
         $rows = prjFetchAll($conn, $r[0], $r[1]);
-        if ($rows === false) { continue; }  // proc missing or not authorized
-        $anyRead = true;
+        if ($rows === false)  { $info[] = $name . '=error'; continue; }
+        if (count($rows) < 1) { $info[] = $name . '=0 rows'; continue; }
+
+        $bestCol = null;
+        $bestHits = 0;
+        foreach (array_keys($rows[0]) as $col) {
+            $hits = 0;
+            foreach ($rows as $row) {
+                if (isset($known[intval($row[$col])])) { $hits += 1; }
+            }
+            if ($hits > $bestHits) { $bestHits = $hits; $bestCol = $col; }
+        }
+        if ($bestCol === null) {
+            $info[] = $name . '=' . count($rows) . ' rows, no project column';
+            continue;
+        }
+
         foreach ($rows as $row) {
-            $num = prjPipeProjNum($row);
+            $num = intval($row[$bestCol]);
             if ($num > 0 && ($num < 90000 || $num > 90999)) {
                 $nums[$num] = true;
             }
         }
+        $info[] = $name . '=' . count($rows) . ' rows, col ' . trim($bestCol) .
+                  ' (' . $bestHits . ' matched)';
     }
-    return $anyRead ? $nums : null;
+    $GLOBALS['prjPipeInfo'] = implode('; ', $info);
+    return empty($nums) ? null : $nums;
+}
+
+
+// a pipeline set that matches not one open project means the reports and
+// the project file disagree (stale work file, wrong library) - fall back
+// to no filtering rather than presenting an empty dashboard as the truth
+function prjPipelineCheck($projects, $pipe) {
+    if ($pipe === null) { return null; }
+    foreach ($projects as $row) {
+        if ($row['STAGE'] !== 'complete' && $row['STAGE'] !== 'rejected'
+            && isset($pipe[intval($row['PJNUM'])])) {
+            return $pipe;
+        }
+    }
+    return null;
 }
 
 

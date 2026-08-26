@@ -93,11 +93,16 @@ closed out. Stale records:
 Two caveats. `PRWKLDP` is rebuilt by the Reports screen's *Submit SC
 Reports* button, so the workload slice is only as fresh as the last refresh
 before the meeting. And the report procedures return different record
-layouts, so `prjPipeProjNum()` finds the project number by taking the first
-column whose name ends in `#` (or contains `PROJ`), falling back to the
-first column — if a report's key column is ever renamed, adjust it there.
-If none of the four procedures can be read at all, the dashboard falls back
-to counting every open record and says so under the Open stat.
+layouts, so the project-number column is found by **validation**, not by
+name: for each report, the column whose values line up with the most real
+project numbers wins, and a report whose columns match nothing contributes
+nothing. If the reads produce no usable numbers at all — or the resulting
+set matches not one open project (`prjPipelineCheck`) — the dashboard falls
+back to counting every open record and says so under the Open stat, rather
+than presenting an empty pipeline as the truth. Each dashboard load logs
+what every report proc returned (row count, chosen column, matches) to the
+activity log, and the same line rides in the JSON response as `pipeinfo` —
+check either one first when a count looks wrong.
 
 ## Weekly AI summary
 

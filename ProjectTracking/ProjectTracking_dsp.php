@@ -82,7 +82,7 @@ function prjStyles() {
                    padding: .35rem 0; border-bottom: 2px solid var(--pt-blue); }
 
 /* the stat strip: one card, four figures separated by hairlines */
-.pt-stats { display: grid; grid-template-columns: repeat(4, 1fr); }
+.pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .pt-stat { padding: .3rem 1.5rem; border-left: 1px solid var(--pt-line-soft); }
 .pt-stat:first-child { border-left: 0; padding-left: .3rem; }
 .pt-stat .pt-lbl { font-size: .72rem; font-weight: 600; letter-spacing: .06em;
@@ -93,7 +93,7 @@ function prjStyles() {
 .pt-statnote { font-size: .72rem; color: var(--pt-faint); margin-top: .1rem; }
 
 /* steering committee pipeline: quiet white cells, a colored rule per stage */
-.pt-pipe { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
+.pt-pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
 .pt-seg { border: 1px solid var(--pt-line); border-top-width: 3px;
           border-top-color: var(--pt-gray); border-radius: 8px;
           padding: .6rem .85rem .65rem; background: var(--pt-card); }
@@ -108,7 +108,9 @@ function prjStyles() {
 .pt-seg-rejected  { border-top-color: var(--pt-red); }
 
 /* the two chart cards side by side */
-.pt-charts { display: grid; grid-template-columns: 3fr 2fr; gap: 1rem;
+/* minmax(0,*) lets the tracks shrink below their content, so the page
+   never demands more width than the space beside the sidebar offers */
+.pt-charts { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem;
              margin: 0 0 1rem; align-items: stretch; }
 .pt-charts .pt-card { margin: 0; display: flex; flex-direction: column; }
 .pt-chartbox { width: 100%; overflow-x: auto; }
@@ -218,11 +220,11 @@ function prjStyles() {
             font-weight: bold; }
 
 @media (max-width: 980px) {
-    .pt-stats { grid-template-columns: repeat(2, 1fr); }
+    .pt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pt-stat { padding: .3rem 1rem; }
     .pt-stat:nth-child(odd) { border-left: 0; padding-left: .3rem; }
-    .pt-pipe { grid-template-columns: repeat(3, 1fr); }
-    .pt-charts { grid-template-columns: 1fr; }
+    .pt-pipe { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .pt-charts { grid-template-columns: minmax(0, 1fr); }
 }
 </style>
 <div id="ptTip"></div>
