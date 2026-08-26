@@ -42,12 +42,12 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// check users authority (10 is the minimum to use LCCOnline; 20 here because
-// that is the PMS level the legacy PROJ_* pages require)
+// check users authority - 10, the minimum to use LCCOnline, since these
+// screens are read-only views
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
 }
 
 if ($authorized != "yes") {
