@@ -32,14 +32,14 @@ define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
 define('PRJ_KEY_FILE', '/www/seidenphp/anthropic_api.key');
 
 // steering committee pipeline stages, in the order the dashboard shows them.
-// 'complete' is not part of the pipeline but comes back from prjStage()
+// 'complete' and 'rejected' also come back from prjStage() but are not pipeline
+// cells - the dashboard counts the live SC pipeline, where neither can appear
 $GLOBALS['prjStages'] = array(
     'new'       => 'New request',
     'awaiting'  => 'Awaiting review',
     'needsinfo' => 'Needs more info',
     'parked'    => 'Parked',
     'approved'  => 'Approved',
-    'rejected'  => 'Rejected',
 );
 
 // status buckets for the "Projects by status" donut (open projects only)
@@ -145,6 +145,111 @@ function prjProgrammers($conn) {
 
 
 /* ---------------------------------------------------------------------------
+   The steering committee "pipeline universe".
+
+   The monthly Projects-by-developer spreadsheet is built from the four PTS
+   report extracts (the PROJ_Reports screen): SC workload, projects submitted
+   this meeting cycle, projects for SC review, and the Formula Friday list.
+   A project the committee is actually tracking appears in at least one of
+   them. The dashboard counts open projects against that same universe so its
+   numbers match the spreadsheet; anything open in the file but absent from
+   every report is "stale" - typically records from prior decades that were
+   never closed out - and is counted separately.
+--------------------------------------------------------------------------- */
+
+// the SC meeting window the workload/submitted reports run for: the Monday
+// before the previous meeting through the Sunday before the next one. The
+// meeting is the first Thursday of the month - the same calculation the
+// legacy PROJ_Reports_ctl.php makes (Dennis Cote 7/19/2012, project 120021)
+function prjMeetingWindow() {
+    $today = intval(date('Ymd'));
+
+    $firstThursThis = intval(date('Ymd', strtotime('first thursday',
+        mktime(0, 0, 0, intval(date('n')) - 1,
+               intval(date('t', mktime(0, 0, 0, intval(date('n')) - 1)))))));
+
+    $nextMonth = strtotime('+1 month');
+    $firstThursNext = intval(date('Ymd', strtotime('first thursday',
+        mktime(0, 0, 0, intval(date('n', $nextMonth)) - 1,
+               intval(date('t', mktime(0, 0, 0, intval(date('n', $nextMonth)) - 1)))))));
+
+    $lastMonth = strtotime('-1 month');
+    $firstThursLast = intval(date('Ymd', strtotime('first thursday',
+        mktime(0, 0, 0, intval(date('n', $lastMonth)) - 1,
+               intval(date('t', mktime(0, 0, 0, intval(date('n', $lastMonth)) - 1)))))));
+
+    if ($today > $firstThursThis) {
+        $from = date('Ymd', strtotime($firstThursThis . ' -3 days'));
+        $to   = date('Ymd', strtotime($firstThursNext . ' -4 days'));
+    } else {
+        $from = date('Ymd', strtotime($firstThursLast . ' -3 days'));
+        $to   = date('Ymd', strtotime($firstThursThis . ' -4 days'));
+    }
+    return array(intval($from), intval($to));
+}
+
+
+// pull the project number out of one report row. The four report procs return
+// different record layouts, but in every PTS file the project number column
+// ends in '#' (PR#, PT#, PRPROJ#, ...) - fall back to the first column
+function prjPipeProjNum($row) {
+    foreach ($row as $key => $val) {
+        $key = strtoupper(trim($key));
+        if (substr($key, -1) === '#' || strpos($key, 'PROJ') !== false) {
+            return intval($val);
+        }
+    }
+    $first = reset($row);
+    return intval($first);
+}
+
+
+// the set of project numbers on any of the four PTS report extracts, keyed
+// by number. These are the SAME stored procedures the legacy PROJ_Reports
+// screen downloads through, so the dashboard can never drift from the
+// spreadsheet. Returns null when none of the procs could be read - callers
+// then skip pipeline filtering instead of showing an empty dashboard.
+// Note: the workload file (PRWKLDP) is rebuilt by the Reports screen's
+// "Submit SC Reports" button, so that slice is as fresh as the last refresh
+function prjPipelineNums($conn) {
+    list($from, $to) = prjMeetingWindow();
+
+    $reports = array(
+        array("CALL PTS0035S()", array()),                            // SC workload
+        array("CALL PTS0036S(?, ?)", array(strval($from), strval($to))), // submitted
+        array("CALL PTS0038S()", array()),                            // SC review
+        array("CALL PTS0039S()", array()),                            // Formula Friday
+    );
+
+    $nums = array();
+    $anyRead = false;
+    foreach ($reports as $r) {
+        $rows = prjFetchAll($conn, $r[0], $r[1]);
+        if ($rows === false) { continue; }  // proc missing or not authorized
+        $anyRead = true;
+        foreach ($rows as $row) {
+            $num = prjPipeProjNum($row);
+            if ($num > 0 && ($num < 90000 || $num > 90999)) {
+                $nums[$num] = true;
+            }
+        }
+    }
+    return $anyRead ? $nums : null;
+}
+
+
+// stamp each project row with PIPE = 1 (on the SC reports) or 0 (stale).
+// A null pipeline set - reports unreadable - marks everything in, so the
+// dashboard degrades to the old count-everything behavior instead of hiding
+function prjMarkPipeline(&$projects, $pipe) {
+    foreach ($projects as &$row) {
+        $row['PIPE'] = ($pipe === null || isset($pipe[intval($row['PJNUM'])])) ? 1 : 0;
+    }
+    unset($row);
+}
+
+
+/* ---------------------------------------------------------------------------
    Stage and status derivations.
 
    The green screen never carried a single "SC stage" column - the stage is
@@ -189,9 +294,12 @@ function prjStatus($row) {
 
 
 // roll one project list up into everything the dashboard draws: the stat
-// tiles, the pipeline counts, the per-programmer load and the status donut
+// tiles, the pipeline counts, the per-programmer load and the status donut.
+// Rows stamped PIPE=0 (open but on none of the PTS reports) only feed the
+// stale counter, so every number matches the monthly spreadsheet
 function prjDashboardRollup($projects) {
-    $tiles = array('open' => 0, 'new' => 0, 'screview' => 0, 'unassigned' => 0);
+    $tiles = array('open' => 0, 'new' => 0, 'screview' => 0,
+                   'unassigned' => 0, 'stale' => 0);
     $pipeline = array_fill_keys(array_keys($GLOBALS['prjStages']), 0);
     $status = array_fill_keys(array_keys($GLOBALS['prjStatuses']), 0);
     $load = array();
@@ -199,6 +307,11 @@ function prjDashboardRollup($projects) {
     foreach ($projects as $row) {
         $stage = $row['STAGE'];
         $open = ($stage !== 'complete' && $stage !== 'rejected');
+
+        if (isset($row['PIPE']) && intval($row['PIPE']) === 0) {
+            if ($open) { $tiles['stale'] += 1; }
+            continue;
+        }
 
         if (isset($pipeline[$stage])) { $pipeline[$stage] += 1; }
         if ($row['STATUS'] !== '' && isset($status[$row['STATUS']])) {

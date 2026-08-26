@@ -36,6 +36,8 @@ function dspProjectDevelopers() {
             <select id="selPgmr"><option value="">All developers</option></select>
             <label><input type="checkbox" id="chkComplete">
                 Include completed / rejected</label>
+            <label title="Open records that appear on none of the PTS report extracts (SC workload, submitted, SC review, Formula Friday) - usually old work that was never closed out">
+                <input type="checkbox" id="chkStale"> Include stale</label>
             <button type="button" class="pt-btn pt-btn-primary" id="btnDownload">
                 Download to Excel</button>
             <span class="pt-count" id="lblCount"></span>

@@ -18,7 +18,14 @@ entry screen (`Picture2.png`) is a later phase and is not part of this work.
 
 Everything is **read-only** against the project files — the new screens change
 no data. Project numbers link back to the existing `PROJ_ctl.php` detail
-screen, and the legacy list stays reachable from the header nav.
+screen.
+
+The folder root also carries the live legacy sources for reference (copied
+from the server 08/26/26): `PROJ_model.php`, `PROJ_ctl.php`,
+`PROJ_ajax_request.php`, `PROJ_ajax_request_post.php`,
+`PROJ_timeEntry_ctl.php`, `PROJ_saveTime.php`, `LCDEPTP_model.php`,
+`LCEMPLOYP_model.php` — the last two are the department and employee lookups
+for the planned team/sub-department tagging.
 
 ## Deploying
 
@@ -46,9 +53,9 @@ screen, the Excel download and the weekly summary all read from them:
   set) → `approved` (SC priority set) → `new` (no estimate yet) → `parked`
   (estimated, dept priority zeroed) → `needsinfo` (estimated, no scheduled
   date) → `awaiting` (estimated + scheduled, waiting on the committee).
-  The pipeline's Rejected count is **all-time** — the file carries no
-  rejection date to scope it to a period. If that reads too large, drop
-  `rejected` from `$GLOBALS['prjStages']` and the segment disappears.
+  `rejected` and `complete` still come back from `prjStage()` for the
+  by-developer page, but they are not pipeline cells — the pipeline card
+  shows the live SC pipeline, where neither can appear.
 - **Status** (donut, open projects only): `Est. not needed` (fire projects,
   type FR) → `On hold` (dept priority zeroed) → `Active` (scheduled
   completion date on file — the legacy "in-play" test) → `Waiting on user`.
@@ -56,6 +63,40 @@ screen, the Excel download and the weekly summary all read from them:
 These are best-effort readings of how the legacy code used the fields. If
 the steering committee draws a bucket differently, change those two
 functions — nothing else needs touching.
+
+## How "open projects" is counted — matching the monthly spreadsheet
+
+The project file carries every never-closed record back to the 1990s, so a
+raw "not complete, not rejected" count lands around 220 — far above the ~89
+the monthly *Projects by developer* spreadsheet tracks. The spreadsheet is
+built from the four PTS report extracts on the legacy `PROJ_Reports` screen,
+so the dashboard scopes itself to that same universe, the **SC pipeline**:
+
+- **SC workload** — `PTS0035S` (reads the `PRWKLDP` work file)
+- **Projects submitted** — `PTS0036S(from, to)` for the current meeting
+  window (Monday before the previous first-Thursday SC meeting through the
+  Sunday before the next — the same calculation `PROJ_Reports_ctl.php` makes)
+- **Projects for SC review** — `PTS0038S`
+- **Formula Friday projects** — `PTS0039S`
+
+`prjPipelineNums()` in `ProjectTracking_model.php` calls all four and unions
+the project numbers; `prjMarkPipeline()` stamps each project row `PIPE` 1/0.
+An open project on none of the four reports is **stale** — old work nobody
+closed out. Stale records:
+
+- are excluded from every dashboard number and chart (the Open stat shows
+  "+ N stale not counted"),
+- are hidden on the by-developer page and the Excel download until the
+  **Include stale** box is checked (`stale=Y` on the download URL).
+
+Two caveats. `PRWKLDP` is rebuilt by the Reports screen's *Submit SC
+Reports* button, so the workload slice is only as fresh as the last refresh
+before the meeting. And the report procedures return different record
+layouts, so `prjPipeProjNum()` finds the project number by taking the first
+column whose name ends in `#` (or contains `PROJ`), falling back to the
+first column — if a report's key column is ever renamed, adjust it there.
+If none of the four procedures can be read at all, the dashboard falls back
+to counting every open record and says so under the Open stat.
 
 ## Weekly AI summary
 

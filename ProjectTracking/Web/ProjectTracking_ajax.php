@@ -85,6 +85,8 @@ function prjRowOut($row) {
         // date chronologically instead of month-first
         'schedraw' => intval($row['PJSCHDATE']),
         'comp'   => prjFmtDate($row['PJCOMPDATE']),
+        // 1 = on the PTS report extracts (the SC pipeline), 0 = stale
+        'pipe'   => intval($row['PIPE'] ?? 1),
     );
 }
 
@@ -120,17 +122,20 @@ switch ($action) {
 
     // everything the dashboard draws in one round trip: the stat tiles, the
     // pipeline, the two charts, the project table, and the cached weekly
-    // summary. The rollup reads the full list so the pipeline's Rejected
-    // count is real (the file carries no rejection date, so it is all-time);
-    // the table itself stays open work only
+    // summary. Counts are scoped to the SC pipeline - the union of the four
+    // PTS report extracts the monthly spreadsheet is built from - so the
+    // open number matches the spreadsheet; open records on none of those
+    // reports only feed the stale counter and stay off the dashboard table
     case 'dashboard':
-        $projects = prjProjects($conn, 'Y');
+        $projects = prjProjects($conn, 'N');
         if ($projects === false) { prjOutFail(); }
+        $pipe = prjPipelineNums($conn);
+        prjMarkPipeline($projects, $pipe);
         $rollup = prjDashboardRollup($projects);
 
         $out = array();
         foreach ($projects as $row) {
-            if ($row['STAGE'] === 'complete' || $row['STAGE'] === 'rejected') { continue; }
+            if (intval($row['PIPE']) === 0) { continue; }
             $out[] = prjRowOut($row);
         }
 
@@ -149,13 +154,19 @@ switch ($action) {
                      "statuses" => $GLOBALS['prjStatuses'],
                      "projects" => $out,
                      "weekly" => $weekly,
+                     // true when none of the PTS report procs could be read
+                     // and the dashboard fell back to counting all open work
+                     "pipenote" => ($pipe === null),
                      "updated" => date('M j, Y')));
 
-    // the assignments page rows; complete=Y adds finished and rejected work
+    // the assignments page rows; complete=Y adds finished and rejected work.
+    // Every row carries its pipe flag so the page can hide stale records
+    // client-side and still offer the include-stale checkbox
     case 'assignments':
         $includeComplete = (($_POST['complete'] ?? $_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
         if ($projects === false) { prjOutFail(); }
+        prjMarkPipeline($projects, prjPipelineNums($conn));
 
         $out = array();
         foreach ($projects as $row) { $out[] = prjRowOut($row); }
@@ -185,8 +196,20 @@ switch ($action) {
             prjOutFail("The spreadsheet library is not available on this server.");
         }
         $includeComplete = (($_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
+        $includeStale    = (($_GET['stale'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
         if ($projects === false) { prjOutFail(); }
+        prjMarkPipeline($projects, prjPipelineNums($conn));
+
+        // stale open records stay out of the workbook unless asked for, the
+        // same visibility rule the page applies; finished work already on
+        // the sheet (complete=Y) is governed by that checkbox alone
+        if ($includeStale !== 'Y') {
+            $projects = array_values(array_filter($projects, function ($row) {
+                return intval($row['PIPE']) === 1 ||
+                       $row['STAGE'] === 'complete' || $row['STAGE'] === 'rejected';
+            }));
+        }
 
         $book  = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $book->getActiveSheet();
@@ -234,7 +257,8 @@ switch ($action) {
             $r += 1; // blank row between programmers, like the source sheet
         }
 
-        prjActLog($user, 'DOWNLOAD', 'complete=' . $includeComplete);
+        prjActLog($user, 'DOWNLOAD', 'complete=' . $includeComplete .
+                  ' stale=' . $includeStale);
 
         while (ob_get_level() > 0) { ob_end_clean(); }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

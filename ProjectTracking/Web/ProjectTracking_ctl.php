@@ -136,7 +136,7 @@ function loadDashboard() {
     postAjax({ action: 'dashboard' }, function (resp) {
         dashData = resp;
         $('#ptUpdated').text('updated ' + resp.updated);
-        renderTiles(resp.tiles);
+        renderTiles(resp.tiles, resp.pipenote);
         renderPipeline(resp.pipeline, resp.stages);
         renderLoad(resp.load);
         renderDonut(resp.status, resp.statuses);
@@ -147,11 +147,28 @@ function loadDashboard() {
 }
 
 
-function renderTiles(t) {
+function renderTiles(t, pipenote) {
     $('#tileOpen').text(t.open);
     $('#tileNew').text(t.new);
     $('#tileReview').text(t.screview);
     $('#tileUnassigned').text(t.unassigned);
+
+    // open counts the SC pipeline (the same universe the monthly PTS report
+    // extracts cover); the note keeps the old never-closed records honest
+    var note = $('#tileOpenNote');
+    if (pipenote) {
+        note.text('PTS reports unavailable - counting all open records')
+            .attr('title', 'None of the PTS report procedures could be read, ' +
+                           'so every open record is counted.');
+    } else if (t.stale > 0) {
+        note.text('+ ' + t.stale + ' stale not counted')
+            .attr('title', 'Open in the project file but on none of the PTS ' +
+                           'report extracts (SC workload, submitted, SC review, ' +
+                           'Formula Friday). Listed on the Projects by developer ' +
+                           'page under "Include stale".');
+    } else {
+        note.text('');
+    }
 }
 
 

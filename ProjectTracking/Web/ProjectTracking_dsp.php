@@ -90,9 +90,10 @@ function prjStyles() {
 .pt-stat .pt-val { font-size: 1.9rem; font-weight: 650; letter-spacing: -.02em;
                    margin-top: .35rem; font-variant-numeric: tabular-nums; }
 .pt-stat.pt-warn .pt-val { color: var(--pt-red); }
+.pt-statnote { font-size: .72rem; color: var(--pt-faint); margin-top: .1rem; }
 
 /* steering committee pipeline: quiet white cells, a colored rule per stage */
-.pt-pipe { display: grid; grid-template-columns: repeat(6, 1fr); gap: .75rem; }
+.pt-pipe { display: grid; grid-template-columns: repeat(5, 1fr); gap: .75rem; }
 .pt-seg { border: 1px solid var(--pt-line); border-top-width: 3px;
           border-top-color: var(--pt-gray); border-radius: 8px;
           padding: .6rem .85rem .65rem; background: var(--pt-card); }
@@ -270,6 +271,7 @@ function dspProjectTracking() {
             <div class="pt-stat">
                 <div class="pt-lbl">Open projects</div>
                 <div class="pt-val" id="tileOpen">&ndash;</div>
+                <div class="pt-statnote" id="tileOpenNote"></div>
             </div>
             <div class="pt-stat">
                 <div class="pt-lbl">New requests</div>

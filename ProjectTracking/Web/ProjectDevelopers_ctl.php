@@ -82,10 +82,17 @@ $(document).ready(function () {
     });
     $('#selPgmr').on('change', renderGroups);
     $('#chkComplete').on('change', loadProjectDevelopers);
+    // the rows already carry their pipe flag, so toggling stale re-renders
+    // without another fetch; the developer filter refills because a hidden
+    // developer should not linger in the dropdown
+    $('#chkStale').on('change', function () {
+        if (asgData) { fillDevFilter(); renderGroups(); }
+    });
     $('#btnDownload').on('click', function () {
         // a plain navigation so the browser handles the workbook download
         window.location = 'ProjectTracking_ajax.php?action=download&complete=' +
-            ($('#chkComplete').is(':checked') ? 'Y' : 'N');
+            ($('#chkComplete').is(':checked') ? 'Y' : 'N') +
+            '&stale=' + ($('#chkStale').is(':checked') ? 'Y' : 'N');
     });
 });
 
@@ -119,7 +126,7 @@ function loadProjectDevelopers() {
             }
             asgData = resp;
             $('#ptUpdated').text('updated ' + resp.updated);
-            fillDevFilter(resp);
+            fillDevFilter();
             renderGroups();
         }, 'json').fail(function () {
             if (seq !== loadSeq) { return; }
@@ -128,10 +135,23 @@ function loadProjectDevelopers() {
 }
 
 
-function fillDevFilter(resp) {
+// the rows currently visible under the stale rule: pipeline rows always,
+// stale open rows only when the checkbox asks for them. Completed/rejected
+// rows are governed by their own checkbox (the fetch), not this one
+function visibleRows() {
+    var showStale = $('#chkStale').is(':checked');
+    return $.grep(asgData.projects, function (p) {
+        if (!showStale && p.pipe === 0 &&
+            p.stage !== 'complete' && p.stage !== 'rejected') { return false; }
+        return true;
+    });
+}
+
+
+function fillDevFilter() {
     var current = $('#selPgmr').val() || '';
     var pgmrs = {};
-    $.each(resp.projects, function (i, p) {
+    $.each(visibleRows(), function (i, p) {
         pgmrs[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
     });
     var opts = '<option value="">All developers</option>';
@@ -188,7 +208,7 @@ function renderGroups() {
     var q = $('#txtSearch').val().trim().toLowerCase();
     var fPgmr = $('#selPgmr').val();
 
-    var rows = $.grep(asgData.projects, function (p) {
+    var rows = $.grep(visibleRows(), function (p) {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
         if (fPgmr !== '' && (p.pgmr === '' ? 'Unassigned' : p.pgmr) !== fPgmr) { return false; }
