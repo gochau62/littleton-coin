@@ -113,8 +113,8 @@ if (!$conn) {
     prjOutFail("No database connection - sign in to LCC Online first.");
 }
 
-// 10 is the minimum authority to use LCCOnline - these are read-only views
-if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 10) != "yes") {
+// level 20 is the developers group (10 is only the minimum to use LCCOnline)
+if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 20) != "yes") {
     prjOutFail("Current user profile is not authorized to use this tool.");
 }
 

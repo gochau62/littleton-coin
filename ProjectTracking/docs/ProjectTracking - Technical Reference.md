@@ -38,8 +38,8 @@ for the planned team/sub-department tagging.
    `RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(PRJTRK001S)`.
    The file and field names are compile-verified (08/25/26) — the PRTIMEP
    columns are `PT#`, `PTPGMR`, `PTDATE`, `PTTIME` per SYSCOLUMNS.
-3. Authority: both screens and the endpoint require `LCCONLINE` level 10,
-   the minimum to use LCC Online - they are read-only views.
+3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
+   the developers group (level 10 is only the minimum to use LCC Online).
 4. The Excel download uses the vendored PhpSpreadsheet at
    `/www/seidenphp/htdocs/vendor/autoload.php`, same as the other loaders.
 

@@ -42,12 +42,12 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// check users authority - 10, the minimum to use LCCOnline, since these
-// screens are read-only views
+// check users authority - level 20, the developers group (10 is only the
+// minimum to use LCCOnline)
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
 }
 
 if ($authorized != "yes") {
