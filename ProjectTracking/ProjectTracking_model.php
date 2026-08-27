@@ -18,10 +18,11 @@
 
 $GLOBALS['prjErr'] = '';
 
-// the model that writes the weekly summary. Priced per million tokens, and a
-// week's digest is a few thousand tokens, so a weekly run costs pennies
-define('PRJ_AI_MODEL', 'claude-opus-5');
-define('PRJ_AI_URL', 'https://api.anthropic.com/v1/messages');
+// the model that writes the weekly summary - the same free Gemini model the
+// Sellbrite Bulk Loader runs on, called through the same endpoint and header
+define('PRJ_AI_MODEL', 'gemini-2.5-flash');
+define('PRJ_AI_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'
+                     . PRJ_AI_MODEL . ':generateContent');
 
 // the activity log lives in the LCCOnline_logs folder beside the PHP, like
 // every other tool's log. The weekly summary cache and the API key do NOT -
@@ -29,7 +30,7 @@ define('PRJ_AI_URL', 'https://api.anthropic.com/v1/messages');
 // so anything secret or durable goes in a folder outside the htdocs tree
 define('PRJ_ACT_LOG', __DIR__ . '/LCCOnline_logs/projecttracking_activity.log');
 define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
-define('PRJ_KEY_FILE', '/www/seidenphp/anthropic_api.key');
+define('PRJ_KEY_FILE', '/www/seidenphp/gemini_api.key');
 
 // steering committee pipeline stages, in the order the dashboard shows them.
 // 'complete' and 'rejected' also come back from prjStage() but are not pipeline
@@ -512,12 +513,22 @@ function prjFallbackSummary($digest) {
 }
 
 
-// the API key comes from the ANTHROPIC_API_KEY environment variable, or from
-// a one-line key file OUTSIDE the htdocs tree so it can never be fetched over
-// HTTP - never from source, after what happened with PROJ_sendChgNotif
+// the Gemini key, found where the other tools keep it: the environment
+// first, then the GEMINI_API_KEY define already configured in the Sellbrite
+// Bulk Loader that lives in the same docroot - one key serves both tools -
+// then a one-line key file OUTSIDE the htdocs tree as a last resort
 function prjApiKey() {
-    $key = trim(strval(getenv('ANTHROPIC_API_KEY')));
+    $key = trim(strval(getenv('GEMINI_API_KEY')));
     if ($key !== '') { return $key; }
+
+    $agent = __DIR__ . '/SellbriteBulkLoader_agent.php';
+    if (is_readable($agent)) {
+        $src = strval(file_get_contents($agent));
+        if (preg_match("/define\(\s*'GEMINI_API_KEY'\s*,\s*'([^']+)'\s*\)/",
+                       $src, $m)) {
+            return trim($m[1]);
+        }
+    }
     if (is_readable(PRJ_KEY_FILE)) {
         return trim(strval(file_get_contents(PRJ_KEY_FILE)));
     }
@@ -525,12 +536,13 @@ function prjApiKey() {
 }
 
 
-// one Messages API call turning the digest into the short per-developer
-// write-up. Returns array(ok, text-or-error, model-used)
-function prjClaudeSummary($digest) {
+// one generateContent call turning the digest into the short per-developer
+// write-up, the same shape as the Sellbrite loader's Gemini calls.
+// Returns array(ok, text-or-error, model-used)
+function prjAiSummary($digest) {
     $key = prjApiKey();
     if ($key === '') {
-        return array(false, 'No Anthropic API key is configured - see the ' .
+        return array(false, 'No Gemini API key is configured - see the ' .
                      'weekly summary section of the technical reference.', '');
     }
     if (!function_exists('curl_init')) {
@@ -556,14 +568,17 @@ function prjClaudeSummary($digest) {
         "- Plain text only - no markdown symbols, no tables.";
 
     $body = json_encode(array(
-        'model' => PRJ_AI_MODEL,
-        'max_tokens' => 2000,
-        'system' => $system,
-        'messages' => array(array(
+        'systemInstruction' => array('parts' => array(array('text' => $system))),
+        'contents' => array(array(
             'role' => 'user',
-            'content' => 'Week ' . $digest['from'] . ' through ' . $digest['to'] .
-                         ". Digest:\n" . json_encode($digest),
+            'parts' => array(array('text' =>
+                'Week ' . $digest['from'] . ' through ' . $digest['to'] .
+                ". Digest:\n" . json_encode($digest))),
         )),
+        // plain text out; the ceiling leaves room for the model's own
+        // deliberation tokens, which count against it on 2.5 flash
+        'generationConfig' => array('temperature' => 0.2,
+                                    'maxOutputTokens' => 8192),
     ));
 
     // a box that cannot reach the API gives up in seconds and the caller
@@ -577,8 +592,7 @@ function prjClaudeSummary($digest) {
         CURLOPT_TIMEOUT => 90,
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
-            'x-api-key: ' . $key,
-            'anthropic-version: 2023-06-01',
+            'x-goog-api-key: ' . $key,
         ),
     ));
     $raw = curl_exec($ch);
@@ -587,25 +601,25 @@ function prjClaudeSummary($digest) {
     curl_close($ch);
 
     if ($raw === false) {
-        return array(false, 'Anthropic API request failed: ' . $curlErr, '');
+        return array(false, 'Gemini API request failed: ' . $curlErr, '');
     }
     $resp = json_decode($raw, true);
     if ($httpCode !== 200) {
         $msg = $resp['error']['message'] ?? ('HTTP ' . $httpCode);
-        return array(false, 'Anthropic API error: ' . $msg, '');
+        return array(false, 'Gemini API error: ' . $msg, '');
     }
-    if (($resp['stop_reason'] ?? '') === 'refusal') {
+    if (($resp['promptFeedback']['blockReason'] ?? '') !== '') {
         return array(false, 'The model declined this request.', '');
     }
 
     $text = '';
-    foreach ($resp['content'] ?? array() as $block) {
-        if (($block['type'] ?? '') === 'text') { $text .= $block['text']; }
+    foreach ($resp['candidates'][0]['content']['parts'] ?? array() as $part) {
+        if (isset($part['text'])) { $text .= $part['text']; }
     }
     if (trim($text) === '') {
         return array(false, 'The API returned an empty summary.', '');
     }
-    return array(true, trim($text), strval($resp['model'] ?? PRJ_AI_MODEL));
+    return array(true, trim($text), strval($resp['modelVersion'] ?? PRJ_AI_MODEL));
 }
 
 
@@ -621,7 +635,7 @@ function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
         return array(false, $GLOBALS['prjErr'] ?: 'The weekly digest reads failed.');
     }
 
-    list($ok, $text, $model) = prjClaudeSummary($digest);
+    list($ok, $text, $model) = prjAiSummary($digest);
     $source = 'ai';
     $note = '';
     if (!$ok) {

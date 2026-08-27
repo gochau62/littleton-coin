@@ -12,7 +12,7 @@ built to the dashboard layout template (`docs/Picture1.png`). The legacy
 | Overview dashboard | `ProjectTracking_ctl.php` | Stat tiles (open / new / awaiting SC review / unassigned), steering-committee pipeline, programmer-load bar chart, projects-by-status donut, weekly AI summary card, and a sortable/filterable project table |
 | Dashboard display | `ProjectTracking_dsp.php` | Markup + the stylesheet shared by both screens |
 | Projects by developer | `ProjectDevelopers_ctl.php` / `_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
-| Data + logic | `ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Claude API call |
+| Data + logic | `ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Gemini call |
 | JSON/Excel endpoint | `ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
 | Db2 procedure | `PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR` |
 
@@ -117,8 +117,9 @@ by type), and completions — the same ground the hand-written "Project by
 Dev" spreadsheet covered.
 
 - **Generate** posts `action=weeklygenerate`. The model builds a JSON digest
-  from Db2, sends it to the Anthropic Messages API (`claude-opus-5` — see
-  `PRJ_AI_MODEL`), and caches the result in
+  from Db2, sends it to the Gemini API (`gemini-2.5-flash` — the same model
+  and endpoint the Sellbrite Bulk Loader uses, see `PRJ_AI_MODEL`), and
+  caches the result in
   `/www/seidenphp/ProjectTracking_data/` (created on first write; the web
   profile needs write access there) as
   `projecttracking_weekly_<weekend>.json` plus a `_latest` copy the
@@ -132,10 +133,12 @@ Dev" spreadsheet covered.
 - **The summary only restates the digest.** The prompt forbids inventing
   projects or numbers, and the digest rides along in the cache file so a
   summary can always be checked against its data.
-- **API key:** set the `ANTHROPIC_API_KEY` environment variable for the web
-  server, or drop the key as a single line in
-  `/www/seidenphp/anthropic_api.key` (`PRJ_KEY_FILE`) — outside the served
-  tree, so it can never be fetched over HTTP. Never put the key in source.
+- **API key:** none to set up — the summary reads the `GEMINI_API_KEY`
+  define already configured in `SellbriteBulkLoader_agent.php` in the same
+  docroot, so one key serves both tools. The `GEMINI_API_KEY` environment
+  variable overrides it, and a one-line key file at
+  `/www/seidenphp/gemini_api.key` (`PRJ_KEY_FILE`) is the fallback. Never
+  put the key in Project Tracking source.
 - **No key / API failure:** the card still works — it falls back to a plain
   deterministic rollup of the same digest and says so in the meta line.
 - **Scheduling:** the button is the v1 workflow (like the monthly PTS
