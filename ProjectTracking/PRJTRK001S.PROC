@@ -47,6 +47,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         DECLARE WKTO    DECIMAL(8, 0) DEFAULT 0;
         DECLARE WKALL   VARCHAR(1)    DEFAULT 'N';
         DECLARE WKLIB   VARCHAR(10)   DEFAULT '';
+        DECLARE WKFILE  VARCHAR(10)   DEFAULT '';
         DECLARE WKNOTES VARCHAR(600)  DEFAULT '';
 
         /* Every project outside the 90000-90999 internal range, with the
@@ -114,10 +115,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
 
         /* WebNotes comment index rows for project comments in a date
            range - the comment text itself lives in IFS files, so only
-           the who/when/what-kind columns come back. WEBNOTESP lives in
-           neither LSCPRDLIB nor the web connection's library list, so
-           the NOTES branch below asks QSYS2/SYSTABLES which library
-           holds it and reads that library directly - no library-list
+           the who/when/what-kind columns come back. The index file's
+           name and library are site-specific (they live in the web
+           tree's WebNotes/webNotesModel.php, not in any source here),
+           so the NOTES branch below finds the file by its WN* columns
+           in the catalog and reads it directly - no name or library
            guessing from any caller's job. C3 opens over S3, prepared
            there. */
         DECLARE C3 CURSOR WITH RETURN FOR S3;
@@ -151,27 +153,41 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
 
-            /* where WEBNOTESP lives on this box, straight from the
-               catalog; prefer a production library over a *DEV* one
-               when it exists in more than one */
-            SET WKLIB = (SELECT SYSTEM_TABLE_SCHEMA
-                           FROM QSYS2/SYSTABLES
-                          WHERE SYSTEM_TABLE_NAME = 'WEBNOTESP'
-                          ORDER BY CASE WHEN SYSTEM_TABLE_SCHEMA LIKE '%DEV%'
-                                        THEN 2 ELSE 1 END,
-                                   SYSTEM_TABLE_SCHEMA
-                          FETCH FIRST 1 ROW ONLY);
-            IF WKLIB IS NULL OR WKLIB = '' THEN
+            /* find the WebNotes index file by its columns: the one
+               file on the box carrying all five WN* columns the read
+               needs. Prefer a physical file over a logical, and a
+               production library over a *DEV* one, when more than one
+               qualifies. No rows leaves WKLIB/WKFILE at their ''
+               defaults, caught just below. */
+            SELECT C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME
+              INTO WKLIB, WKFILE
+              FROM QSYS2/SYSCOLUMNS C
+              JOIN QSYS2/SYSTABLES T
+                ON T.SYSTEM_TABLE_SCHEMA = C.SYSTEM_TABLE_SCHEMA
+               AND T.SYSTEM_TABLE_NAME = C.SYSTEM_TABLE_NAME
+             WHERE C.SYSTEM_COLUMN_NAME IN
+                   ('WNPREFIX', 'WNIDVAL', 'WNUSER', 'WNDATE', 'WNTYPE')
+             GROUP BY C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME,
+                      T.TABLE_TYPE
+            HAVING COUNT(DISTINCT C.SYSTEM_COLUMN_NAME) = 5
+             ORDER BY CASE WHEN T.TABLE_TYPE IN ('P', 'T') THEN 1 ELSE 2 END,
+                      CASE WHEN C.SYSTEM_TABLE_SCHEMA LIKE '%DEV%'
+                           THEN 2 ELSE 1 END,
+                      C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME
+             FETCH FIRST 1 ROW ONLY;
+
+            IF WKLIB = '' OR WKFILE = '' THEN
                 SIGNAL SQLSTATE '75012'
                     SET MESSAGE_TEXT =
-                        'WEBNOTESP not found in QSYS2/SYSTABLES on this system';
+                        'No WebNotes index file (WN* columns) in the catalogs';
             END IF;
 
             SET WKNOTES = 'SELECT RTRIM(W.WNIDVAL) AS NTPROJ, '
                    CONCAT 'RTRIM(W.WNUSER) AS NTUSER, '
                    CONCAT 'W.WNDATE AS NTDATE, '
                    CONCAT 'RTRIM(W.WNTYPE) AS NTTYPE '
-                   CONCAT 'FROM ' CONCAT WKLIB CONCAT '/WEBNOTESP W '
+                   CONCAT 'FROM ' CONCAT WKLIB CONCAT '/' CONCAT WKFILE
+                   CONCAT ' W '
                    CONCAT 'WHERE RTRIM(W.WNPREFIX) = ''PROJ_'' '
                    CONCAT 'AND W.WNDATE BETWEEN ? AND ? '
                    CONCAT 'ORDER BY W.WNUSER, W.WNIDVAL';

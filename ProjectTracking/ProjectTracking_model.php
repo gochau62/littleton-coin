@@ -415,8 +415,17 @@ function prjWeekRange() {
 function prjWeeklyDigest($conn, $from, $to) {
     $time = prjTime($conn, $from, $to);
     if ($time === false) { return false; }
+    // the WebNotes index is the one feed with a site-specific home; if
+    // that read fails the week still summarizes without comment counts
+    // rather than erroring the whole card - the reason lands in the
+    // activity log and the card's meta line
+    $GLOBALS['prjNotesNote'] = '';
     $notes = prjNotes($conn, $from, $to);
-    if ($notes === false) { return false; }
+    if ($notes === false) {
+        $GLOBALS['prjNotesNote'] =
+            'comment counts unavailable - the WebNotes read failed';
+        $notes = array();
+    }
     $completed = prjCompleted($conn, $from, $to);
     if ($completed === false) { return false; }
 
@@ -670,6 +679,10 @@ function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
         $text = prjFallbackSummary($digest);
         $source = 'fallback';
         $model = '';
+    }
+    if (!empty($GLOBALS['prjNotesNote'])) {
+        $note = trim(($note !== '' ? $note . '; ' : '') .
+                     $GLOBALS['prjNotesNote']);
     }
 
     $summary = array(
