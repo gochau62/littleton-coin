@@ -236,17 +236,17 @@ function renderLoad(load) {
 // status donut: stroke-drawn segments with small gaps, total in the center,
 // legend alongside. Gray is deliberate for On hold - it reads as inactive
 function renderDonut(status, labels) {
-    // statuses are the green screen's own Work Status values, colored the
-    // same way the status chips are: active blue, waiting orange, hold
-    // gray, testing/complete green, unstatused light gray; a wording the
-    // chips don't recognize cycles the reserve palette
+    // statuses are the green screen's own Work Status values, in the
+    // original design's colors: active blue, waiting orange, hold warm
+    // gray, testing/complete green, unstatused light gray; a wording
+    // outside those cycles the reserve palette
     var palette = ['#7a5af8', '#b07b0e', '#0ba5ec', '#d03b3b', '#1c5cab'];
     var pi = 0;
     var colors = {};
     $.each(labels, function (key, label) {
         var l = String(label).toLowerCase();
         if (key === 'notset') { colors[key] = '#cbd2dc'; }
-        else if (l.indexOf('hold') >= 0) { colors[key] = '#667085'; }
+        else if (l.indexOf('hold') >= 0) { colors[key] = '#898781'; }
         else if (l.indexOf('wait') >= 0) { colors[key] = '#eb6834'; }
         else if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
                  l.indexOf('prog') >= 0) { colors[key] = '#2a78d6'; }
