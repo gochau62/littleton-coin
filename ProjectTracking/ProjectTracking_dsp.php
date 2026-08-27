@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-27-J - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-27-K - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -219,9 +219,9 @@ function prjStyles() {
 /* per-row status, colored to match the dashboard donut */
 .pt-st { font-size: .72rem; font-weight: 600; white-space: nowrap; }
 .pt-st::before { content: "\25CF\00a0"; font-size: .6rem; }
-.pt-st-active     { color: var(--pt-blue); }
-.pt-st-waituser   { color: var(--pt-orange); }
-.pt-st-onhold     { color: var(--pt-muted); }
+.pt-st-active     { color: #185fa5; }
+.pt-st-waituser   { color: var(--pt-amber); }
+.pt-st-onhold     { color: #898781; }
 .pt-st-estnotneed { color: var(--pt-green); }
 .pt-st-other      { color: var(--pt-blue-dk); }
 .pt-st-notset     { color: var(--pt-faint); font-weight: 500; }
