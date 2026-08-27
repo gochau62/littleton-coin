@@ -18,10 +18,14 @@
 ?>
 
 <?php
-    // retrieves and sets password and username
+    // retrieves and sets password and username; StartBlockScriptB stays up
+    // top BEFORE any page output, the settled controller convention - the
+    // framework stashes this address and lands the person back here after
+    // sign-on, so a bookmark reopens this page instead of the home screen
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
+    if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 ?>
 
 <!-- includes css and javascript libraries -->
@@ -40,8 +44,6 @@
 <div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
 // check users authority - level 20, the developers group (10 is only the
 // minimum to use LCCOnline)
 $authorized = "yes";

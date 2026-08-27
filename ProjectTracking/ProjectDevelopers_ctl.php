@@ -18,10 +18,14 @@
 ?>
 
 <?php
-    // retrieves and sets password and username
+    // retrieves and sets password and username; StartBlockScriptB stays up
+    // top BEFORE any page output, the settled controller convention - the
+    // framework stashes this address and lands the person back here after
+    // sign-on, so a bookmark reopens this page instead of the home screen
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
+    if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 ?>
 
 <!-- includes css and javascript libraries -->
@@ -40,8 +44,6 @@
 <div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
-
 // check users authority - level 20, the developers group (10 is only the
 // minimum to use LCCOnline)
 $authorized = "yes";
@@ -163,10 +165,15 @@ function fillDevFilter() {
 }
 
 
+// stage chip with a compact label so it reads whole inside its column even
+// beside the sidebar; the full wording rides on the hover title
+var sgShort = { needsinfo: 'Needs info', awaiting: 'Awaiting', 'new': 'New' };
+
 function stageChip(stage) {
-    var label = (asgData.stages && asgData.stages[stage]) ||
-                stage.charAt(0).toUpperCase() + stage.slice(1);
-    return '<span class="pt-chip pt-chip-' + esc(stage) + '">' + esc(label) + '</span>';
+    var full = (asgData.stages && asgData.stages[stage]) ||
+               stage.charAt(0).toUpperCase() + stage.slice(1);
+    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(full) + '">' +
+           esc(sgShort[stage] || full) + '</span>';
 }
 
 
@@ -185,39 +192,43 @@ function statusChip(status) {
 
 
 function groupTable(rows) {
-    // fixed column widths so every developer's table lines up with the next.
-    // The table keeps a readable minimum (.pt-devgrid) and scrolls sideways
-    // inside its card when the page gets less room, instead of crushing the
-    // columns; numbers and dates hold pixel columns so they never ellipsize,
-    // and the description takes whatever is left
+    // fixed column widths so every developer's table lines up with the next,
+    // and every column reads whole in the space beside the sidebar - nothing
+    // scrolls and nothing grows. The two priorities share one "Prty D/S"
+    // cell, the estimate range shares one "Est" cell, and the completion
+    // date column only appears when completed work is being shown (it is
+    // blank on every open project). The description takes whatever is left
+    var withComp = $('#chkComplete').is(':checked');
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
-        '<table class="pt-grid pt-devgrid">' +
-        '<colgroup><col style="width:64px"><col style="width:12%">' +
-        '<col style="width:13%"><col style="width:46px">' +
-        '<col style="width:56px"><col style="width:52px">' +
+        '<table class="pt-grid">' +
+        '<colgroup><col style="width:64px"><col style="width:13%">' +
+        '<col style="width:12.5%"><col style="width:48px"><col style="width:58px">' +
         '<col>' +
-        '<col style="width:42px"><col style="width:42px"><col style="width:54px">' +
-        '<col style="width:86px"><col style="width:86px">' +
+        '<col style="width:64px"><col style="width:52px"><col style="width:84px">' +
+        (withComp ? '<col style="width:84px">' : '') +
         '</colgroup><thead><tr>' +
         '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Status</th><th>Dept</th>' +
-        '<th class="pt-num pt-wrap">Dept prty</th><th class="pt-num pt-wrap">SC prty</th>' +
-        '<th>Description</th><th class="pt-num">Low</th><th class="pt-num">Hi</th>' +
-        '<th class="pt-num">Hours</th><th class="pt-wrap">Sched comp</th><th class="pt-wrap">Comp date</th>' +
+        '<th class="pt-num pt-wrap" title="Department priority / SC priority">Prty D/S</th>' +
+        '<th>Description</th>' +
+        '<th class="pt-num" title="Estimate, low to high hours">Est</th>' +
+        '<th class="pt-num">Hours</th><th class="pt-wrap">Sched comp</th>' +
+        (withComp ? '<th class="pt-wrap">Comp date</th>' : '') +
         '</tr></thead><tbody>';
     $.each(rows, function (i, p) {
+        var est = (p.low || p.hi) ? (p.low + '–' + p.hi) : '';
         html += '<tr>' +
             '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
             '<td>' + statusChip(p.status) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
-            '<td class="pt-num">' + p.deptpr + '</td>' +
-            '<td class="pt-num">' + p.scpr + '</td>' +
+            '<td class="pt-num" title="Dept priority ' + p.deptpr +
+                ', SC priority ' + p.scpr + '">' + p.deptpr + ' / ' + p.scpr + '</td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
-            '<td class="pt-num">' + p.low + '</td>' +
-            '<td class="pt-num">' + p.hi + '</td>' +
+            '<td class="pt-num" title="Estimate low ' + p.low + ', high ' + p.hi +
+                ' hours">' + est + '</td>' +
             '<td class="pt-num">' + p.hours + '</td>' +
             '<td>' + esc(p.sched) + '</td>' +
-            '<td>' + esc(p.comp) + '</td>' +
+            (withComp ? '<td>' + esc(p.comp) + '</td>' : '') +
             '</tr>';
     });
     return html + '</tbody></table></div></div>';

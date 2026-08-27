@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-26-D - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-26-E - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -184,20 +184,17 @@ function prjStyles() {
                 border: 1px solid var(--pt-line); border-radius: 8px; }
 .pt-grid { width: 100%; table-layout: fixed; border-collapse: separate;
            border-spacing: 0; font-size: .84rem; }
-/* the by-developer tables keep readable columns and scroll sideways inside
-   their card when the page gets less room - the Requisitions pattern; the
-   wrapper's containment keeps that minimum from widening the page itself */
-.pt-devgrid { min-width: 880px; }
+
 .pt-grid thead th { position: sticky; top: 0; z-index: 5; background: #fafbfc;
            color: var(--pt-muted); font-size: .7rem; font-weight: 600;
            letter-spacing: .05em; text-transform: uppercase; text-align: left;
-           padding: .55rem .55rem; white-space: nowrap; cursor: pointer;
+           padding: .55rem .45rem; white-space: nowrap; cursor: pointer;
            border-bottom: 1px solid var(--pt-line); user-select: none; }
 .pt-grid thead th:hover { color: var(--pt-text); }
 .pt-grid thead th.pt-num { text-align: right; }
 .pt-grid thead th.pt-sort-asc::after  { content: " \2191"; color: var(--pt-blue); }
 .pt-grid thead th.pt-sort-desc::after { content: " \2193"; color: var(--pt-blue); }
-.pt-grid tbody td { padding: .5rem .55rem;
+.pt-grid tbody td { padding: .5rem .45rem;
            border-bottom: 1px solid var(--pt-line-soft); white-space: nowrap;
            overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
 .pt-grid tbody tr:last-child td { border-bottom: 0; }
@@ -230,7 +227,7 @@ function prjStyles() {
 .pt-unassigned { color: var(--pt-red); font-weight: 600; }
 
 /* stage chips in the table */
-.pt-chip { display: inline-block; padding: .14rem .5rem; border-radius: 5px;
+.pt-chip { display: inline-block; padding: .14rem .4rem; border-radius: 5px;
            font-size: .72rem; font-weight: 600; letter-spacing: .01em; }
 .pt-chip-new       { background: var(--pt-chip-blue);  color: var(--pt-blue-dk); }
 .pt-chip-awaiting  { background: var(--pt-chip-gray);  color: var(--pt-muted); }
