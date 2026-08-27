@@ -59,6 +59,17 @@ $GLOBALS['prjWrkLabels'] = array(
     'WUF' => 'Waiting user feedback',
 );
 
+// the donut's four buckets, straight from the layout template. Every
+// assigned project falls in exactly one - derived from the legacy fields,
+// so the chart is never dominated by projects nobody has statused (the
+// by-developer Status column is separate: it shows PRWRKSTS as stored)
+$GLOBALS['prjStatusBuckets'] = array(
+    'active'     => 'Active',
+    'waituser'   => 'Waiting on user',
+    'onhold'     => 'On hold',
+    'estnotneed' => 'Est. not needed',
+);
+
 // the developers the monthly Projects-by-developer spreadsheet tracks. The
 // by-developer groups, the programmer filters, the load chart and the Excel
 // download show these profiles (plus Unassigned) and no one else - a project
@@ -339,6 +350,21 @@ function prjStage($row) {
 }
 
 
+// donut bucket for one project, the first design's derivation:
+//   estnotneed - fire projects (type FR) go straight to work, no estimate
+//   onhold     - department priority zeroed out after estimating
+//   active     - scheduled completion date on file ("in-play")
+//   waituser   - everything else is waiting on the requestor or committee
+function prjStatusBucket($row) {
+    if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
+    if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
+    if (trim($row['PJTYPE']) === 'FR')    { return 'estnotneed'; }
+    if (intval($row['PJDEPTPR']) <= 0 && trim($row['PJHASEST']) === 'Y') { return 'onhold'; }
+    if (intval($row['PJSCHDATE']) > 0)    { return 'active'; }
+    return 'waituser';
+}
+
+
 // status for one open project: the green screen's own Work Status
 // (PRWRKSTS, the dropdown on the project edit screen) and nothing else -
 // never derived from priorities or schedules. Blank means nobody has
@@ -360,7 +386,7 @@ function prjDashboardRollup($projects) {
     $tiles = array('open' => 0, 'new' => 0, 'screview' => 0,
                    'unassigned' => 0, 'stale' => 0);
     $pipeline = array_fill_keys(array_keys($GLOBALS['prjStages']), 0);
-    $status = array_fill_keys(array_keys($GLOBALS['prjStatuses']), 0);
+    $status = array_fill_keys(array_keys($GLOBALS['prjStatusBuckets']), 0);
     $load = array();
 
     foreach ($projects as $row) {
@@ -373,9 +399,6 @@ function prjDashboardRollup($projects) {
         }
 
         if (isset($pipeline[$stage])) { $pipeline[$stage] += 1; }
-        if ($row['STATUS'] !== '' && isset($status[$row['STATUS']])) {
-            $status[$row['STATUS']] += 1;
-        }
 
         if ($open) {
             $tiles['open'] += 1;
@@ -392,6 +415,13 @@ function prjDashboardRollup($projects) {
             if ($pgmr === 'Unassigned' || prjTrackedDev($pgmr)) {
                 if (!isset($load[$pgmr])) { $load[$pgmr] = 0; }
                 $load[$pgmr] += 1;
+            }
+
+            // the donut covers the assigned working set - open pipeline
+            // projects sitting with one of the tracked developers
+            if (prjTrackedDev($pgmr)) {
+                $bucket = prjStatusBucket($row);
+                if (isset($status[$bucket])) { $status[$bucket] += 1; }
             }
         }
     }

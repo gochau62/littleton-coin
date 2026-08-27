@@ -155,7 +155,9 @@ switch ($action) {
                      "status" => $rollup['status'],
                      "load" => $rollup['load'],
                      "stages" => $GLOBALS['prjStages'],
-                     "statuses" => $GLOBALS['prjStatuses'],
+                     // the donut's four fixed buckets - the by-developer
+                     // page gets the stored PRWRKSTS labels instead
+                     "statuses" => $GLOBALS['prjStatusBuckets'],
                      "developers" => $GLOBALS['prjDevelopers'],
                      "projects" => $out,
                      "weekly" => $weekly,

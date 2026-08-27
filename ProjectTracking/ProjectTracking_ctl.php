@@ -236,27 +236,13 @@ function renderLoad(load) {
 // status donut: stroke-drawn segments with small gaps, total in the center,
 // legend alongside. Gray is deliberate for On hold - it reads as inactive
 function renderDonut(status, labels) {
-    // statuses are the green screen's own Work Status values, in the layout
-    // template's donut colors (docs/Picture1.png, sampled): active blue
-    // #185fa5, waiting amber #eda100, hold gray #898781, est-not-needed /
-    // testing / complete green #1baf7a, unstatused light gray; a wording
-    // outside those cycles the reserve palette
-    var palette = ['#7a5af8', '#0ba5ec', '#d03b3b', '#1c5cab'];
-    var pi = 0;
-    var colors = {};
-    $.each(labels, function (key, label) {
-        var l = String(label).toLowerCase();
-        if (key === 'notset') { colors[key] = '#cbd2dc'; }
-        else if (l.indexOf('hold') >= 0) { colors[key] = '#898781'; }
-        else if (l.indexOf('wait') >= 0) { colors[key] = '#eda100'; }
-        else if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
-                 l.indexOf('prog') >= 0) { colors[key] = '#185fa5'; }
-        else if (l.indexOf('test') >= 0 || l.indexOf('comp') >= 0 ||
-                 l.indexOf('done') >= 0 || l.indexOf('impl') >= 0 ||
-                 l.indexOf('needed') >= 0) {
-            colors[key] = '#1baf7a';
-        }
-        else { colors[key] = palette[pi % palette.length]; pi += 1; }
+    // the layout template's four buckets in its sampled colors: active blue,
+    // waiting amber, on hold gray, est-not-needed green - counted over the
+    // assigned working set, so the chart says where assigned work stands
+    var colors = { active: '#185fa5', waituser: '#eda100',
+                   onhold: '#898781', estnotneed: '#1baf7a' };
+    $.each(labels, function (key) {
+        if (!colors[key]) { colors[key] = '#7a5af8'; }
     });
     var total = 0;
     $.each(status, function (k, c) { total += c; });
@@ -269,7 +255,7 @@ function renderDonut(status, labels) {
     // full unbroken ring
     var gap = (segs > 1) ? 2 : 0;
     var svg = '<svg width="' + size + '" height="' + size +
-              '" role="img" aria-label="Open projects by status">';
+              '" role="img" aria-label="Assigned projects by status">';
 
     if (total === 0) {
         svg += '<circle cx="' + c + '" cy="' + c + '" r="' + r +
@@ -295,7 +281,7 @@ function renderDonut(status, labels) {
     svg += '<text x="' + c + '" y="' + (c - 2) + '" text-anchor="middle"' +
            ' font-size="22" font-weight="650" fill="#101828">' + total + '</text>' +
            '<text x="' + c + '" y="' + (c + 16) + '" text-anchor="middle"' +
-           ' font-size="10" fill="#667085">open</text></svg>';
+           ' font-size="10" fill="#667085">assigned</text></svg>';
     $('#statusDonut').html(svg);
 
     var leg = '';
