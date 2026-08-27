@@ -236,14 +236,25 @@ function renderLoad(load) {
 // status donut: stroke-drawn segments with small gaps, total in the center,
 // legend alongside. Gray is deliberate for On hold - it reads as inactive
 function renderDonut(status, labels) {
-    // statuses are the green screen's own Work Status values - each gets a
-    // palette color as it appears; unstatused projects stay light gray
-    var colors = { notset: '#cbd2dc' };
-    var palette = ['#2a78d6', '#eb6834', '#12b76a', '#7a5af8', '#b07b0e',
-                   '#0ba5ec', '#d03b3b', '#667085'];
+    // statuses are the green screen's own Work Status values, colored the
+    // same way the status chips are: active blue, waiting orange, hold
+    // gray, testing/complete green, unstatused light gray; a wording the
+    // chips don't recognize cycles the reserve palette
+    var palette = ['#7a5af8', '#b07b0e', '#0ba5ec', '#d03b3b', '#1c5cab'];
     var pi = 0;
-    $.each(labels, function (key) {
-        if (!colors[key]) { colors[key] = palette[pi % palette.length]; pi += 1; }
+    var colors = {};
+    $.each(labels, function (key, label) {
+        var l = String(label).toLowerCase();
+        if (key === 'notset') { colors[key] = '#cbd2dc'; }
+        else if (l.indexOf('hold') >= 0) { colors[key] = '#667085'; }
+        else if (l.indexOf('wait') >= 0) { colors[key] = '#eb6834'; }
+        else if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
+                 l.indexOf('prog') >= 0) { colors[key] = '#2a78d6'; }
+        else if (l.indexOf('test') >= 0 || l.indexOf('comp') >= 0 ||
+                 l.indexOf('done') >= 0 || l.indexOf('impl') >= 0) {
+            colors[key] = '#008300';
+        }
+        else { colors[key] = palette[pi % palette.length]; pi += 1; }
     });
     var total = 0;
     $.each(status, function (k, c) { total += c; });

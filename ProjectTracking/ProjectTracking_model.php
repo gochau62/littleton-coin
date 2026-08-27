@@ -50,6 +50,15 @@ $GLOBALS['prjStatuses'] = array(
     'notset' => 'Not set',
 );
 
+// the Work Status codes the green screen's dropdown writes, spelled out for
+// the screens. A code not listed here still shows under its stored value -
+// add it here when the dropdown gains one
+$GLOBALS['prjWrkLabels'] = array(
+    'ACT' => 'Active',
+    'HLD' => 'Hold',
+    'WUF' => 'Waiting user feedback',
+);
+
 // the developers the monthly Projects-by-developer spreadsheet tracks. The
 // by-developer groups, the programmer filters, the load chart and the Excel
 // download show these profiles (plus Unassigned) and no one else - a project
@@ -127,11 +136,13 @@ function prjProjects($conn, $includeComplete = 'N') {
         $row['STATUS'] = prjStatus($row);
 
         // each distinct Work Status value joins the shared map so the donut
-        // and the by-developer column show it under its own name
+        // and the by-developer column show it under its own name - spelled
+        // out for the codes the dropdown writes (Act, Hld, Wuf)
         if ($row['STATUS'] !== '' && $row['STATUS'] !== 'notset'
             && !isset($GLOBALS['prjStatuses'][$row['STATUS']])) {
-            $wrk = trim(strval($row['PJWRKSTS'] ?? ''));
-            $GLOBALS['prjStatuses'][$row['STATUS']] = ucfirst(strtolower($wrk));
+            $wrk = strtoupper(trim(strval($row['PJWRKSTS'] ?? '')));
+            $GLOBALS['prjStatuses'][$row['STATUS']] =
+                $GLOBALS['prjWrkLabels'][$wrk] ?? ucfirst(strtolower($wrk));
         }
         $out[] = $row;
     }

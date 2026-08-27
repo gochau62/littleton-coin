@@ -75,7 +75,12 @@ screen, the Excel download and the weekly summary all read from them:
   project edit screen), read as-is — never derived from priorities or
   schedules, so it moves the moment someone changes it on the edit screen.
   Each distinct value shows under its own name; an open project whose Work
-  Status is blank shows as `Not set`.
+  Status is blank shows as `Not set`. The dropdown stores short codes, so
+  `$GLOBALS['prjWrkLabels']` in the model spells them out for the screens
+  (`ACT` → Active, `HLD` → Hold, `WUF` → Waiting user feedback) — an
+  unlisted code still shows under its stored value until it is added
+  there. The chips and the donut color by the wording: active blue,
+  waiting orange, hold gray, testing/complete green.
 
 The stage rules are a best-effort reading of how the legacy code used the
 fields. If the steering committee draws a stage differently, change
