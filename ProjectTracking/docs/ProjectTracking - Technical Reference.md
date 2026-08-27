@@ -43,12 +43,12 @@ for the planned team/sub-department tagging.
    `PRWRKSTS AS PJWRKSTS` for the Work Status (until the recompiled
    procedure is on the box the Submitted column shows blank and every
    open project's status reads "Not set"),
-   and the NOTES cursor now leaves `WEBNOTESP` unqualified — the WebNotes
-   index is not in `LSCPRDLIB`, so it resolves through the job's library
-   list like the legacy WebNotes screens. Compile from a job whose
-   library list carries the WebNotes library; if RUNSQLSTM cannot find
-   it, `SELECT SYSTEM_TABLE_SCHEMA FROM QSYS2.SYSTABLES WHERE
-   SYSTEM_TABLE_NAME = 'WEBNOTESP'` names the library to qualify.
+   and the NOTES read now locates `WEBNOTESP` itself — the WebNotes
+   index sits in neither `LSCPRDLIB` nor the web connection's library
+   list, so at run time the procedure asks `QSYS2/SYSTABLES` which
+   library holds it (preferring a non-`*DEV*` library when it exists in
+   more than one) and reads that library directly. Neither the compile
+   job's nor the calling job's library list matters.
 3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
    the developers group (level 10 is only the minimum to use LCC Online).
 4. The Excel download uses the vendored PhpSpreadsheet at

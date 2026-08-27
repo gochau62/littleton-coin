@@ -43,9 +43,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
 
     BEGIN
-        DECLARE WKFROM DECIMAL(8, 0) DEFAULT 0;
-        DECLARE WKTO   DECIMAL(8, 0) DEFAULT 0;
-        DECLARE WKALL  VARCHAR(1)    DEFAULT 'N';
+        DECLARE WKFROM  DECIMAL(8, 0) DEFAULT 0;
+        DECLARE WKTO    DECIMAL(8, 0) DEFAULT 0;
+        DECLARE WKALL   VARCHAR(1)    DEFAULT 'N';
+        DECLARE WKLIB   VARCHAR(10)   DEFAULT '';
+        DECLARE WKNOTES VARCHAR(600)  DEFAULT '';
 
         /* Every project outside the 90000-90999 internal range, with the
            newest estimate and the summed programming time riding along.
@@ -112,19 +114,13 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
 
         /* WebNotes comment index rows for project comments in a date
            range - the comment text itself lives in IFS files, so only
-           the who/when/what-kind columns come back. WEBNOTESP does NOT
-           live in LSCPRDLIB - it stays unqualified so it resolves
-           through the job's library list, the same way the legacy
-           WebNotes screens reach it. */
-        DECLARE C3 CURSOR WITH RETURN FOR
-            SELECT RTRIM(W.WNIDVAL) AS NTPROJ,
-                   RTRIM(W.WNUSER) AS NTUSER,
-                   W.WNDATE AS NTDATE,
-                   RTRIM(W.WNTYPE) AS NTTYPE
-              FROM WEBNOTESP W
-             WHERE RTRIM(W.WNPREFIX) = 'PROJ_'
-               AND W.WNDATE BETWEEN WKFROM AND WKTO
-             ORDER BY W.WNUSER, W.WNIDVAL;
+           the who/when/what-kind columns come back. WEBNOTESP lives in
+           neither LSCPRDLIB nor the web connection's library list, so
+           the NOTES branch below asks QSYS2/SYSTABLES which library
+           holds it and reads that library directly - no library-list
+           guessing from any caller's job. C3 opens over S3, prepared
+           there. */
+        DECLARE C3 CURSOR WITH RETURN FOR S3;
 
         /* Projects completed in a date range, for the weekly digest. */
         DECLARE C4 CURSOR WITH RETURN FOR
@@ -154,7 +150,33 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         ELSEIF INTYPE = 'NOTES' THEN
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
-            OPEN C3;
+
+            /* where WEBNOTESP lives on this box, straight from the
+               catalog; prefer a production library over a *DEV* one
+               when it exists in more than one */
+            SET WKLIB = (SELECT SYSTEM_TABLE_SCHEMA
+                           FROM QSYS2/SYSTABLES
+                          WHERE SYSTEM_TABLE_NAME = 'WEBNOTESP'
+                          ORDER BY CASE WHEN SYSTEM_TABLE_SCHEMA LIKE '%DEV%'
+                                        THEN 2 ELSE 1 END,
+                                   SYSTEM_TABLE_SCHEMA
+                          FETCH FIRST 1 ROW ONLY);
+            IF WKLIB IS NULL OR WKLIB = '' THEN
+                SIGNAL SQLSTATE '75012'
+                    SET MESSAGE_TEXT =
+                        'WEBNOTESP not found in QSYS2/SYSTABLES on this system';
+            END IF;
+
+            SET WKNOTES = 'SELECT RTRIM(W.WNIDVAL) AS NTPROJ, '
+                   CONCAT 'RTRIM(W.WNUSER) AS NTUSER, '
+                   CONCAT 'W.WNDATE AS NTDATE, '
+                   CONCAT 'RTRIM(W.WNTYPE) AS NTTYPE '
+                   CONCAT 'FROM ' CONCAT WKLIB CONCAT '/WEBNOTESP W '
+                   CONCAT 'WHERE RTRIM(W.WNPREFIX) = ''PROJ_'' '
+                   CONCAT 'AND W.WNDATE BETWEEN ? AND ? '
+                   CONCAT 'ORDER BY W.WNUSER, W.WNIDVAL';
+            PREPARE S3 FROM WKNOTES;
+            OPEN C3 USING WKFROM, WKTO;
         ELSEIF INTYPE = 'COMP' THEN
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
