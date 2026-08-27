@@ -18,11 +18,12 @@
 
 $GLOBALS['prjErr'] = '';
 
-// the model that writes the weekly summary - the same free Gemini model the
-// Sellbrite Bulk Loader runs on, called through the same endpoint and header
-define('PRJ_AI_MODEL', 'gemini-2.5-flash');
-define('PRJ_AI_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'
-                     . PRJ_AI_MODEL . ':generateContent');
+// the weekly summary speaks Gemini exactly the way the Sellbrite Bulk
+// Loader's agent does - and rather than repeating its settings here, the
+// key, model, endpoint and timeout are read from the agent file deployed
+// in this same docroot (prjAgentDefine below), so if the agent's model
+// ever changes, this tool follows it in the same moment. The defaults
+// mirror the agent's shipped values (gemini-2.5-flash)
 
 // the activity log lives in the LCCOnline_logs folder beside the PHP, like
 // every other tool's log. The weekly summary cache and the API key do NOT -
@@ -513,22 +514,46 @@ function prjFallbackSummary($digest) {
 }
 
 
+// read one define out of the Sellbrite Bulk Loader agent file (text only,
+// never executed) - the single source of truth for how Gemini is called on
+// this box. Handles both quoted and bare-number defines
+function prjAgentDefine($name, $default) {
+    static $src = null;
+    if ($src === null) {
+        $agent = __DIR__ . '/SellbriteBulkLoader_agent.php';
+        $src = is_readable($agent) ? strval(file_get_contents($agent)) : '';
+    }
+    if ($src !== '' &&
+        preg_match("/define\(\s*'" . preg_quote($name, '/') .
+                   "'\s*,\s*(?:'([^']*)'|([0-9]+))\s*\)/", $src, $m)) {
+        $val = trim($m[1] !== '' ? $m[1] : ($m[2] ?? ''));
+        if ($val !== '') { return $val; }
+    }
+    return $default;
+}
+
+
+function prjAiModel() {
+    return prjAgentDefine('GEMINI_MODEL', 'gemini-2.5-flash');
+}
+
+
+function prjAiUrl() {
+    $base = prjAgentDefine('GEMINI_BASE',
+                           'https://generativelanguage.googleapis.com/v1beta');
+    return rtrim($base, '/') . '/models/' . rawurlencode(prjAiModel()) .
+           ':generateContent';
+}
+
+
 // the Gemini key, found where the other tools keep it: the environment
-// first, then the GEMINI_API_KEY define already configured in the Sellbrite
-// Bulk Loader that lives in the same docroot - one key serves both tools -
-// then a one-line key file OUTSIDE the htdocs tree as a last resort
+// first, then the GEMINI_API_KEY the Sellbrite agent carries - one key
+// serves both tools - then a one-line key file OUTSIDE the htdocs tree
 function prjApiKey() {
     $key = trim(strval(getenv('GEMINI_API_KEY')));
     if ($key !== '') { return $key; }
-
-    $agent = __DIR__ . '/SellbriteBulkLoader_agent.php';
-    if (is_readable($agent)) {
-        $src = strval(file_get_contents($agent));
-        if (preg_match("/define\(\s*'GEMINI_API_KEY'\s*,\s*'([^']+)'\s*\)/",
-                       $src, $m)) {
-            return trim($m[1]);
-        }
-    }
+    $key = prjAgentDefine('GEMINI_API_KEY', '');
+    if ($key !== '') { return $key; }
     if (is_readable(PRJ_KEY_FILE)) {
         return trim(strval(file_get_contents(PRJ_KEY_FILE)));
     }
@@ -581,15 +606,15 @@ function prjAiSummary($digest) {
                                     'maxOutputTokens' => 8192),
     ));
 
-    // a box that cannot reach the API gives up in seconds and the caller
-    // falls back to the plain rollup, instead of the button looking hung
-    $ch = curl_init(PRJ_AI_URL);
+    // connect gives up in seconds so a box that cannot reach the API falls
+    // back to the plain rollup; the overall timeout follows the agent's
+    $ch = curl_init(prjAiUrl());
     curl_setopt_array($ch, array(
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $body,
         CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_TIMEOUT => 90,
+        CURLOPT_TIMEOUT => intval(prjAgentDefine('GEMINI_TIMEOUT', '400')),
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             'x-goog-api-key: ' . $key,
@@ -619,7 +644,7 @@ function prjAiSummary($digest) {
     if (trim($text) === '') {
         return array(false, 'The API returned an empty summary.', '');
     }
-    return array(true, trim($text), strval($resp['modelVersion'] ?? PRJ_AI_MODEL));
+    return array(true, trim($text), strval($resp['modelVersion'] ?? prjAiModel()));
 }
 
 

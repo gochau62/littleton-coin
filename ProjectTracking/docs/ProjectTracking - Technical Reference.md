@@ -117,9 +117,11 @@ by type), and completions — the same ground the hand-written "Project by
 Dev" spreadsheet covered.
 
 - **Generate** posts `action=weeklygenerate`. The model builds a JSON digest
-  from Db2, sends it to the Gemini API (`gemini-2.5-flash` — the same model
-  and endpoint the Sellbrite Bulk Loader uses, see `PRJ_AI_MODEL`), and
-  caches the result in
+  from Db2 and sends it to the Gemini API exactly the way the Sellbrite
+  Bulk Loader does — the key, model, endpoint and timeout are read from
+  the `GEMINI_*` defines in the deployed `SellbriteBulkLoader_agent.php`
+  (`prjAgentDefine`), so whatever model that agent runs, this runs. The
+  shipped default is `gemini-2.5-flash`. The result caches in
   `/www/seidenphp/ProjectTracking_data/` (created on first write; the web
   profile needs write access there) as
   `projecttracking_weekly_<weekend>.json` plus a `_latest` copy the
