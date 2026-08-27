@@ -18,10 +18,7 @@
 
 $GLOBALS['prjErr'] = '';
 
-// gemini 3.7 flash model writes the weekly summary, configured the same
-// way the Sellbrite Bulk Loader's agent is. Fill GEMINI_API_KEY on the
-// SERVER copy only - the repository copy stays empty, keys never live in
-// source control
+// gemini 3.7 flash model current usage for free testing
 if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-3.7-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
@@ -515,103 +512,116 @@ function prjFallbackSummary($digest) {
 }
 
 
-// if no gemini key configured skip, same test the Sellbrite agent makes
-function prjApiKey() {
-    return trim(strval(GEMINI_API_KEY));
+// if no gemini key configured skip
+function prjGeminiConfigured() { return GEMINI_API_KEY !== ''; }
+
+
+// gemini call reports land in the activity log, the way the Sellbrite
+// loader's gsLog lines land in its own
+function prjAiLog($msg) { prjActLog('agent', 'GEMINI', $msg); }
+
+
+// asks for a JSON answer - the same caller as the Sellbrite loader's
+// geminiJson: system instruction + user text in, meta call report out.
+// $think caps Gemini's internal reasoning tokens
+function prjGeminiJson($system, $user, &$meta = array(), $think = 0)
+{
+    // if not key set return error
+    $meta = array('status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0);
+    if (!prjGeminiConfigured()) { $meta['error'] = 'GEMINI_API_KEY not set'; return null; }
+    if (!function_exists('curl_init')) { $meta['error'] = 'PHP curl extension not available'; return null; }
+
+    // The generateContent gemini endpoint
+    $url = rtrim(GEMINI_BASE, '/') . '/models/' . rawurlencode(GEMINI_MODEL) . ':generateContent';
+
+    // request using system instructions, user input, and the settings
+    $body = json_encode(array(
+        'systemInstruction' => array('parts' => array(array('text' => (string) $system))),
+        'contents'          => array(array('role' => 'user', 'parts' => array(array('text' => (string) $user)))),
+        'generationConfig'  => array('temperature' => 0.2, 'responseMimeType' => 'application/json',
+                                     'maxOutputTokens' => 8192,
+                                     'thinkingConfig' => array('thinkingBudget' => $think)),
+    ), JSON_UNESCAPED_SLASHES);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, array(
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $body,
+        CURLOPT_TIMEOUT        => GEMINI_TIMEOUT,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_HTTPHEADER     => array('Content-Type: application/json', 'x-goog-api-key: ' . GEMINI_API_KEY),
+    ));
+
+    // same startup, execute, exit as the loader's call
+    $t0  = microtime(true);
+    $raw = curl_exec($ch);
+    $meta['ms'] = (int) round((microtime(true) - $t0) * 1000);
+    if ($raw === false) { $meta['error'] = 'cURL: ' . curl_error($ch); curl_close($ch); prjAiLog('gemini ' . $meta['error']); return null; }
+    $meta['status'] = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    // parse geminis response
+    $resp = json_decode($raw, true);
+    if ($meta['status'] < 200 || $meta['status'] >= 300) {
+        $meta['error'] = 'Gemini HTTP ' . $meta['status'] . ': ' . ($resp['error']['message'] ?? '');
+        prjAiLog($meta['error']);
+        return null;
+    }
+
+    // return token usage data, then dig the answer text out of the response
+    $meta['tokens'] = (int) ($resp['usageMetadata']['totalTokenCount'] ?? 0);
+    $fin = (string) ($resp['candidates'][0]['finishReason'] ?? '');
+    if ($fin !== '' && $fin !== 'STOP') { prjAiLog('gemini finishReason=' . $fin . ' (answer truncated - raise maxOutputTokens?)'); }
+    $text = $resp['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+    // the answer is JSON, we then parse it
+    $data = json_decode($text, true);
+    if (!is_array($data) && preg_match('/\{.*\}/s', (string) $text, $m)) { $data = json_decode($m[0], true); }
+    if (!is_array($data)) { $meta['error'] = 'Gemini returned no usable JSON'; prjAiLog($meta['error']); return null; }
+    prjAiLog('gemini ok tokens=' . $meta['tokens'] . ' ms=' . $meta['ms']);
+    return $data;
 }
 
 
-// the generateContent gemini endpoint for the configured model
-function prjAiUrl() {
-    return rtrim(GEMINI_BASE, '/') . '/models/' . rawurlencode(GEMINI_MODEL) .
-           ':generateContent';
-}
-
-
-// one generateContent call turning the digest into the short per-developer
-// write-up, the same shape as the Sellbrite loader's Gemini calls.
+// the weekly summary writer: one prjGeminiJson call over the digest, asking
+// for its answer as JSON the way every loader prompt does.
 // Returns array(ok, text-or-error, model-used)
 function prjAiSummary($digest) {
-    $key = prjApiKey();
-    if ($key === '') {
-        return array(false, 'GEMINI_API_KEY not set in ' .
-                     'ProjectTracking_model.php on this server.', '');
-    }
-    if (!function_exists('curl_init')) {
-        return array(false, 'The PHP curl extension is not available on this ' .
-                     'server, so the API cannot be reached.', '');
+    if (!prjGeminiConfigured()) {
+        return array(false, 'GEMINI_API_KEY not set in ProjectTracking_model.php.', '');
     }
 
-    $system =
+    $sys =
         "You write the weekly IT project status summary for Littleton Coin " .
         "Company's project tracking system. You are given a JSON digest of one " .
         "week's activity: per developer, the hours they logged by project, the " .
         "comments they wrote by type (ComntIT = IT comment, ComntGen = general, " .
         "ComntSC = steering committee, ComntPB = payback, Descrip = description), " .
-        "and the projects completed.\n\n" .
-        "Write a brief summary a manager can skim in a minute:\n" .
-        "- One short section per developer, the developer's profile name as the " .
-        "heading line, then 1-3 plain sentences covering where their time went, " .
-        "notable comment activity, and anything completed.\n" .
-        "- Refer to projects as 'number - description'.\n" .
-        "- Only state what is in the digest. Never invent projects, hours, or " .
+        "and the projects completed.\n" .
+        "RULES:\n" .
+        "1. Write a brief summary a manager can skim in a minute: one short " .
+        "section per developer, the developer's profile name as the heading " .
+        "line, then 1-3 plain sentences covering where their time went, notable " .
+        "comment activity, and anything completed.\n" .
+        "2. Refer to projects as 'number - description'.\n" .
+        "3. Only state what is in the digest. Never invent projects, hours, or " .
         "activity. If a developer has very little activity, one sentence is fine.\n" .
-        "- Close with a one-sentence week overview (total hours, completions).\n" .
-        "- Plain text only - no markdown symbols, no tables.";
+        "4. Close with a one-sentence week overview (total hours, completions).\n" .
+        "5. Plain text inside the summary - no markdown symbols, no tables; " .
+        "separate sections with blank lines.\n" .
+        'Return ONLY JSON {"summary": "the full summary text"}.';
 
-    $body = json_encode(array(
-        'systemInstruction' => array('parts' => array(array('text' => $system))),
-        'contents' => array(array(
-            'role' => 'user',
-            'parts' => array(array('text' =>
-                'Week ' . $digest['from'] . ' through ' . $digest['to'] .
-                ". Digest:\n" . json_encode($digest))),
-        )),
-        // plain text out; the ceiling leaves room for the model's own
-        // deliberation tokens, which count against it on 2.5 flash
-        'generationConfig' => array('temperature' => 0.2,
-                                    'maxOutputTokens' => 8192),
-    ));
+    $user = 'Week ' . $digest['from'] . ' through ' . $digest['to'] .
+            ". Digest:\n" . json_encode($digest);
 
-    // connect gives up in seconds so a box that cannot reach the API falls
-    // back to the plain rollup; the overall timeout follows the agent's
-    $ch = curl_init(prjAiUrl());
-    curl_setopt_array($ch, array(
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $body,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_TIMEOUT => GEMINI_TIMEOUT,
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            'x-goog-api-key: ' . $key,
-        ),
-    ));
-    $raw = curl_exec($ch);
-    $curlErr = curl_error($ch);
-    $httpCode = intval(curl_getinfo($ch, CURLINFO_RESPONSE_CODE));
-    curl_close($ch);
-
-    if ($raw === false) {
-        return array(false, 'Gemini API request failed: ' . $curlErr, '');
+    // a small thinking budget, like the loader's listing-writing calls keep
+    $a = prjGeminiJson($sys, $user, $m, 512);
+    if (!is_array($a) || trim((string) ($a['summary'] ?? '')) === '') {
+        return array(false, ($m['error'] ?? '') !== '' ? $m['error']
+                     : 'The API returned no usable summary.', '');
     }
-    $resp = json_decode($raw, true);
-    if ($httpCode !== 200) {
-        $msg = $resp['error']['message'] ?? ('HTTP ' . $httpCode);
-        return array(false, 'Gemini API error: ' . $msg, '');
-    }
-    if (($resp['promptFeedback']['blockReason'] ?? '') !== '') {
-        return array(false, 'The model declined this request.', '');
-    }
-
-    $text = '';
-    foreach ($resp['candidates'][0]['content']['parts'] ?? array() as $part) {
-        if (isset($part['text'])) { $text .= $part['text']; }
-    }
-    if (trim($text) === '') {
-        return array(false, 'The API returned an empty summary.', '');
-    }
-    return array(true, trim($text), strval($resp['modelVersion'] ?? GEMINI_MODEL));
+    return array(true, trim((string) $a['summary']), GEMINI_MODEL);
 }
 
 

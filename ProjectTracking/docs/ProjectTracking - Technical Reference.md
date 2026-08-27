@@ -117,10 +117,10 @@ by type), and completions — the same ground the hand-written "Project by
 Dev" spreadsheet covered.
 
 - **Generate** posts `action=weeklygenerate`. The model builds a JSON digest
-  from Db2 and sends it to the Gemini API (`gemini-3.7-flash` through the
-  `generateContent` endpoint), configured by the same `GEMINI_*` define
-  block the Sellbrite Bulk Loader's agent carries — at the top of
-  `ProjectTracking_model.php`. The result caches in
+  from Db2 and sends it through `prjGeminiJson()` — a copy of the Sellbrite
+  loader's `geminiJson()` caller (JSON-mode `generateContent`, thinking
+  budget, meta call report, activity-log lines) against `gemini-3.7-flash`.
+  The result caches in
   `/www/seidenphp/ProjectTracking_data/` (created on first write; the web
   profile needs write access there) as
   `projecttracking_weekly_<weekend>.json` plus a `_latest` copy the
@@ -134,10 +134,10 @@ Dev" spreadsheet covered.
 - **The summary only restates the digest.** The prompt forbids inventing
   projects or numbers, and the digest rides along in the cache file so a
   summary can always be checked against its data.
-- **API key:** after deploying, paste the Gemini key into the
-  `GEMINI_API_KEY` define at the top of the SERVER copy of
-  `ProjectTracking_model.php` — the same step the Sellbrite agent takes.
-  The repository copy stays empty; never commit the key.
+- **API key:** the `GEMINI_*` define block at the top of
+  `ProjectTracking_model.php` carries the key, model, base URL and
+  timeout — the same block, written the same way, as
+  `SellbriteBulkLoader_agent.php`. Nothing extra to configure at deploy.
 - **No key / API failure:** the card still works — it falls back to a plain
   deterministic rollup of the same digest and says so in the meta line.
 - **Scheduling:** the button is the v1 workflow (like the monthly PTS
