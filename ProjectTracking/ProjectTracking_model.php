@@ -42,13 +42,28 @@ $GLOBALS['prjStages'] = array(
     'approved'  => 'Approved',
 );
 
-// status buckets for the "Projects by status" donut (open projects only)
+// status labels for the donut and the by-developer column. Statuses come
+// straight from the green screen's Work Status (PRWRKSTS): every distinct
+// value joins this map at read time under its own name, and open projects
+// nobody has statused fall in the one shipped bucket
 $GLOBALS['prjStatuses'] = array(
-    'active'      => 'Active',
-    'waituser'    => 'Waiting on user',
-    'onhold'      => 'On hold',
-    'estnotneed'  => 'Est. not needed',
+    'notset' => 'Not set',
 );
+
+// the developers the monthly Projects-by-developer spreadsheet tracks. The
+// by-developer groups, the programmer filters, the load chart and the Excel
+// download show these profiles (plus Unassigned) and no one else - a project
+// assigned to any other profile stays out of those views. Edit this list
+// when the team changes.
+$GLOBALS['prjDevelopers'] = array(
+    'CMCBETH', 'DCOTE', 'GCHAU', 'JTAYLOR', 'KRAINVILLE', 'TCONNOLLY',
+);
+
+
+// true when the profile is one of the tracked developers above
+function prjTrackedDev($pgmr) {
+    return in_array(strtoupper(trim($pgmr)), $GLOBALS['prjDevelopers'], true);
+}
 
 
 // append one line to the activity log, with the write suppressed so a bad one
@@ -110,6 +125,14 @@ function prjProjects($conn, $includeComplete = 'N') {
         if (intval($row['PJNUM']) <= 0) { continue; }
         $row['STAGE']  = prjStage($row);
         $row['STATUS'] = prjStatus($row);
+
+        // each distinct Work Status value joins the shared map so the donut
+        // and the by-developer column show it under its own name
+        if ($row['STATUS'] !== '' && $row['STATUS'] !== 'notset'
+            && !isset($GLOBALS['prjStatuses'][$row['STATUS']])) {
+            $wrk = trim(strval($row['PJWRKSTS'] ?? ''));
+            $GLOBALS['prjStatuses'][$row['STATUS']] = ucfirst(strtolower($wrk));
+        }
         $out[] = $row;
     }
     return $out;
@@ -305,18 +328,16 @@ function prjStage($row) {
 }
 
 
-// status bucket for the donut. Only open projects get a bucket:
-//   estnotneed - fire projects (type FR) go straight to work, no estimate
-//   onhold     - department priority zeroed out
-//   active     - scheduled completion date on file ("in-play")
-//   waituser   - everything else is waiting on the requestor or committee
+// status for one open project: the green screen's own Work Status
+// (PRWRKSTS, the dropdown on the project edit screen) and nothing else -
+// never derived from priorities or schedules. Blank means nobody has
+// statused the project yet
 function prjStatus($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
     if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
-    if (trim($row['PJTYPE']) === 'FR')    { return 'estnotneed'; }
-    if (intval($row['PJDEPTPR']) <= 0 && trim($row['PJHASEST']) === 'Y') { return 'onhold'; }
-    if (intval($row['PJSCHDATE']) > 0)    { return 'active'; }
-    return 'waituser';
+    $wrk = trim(strval($row['PJWRKSTS'] ?? ''));
+    if ($wrk === '') { return 'notset'; }
+    return 'w' . preg_replace('/[^a-z0-9]/', '', strtolower($wrk));
 }
 
 
@@ -355,8 +376,12 @@ function prjDashboardRollup($projects) {
                 $tiles['unassigned'] += 1;
                 $pgmr = 'Unassigned';
             }
-            if (!isset($load[$pgmr])) { $load[$pgmr] = 0; }
-            $load[$pgmr] += 1;
+            // only the tracked developers (and Unassigned) get a bar on the
+            // load chart, matching the monthly spreadsheet's groups
+            if ($pgmr === 'Unassigned' || prjTrackedDev($pgmr)) {
+                if (!isset($load[$pgmr])) { $load[$pgmr] = 0; }
+                $load[$pgmr] += 1;
+            }
         }
     }
 

@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-26-F - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-27-H - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -204,8 +204,11 @@ function prjStyles() {
 /* two-line headings for the narrow priority/date columns */
 .pt-grid thead th.pt-wrap { white-space: normal; line-height: 1.15; }
 
-/* the LCC framework styles bare th/td site-wide (green headers, black cell
-   borders); these put the tool's own look back with the #stdPage weight */
+/* the LCC framework styles bare table/th/td site-wide (green headers, black
+   cell borders, auto layout); these put the tool's own look back with the
+   #stdPage weight - fixed layout is what keeps every group's columns equal */
+#stdPage table.pt-grid { table-layout: fixed; width: 100%;
+                         border-collapse: separate; border-spacing: 0; }
 #stdPage .pt-grid th, #stdPage .pt-grid td { border: 0; background: transparent; }
 #stdPage .pt-grid thead th { background: #fafbfc;
            border-bottom: 1px solid var(--pt-line); }
@@ -220,6 +223,8 @@ function prjStyles() {
 .pt-st-waituser   { color: var(--pt-orange); }
 .pt-st-onhold     { color: var(--pt-muted); }
 .pt-st-estnotneed { color: var(--pt-green); }
+.pt-st-other      { color: var(--pt-blue-dk); }
+.pt-st-notset     { color: var(--pt-faint); font-weight: 500; }
 .pt-grid a { color: var(--pt-blue); text-decoration: none;
              font-family: var(--pt-mono); font-size: .8rem; font-weight: 600; }
 .pt-grid a:hover { text-decoration: underline; }

@@ -64,6 +64,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    P.PRUPTY AS PJDEPTPR,
                    P.PRPRTY AS PJSCPR,
                    RTRIM(P.PRTYPE) AS PJTYPE,
+                   RTRIM(P.PRWRKSTS) AS PJWRKSTS,
                    P.PRSUBD AS PJSUBDATE,
                    P.PRECOM AS PJSCHDATE,
                    P.PRACOM AS PJCOMPDATE,

@@ -156,6 +156,7 @@ switch ($action) {
                      "load" => $rollup['load'],
                      "stages" => $GLOBALS['prjStages'],
                      "statuses" => $GLOBALS['prjStatuses'],
+                     "developers" => $GLOBALS['prjDevelopers'],
                      "projects" => $out,
                      "weekly" => $weekly,
                      // true when the PTS report reads produced nothing usable
@@ -182,6 +183,7 @@ switch ($action) {
         prjOut(array("ok" => true,
                      "stages" => $GLOBALS['prjStages'],
                      "statuses" => $GLOBALS['prjStatuses'],
+                     "developers" => $GLOBALS['prjDevelopers'],
                      "projects" => $out,
                      "updated" => date('M j, Y')));
 
@@ -219,6 +221,13 @@ switch ($action) {
                        $row['STAGE'] === 'complete' || $row['STAGE'] === 'rejected';
             }));
         }
+
+        // only the tracked developers' groups (and Unassigned) go in the
+        // workbook - the same groups the monthly spreadsheet carries
+        $projects = array_values(array_filter($projects, function ($row) {
+            $pgmr = trim($row['PJPGMR']);
+            return $pgmr === '' || prjTrackedDev($pgmr);
+        }));
 
         $book  = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $book->getActiveSheet();

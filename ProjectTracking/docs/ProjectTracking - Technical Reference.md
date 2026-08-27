@@ -39,8 +39,10 @@ for the planned team/sub-department tagging.
    The file and field names are compile-verified (08/25/26) — the PRTIMEP
    columns are `PT#`, `PTPGMR`, `PTDATE`, `PTTIME` per SYSCOLUMNS.
    Recompile after pulling 08/26/26 or later: the LIST cursor gained
-   `PRSUBD AS PJSUBDATE` for the Overview's Submitted column (the PHP
-   shows the column blank until the recompiled procedure is on the box),
+   `PRSUBD AS PJSUBDATE` for the Overview's Submitted column and
+   `PRWRKSTS AS PJWRKSTS` for the Work Status (until the recompiled
+   procedure is on the box the Submitted column shows blank and every
+   open project's status reads "Not set"),
    and the NOTES cursor now leaves `WEBNOTESP` unqualified — the WebNotes
    index is not in `LSCPRDLIB`, so it resolves through the job's library
    list like the legacy WebNotes screens. Compile from a job whose
@@ -54,25 +56,28 @@ for the planned team/sub-department tagging.
 
 ## The stage/status mapping — the one thing to review
 
-The green screen never carried a single "SC stage" column, so the dashboard
-derives it. The mapping lives in exactly two functions in
+The mapping lives in exactly two functions in
 `ProjectTracking_model.php` — `prjStage()` and `prjStatus()` — and every
 screen, the Excel download and the weekly summary all read from them:
 
-- **Stage** (pipeline): `rejected` (PRRESCOD = REJ) → `complete` (PRACOM
-  set) → `approved` (SC priority set) → `new` (no estimate yet) → `parked`
-  (estimated, dept priority zeroed) → `needsinfo` (estimated, no scheduled
-  date) → `awaiting` (estimated + scheduled, waiting on the committee).
-  `rejected` and `complete` still come back from `prjStage()` for the
-  by-developer page, but they are not pipeline cells — the pipeline card
-  shows the live SC pipeline, where neither can appear.
-- **Status** (donut, open projects only): `Est. not needed` (fire projects,
-  type FR) → `On hold` (dept priority zeroed) → `Active` (scheduled
-  completion date on file — the legacy "in-play" test) → `Waiting on user`.
+- **Stage** (pipeline): the green screen never carried a single "SC stage"
+  column, so the dashboard derives it: `rejected` (PRRESCOD = REJ) →
+  `complete` (PRACOM set) → `approved` (SC priority set) → `new` (no
+  estimate yet) → `parked` (estimated, dept priority zeroed) → `needsinfo`
+  (estimated, no scheduled date) → `awaiting` (estimated + scheduled,
+  waiting on the committee). `rejected` and `complete` still come back from
+  `prjStage()` for the by-developer page, but they are not pipeline cells —
+  the pipeline card shows the live SC pipeline, where neither can appear.
+- **Status** (donut and the by-developer column, open projects only): the
+  green screen's own **Work Status** (`PRWRKSTS`, the dropdown on the
+  project edit screen), read as-is — never derived from priorities or
+  schedules, so it moves the moment someone changes it on the edit screen.
+  Each distinct value shows under its own name; an open project whose Work
+  Status is blank shows as `Not set`.
 
-These are best-effort readings of how the legacy code used the fields. If
-the steering committee draws a bucket differently, change those two
-functions — nothing else needs touching.
+The stage rules are a best-effort reading of how the legacy code used the
+fields. If the steering committee draws a stage differently, change
+`prjStage()` — nothing else needs touching.
 
 ## How "open projects" is counted — matching the monthly spreadsheet
 
@@ -99,6 +104,14 @@ closed out. Stale records:
 - stay off the by-developer page and the Excel download entirely — the
   screens show the working list, like the monthly spreadsheet. The ajax
   endpoint still honors `complete=Y` / `stale=Y` for ad-hoc pulls.
+
+The developer groups themselves are pinned to the team the monthly
+spreadsheet tracks: `$GLOBALS['prjDevelopers']` at the top of
+`ProjectTracking_model.php` (CMCBETH, DCOTE, GCHAU, JTAYLOR, KRAINVILLE,
+TCONNOLLY). The by-developer page, the programmer filters, the load chart
+and the workbook show those profiles plus Unassigned and no one else — a
+row assigned to any other profile stays out of those views. Edit that one
+list when the team changes.
 
 Two caveats. `PRWKLDP` is rebuilt by the Reports screen's *Submit SC
 Reports* button, so the workload slice is only as fresh as the last refresh

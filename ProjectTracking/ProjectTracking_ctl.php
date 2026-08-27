@@ -236,8 +236,15 @@ function renderLoad(load) {
 // status donut: stroke-drawn segments with small gaps, total in the center,
 // legend alongside. Gray is deliberate for On hold - it reads as inactive
 function renderDonut(status, labels) {
-    var colors = { active: '#2a78d6', waituser: '#eb6834',
-                   onhold: '#898781', estnotneed: '#008300' };
+    // statuses are the green screen's own Work Status values - each gets a
+    // palette color as it appears; unstatused projects stay light gray
+    var colors = { notset: '#cbd2dc' };
+    var palette = ['#2a78d6', '#eb6834', '#12b76a', '#7a5af8', '#b07b0e',
+                   '#0ba5ec', '#d03b3b', '#667085'];
+    var pi = 0;
+    $.each(labels, function (key) {
+        if (!colors[key]) { colors[key] = palette[pi % palette.length]; pi += 1; }
+    });
     var total = 0;
     $.each(status, function (k, c) { total += c; });
 
@@ -335,12 +342,18 @@ function fillFilters(resp) {
     var curPgmr = $('#selPgmr').val() || '';
     var curStage = $('#selStage').val() || '';
 
-    var pgmrs = {};
+    // only the tracked developers (and Unassigned) get filter entries - the
+    // same names the monthly spreadsheet groups under
+    var have = {};
     $.each(resp.projects, function (i, p) {
-        pgmrs[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
+        have[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
     });
+    var names = $.grep((resp.developers || []).slice().sort(), function (n) {
+        return have[n] === true;
+    });
+    if (have['Unassigned']) { names.push('Unassigned'); }
     var opts = '<option value="">All assignees</option>';
-    $.each(Object.keys(pgmrs).sort(), function (i, n) {
+    $.each(names, function (i, n) {
         opts += '<option value="' + attr(n) + '">' + esc(n) + '</option>';
     });
     $('#selPgmr').html(opts).val(curPgmr);

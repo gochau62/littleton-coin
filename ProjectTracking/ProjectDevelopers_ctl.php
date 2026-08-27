@@ -128,11 +128,14 @@ function loadProjectDevelopers() {
 
 
 // the page shows the working list: open projects on the SC pipeline (the
-// PTS report extracts). Older open records on none of those reports stay
-// off the page, same as the monthly spreadsheet
+// PTS report extracts), grouped under the tracked developers the monthly
+// spreadsheet follows. Older open records off those reports, and rows
+// assigned to any other profile, stay off the page
 function visibleRows() {
+    var devs = asgData.developers || [];
     return $.grep(asgData.projects, function (p) {
-        return p.pipe !== 0;
+        if (p.pipe === 0) { return false; }
+        return p.pgmr === '' || $.inArray(p.pgmr, devs) !== -1;
     });
 }
 
@@ -164,17 +167,26 @@ function stageChip(stage) {
 }
 
 
-// per-row status dot, blank for completed/rejected rows which have none.
-// The cell shows a short form so the column never clips; the full wording
-// from the shared status map rides on the hover title
-var stShort = { active: 'Active', waituser: 'Waiting',
-                onhold: 'On hold', estnotneed: 'No estimate' };
+// per-row status dot: the project's own Work Status from the green
+// screen, blank for completed/rejected rows. The dot color comes from
+// what the wording says; unstatused projects show a quiet "Not set"
+function stClass(status, label) {
+    if (status === 'notset') { return 'pt-st-notset'; }
+    var l = label.toLowerCase();
+    if (l.indexOf('hold') >= 0) { return 'pt-st-onhold'; }
+    if (l.indexOf('wait') >= 0) { return 'pt-st-waituser'; }
+    if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
+        l.indexOf('prog') >= 0) { return 'pt-st-active'; }
+    if (l.indexOf('test') >= 0 || l.indexOf('comp') >= 0 ||
+        l.indexOf('done') >= 0 || l.indexOf('impl') >= 0) { return 'pt-st-estnotneed'; }
+    return 'pt-st-other';
+}
 
 function statusChip(status) {
     if (!status) { return ''; }
     var full = (asgData.statuses && asgData.statuses[status]) || status;
-    return '<span class="pt-st pt-st-' + esc(status) + '" title="' + attr(full) + '">' +
-           esc(stShort[status] || full) + '</span>';
+    return '<span class="pt-st ' + stClass(status, full) + '" title="' + attr(full) + '">' +
+           esc(full) + '</span>';
 }
 
 
@@ -189,7 +201,7 @@ function groupTable(rows) {
         '<colgroup><col style="width:64px"><col style="width:13%">' +
         '<col style="width:12.5%"><col style="width:48px"><col style="width:58px">' +
         '<col>' +
-        '<col style="width:64px"><col style="width:52px"><col style="width:84px">' +
+        '<col style="width:64px"><col style="width:56px"><col style="width:92px">' +
         '</colgroup><thead><tr>' +
         '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Status</th><th>Dept</th>' +
         '<th class="pt-num pt-wrap" title="Department priority / SC priority">Prty D/S</th>' +
