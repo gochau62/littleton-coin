@@ -156,20 +156,21 @@ function renderTiles(t, pipenote) {
     $('#tileUnassigned').text(t.unassigned);
 
     // open counts the SC pipeline (the same universe the monthly PTS report
-    // extracts cover); the note keeps the old never-closed records honest
+    // extracts cover); the older never-closed records are explained on hover
+    // rather than on the page, and the note only appears when the report
+    // reads failed and the count fell back to everything
     var note = $('#tileOpenNote');
     if (pipenote) {
         note.text('PTS reports unavailable - counting all open records')
             .attr('title', 'None of the PTS report procedures could be read, ' +
                            'so every open record is counted.');
-    } else if (t.stale > 0) {
-        note.text('+ ' + t.stale + ' stale not counted')
-            .attr('title', 'Open in the project file but on none of the PTS ' +
-                           'report extracts (SC workload, submitted, SC review, ' +
-                           'Formula Friday). Listed on the Projects by developer ' +
-                           'page under "Include stale".');
     } else {
         note.text('');
+        if (t.stale > 0) {
+            $('#statOpen').attr('title', 'Projects the PTS report extracts ' +
+                'track. ' + t.stale + ' older open records sit on none of ' +
+                'those reports and are not counted.');
+        }
     }
 }
 
@@ -354,10 +355,15 @@ function fillFilters(resp) {
 }
 
 
+// compact chip labels so every stage reads whole beside the sidebar; the
+// full wording rides on the hover title
+var sgShort = { needsinfo: 'Needs info', awaiting: 'Awaiting', 'new': 'New' };
+
 function stageChip(stage) {
-    var label = (dashData.stages && dashData.stages[stage]) ||
-                stage.charAt(0).toUpperCase() + stage.slice(1);
-    return '<span class="pt-chip pt-chip-' + esc(stage) + '">' + esc(label) + '</span>';
+    var full = (dashData.stages && dashData.stages[stage]) ||
+               stage.charAt(0).toUpperCase() + stage.slice(1);
+    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(full) + '">' +
+           esc(sgShort[stage] || full) + '</span>';
 }
 
 
@@ -392,6 +398,7 @@ function renderTable() {
             // YYYYMMDD sorts chronologically, no-date rows first
             x = a.schedraw; y = b.schedraw;
         }
+        if (sortKey === 'sub') { x = a.subraw; y = b.subraw; }
         if (typeof x === 'string') { x = x.toLowerCase(); y = String(y).toLowerCase(); }
         if (x < y) { return -sortDir; }
         if (x > y) { return sortDir; }
@@ -405,6 +412,7 @@ function renderTable() {
         html += '<tr>' +
             '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
+            '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
             '<td class="pt-num">' + p.deptpr + '</td>' +
@@ -414,8 +422,7 @@ function renderTable() {
             '</tr>';
     });
     $('#gridBody').html(html ||
-        '<tr><td colspan="8" class="pt-empty">No projects match.</td></tr>');
-    $('#lblCount').text(rows.length + ' project' + (rows.length === 1 ? '' : 's'));
+        '<tr><td colspan="9" class="pt-empty">No projects match.</td></tr>');
 }
 </script>
 

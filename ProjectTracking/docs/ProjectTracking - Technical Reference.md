@@ -38,6 +38,9 @@ for the planned team/sub-department tagging.
    `RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC) SRCMBR(PRJTRK001S)`.
    The file and field names are compile-verified (08/25/26) — the PRTIMEP
    columns are `PT#`, `PTPGMR`, `PTDATE`, `PTTIME` per SYSCOLUMNS.
+   Recompile after pulling 08/26/26 or later: the LIST cursor gained
+   `PRSUBD AS PJSUBDATE` for the Overview's Submitted column (the PHP
+   shows the column blank until the recompiled procedure is on the box).
 3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
    the developers group (level 10 is only the minimum to use LCC Online).
 4. The Excel download uses the vendored PhpSpreadsheet at
@@ -85,10 +88,11 @@ the project numbers; `prjMarkPipeline()` stamps each project row `PIPE` 1/0.
 An open project on none of the four reports is **stale** — old work nobody
 closed out. Stale records:
 
-- are excluded from every dashboard number and chart (the Open stat shows
-  "+ N stale not counted"),
-- are hidden on the by-developer page and the Excel download until the
-  **Include stale** box is checked (`stale=Y` on the download URL).
+- are excluded from every dashboard number and chart (hovering the Open
+  stat says how many were left out),
+- stay off the by-developer page and the Excel download entirely — the
+  screens show the working list, like the monthly spreadsheet. The ajax
+  endpoint still honors `complete=Y` / `stale=Y` for ad-hoc pulls.
 
 Two caveats. `PRWKLDP` is rebuilt by the Reports screen's *Submit SC
 Reports* button, so the workload slice is only as fresh as the last refresh

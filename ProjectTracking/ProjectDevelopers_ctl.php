@@ -83,18 +83,9 @@ $(document).ready(function () {
         searchTimer = setTimeout(renderGroups, 250);
     });
     $('#selPgmr').on('change', renderGroups);
-    $('#chkComplete').on('change', loadProjectDevelopers);
-    // the rows already carry their pipe flag, so toggling stale re-renders
-    // without another fetch; the developer filter refills because a hidden
-    // developer should not linger in the dropdown
-    $('#chkStale').on('change', function () {
-        if (asgData) { fillDevFilter(); renderGroups(); }
-    });
     $('#btnDownload').on('click', function () {
         // a plain navigation so the browser handles the workbook download
-        window.location = 'ProjectTracking_ajax.php?action=download&complete=' +
-            ($('#chkComplete').is(':checked') ? 'Y' : 'N') +
-            '&stale=' + ($('#chkStale').is(':checked') ? 'Y' : 'N');
+        window.location = 'ProjectTracking_ajax.php?action=download';
     });
 });
 
@@ -113,13 +104,12 @@ function attr(s) {
 
 
 // each fetch takes a sequence number so a slow earlier response can never
-// overwrite a newer one when the checkbox is toggled quickly
+// overwrite a newer one when refresh is clicked twice quickly
 var loadSeq = 0;
 
 function loadProjectDevelopers() {
     var seq = ++loadSeq;
-    var complete = $('#chkComplete').is(':checked') ? 'Y' : 'N';
-    $.post('ProjectTracking_ajax.php', { action: 'assignments', complete: complete },
+    $.post('ProjectTracking_ajax.php', { action: 'assignments' },
         function (resp) {
             if (seq !== loadSeq) { return; }
             if (!resp || !resp.ok) {
@@ -137,15 +127,12 @@ function loadProjectDevelopers() {
 }
 
 
-// the rows currently visible under the stale rule: pipeline rows always,
-// stale open rows only when the checkbox asks for them. Completed/rejected
-// rows are governed by their own checkbox (the fetch), not this one
+// the page shows the working list: open projects on the SC pipeline (the
+// PTS report extracts). Older open records on none of those reports stay
+// off the page, same as the monthly spreadsheet
 function visibleRows() {
-    var showStale = $('#chkStale').is(':checked');
     return $.grep(asgData.projects, function (p) {
-        if (!showStale && p.pipe === 0 &&
-            p.stage !== 'complete' && p.stage !== 'rejected') { return false; }
-        return true;
+        return p.pipe !== 0;
     });
 }
 
@@ -195,24 +182,20 @@ function groupTable(rows) {
     // fixed column widths so every developer's table lines up with the next,
     // and every column reads whole in the space beside the sidebar - nothing
     // scrolls and nothing grows. The two priorities share one "Prty D/S"
-    // cell, the estimate range shares one "Est" cell, and the completion
-    // date column only appears when completed work is being shown (it is
-    // blank on every open project). The description takes whatever is left
-    var withComp = $('#chkComplete').is(':checked');
+    // cell, the estimate range shares one "Est" cell, and the description
+    // takes whatever is left
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
         '<table class="pt-grid">' +
         '<colgroup><col style="width:64px"><col style="width:13%">' +
         '<col style="width:12.5%"><col style="width:48px"><col style="width:58px">' +
         '<col>' +
         '<col style="width:64px"><col style="width:52px"><col style="width:84px">' +
-        (withComp ? '<col style="width:84px">' : '') +
         '</colgroup><thead><tr>' +
         '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Status</th><th>Dept</th>' +
         '<th class="pt-num pt-wrap" title="Department priority / SC priority">Prty D/S</th>' +
         '<th>Description</th>' +
         '<th class="pt-num" title="Estimate, low to high hours">Est</th>' +
         '<th class="pt-num">Hours</th><th class="pt-wrap">Sched comp</th>' +
-        (withComp ? '<th class="pt-wrap">Comp date</th>' : '') +
         '</tr></thead><tbody>';
     $.each(rows, function (i, p) {
         var est = (p.low || p.hi) ? (p.low + '–' + p.hi) : '';
@@ -228,7 +211,6 @@ function groupTable(rows) {
                 ' hours">' + est + '</td>' +
             '<td class="pt-num">' + p.hours + '</td>' +
             '<td>' + esc(p.sched) + '</td>' +
-            (withComp ? '<td>' + esc(p.comp) + '</td>' : '') +
             '</tr>';
     });
     return html + '</tbody></table></div></div>';
@@ -272,8 +254,6 @@ function renderGroups() {
 
     $('#groupList').html(html ||
         '<div class="pt-card pt-empty">No projects match.</div>');
-    $('#lblCount').text(rows.length + ' project' + (rows.length === 1 ? '' : 's') +
-                        ' / ' + names.length + ' group' + (names.length === 1 ? '' : 's'));
 }
 </script>
 

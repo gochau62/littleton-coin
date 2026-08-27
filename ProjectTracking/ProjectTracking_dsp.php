@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-26-E - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-26-F - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -317,7 +317,7 @@ function dspProjectTracking() {
 
     <div class="pt-card">
         <div class="pt-stats">
-            <div class="pt-stat">
+            <div class="pt-stat" id="statOpen">
                 <div class="pt-lbl">Open projects</div>
                 <div class="pt-val" id="tileOpen">&ndash;</div>
                 <div class="pt-statnote" id="tileOpenNote"></div>
@@ -373,25 +373,26 @@ function dspProjectTracking() {
             <input type="text" id="txtSearch" placeholder="Search project # or description">
             <select id="selPgmr"><option value="">All assignees</option></select>
             <select id="selStage"><option value="">All stages</option></select>
-            <span class="pt-count" id="lblCount"></span>
         </div>
         <div class="pt-tablewrap">
             <table class="pt-grid" id="tblProjects">
                 <!-- numbers and dates get fixed pixel columns so they never
                      ellipsize; the text columns absorb any squeeze -->
-                <colgroup><col style="width:76px"><col style="width:34%">
-                <col style="width:13%"><col style="width:16%">
-                <col style="width:9%"><col style="width:8%">
-                <col style="width:8%"><col style="width:96px"></colgroup>
+                <colgroup><col style="width:76px"><col style="width:22%">
+                <col style="width:88px"><col style="width:11%">
+                <col style="width:11%"><col style="width:6%">
+                <col style="width:6%"><col style="width:6%">
+                <col style="width:88px"></colgroup>
                 <thead><tr>
                     <th data-k="num" class="pt-num">Project</th>
                     <th data-k="desc">Name</th>
+                    <th data-k="sub" class="pt-wrap">Submitted</th>
                     <th data-k="pgmr">Assigned</th>
                     <th data-k="stage">SC stage</th>
-                    <th data-k="deptpr" class="pt-num">Dept prty</th>
-                    <th data-k="scpr" class="pt-num">SC prty</th>
+                    <th data-k="deptpr" class="pt-num pt-wrap">Dept prty</th>
+                    <th data-k="scpr" class="pt-num pt-wrap">SC prty</th>
                     <th data-k="hours" class="pt-num">Hours</th>
-                    <th data-k="sched">Sched comp</th>
+                    <th data-k="sched" class="pt-wrap">Sched comp</th>
                 </tr></thead>
                 <tbody id="gridBody"></tbody>
             </table>

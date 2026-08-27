@@ -80,6 +80,10 @@ function prjRowOut($row) {
         'low'    => floatval($row['PJESTLOW']),
         'hi'     => floatval($row['PJESTHI']),
         'hours'  => floatval($row['PJHOURS']),
+        // submitted (created) date; ?? 0 keeps the page alive until the
+        // recompiled PRJTRK001S that returns PJSUBDATE is on the box
+        'sub'    => prjFmtDate($row['PJSUBDATE'] ?? 0),
+        'subraw' => intval($row['PJSUBDATE'] ?? 0),
         'sched'  => prjFmtDate($row['PJSCHDATE']),
         // the raw YYYYMMDD rides along so the table can sort the formatted
         // date chronologically instead of month-first
