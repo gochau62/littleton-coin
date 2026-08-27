@@ -40,7 +40,13 @@ for the planned team/sub-department tagging.
    columns are `PT#`, `PTPGMR`, `PTDATE`, `PTTIME` per SYSCOLUMNS.
    Recompile after pulling 08/26/26 or later: the LIST cursor gained
    `PRSUBD AS PJSUBDATE` for the Overview's Submitted column (the PHP
-   shows the column blank until the recompiled procedure is on the box).
+   shows the column blank until the recompiled procedure is on the box),
+   and the NOTES cursor now leaves `WEBNOTESP` unqualified — the WebNotes
+   index is not in `LSCPRDLIB`, so it resolves through the job's library
+   list like the legacy WebNotes screens. Compile from a job whose
+   library list carries the WebNotes library; if RUNSQLSTM cannot find
+   it, `SELECT SYSTEM_TABLE_SCHEMA FROM QSYS2.SYSTABLES WHERE
+   SYSTEM_TABLE_NAME = 'WEBNOTESP'` names the library to qualify.
 3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
    the developers group (level 10 is only the minimum to use LCC Online).
 4. The Excel download uses the vendored PhpSpreadsheet at

@@ -111,13 +111,16 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
 
         /* WebNotes comment index rows for project comments in a date
            range - the comment text itself lives in IFS files, so only
-           the who/when/what-kind columns come back. */
+           the who/when/what-kind columns come back. WEBNOTESP does NOT
+           live in LSCPRDLIB - it stays unqualified so it resolves
+           through the job's library list, the same way the legacy
+           WebNotes screens reach it. */
         DECLARE C3 CURSOR WITH RETURN FOR
             SELECT RTRIM(W.WNIDVAL) AS NTPROJ,
                    RTRIM(W.WNUSER) AS NTUSER,
                    W.WNDATE AS NTDATE,
                    RTRIM(W.WNTYPE) AS NTTYPE
-              FROM LSCPRDLIB/WEBNOTESP W
+              FROM WEBNOTESP W
              WHERE RTRIM(W.WNPREFIX) = 'PROJ_'
                AND W.WNDATE BETWEEN WKFROM AND WKTO
              ORDER BY W.WNUSER, W.WNIDVAL;
