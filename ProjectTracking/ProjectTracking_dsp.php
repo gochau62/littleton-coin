@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-26-C - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-26-D - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -179,10 +179,15 @@ function prjStyles() {
    (a min-width, or an auto table of nowrap cells) makes the whole page too
    wide to sit beside it, dropping the content below the menu. Long values
    ellipsize inside their columns instead of forcing the page wider */
-.pt-tablewrap { overflow: auto; max-height: 30rem;
+.pt-tablewrap { overflow: auto; max-height: 30rem; max-width: 100%;
+                contain: inline-size;
                 border: 1px solid var(--pt-line); border-radius: 8px; }
 .pt-grid { width: 100%; table-layout: fixed; border-collapse: separate;
            border-spacing: 0; font-size: .84rem; }
+/* the by-developer tables keep readable columns and scroll sideways inside
+   their card when the page gets less room - the Requisitions pattern; the
+   wrapper's containment keeps that minimum from widening the page itself */
+.pt-devgrid { min-width: 880px; }
 .pt-grid thead th { position: sticky; top: 0; z-index: 5; background: #fafbfc;
            color: var(--pt-muted); font-size: .7rem; font-weight: 600;
            letter-spacing: .05em; text-transform: uppercase; text-align: left;
@@ -199,6 +204,25 @@ function prjStyles() {
 .pt-grid tbody td.pt-num { text-align: right;
            font-variant-numeric: tabular-nums; }
 .pt-grid tbody tr:hover td { background: #f8fafc; }
+/* two-line headings for the narrow priority/date columns */
+.pt-grid thead th.pt-wrap { white-space: normal; line-height: 1.15; }
+
+/* the LCC framework styles bare th/td site-wide (green headers, black cell
+   borders); these put the tool's own look back with the #stdPage weight */
+#stdPage .pt-grid th, #stdPage .pt-grid td { border: 0; background: transparent; }
+#stdPage .pt-grid thead th { background: #fafbfc;
+           border-bottom: 1px solid var(--pt-line); }
+#stdPage .pt-grid tbody td { border-bottom: 1px solid var(--pt-line-soft); }
+#stdPage .pt-grid tbody tr:last-child td { border-bottom: 0; }
+#stdPage .pt-grid tbody tr:hover td { background: #f8fafc; }
+
+/* per-row status, colored to match the dashboard donut */
+.pt-st { font-size: .72rem; font-weight: 600; white-space: nowrap; }
+.pt-st::before { content: "\25CF\00a0"; font-size: .6rem; }
+.pt-st-active     { color: var(--pt-blue); }
+.pt-st-waituser   { color: var(--pt-orange); }
+.pt-st-onhold     { color: var(--pt-muted); }
+.pt-st-estnotneed { color: var(--pt-green); }
 .pt-grid a { color: var(--pt-blue); text-decoration: none;
              font-family: var(--pt-mono); font-size: .8rem; font-weight: 600; }
 .pt-grid a:hover { text-decoration: underline; }

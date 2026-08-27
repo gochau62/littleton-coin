@@ -177,6 +177,7 @@ switch ($action) {
         prjActLog($user, 'ASSIGNMENTS', 'complete=' . $includeComplete);
         prjOut(array("ok" => true,
                      "stages" => $GLOBALS['prjStages'],
+                     "statuses" => $GLOBALS['prjStatuses'],
                      "projects" => $out,
                      "updated" => date('M j, Y')));
 
@@ -219,12 +220,12 @@ switch ($action) {
         $sheet = $book->getActiveSheet();
         $sheet->setTitle('Projects by developer');
 
-        $heads = array('Pjt#', 'SC Stage', 'Dept', 'Dept Prty', 'SC Prty',
-                       'Description', 'Low Est', 'Hi Est', 'Hours',
+        $heads = array('Pjt#', 'SC Stage', 'Status', 'Dept', 'Dept Prty',
+                       'SC Prty', 'Description', 'Low Est', 'Hi Est', 'Hours',
                        'Sched Comp', 'Comp Date');
-        $widths = array('A' => 10, 'B' => 16, 'C' => 8, 'D' => 10, 'E' => 9,
-                        'F' => 52, 'G' => 9, 'H' => 9, 'I' => 9, 'J' => 12,
-                        'K' => 12);
+        $widths = array('A' => 10, 'B' => 16, 'C' => 15, 'D' => 8, 'E' => 10,
+                        'F' => 9, 'G' => 52, 'H' => 9, 'I' => 9, 'J' => 9,
+                        'K' => 12, 'L' => 12);
         foreach ($widths as $col => $w) {
             $sheet->getColumnDimension($col)->setWidth($w);
         }
@@ -234,18 +235,19 @@ switch ($action) {
             $count = count($rows);
             $sheet->setCellValue('A' . $r,
                 $pgmr . ' - ' . $count . ' project' . ($count === 1 ? '' : 's'));
-            $sheet->mergeCells('A' . $r . ':K' . $r);
+            $sheet->mergeCells('A' . $r . ':L' . $r);
             $sheet->getStyle('A' . $r)->getFont()->setBold(true)->setSize(12);
             $r += 1;
 
             $sheet->fromArray($heads, NULL, 'A' . $r);
-            $sheet->getStyle('A' . $r . ':K' . $r)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $r . ':L' . $r)->getFont()->setBold(true);
             $r += 1;
 
             foreach ($rows as $row) {
                 $sheet->fromArray(array(
                     intval($row['PJNUM']),
                     $GLOBALS['prjStages'][$row['STAGE']] ?? ucfirst($row['STAGE']),
+                    $GLOBALS['prjStatuses'][$row['STATUS']] ?? '',
                     trim($row['PJDEPT']),
                     intval($row['PJDEPTPR']),
                     intval($row['PJSCPR']),

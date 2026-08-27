@@ -170,26 +170,45 @@ function stageChip(stage) {
 }
 
 
+// per-row status dot, blank for completed/rejected rows which have none.
+// The cell shows a short form so the column never clips; the full wording
+// from the shared status map rides on the hover title
+var stShort = { active: 'Active', waituser: 'Waiting',
+                onhold: 'On hold', estnotneed: 'No estimate' };
+
+function statusChip(status) {
+    if (!status) { return ''; }
+    var full = (asgData.statuses && asgData.statuses[status]) || status;
+    return '<span class="pt-st pt-st-' + esc(status) + '" title="' + attr(full) + '">' +
+           esc(stShort[status] || full) + '</span>';
+}
+
+
 function groupTable(rows) {
     // fixed column widths so every developer's table lines up with the next.
-    // Project numbers and dates get pixel columns so they never ellipsize;
-    // the text columns absorb any squeeze in a narrow window
+    // The table keeps a readable minimum (.pt-devgrid) and scrolls sideways
+    // inside its card when the page gets less room, instead of crushing the
+    // columns; numbers and dates hold pixel columns so they never ellipsize,
+    // and the description takes whatever is left
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
-        '<table class="pt-grid">' +
-        '<colgroup><col style="width:76px"><col style="width:13%">' +
-        '<col style="width:6%"><col style="width:8%"><col style="width:7%">' +
-        '<col style="width:34%"><col style="width:5%"><col style="width:5%">' +
-        '<col style="width:7%"><col style="width:96px"><col style="width:96px">' +
+        '<table class="pt-grid pt-devgrid">' +
+        '<colgroup><col style="width:64px"><col style="width:12%">' +
+        '<col style="width:13%"><col style="width:46px">' +
+        '<col style="width:56px"><col style="width:52px">' +
+        '<col>' +
+        '<col style="width:42px"><col style="width:42px"><col style="width:54px">' +
+        '<col style="width:86px"><col style="width:86px">' +
         '</colgroup><thead><tr>' +
-        '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Dept</th>' +
-        '<th class="pt-num">Dept prty</th><th class="pt-num">SC prty</th>' +
+        '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Status</th><th>Dept</th>' +
+        '<th class="pt-num pt-wrap">Dept prty</th><th class="pt-num pt-wrap">SC prty</th>' +
         '<th>Description</th><th class="pt-num">Low</th><th class="pt-num">Hi</th>' +
-        '<th class="pt-num">Hours</th><th>Sched comp</th><th>Comp date</th>' +
+        '<th class="pt-num">Hours</th><th class="pt-wrap">Sched comp</th><th class="pt-wrap">Comp date</th>' +
         '</tr></thead><tbody>';
     $.each(rows, function (i, p) {
         html += '<tr>' +
             '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
+            '<td>' + statusChip(p.status) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
             '<td class="pt-num">' + p.deptpr + '</td>' +
             '<td class="pt-num">' + p.scpr + '</td>' +
