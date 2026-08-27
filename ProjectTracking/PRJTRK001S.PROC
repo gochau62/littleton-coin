@@ -114,8 +114,10 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
              ORDER BY T.PTPGMR, T.PT#;
 
         /* WebNotes comment index rows for project comments in a date
-           range - the comment text itself lives in IFS files, so only
-           the who/when/what-kind columns come back. The index file's
+           range - the comment text itself lives in IFS files, so the
+           who/when/what-kind columns come back along with the path and
+           time that name each comment's file, letting the PHP read the
+           text the way the legacy project screen does. The index file's
            name and library are site-specific (they live in the web
            tree's WebNotes/webNotesModel.php, not in any source here),
            so the NOTES branch below finds the file by its WN* columns
@@ -154,7 +156,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
 
             /* find the WebNotes index file by its columns: the one
-               file on the box carrying all five WN* columns the read
+               file on the box carrying all seven WN* columns the read
                needs. Prefer a physical file over a logical, and a
                production library over a *DEV* one, when more than one
                qualifies. No rows leaves WKLIB/WKFILE at their ''
@@ -166,10 +168,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                 ON T.SYSTEM_TABLE_SCHEMA = C.SYSTEM_TABLE_SCHEMA
                AND T.SYSTEM_TABLE_NAME = C.SYSTEM_TABLE_NAME
              WHERE C.SYSTEM_COLUMN_NAME IN
-                   ('WNPREFIX', 'WNIDVAL', 'WNUSER', 'WNDATE', 'WNTYPE')
+                   ('WNPREFIX', 'WNIDVAL', 'WNUSER', 'WNDATE', 'WNTIME',
+                    'WNTYPE', 'WNPATH')
              GROUP BY C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME,
                       T.TABLE_TYPE
-            HAVING COUNT(DISTINCT C.SYSTEM_COLUMN_NAME) = 5
+            HAVING COUNT(DISTINCT C.SYSTEM_COLUMN_NAME) = 7
              ORDER BY CASE WHEN T.TABLE_TYPE IN ('P', 'T') THEN 1 ELSE 2 END,
                       CASE WHEN C.SYSTEM_TABLE_SCHEMA LIKE '%DEV%'
                            THEN 2 ELSE 1 END,
@@ -185,7 +188,9 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             SET WKNOTES = 'SELECT RTRIM(W.WNIDVAL) AS NTPROJ, '
                    CONCAT 'RTRIM(W.WNUSER) AS NTUSER, '
                    CONCAT 'W.WNDATE AS NTDATE, '
-                   CONCAT 'RTRIM(W.WNTYPE) AS NTTYPE '
+                   CONCAT 'RTRIM(W.WNTYPE) AS NTTYPE, '
+                   CONCAT 'RTRIM(W.WNPATH) AS NTPATH, '
+                   CONCAT 'W.WNTIME AS NTTIME '
                    CONCAT 'FROM ' CONCAT WKLIB CONCAT '/' CONCAT WKFILE
                    CONCAT ' W '
                    CONCAT 'WHERE RTRIM(W.WNPREFIX) = ''PROJ_'' '
