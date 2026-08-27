@@ -117,11 +117,10 @@ by type), and completions — the same ground the hand-written "Project by
 Dev" spreadsheet covered.
 
 - **Generate** posts `action=weeklygenerate`. The model builds a JSON digest
-  from Db2 and sends it to the Gemini API exactly the way the Sellbrite
-  Bulk Loader does — the key, model, endpoint and timeout are read from
-  the `GEMINI_*` defines in the deployed `SellbriteBulkLoader_agent.php`
-  (`prjAgentDefine`), so whatever model that agent runs, this runs. The
-  shipped default is `gemini-2.5-flash`. The result caches in
+  from Db2 and sends it to the Gemini API (`gemini-3.7-flash` through the
+  `generateContent` endpoint), configured by the same `GEMINI_*` define
+  block the Sellbrite Bulk Loader's agent carries — at the top of
+  `ProjectTracking_model.php`. The result caches in
   `/www/seidenphp/ProjectTracking_data/` (created on first write; the web
   profile needs write access there) as
   `projecttracking_weekly_<weekend>.json` plus a `_latest` copy the
@@ -135,12 +134,10 @@ Dev" spreadsheet covered.
 - **The summary only restates the digest.** The prompt forbids inventing
   projects or numbers, and the digest rides along in the cache file so a
   summary can always be checked against its data.
-- **API key:** none to set up — the summary reads the `GEMINI_API_KEY`
-  define already configured in `SellbriteBulkLoader_agent.php` in the same
-  docroot, so one key serves both tools. The `GEMINI_API_KEY` environment
-  variable overrides it, and a one-line key file at
-  `/www/seidenphp/gemini_api.key` (`PRJ_KEY_FILE`) is the fallback. Never
-  put the key in Project Tracking source.
+- **API key:** after deploying, paste the Gemini key into the
+  `GEMINI_API_KEY` define at the top of the SERVER copy of
+  `ProjectTracking_model.php` — the same step the Sellbrite agent takes.
+  The repository copy stays empty; never commit the key.
 - **No key / API failure:** the card still works — it falls back to a plain
   deterministic rollup of the same digest and says so in the meta line.
 - **Scheduling:** the button is the v1 workflow (like the monthly PTS

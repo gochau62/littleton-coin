@@ -18,20 +18,21 @@
 
 $GLOBALS['prjErr'] = '';
 
-// the weekly summary speaks Gemini exactly the way the Sellbrite Bulk
-// Loader's agent does - and rather than repeating its settings here, the
-// key, model, endpoint and timeout are read from the agent file deployed
-// in this same docroot (prjAgentDefine below), so if the agent's model
-// ever changes, this tool follows it in the same moment. The defaults
-// mirror the agent's shipped values (gemini-2.5-flash)
+// gemini 3.7 flash model writes the weekly summary, configured the same
+// way the Sellbrite Bulk Loader's agent is. Fill GEMINI_API_KEY on the
+// SERVER copy only - the repository copy stays empty, keys never live in
+// source control
+if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
+if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-3.7-flash'); }
+if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
+if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
 // the activity log lives in the LCCOnline_logs folder beside the PHP, like
-// every other tool's log. The weekly summary cache and the API key do NOT -
-// LCCOnline_logs is web-served and the Clario purge job empties it monthly,
-// so anything secret or durable goes in a folder outside the htdocs tree
+// every other tool's log. The weekly summary cache does NOT - LCCOnline_logs
+// is web-served and the Clario purge job empties it monthly, so anything
+// durable goes in a folder outside the htdocs tree
 define('PRJ_ACT_LOG', __DIR__ . '/LCCOnline_logs/projecttracking_activity.log');
 define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
-define('PRJ_KEY_FILE', '/www/seidenphp/gemini_api.key');
 
 // steering committee pipeline stages, in the order the dashboard shows them.
 // 'complete' and 'rejected' also come back from prjStage() but are not pipeline
@@ -514,56 +515,16 @@ function prjFallbackSummary($digest) {
 }
 
 
-// read one define out of the Sellbrite Bulk Loader agent file (text only,
-// never executed) - the single source of truth for how Gemini is called on
-// this box. Handles both quoted and bare-number defines
-function prjAgentDefine($name, $default) {
-    static $src = null;
-    if ($src === null) {
-        $agent = __DIR__ . '/SellbriteBulkLoader_agent.php';
-        $src = is_readable($agent) ? strval(file_get_contents($agent)) : '';
-    }
-    if ($src !== '' &&
-        preg_match("/define\(\s*'" . preg_quote($name, '/') .
-                   "'\s*,\s*(?:'([^']*)'|([0-9]+))\s*\)/", $src, $m)) {
-        $val = trim($m[1] !== '' ? $m[1] : ($m[2] ?? ''));
-        if ($val !== '') { return $val; }
-    }
-    return $default;
-}
-
-
-// leave the override '' to run the same model as the Sellbrite agent; name
-// a model here (e.g. 'gemini-3.7-flash') to move ONLY the weekly summary
-// to it without touching what the Sellbrite loader runs on
-define('PRJ_MODEL_OVERRIDE', '');
-
-function prjAiModel() {
-    if (PRJ_MODEL_OVERRIDE !== '') { return PRJ_MODEL_OVERRIDE; }
-    return prjAgentDefine('GEMINI_MODEL', 'gemini-2.5-flash');
-}
-
-
-function prjAiUrl() {
-    $base = prjAgentDefine('GEMINI_BASE',
-                           'https://generativelanguage.googleapis.com/v1beta');
-    return rtrim($base, '/') . '/models/' . rawurlencode(prjAiModel()) .
-           ':generateContent';
-}
-
-
-// the Gemini key, found where the other tools keep it: the environment
-// first, then the GEMINI_API_KEY the Sellbrite agent carries - one key
-// serves both tools - then a one-line key file OUTSIDE the htdocs tree
+// if no gemini key configured skip, same test the Sellbrite agent makes
 function prjApiKey() {
-    $key = trim(strval(getenv('GEMINI_API_KEY')));
-    if ($key !== '') { return $key; }
-    $key = prjAgentDefine('GEMINI_API_KEY', '');
-    if ($key !== '') { return $key; }
-    if (is_readable(PRJ_KEY_FILE)) {
-        return trim(strval(file_get_contents(PRJ_KEY_FILE)));
-    }
-    return '';
+    return trim(strval(GEMINI_API_KEY));
+}
+
+
+// the generateContent gemini endpoint for the configured model
+function prjAiUrl() {
+    return rtrim(GEMINI_BASE, '/') . '/models/' . rawurlencode(GEMINI_MODEL) .
+           ':generateContent';
 }
 
 
@@ -573,8 +534,8 @@ function prjApiKey() {
 function prjAiSummary($digest) {
     $key = prjApiKey();
     if ($key === '') {
-        return array(false, 'No Gemini API key is configured - see the ' .
-                     'weekly summary section of the technical reference.', '');
+        return array(false, 'GEMINI_API_KEY not set in ' .
+                     'ProjectTracking_model.php on this server.', '');
     }
     if (!function_exists('curl_init')) {
         return array(false, 'The PHP curl extension is not available on this ' .
@@ -620,7 +581,7 @@ function prjAiSummary($digest) {
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $body,
         CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_TIMEOUT => intval(prjAgentDefine('GEMINI_TIMEOUT', '400')),
+        CURLOPT_TIMEOUT => GEMINI_TIMEOUT,
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             'x-goog-api-key: ' . $key,
@@ -650,7 +611,7 @@ function prjAiSummary($digest) {
     if (trim($text) === '') {
         return array(false, 'The API returned an empty summary.', '');
     }
-    return array(true, trim($text), strval($resp['modelVersion'] ?? prjAiModel()));
+    return array(true, trim($text), strval($resp['modelVersion'] ?? GEMINI_MODEL));
 }
 
 
