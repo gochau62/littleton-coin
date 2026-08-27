@@ -533,7 +533,13 @@ function prjAgentDefine($name, $default) {
 }
 
 
+// leave the override '' to run the same model as the Sellbrite agent; name
+// a model here (e.g. 'gemini-3.7-flash') to move ONLY the weekly summary
+// to it without touching what the Sellbrite loader runs on
+define('PRJ_MODEL_OVERRIDE', '');
+
 function prjAiModel() {
+    if (PRJ_MODEL_OVERRIDE !== '') { return PRJ_MODEL_OVERRIDE; }
     return prjAgentDefine('GEMINI_MODEL', 'gemini-2.5-flash');
 }
 
