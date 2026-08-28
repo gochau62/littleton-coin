@@ -293,6 +293,35 @@ function renderDonut(status, labels) {
 }
 
 
+// the writer returns plain text: a profile-name line then sentences per
+// developer, and a closing week overview. Render each block as its own
+// section - the name as a heading, project numbers as links back to the
+// project screen - so the report scans as sections, not a wall of text
+function weeklyHtml(text) {
+    function body(s) {
+        return esc(s).replace(/\n/g, '<br>')
+            .replace(/\b(\d{5,6})\b/g,
+                '<a class="pt-wk-num" href="PROJ_ctl.php?projnum=$1">$1</a>');
+    }
+    var html = '';
+    $.each(String(text).split(/\n\s*\n/), function (i, b) {
+        b = String(b).trim();
+        if (b === '') { return; }
+        var lines = b.split('\n');
+        var first = lines[0].trim().replace(/:$/, '');
+        if (/^week overview/i.test(first)) {
+            html += '<div class="pt-wk-total">' + body(b) + '</div>';
+        } else if (lines.length > 1 && /^[A-Z][A-Z0-9 ._-]{1,14}$/.test(first)) {
+            html += '<div class="pt-wk-dev"><h3>' + esc(first) + '</h3><p>' +
+                    body(lines.slice(1).join('\n').trim()) + '</p></div>';
+        } else {
+            html += '<div class="pt-wk-dev"><p>' + body(b) + '</p></div>';
+        }
+    });
+    return html || esc(text);
+}
+
+
 function renderWeekly(w) {
     if (!w || !w.text) {
         $('#weeklyMeta').text('');
@@ -308,7 +337,7 @@ function renderWeekly(w) {
     // the cache file and the activity log
     $('#weeklyMeta').text('Week ' + slashes(w.from) + ' - ' + slashes(w.to) +
         ' · generated ' + w.generated_at);
-    $('#weeklyText').text(w.text);
+    $('#weeklyText').html(weeklyHtml(w.text));
     $('#weeklyNote').text(w.source === 'fallback' && w.note ? w.note : '');
 }
 

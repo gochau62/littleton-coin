@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-A - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-28-B - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -234,10 +234,23 @@ function prjStyles() {
 .pt-chip-rejected  { background: var(--pt-chip-red);   color: var(--pt-red); }
 .pt-chip-complete  { background: var(--pt-chip-green); color: var(--pt-green); }
 
-/* weekly summary card */
+/* weekly summary card: one section per developer, the profile name as a
+   small heading and a hairline between sections, so the report reads as
+   a professional overview rather than a wall of text */
 .pt-weekly-meta { color: var(--pt-faint); font-size: .76rem; margin: 0 0 .6rem; }
-.pt-weekly-text { white-space: pre-wrap; font-size: .85rem; line-height: 1.55;
+.pt-weekly-text { font-size: .85rem; line-height: 1.55;
                   max-height: 24rem; overflow: auto; color: var(--pt-text); }
+.pt-wk-dev { padding: .55rem 0 .6rem; border-top: 1px solid var(--pt-line-soft); }
+.pt-wk-dev:first-child { border-top: 0; padding-top: .1rem; }
+.pt-wk-dev h3 { margin: 0 0 .15rem; font-size: .78rem; font-weight: 700;
+                letter-spacing: .05em; color: var(--pt-blue-dk); }
+.pt-wk-dev p { margin: 0; }
+.pt-wk-num { color: var(--pt-blue); text-decoration: none; font-weight: 600;
+             font-variant-numeric: tabular-nums; }
+.pt-wk-num:hover { text-decoration: underline; }
+.pt-wk-total { margin-top: .65rem; padding: .55rem .8rem; background: #f8fafc;
+               border: 1px solid var(--pt-line-soft); border-radius: 8px;
+               color: var(--pt-muted); }
 .pt-weekly-note { color: var(--pt-amber); font-size: .78rem; margin-top: .6rem; }
 
 /* per-developer group blocks on the developers page */
