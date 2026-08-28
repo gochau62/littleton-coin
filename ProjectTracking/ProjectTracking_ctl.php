@@ -92,11 +92,32 @@ $(document).ready(function () {
     });
     $('#btnWeekly').on('click', generateWeekly);
 
-    // preset the period picker to the prior week, so Generate with nothing
-    // changed reports on the last finished Mon-Sun week
-    var m = new Date();
-    m.setDate(m.getDate() - ((m.getDay() + 6) % 7) - 7);
-    $('#dtWkDate').val(isoDate(m));
+    // the period calendar: preset to the prior week, so Generate with
+    // nothing changed reports on the last finished Mon-Sun week. Built
+    // through the date constructor so the anchor sits at midnight -
+    // stray time-of-day would break the range highlighting
+    var t = new Date();
+    calAnchor = new Date(t.getFullYear(), t.getMonth(),
+                         t.getDate() - ((t.getDay() + 6) % 7) - 7);
+    calView = { y: calAnchor.getFullYear(), m: calAnchor.getMonth() };
+    calRender();
+
+    $('#btnCalField').on('click', function (e) {
+        e.stopPropagation();
+        $('#ptCal').toggle();
+    });
+    $('#ptCal').on('click', function (e) { e.stopPropagation(); });
+    $(document).on('click', function () { $('#ptCal').hide(); });
+    $('#calPrev').on('click', function () { calNav(-1); });
+    $('#calNext').on('click', function () { calNav(1); });
+    $('#selWkMode').on('change', calRender);
+    $('#calGrid').on('click', '.pt-cal-day', function () {
+        var v = String($(this).data('ymd'));
+        calAnchor = new Date(+v.substr(0, 4), +v.substr(4, 2) - 1, +v.substr(6, 2));
+        calView = { y: calAnchor.getFullYear(), m: calAnchor.getMonth() };
+        calRender();
+        $('#ptCal').hide();
+    });
 });
 
 
@@ -348,48 +369,85 @@ function renderWeekly(w) {
 }
 
 
-// the period picker's date arrives as yyyy-mm-dd text; parse it by parts -
-// new Date(string) would read it as UTC and shift a day in this timezone
-function pickedDate() {
-    var v = $('#dtWkDate').val();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { return null; }
-    var p = v.split('-');
-    return new Date(+p[0], p[1] - 1, +p[2]);
-}
-
+// the period calendar: a month grid that opens under the field. Pick any
+// day and the whole reporting period highlights - its Mon-Sun week in
+// week mode, its calendar month in month mode
+var calView = null;    // the month the grid is showing {y, m}
+var calAnchor = null;  // the day last picked
+var CAL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November',
+                  'December'];
+var CAL_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function ymd(d) {
     return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
 
 
-function isoDate(d) {
-    var mm = String(d.getMonth() + 1), dd = String(d.getDate());
-    if (mm.length < 2) { mm = '0' + mm; }
-    if (dd.length < 2) { dd = '0' + dd; }
-    return d.getFullYear() + '-' + mm + '-' + dd;
+// the reporting period the anchor day resolves to under the current mode;
+// everything built at midnight through the date constructor so the grid's
+// range comparison holds at both ends
+function calPeriod() {
+    var d = calAnchor, from, to;
+    if ($('#selWkMode').val() === 'month') {
+        from = new Date(d.getFullYear(), d.getMonth(), 1);
+        to   = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    } else {
+        from = new Date(d.getFullYear(), d.getMonth(),
+                        d.getDate() - ((d.getDay() + 6) % 7));
+        to = new Date(from.getFullYear(), from.getMonth(), from.getDate() + 6);
+    }
+    return { from: from, to: to };
+}
+
+
+function calFieldLabel(p) {
+    var f = p.from, t = p.to;
+    if ($('#selWkMode').val() === 'month') {
+        return CAL_MONTHS[f.getMonth()] + ' ' + f.getFullYear();
+    }
+    return CAL_SHORT[f.getMonth()] + ' ' + f.getDate() + ' – ' +
+           (f.getMonth() === t.getMonth() ? '' : CAL_SHORT[t.getMonth()] + ' ') +
+           t.getDate() + ', ' + t.getFullYear();
+}
+
+
+function calNav(dir) {
+    var m = calView.m + dir;
+    calView = { y: calView.y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 };
+    calRender();
+}
+
+
+function calRender() {
+    $('#calTitle').text(CAL_MONTHS[calView.m] + ' ' + calView.y);
+    var p = calPeriod();
+    var first = new Date(calView.y, calView.m, 1);
+    var start = new Date(first);
+    start.setDate(1 - first.getDay());   // back to the grid's Sunday
+    var dows = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var html = '';
+    for (var i = 0; i < 7; i++) {
+        html += '<div class="pt-cal-dow' +
+                (i === 0 || i === 6 ? ' pt-cal-we' : '') + '">' + dows[i] + '</div>';
+    }
+    var d = new Date(start);
+    for (var c = 0; c < 42; c++) {
+        html += '<div class="pt-cal-day' +
+                (d.getMonth() === calView.m ? '' : ' pt-cal-out') +
+                (d >= p.from && d <= p.to ? ' pt-cal-sel' : '') +
+                '" data-ymd="' + ymd(d) + '">' + d.getDate() + '</div>';
+        d.setDate(d.getDate() + 1);
+    }
+    $('#calGrid').html(html);
+    $('#calLabel').text(calFieldLabel(p));
 }
 
 
 function generateWeekly() {
-    // resolve the picked date to its Mon-Sun week or its calendar month;
-    // with the picker empty the server falls back to the prior week
-    var post = { action: 'weeklygenerate' };
-    var d = pickedDate();
-    if (d) {
-        var from, to;
-        if ($('#selWkMode').val() === 'month') {
-            from = new Date(d.getFullYear(), d.getMonth(), 1);
-            to   = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-        } else {
-            from = new Date(d);
-            from.setDate(from.getDate() - ((from.getDay() + 6) % 7));
-            to = new Date(from);
-            to.setDate(from.getDate() + 6);
-        }
-        post.from = ymd(from);
-        post.to = ymd(to);
-    }
+    var p = calPeriod();
+    var post = { action: 'weeklygenerate', from: ymd(p.from), to: ymd(p.to) };
     var btn = $('#btnWeekly');
     btn.prop('disabled', true).text('Generating...');
     $.post('ProjectTracking_ajax.php', post, function (resp) {

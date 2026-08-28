@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-D - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-28-E - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -252,15 +252,45 @@ function prjStyles() {
                border: 1px solid var(--pt-line-soft); border-radius: 8px;
                color: var(--pt-muted); }
 .pt-weekly-note { color: var(--pt-amber); font-size: .78rem; margin-top: .6rem; }
-/* the period picker beside Generate: week-of or month-of plus a calendar
-   date, preset to the prior week so an untouched Generate reports on the
-   last finished week */
+/* the period picker beside Generate: week or month mode plus a calendar
+   field that opens a month grid; pick any day and the whole reporting
+   week (or month) highlights. Preset to the prior week so an untouched
+   Generate reports on the last finished week */
 .pt-wkbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
             margin: .85rem 0 0; }
-.pt-wkbar select, .pt-wkbar input[type=date] {
+.pt-wkbar select {
             padding: .42rem .6rem; border: 1px solid var(--pt-field);
             border-radius: 8px; font: inherit; font-size: .84rem;
             background: var(--pt-card); color: var(--pt-text); }
+.pt-cal-wrap { position: relative; }
+.pt-cal-field { display: flex; align-items: center; gap: .5rem;
+            padding: .42rem .6rem; border: 1px solid var(--pt-field);
+            border-radius: 8px; font: inherit; font-size: .84rem;
+            background: var(--pt-card); color: var(--pt-text); cursor: pointer; }
+.pt-cal-field:hover { border-color: var(--pt-blue); }
+.pt-cal-caret { color: var(--pt-faint); font-size: .7rem; }
+.pt-cal { position: absolute; left: 0; top: calc(100% + 6px); z-index: 40;
+          background: var(--pt-card); border: 1px solid var(--pt-line);
+          border-radius: 10px; box-shadow: 0 8px 24px rgba(16, 24, 40, .14);
+          padding: .6rem .65rem .65rem; width: 238px; }
+.pt-cal-head { display: flex; align-items: center; margin: 0 0 .4rem; }
+.pt-cal-title { flex: 1; text-align: center; font-weight: 650; font-size: .84rem; }
+.pt-cal-nav { border: 0; background: transparent; cursor: pointer;
+              font-size: 1rem; color: var(--pt-muted); padding: .1rem .45rem;
+              border-radius: 6px; }
+.pt-cal-nav:hover { background: var(--pt-line-soft); color: var(--pt-text); }
+.pt-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.pt-cal-dow { text-align: center; font-size: .68rem; font-weight: 600;
+              color: var(--pt-muted); padding: .15rem 0 .25rem; }
+.pt-cal-we  { color: #c56a6a; }
+.pt-cal-day { text-align: center; font-size: .78rem; padding: .32rem 0;
+              border-radius: 6px; cursor: pointer;
+              font-variant-numeric: tabular-nums; }
+.pt-cal-day:hover { background: var(--pt-line-soft); }
+.pt-cal-out { color: var(--pt-faint); }
+.pt-cal-sel { background: var(--pt-chip-blue); color: var(--pt-blue-dk);
+              font-weight: 600; }
+.pt-cal-sel:hover { background: var(--pt-chip-blue); }
 
 /* per-developer group blocks on the developers page */
 .pt-group h3 { font-size: .92rem; font-weight: 650; letter-spacing: -.005em;
@@ -380,10 +410,23 @@ function dspProjectTracking() {
         <div class="pt-weekly-note" id="weeklyNote"></div>
         <div class="pt-wkbar">
             <select id="selWkMode">
-                <option value="week">Week of</option>
-                <option value="month">Month of</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
             </select>
-            <input type="date" id="dtWkDate">
+            <div class="pt-cal-wrap">
+                <button type="button" class="pt-cal-field" id="btnCalField">
+                    <span id="calLabel">Select date</span>
+                    <span class="pt-cal-caret">&#9662;</span>
+                </button>
+                <div class="pt-cal" id="ptCal" style="display:none">
+                    <div class="pt-cal-head">
+                        <button type="button" class="pt-cal-nav" id="calPrev">&#8249;</button>
+                        <div class="pt-cal-title" id="calTitle"></div>
+                        <button type="button" class="pt-cal-nav" id="calNext">&#8250;</button>
+                    </div>
+                    <div class="pt-cal-grid" id="calGrid"></div>
+                </div>
+            </div>
             <button type="button" class="pt-btn" id="btnWeekly">Generate</button>
         </div>
     </div>
