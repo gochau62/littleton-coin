@@ -25,8 +25,8 @@ function dspProjectDevelopers() {
 <div class="pt-app">
 
     <?php prjHeader('Projects by Developer',
-                    '<span id="ptUpdated"></span> &nbsp;&middot;&nbsp; ' .
-                    '<a href="#" id="lnkRefresh">refresh</a>',
+                    '<span class="pt-when" id="ptUpdated"></span>' .
+                    '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
                     'assignments'); ?>
 
     <div class="pt-card">

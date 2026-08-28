@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-I - deploy marker, check via view-source -->
+<!-- PT build 2026-08-28-J - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -60,22 +60,29 @@ function prjStyles() {
               text-transform: uppercase; color: var(--pt-muted);
               margin: 0 0 .85rem; }
 
-/* title card: name on the left, switch button on the right */
+/* title card: name and meta line left, switch button right */
 .pt-head { display: flex; align-items: center; gap: 1rem;
-           padding: .85rem 1.15rem; }
-.pt-head h1 { font-size: 1.15rem; font-weight: 650; letter-spacing: -.015em;
-              margin: 0; line-height: 1.2; }
-.pt-head .pt-sub { color: var(--pt-faint); font-size: .76rem;
-                   margin-top: .2rem; }
-.pt-head .pt-sub a { color: var(--pt-blue); text-decoration: none;
-                     font-weight: 600; }
-.pt-head .pt-sub a:hover { text-decoration: underline; }
+           padding: .9rem 1.15rem; }
+.pt-head h1 { font-size: 1.25rem; font-weight: 680; letter-spacing: -.02em;
+              margin: 0; line-height: 1.15; }
+.pt-head .pt-sub { display: flex; align-items: center; gap: .55rem;
+                   margin-top: .35rem; font-size: .75rem;
+                   color: var(--pt-faint); }
+.pt-head .pt-sub .pt-when { display: inline-flex; align-items: center;
+           gap: .3rem; padding: .12rem .45rem; border-radius: 999px;
+           background: var(--pt-line-soft); color: var(--pt-muted);
+           font-weight: 500; }
+.pt-head .pt-sub .pt-when::before { content: ""; width: 6px; height: 6px;
+           border-radius: 50%; background: var(--pt-green); }
+.pt-refresh { color: var(--pt-muted) !important; text-decoration: none;
+           font-weight: 600; padding: .12rem .3rem; border-radius: 6px; }
+.pt-refresh:hover { color: var(--pt-blue) !important;
+           background: var(--pt-line-soft); text-decoration: none; }
 .pt-head .pt-nav { margin-left: auto; white-space: nowrap; }
 .pt-head .pt-nav a.pt-btn { text-decoration: none;
-           background: var(--pt-blue); border-color: var(--pt-blue);
-           color: #fff; padding: .45rem .9rem; }
-.pt-head .pt-nav a.pt-btn:hover { background: var(--pt-blue-dk);
-           border-color: var(--pt-blue-dk); color: #fff; }
+           color: var(--pt-text) !important; }
+.pt-head .pt-nav a.pt-btn:hover { color: var(--pt-blue) !important;
+           border-color: var(--pt-blue); }
 
 /* the stat strip: four cards with a colored top rule, like the pipeline */
 .pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -348,8 +355,8 @@ function dspProjectTracking() {
 <div class="pt-app">
 
     <?php prjHeader('Project Tracking',
-                    '<span id="ptUpdated"></span> &nbsp;&middot;&nbsp; ' .
-                    '<a href="#" id="lnkRefresh">refresh</a>',
+                    '<span class="pt-when" id="ptUpdated"></span>' .
+                    '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
                     'dashboard'); ?>
 
     <div class="pt-stats">
