@@ -409,6 +409,8 @@ function prjWeeklyDigest($conn, $from, $to) {
             'comment counts unavailable - the WebNotes read failed';
         $notes = array();
     }
+    prjActLog('agent', 'NOTES', count($notes) . ' comment rows ' .
+              $from . '-' . $to);
     // change history degrades the same way on an old proc compile
     $chglog = prjChgLog($conn, $from, $to);
     if ($chglog === false) {
@@ -515,7 +517,9 @@ function prjWeeklyDigest($conn, $from, $to) {
 
     // say why comment text is missing rather than reporting hours only
     $why = '';
-    if (intval($GLOBALS['prjNoteNoCols']) > 0) {
+    if (count($notes) === 0 && $GLOBALS['prjNotesNote'] === '') {
+        $why = 'no project comments were recorded in this period';
+    } elseif (intval($GLOBALS['prjNoteNoCols']) > 0) {
         $why = 'comment text unavailable - recompile PRJTRK001S';
     } elseif (intval($GLOBALS['prjNoteNoFile']) > 0) {
         $why = intval($GLOBALS['prjNoteNoFile']) .

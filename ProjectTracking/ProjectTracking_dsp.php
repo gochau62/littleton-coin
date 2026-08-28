@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-H - deploy marker, check via view-source -->
+<!-- PT build 2026-08-28-I - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -57,38 +57,38 @@ function prjStyles() {
               text-transform: uppercase; color: var(--pt-muted);
               margin: 0 0 .85rem; }
 
-/* title card: title, updated line, cross-link */
-.pt-head { display: flex; align-items: center; gap: .85rem;
-           padding: .95rem 1.25rem; }
-.pt-head h1 { font-size: 1.2rem; font-weight: 650; letter-spacing: -.01em;
-              margin: 0; }
-.pt-head .pt-sub { color: var(--pt-muted); font-size: .78rem;
-                   margin-top: .15rem; }
+/* title card: name on the left, switch button on the right */
+.pt-head { display: flex; align-items: center; gap: 1rem;
+           padding: .85rem 1.15rem; }
+.pt-head h1 { font-size: 1.15rem; font-weight: 650; letter-spacing: -.015em;
+              margin: 0; line-height: 1.2; }
+.pt-head .pt-sub { color: var(--pt-faint); font-size: .76rem;
+                   margin-top: .2rem; }
 .pt-head .pt-sub a { color: var(--pt-blue); text-decoration: none;
                      font-weight: 600; }
 .pt-head .pt-sub a:hover { text-decoration: underline; }
 .pt-head .pt-nav { margin-left: auto; white-space: nowrap; }
-.pt-head .pt-nav a.pt-btn { text-decoration: none; color: var(--pt-text); }
-.pt-head .pt-nav a.pt-btn:hover { color: var(--pt-blue); }
+.pt-head .pt-nav a.pt-btn { text-decoration: none;
+           background: var(--pt-blue); border-color: var(--pt-blue);
+           color: #fff; padding: .45rem .9rem; }
+.pt-head .pt-nav a.pt-btn:hover { background: var(--pt-blue-dk);
+           border-color: var(--pt-blue-dk); color: #fff; }
 
-/* the stat strip: four boxes with a colored top rule, like the pipeline */
+/* the stat strip: four cards on the page, no wrapper around them */
 .pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: .75rem; }
-.pt-stat { border: 1px solid var(--pt-line); border-top-width: 3px;
-           border-top-color: var(--pt-gray); border-radius: 8px;
-           padding: .6rem .85rem .7rem; background: var(--pt-card); }
-.pt-stat .pt-lbl { font-size: .72rem; font-weight: 600; letter-spacing: .06em;
+            gap: .75rem; margin: 0 0 1rem; }
+.pt-stat { background: var(--pt-card); border: 1px solid var(--pt-line);
+           border-radius: 10px; box-shadow: var(--pt-shadow);
+           padding: .7rem .9rem .8rem; transition: border-color .12s ease; }
+.pt-stat:hover { border-color: var(--pt-blue); }
+.pt-stat .pt-lbl { font-size: .7rem; font-weight: 600; letter-spacing: .06em;
                    text-transform: uppercase; color: var(--pt-muted); }
-.pt-stat .pt-val { font-size: 1.7rem; font-weight: 650; letter-spacing: -.02em;
-                   margin-top: .25rem; font-variant-numeric: tabular-nums; }
-.pt-stat-open   { border-top-color: var(--pt-blue); }
-.pt-stat-new    { border-top-color: var(--pt-blue); }
-.pt-stat-review { border-top-color: var(--pt-yellow); }
-.pt-stat-unasgn { border-top-color: var(--pt-red); }
+.pt-stat .pt-val { font-size: 1.75rem; font-weight: 650; letter-spacing: -.02em;
+                   margin-top: .3rem; font-variant-numeric: tabular-nums; }
 .pt-stat.pt-warn .pt-val { color: var(--pt-red); }
 
 /* everything that navigates or filters shows a pointer */
-.pt-seg, .pt-legrow, .pt-rowlink, .pt-bar, .pt-arc { cursor: pointer; }
+.pt-seg, .pt-legrow, .pt-rowlink, .pt-bar, .pt-arc, .pt-stat { cursor: pointer; }
 .pt-seg:hover { border-color: var(--pt-blue); }
 .pt-legrow { padding: .1rem .25rem; border-radius: 6px; }
 .pt-legrow:hover { background: var(--pt-line-soft); }
@@ -345,24 +345,23 @@ function dspProjectTracking() {
                     '<a href="#" id="lnkRefresh">refresh</a>',
                     'dashboard'); ?>
 
-    <div class="pt-card">
-        <div class="pt-stats">
-            <div class="pt-stat pt-stat-open" id="statOpen">
-                <div class="pt-lbl">Open projects</div>
-                <div class="pt-val" id="tileOpen">&ndash;</div>
-            </div>
-            <div class="pt-stat pt-stat-new">
-                <div class="pt-lbl">New requests</div>
-                <div class="pt-val" id="tileNew">&ndash;</div>
-            </div>
-            <div class="pt-stat pt-stat-review">
-                <div class="pt-lbl">Awaiting SC review</div>
-                <div class="pt-val" id="tileReview">&ndash;</div>
-            </div>
-            <div class="pt-stat pt-stat-unasgn pt-warn">
-                <div class="pt-lbl">Unassigned</div>
-                <div class="pt-val" id="tileUnassigned">&ndash;</div>
-            </div>
+    <div class="pt-stats">
+        <div class="pt-stat" id="statOpen" data-tile="open"
+             title="Every project on the SC reports - click to clear filters">
+            <div class="pt-lbl">Open projects</div>
+            <div class="pt-val" id="tileOpen">&ndash;</div>
+        </div>
+        <div class="pt-stat" data-tile="new" title="Click to list the new requests">
+            <div class="pt-lbl">New requests</div>
+            <div class="pt-val" id="tileNew">&ndash;</div>
+        </div>
+        <div class="pt-stat" data-tile="review" title="Click to list what the committee is reviewing">
+            <div class="pt-lbl">Awaiting SC review</div>
+            <div class="pt-val" id="tileReview">&ndash;</div>
+        </div>
+        <div class="pt-stat pt-warn" data-tile="unassigned" title="Click to list the unassigned projects">
+            <div class="pt-lbl">Unassigned</div>
+            <div class="pt-val" id="tileUnassigned">&ndash;</div>
         </div>
     </div>
 

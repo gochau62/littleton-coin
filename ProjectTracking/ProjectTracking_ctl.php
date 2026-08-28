@@ -76,7 +76,10 @@ $(document).ready(function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderTable, 250);
     });
-    $('#selPgmr, #selStage').on('change', renderTable);
+    $('#selPgmr, #selStage').on('change', function () {
+        reviewOnly = false;
+        renderTable();
+    });
     $('#tblProjects thead th').on('click', function () {
         var k = $(this).data('k');
         if (sortKey === k) { sortDir = -sortDir; }
@@ -165,6 +168,9 @@ function loadDashboard() {
 }
 
 
+// the Awaiting SC review tile spans two stages, so it filters on its own
+var reviewOnly = false;
+
 function renderTiles(t, pipenote) {
     $('#tileOpen').text(t.open);
     $('#tileNew').text(t.new);
@@ -180,6 +186,15 @@ function renderTiles(t, pipenote) {
             'track. ' + t.stale + ' older open records sit on none of ' +
             'those reports and are not counted.');
     }
+
+    // each tile lists what it counts in the table below
+    $('.pt-stat').off('click').on('click', function () {
+        var tile = $(this).data('tile');
+        if (tile === 'new')             { showInTable({ stage: 'new' }); }
+        else if (tile === 'review')     { showInTable({ review: true }); }
+        else if (tile === 'unassigned') { showInTable({ pgmr: 'Unassigned' }); }
+        else                            { showInTable({}); }
+    });
 }
 
 
@@ -201,6 +216,7 @@ function renderPipeline(pipe, stages) {
 
 // point the project table's filters at one slice and scroll to it
 function showInTable(f) {
+    reviewOnly = (f.review === true);
     $('#selStage').val(f.stage !== undefined ? f.stage : '');
     $('#selPgmr').val(f.pgmr !== undefined ? f.pgmr : '');
     if ($('#selStage').val() === null) { $('#selStage').val(''); }
@@ -542,6 +558,7 @@ function renderTable() {
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
         if (fPgmr !== '' && (p.pgmr === '' ? 'Unassigned' : p.pgmr) !== fPgmr) { return false; }
         if (fStage !== '' && p.stage !== fStage) { return false; }
+        if (reviewOnly && p.stage !== 'awaiting' && p.stage !== 'needsinfo') { return false; }
         return true;
     });
 
