@@ -156,21 +156,16 @@ function renderTiles(t, pipenote) {
     $('#tileUnassigned').text(t.unassigned);
 
     // open counts the SC pipeline (the same universe the monthly PTS report
-    // extracts cover); the older never-closed records are explained on hover
-    // rather than on the page, and the note only appears when the report
-    // reads failed and the count fell back to everything
-    var note = $('#tileOpenNote');
+    // extracts cover). Nothing prints under the number either way - the
+    // story, including a fallback to counting everything when the report
+    // reads fail, rides on the hover title only
     if (pipenote) {
-        note.text('PTS reports unavailable - counting all open records')
-            .attr('title', 'None of the PTS report procedures could be read, ' +
-                           'so every open record is counted.');
-    } else {
-        note.text('');
-        if (t.stale > 0) {
-            $('#statOpen').attr('title', 'Projects the PTS report extracts ' +
-                'track. ' + t.stale + ' older open records sit on none of ' +
-                'those reports and are not counted.');
-        }
+        $('#statOpen').attr('title', 'Counting every open record - none of ' +
+            'the PTS report extracts could be read.');
+    } else if (t.stale > 0) {
+        $('#statOpen').attr('title', 'Projects the PTS report extracts ' +
+            'track. ' + t.stale + ' older open records sit on none of ' +
+            'those reports and are not counted.');
     }
 }
 

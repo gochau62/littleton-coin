@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-27-M - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-27-N - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -100,7 +100,6 @@ function prjStyles() {
 .pt-stat .pt-val { font-size: 1.9rem; font-weight: 650; letter-spacing: -.02em;
                    margin-top: .35rem; font-variant-numeric: tabular-nums; }
 .pt-stat.pt-warn .pt-val { color: var(--pt-red); }
-.pt-statnote { font-size: .72rem; color: var(--pt-faint); margin-top: .1rem; }
 
 /* steering committee pipeline: quiet white cells, a colored rule per stage */
 .pt-pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
@@ -325,7 +324,6 @@ function dspProjectTracking() {
             <div class="pt-stat" id="statOpen">
                 <div class="pt-lbl">Open projects</div>
                 <div class="pt-val" id="tileOpen">&ndash;</div>
-                <div class="pt-statnote" id="tileOpenNote"></div>
             </div>
             <div class="pt-stat">
                 <div class="pt-lbl">New requests</div>
