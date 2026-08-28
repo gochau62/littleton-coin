@@ -104,14 +104,61 @@ if ($authorized != 'yes') {
     ptdOut('stopping - not authorized');
 } else {
 
-require_once __DIR__ . '/ProjectTracking_model.php';
-ptdOut('model loaded', 'yes');
+/* 0 - what is actually deployed beside this page */
+ptdOut('0. FILES IN THIS DIRECTORY');
+$found = array();
+foreach (array('ProjectTracking_model.php', 'ProjectTracking_ctl.php',
+               'ProjectTracking_ajax.php', 'ProjectTracking_dsp.php',
+               'ProjectDevelopers_ctl.php', 'ProjectDevelopers_dsp.php') as $f) {
+    $p = __DIR__ . '/' . $f;
+    ptdOut('  ' . $f, file_exists($p)
+           ? date('Y-m-d H:i', filemtime($p)) . '  ' . filesize($p) . ' bytes'
+           : 'MISSING');
+    if (file_exists($p)) { $found[] = $f; }
+}
+// anything ProjectTracking-ish anywhere near, in case it lives elsewhere
+foreach (array(__DIR__, __DIR__ . '/ProjectTracking',
+               rtrim(strval($_SERVER['DOCUMENT_ROOT'] ?? ''), '/') . '/LCCOnline',
+               rtrim(strval($_SERVER['DOCUMENT_ROOT'] ?? ''), '/')) as $dir) {
+    $hit = @glob($dir . '/ProjectTracking_model.php');
+    if (is_array($hit) && count($hit) > 0) { ptdOut('  model also seen at', $hit[0]); }
+}
 ptdOut('');
+
+// the model is optional here - every read below stands on its own
+$modelPath = '';
+foreach (array(__DIR__ . '/ProjectTracking_model.php',
+               __DIR__ . '/ProjectTracking/ProjectTracking_model.php') as $cand) {
+    if (file_exists($cand)) { $modelPath = $cand; break; }
+}
+if ($modelPath !== '') {
+    require_once $modelPath;
+    ptdOut('model loaded from', $modelPath);
+} else {
+    ptdOut('model not found', 'running the reads without it');
+}
+ptdOut('');
+
+
+// the same call the model makes, so this page works without it
+function ptdNotes($conn, $proj) {
+    $stmt = @db2_prepare($conn, "CALL PHP0003S(?, ?)");
+    if (!$stmt) { ptdOut('  prepare failed', @db2_stmt_errormsg()); return false; }
+    $a = strval(intval($proj)); $b = 'PROJ_';
+    @db2_bind_param($stmt, 1, 'a', DB2_PARAM_IN);
+    @db2_bind_param($stmt, 2, 'b', DB2_PARAM_IN);
+    if (!@db2_execute($stmt)) {
+        ptdOut('  execute failed', @db2_stmt_errormsg()); return false;
+    }
+    $rows = array();
+    while ($r = db2_fetch_assoc($stmt)) { $rows[] = $r; }
+    return $rows;
+}
 
 /* 1 - the project screen's own procedure, straight up */
 ptdOut('1. PHP0003S - THE PROJECT SCREEN\'S OWN READ');
-ptdRows(prjFetchAll($conn, "CALL PHP0003S(?, ?)",
-                    array(strval($proj), 'PROJ_')), 12);
+$raw = ptdNotes($conn, $proj);
+ptdRows($raw, 12);
 ptdOut('');
 
 /* 1b - the same rows straight from the file */
@@ -162,7 +209,20 @@ ptdOut('');
 
 /* 4 - the report's own read */
 ptdOut('4. THE REPORT READ - prjNotes()');
-$notes = prjNotes($conn, array($proj));
+$notes = function_exists('prjNotes') ? prjNotes($conn, array($proj)) : false;
+if ($notes === false) {
+    ptdOut('  model not loaded, mapping step 1 instead');
+    $notes = array();
+    foreach (is_array($raw) ? $raw : array() as $r) {
+        $notes[] = array(
+            'NTPROJ' => trim(strval($r['WNIDVAL'] ?? $proj)),
+            'NTUSER' => trim(strval($r['WNUSER'] ?? '')),
+            'NTDATE' => intval($r['WNDATE'] ?? 0),
+            'NTTIME' => intval($r['WNTIME'] ?? 0),
+            'NTTYPE' => trim(strval($r['WNTYPE'] ?? '')),
+            'NTPATH' => trim(strval($r['WNPATH'] ?? '')));
+    }
+}
 ptdRows($notes, 12);
 ptdOut('');
 
@@ -190,9 +250,11 @@ if (!is_array($notes) || count($notes) === 0) {
                 ptdOut('    prefix match', $hit[0]);
             }
         }
-        $txt = prjNoteText($n);
-        ptdOut('    text length', strval(strlen($txt)));
-        if ($txt !== '') { ptdOut('    first 200', substr($txt, 0, 200)); }
+        if (function_exists('prjNoteText')) {
+            $txt = prjNoteText($n);
+            ptdOut('    prjNoteText length', strval(strlen($txt)));
+            if ($txt !== '') { ptdOut('    first 200', substr($txt, 0, 200)); }
+        }
     }
 }
 ptdOut('');
@@ -200,11 +262,14 @@ ptdOut('');
 /* 6 - the real digest for a period: ?from=20260801&to=20260831 */
 $dFrom = intval($_GET['from'] ?? 0);
 $dTo   = intval($_GET['to'] ?? 0);
-if ($dFrom <= 0 || $dTo <= 0) { list($dFrom, $dTo) = prjWeekRange(); }
+if (($dFrom <= 0 || $dTo <= 0) && function_exists('prjWeekRange')) {
+    list($dFrom, $dTo) = prjWeekRange();
+}
 ptdOut('6. THE DIGEST ITSELF - ' . $dFrom . ' to ' . $dTo);
 ptdOut('   (add ?from=20260801&to=20260831 to trace another period)');
 
-$dTime = prjTime($conn, $dFrom, $dTo);
+$dTime = (function_exists('prjTime') && $dFrom > 0)
+         ? prjTime($conn, $dFrom, $dTo) : false;
 if ($dTime === false) {
     ptdOut('  time read FAILED', strval($GLOBALS['prjErr'] ?? ''));
 } else {
