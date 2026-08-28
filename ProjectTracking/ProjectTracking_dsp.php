@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-J - deploy marker, check via view-source -->
+<!-- PT build 2026-08-28-K - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -84,13 +84,13 @@ function prjStyles() {
 .pt-head .pt-nav a.pt-btn:hover { color: var(--pt-blue) !important;
            border-color: var(--pt-blue); }
 
-/* the stat strip: four cards with a colored top rule, like the pipeline */
+/* the stat strip: four cells with a colored top rule, inside one card */
 .pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: .75rem; margin: 0 0 1rem; }
+            gap: .75rem; }
 .pt-stat { background: var(--pt-card); border: 1px solid var(--pt-line);
            border-top-width: 3px; border-top-color: var(--pt-gray);
-           border-radius: 10px; box-shadow: var(--pt-shadow);
-           padding: .7rem .9rem .8rem; }
+           border-radius: 8px; padding: .6rem .85rem .7rem; }
+.pt-stat:hover { border-color: var(--pt-blue); }
 .pt-stat[data-tile=open]       { border-top-color: var(--pt-blue); }
 .pt-stat[data-tile=new]        { border-top-color: var(--pt-blue); }
 .pt-stat[data-tile=review]     { border-top-color: var(--pt-yellow); }
@@ -359,6 +359,7 @@ function dspProjectTracking() {
                     '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
                     'dashboard'); ?>
 
+    <div class="pt-card">
     <div class="pt-stats">
         <div class="pt-stat" id="statOpen" data-tile="open"
              title="Every project on the SC reports - click to clear filters">
@@ -377,6 +378,7 @@ function dspProjectTracking() {
             <div class="pt-lbl">Unassigned</div>
             <div class="pt-val" id="tileUnassigned">&ndash;</div>
         </div>
+    </div>
     </div>
 
     <div class="pt-card">
