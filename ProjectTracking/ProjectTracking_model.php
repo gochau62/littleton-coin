@@ -375,9 +375,9 @@ function prjNoteText($n) {
     // strip the HTML; tags become spaces
     $txt = html_entity_decode(preg_replace('/<[^>]*>/', ' ', $txt), ENT_QUOTES);
     $txt = trim(preg_replace('/\s+/', ' ', $txt));
-    if (strlen($txt) > 400) {
+    if (strlen($txt) > 1200) {
         $txt = (function_exists('mb_substr')
-                ? mb_substr($txt, 0, 400) : substr($txt, 0, 400)) . '...';
+                ? mb_substr($txt, 0, 1200) : substr($txt, 0, 1200)) . '...';
     }
     return $txt;
 }

@@ -153,9 +153,10 @@ Comments contribute more than counts: the digest reads each week's comment
 row names the folder, the file is `prefix + project + date + time`), strips
 the HTML, and hands the words to the writer so the summary can say what was
 actually done or decided — progress, blockers, who is being waited on — not
-just how many notes were left. Text is capped (400 chars per comment, ~15k
-per digest) so a heavy week cannot overrun the prompt; the counts always
-cover every comment. This needs the current `PRJTRK001S`, whose NOTES set
+just how many notes were left. Text is capped (1,200 chars per comment,
+~15k per digest) so a heavy week cannot overrun the prompt; the counts
+always cover every comment. Period matching goes by the comment's posted
+date, not dates written inside the text. This needs the current `PRJTRK001S`, whose NOTES set
 returns the path/time columns that name each file — on an older compile the
 summary still generates from counts alone.
 
