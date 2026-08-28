@@ -54,8 +54,6 @@ if ($authorized != "yes") {
 
     require_once __DIR__ . '/ProjectTracking_model.php';
 
-    prjActLog($user, 'OPEN', 'assignments');
-
     include "ProjectTracking_dsp.php";
     include "ProjectDevelopers_dsp.php";
     dspProjectDevelopers();

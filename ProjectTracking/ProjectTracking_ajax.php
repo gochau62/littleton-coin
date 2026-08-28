@@ -136,7 +136,6 @@ switch ($action) {
         $weekly = prjWeeklyRead();
         if (is_array($weekly)) { unset($weekly['digest']); }
 
-        prjActLog($user, 'DASHBOARD', $GLOBALS['prjPipeInfo'] ?? '');
         prjOut(array("ok" => true,
                      "tiles" => $rollup['tiles'],
                      "pipeline" => $rollup['pipeline'],
@@ -164,7 +163,6 @@ switch ($action) {
         $out = array();
         foreach ($projects as $row) { $out[] = prjRowOut($row); }
 
-        prjActLog($user, 'ASSIGNMENTS', 'complete=' . $includeComplete);
         prjOut(array("ok" => true,
                      "stages" => $GLOBALS['prjStages'],
                      "statuses" => $GLOBALS['prjStatuses'],
