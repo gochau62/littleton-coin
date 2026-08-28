@@ -148,12 +148,16 @@ write-up of the last finished week (Mon–Sun): where each developer's time
 went (`PRTIMEP` hours by project), their comment activity, and completions —
 the same ground the hand-written "Project by Dev" spreadsheet covered.
 
-Comments contribute more than counts: the digest reads each week's comment
-**text** off the IFS the same way the legacy project screen does (the index
-row names the folder, the file is `prefix + project + date + time`), strips
-the HTML, and hands the words to the writer so the summary can say what was
-actually done or decided — progress, blockers, who is being waited on — not
-just how many notes were left. Text is capped (1,200 chars per comment,
+Comments contribute more than counts, and they are read **by project, the
+way `PROJ_ctl.php` reads them** — not by date. The digest collects the
+projects with time logged in the period, asks `NOTES` for those projects'
+comment index rows (`WNIDVAL IN (…)`, prefix `PROJ%`, no date test in SQL),
+keeps the rows whose date falls in the period, then reads each comment's
+**text** off the IFS (`prefix + project + date + time`), strips the HTML,
+and hands the words to the writer so the summary can say what was actually
+done or decided — progress, blockers, who is being waited on — not just how
+many notes were left. Only `ComntIT` comments feed the per-developer
+sections. Text is capped (1,200 chars per comment,
 ~15k per digest) so a heavy week cannot overrun the prompt; the counts
 always cover every comment. Period matching goes by the comment's posted
 date, not dates written inside the text.

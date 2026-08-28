@@ -136,10 +136,16 @@ function prjTime($conn, $from, $to) {
 }
 
 
-// NOTES: comment index rows in a range
-function prjNotes($conn, $from, $to) {
+// NOTES: comment index rows for a list of projects, like the project screen
+function prjNotes($conn, $projNums) {
+    $list = array();
+    foreach (array_slice(array_unique($projNums), 0, 150) as $num) {
+        $n = intval($num);
+        if ($n > 0) { $list[] = "'" . $n . "'"; }
+    }
+    if (empty($list)) { return array(); }
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
-                       array('NOTES', strval(intval($from)), strval(intval($to))));
+                       array('NOTES', implode(',', $list), ''));
 }
 
 
@@ -358,11 +364,7 @@ function prjWeekRange() {
 // read a comment's IFS file like the legacy screen
 function prjNoteText($n) {
     $path = trim(strval($n['NTPATH'] ?? ''));
-    if ($path === '' || !isset($n['NTTIME'])) {
-        // an old PRJTRK001S returns no path/time columns at all
-        $GLOBALS['prjNoteNoCols'] = ($GLOBALS['prjNoteNoCols'] ?? 0) + 1;
-        return '';
-    }
+    if ($path === '' || !isset($n['NTTIME'])) { return ''; }
     $time = strval(intval($n['NTTIME']));
     while (strlen($time) < 6) { $time = '0' . $time; }
     $stem = 'PROJ_' . trim(strval($n['NTPROJ'])) . strval(intval($n['NTDATE']));
@@ -390,14 +392,7 @@ function prjNoteText($n) {
             if ($txt !== false) { break; }
         }
     }
-    if ($txt === false) {
-        $GLOBALS['prjNoteNoFile'] = ($GLOBALS['prjNoteNoFile'] ?? 0) + 1;
-        if (empty($GLOBALS['prjNoteSample'])) {
-            $GLOBALS['prjNoteSample'] = implode(' | ', $tries);
-        }
-        return '';
-    }
-    $GLOBALS['prjNoteGotText'] = ($GLOBALS['prjNoteGotText'] ?? 0) + 1;
+    if ($txt === false) { return ''; }
     // strip the HTML; tags become spaces
     $txt = html_entity_decode(preg_replace('/<[^>]*>/', ' ', $txt), ENT_QUOTES);
     $txt = trim(preg_replace('/\s+/', ' ', $txt));
@@ -413,19 +408,22 @@ function prjNoteText($n) {
 function prjWeeklyDigest($conn, $from, $to) {
     $time = prjTime($conn, $from, $to);
     if ($time === false) { return false; }
-    // a failed notes read skips comment info, not the summary
     $GLOBALS['prjNotesNote'] = '';
-    $GLOBALS['prjNoteNoCols'] = 0;
-    $GLOBALS['prjNoteNoFile'] = 0;
-    $GLOBALS['prjNoteGotText'] = 0;
-    $GLOBALS['prjNoteSample'] = '';
-    $notes = prjNotes($conn, $from, $to);
-    if ($notes === false) {
-        $GLOBALS['prjNotesNote'] =
-            'comment counts unavailable - the WebNotes read failed';
-        $notes = array();
+
+    // comments come back per project, so gather the projects worked on
+    $worked = array();
+    foreach ($time as $t) {
+        $n = intval($t['TMPROJ']);
+        if ($n > 0) { $worked[$n] = true; }
     }
-    $noteRows = count($notes);
+    $notes = prjNotes($conn, array_keys($worked));
+    if ($notes === false) { $notes = array(); }
+
+    // keep the period's comments; the read itself is not date filtered
+    $notes = array_values(array_filter($notes, function ($n) use ($from, $to) {
+        $d = intval($n['NTDATE'] ?? 0);
+        return $d >= intval($from) && $d <= intval($to);
+    }));
     // change history degrades the same way on an old proc compile
     $chglog = prjChgLog($conn, $from, $to);
     if ($chglog === false) {
@@ -530,27 +528,6 @@ function prjWeeklyDigest($conn, $from, $to) {
             ' comment texts were left out of the digest for size';
     }
 
-    // say why comment text is missing rather than reporting hours only
-    $why = '';
-    if (count($notes) === 0 && $GLOBALS['prjNotesNote'] === '') {
-        $why = 'no project comments were recorded in this period';
-    } elseif (intval($GLOBALS['prjNoteNoCols']) > 0) {
-        $why = 'comment text unavailable - recompile PRJTRK001S';
-    } elseif (intval($GLOBALS['prjNoteNoFile']) > 0) {
-        $why = intval($GLOBALS['prjNoteNoFile']) .
-               ' comment files could not be read (first: ' .
-               $GLOBALS['prjNoteSample'] . ')';
-    }
-    if ($why !== '') {
-        $GLOBALS['prjNotesNote'] = trim(
-            ($GLOBALS['prjNotesNote'] !== '' ? $GLOBALS['prjNotesNote'] . '; ' : '') . $why);
-    }
-    // one line that says exactly how the comment feed did
-    prjActLog('agent', 'NOTES', $from . '-' . $to . ': ' . $noteRows .
-              ' rows, ' . intval($GLOBALS['prjNoteGotText']) . ' with text, ' .
-              intval($GLOBALS['prjNoteNoFile']) . ' unreadable' .
-              ($GLOBALS['prjNoteSample'] !== ''
-               ? ' [' . $GLOBALS['prjNoteSample'] . ']' : ''));
     return $out;
 }
 

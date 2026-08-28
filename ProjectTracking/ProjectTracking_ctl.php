@@ -18,11 +18,10 @@
 ?>
 
 <?php
-    // StartBlock before output so bookmarks return here after sign-on
+    // retrieves and sets password and username
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
-    if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 ?>
 
 <!-- includes css and javascript libraries -->
@@ -40,7 +39,11 @@
 
 <div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
+<!--  Begin Content Here -->
 <?php
+// the frame stashes this address here, so a bookmark returns after sign-on
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
 // authority level 20, the developers group
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
