@@ -18,10 +18,7 @@
 ?>
 
 <?php
-    // retrieves and sets password and username; StartBlockScriptB stays up
-    // top BEFORE any page output, the settled controller convention - the
-    // framework stashes this address and lands the person back here after
-    // sign-on, so a bookmark reopens this page instead of the home screen
+    // StartBlock before output so bookmarks return here after sign-on
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
@@ -34,7 +31,7 @@
 
     document.title = "Project Tracking - Projects by Developer";
 
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
+    // show the red error box with a message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
 
 
@@ -44,8 +41,7 @@
 <div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
-// check users authority - level 20, the developers group (10 is only the
-// minimum to use LCCOnline)
+// authority level 20, the developers group
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
@@ -66,8 +62,7 @@ if ($authorized != "yes") {
 ?>
 
 <script>
-// Projects-by-developer frontend logic: fetch the rows, group them per
-// programmer like the monthly spreadsheet, filter and count client-side
+// fetch rows, group per programmer, filter client-side
 var asgData = null;
 var searchTimer = null;
 
@@ -92,15 +87,13 @@ function esc(s) {
 }
 
 
-// esc() for attribute values (quotes escaped too), for hover titles and
-// option values built into HTML strings
+// esc for attribute values, quotes escaped too
 function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
 }
 
 
-// each fetch takes a sequence number so a slow earlier response can never
-// overwrite a newer one when refresh is clicked twice quickly
+// sequence number so stale responses never win
 var loadSeq = 0;
 
 function loadProjectDevelopers() {
@@ -123,10 +116,7 @@ function loadProjectDevelopers() {
 }
 
 
-// the page shows the working list: open projects on the SC pipeline (the
-// PTS report extracts), grouped under the tracked developers the monthly
-// spreadsheet follows. Older open records off those reports, and rows
-// assigned to any other profile, stay off the page
+// pipeline rows for tracked developers plus Unassigned only
 function visibleRows() {
     var devs = asgData.developers || [];
     return $.grep(asgData.projects, function (p) {
@@ -151,8 +141,7 @@ function fillDevFilter() {
 }
 
 
-// stage chip with a compact label so it reads whole inside its column even
-// beside the sidebar; the full wording rides on the hover title
+// short chip labels; full wording on hover
 var sgShort = { needsinfo: 'Needs info', awaiting: 'Awaiting', 'new': 'New' };
 
 function stageChip(stage) {
@@ -163,9 +152,7 @@ function stageChip(stage) {
 }
 
 
-// per-row status dot: the project's own Work Status from the green
-// screen, blank for completed/rejected rows. The dot color comes from
-// what the wording says; unstatused projects show a quiet "Not set"
+// status dot colored by the stored Work Status wording
 function stClass(status, label) {
     if (status === 'notset') { return 'pt-st-notset'; }
     var l = label.toLowerCase();
@@ -187,11 +174,7 @@ function statusChip(status) {
 
 
 function groupTable(rows) {
-    // fixed column widths so every developer's table lines up with the next,
-    // and every column reads whole in the space beside the sidebar - nothing
-    // scrolls and nothing grows. The two priorities share one "Prty D/S"
-    // cell, the estimate range shares one "Est" cell, and the description
-    // takes whatever is left
+    // fixed column widths so every group's table lines up
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
         '<table class="pt-grid">' +
         '<colgroup><col style="width:64px"><col style="width:13%">' +
@@ -237,8 +220,7 @@ function renderGroups() {
         return true;
     });
 
-    // group by developer, alphabetical, with Unassigned always last - the
-    // same order the Projects-by-developer spreadsheet uses
+    // group by developer, alphabetical, Unassigned last
     var groups = {};
     $.each(rows, function (i, p) {
         var key = (p.pgmr === '') ? 'Unassigned' : p.pgmr;

@@ -18,10 +18,7 @@
 ?>
 
 <?php
-    // retrieves and sets password and username; StartBlockScriptB stays up
-    // top BEFORE any page output, the settled controller convention - the
-    // framework stashes this address and lands the person back here after
-    // sign-on, so a bookmark reopens this page instead of the home screen
+    // StartBlock before output so bookmarks return here after sign-on
     if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
@@ -34,7 +31,7 @@
 
     document.title = "Project Tracking - Overview";
 
-    // small message helpers following the LCC convention: show the red error box with a message, or the standard not authorized message
+    // show the red error box with a message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
 
 
@@ -44,8 +41,7 @@
 <div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
-// check users authority - level 20, the developers group (10 is only the
-// minimum to use LCCOnline)
+// authority level 20, the developers group
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
@@ -65,8 +61,7 @@ if ($authorized != "yes") {
 ?>
 
 <script>
-// Project Tracking dashboard frontend logic: one fetch, then render the
-// tiles, pipeline, charts, weekly summary and project table from it
+// one fetch, then render every dashboard piece
 var dashData = null;
 var sortKey = 'num';
 var sortDir = 1;
@@ -92,10 +87,7 @@ $(document).ready(function () {
     });
     $('#btnWeekly').on('click', generateWeekly);
 
-    // the period calendar: preset to the prior week, so Generate with
-    // nothing changed reports on the last finished Mon-Sun week. Built
-    // through the date constructor so the anchor sits at midnight -
-    // stray time-of-day would break the range highlighting
+    // preset the calendar to the prior week, at midnight
     var t = new Date();
     calAnchor = new Date(t.getFullYear(), t.getMonth(),
                          t.getDate() - ((t.getDay() + 6) % 7) - 7);
@@ -141,8 +133,7 @@ function esc(s) {
 }
 
 
-// esc() for attribute values (quotes escaped too), for hover titles and
-// option values built into HTML strings
+// esc for attribute values, quotes escaped too
 function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
 }
@@ -182,10 +173,7 @@ function renderTiles(t, pipenote) {
     $('#tileReview').text(t.screview);
     $('#tileUnassigned').text(t.unassigned);
 
-    // open counts the SC pipeline (the same universe the monthly PTS report
-    // extracts cover). Nothing prints under the number either way - the
-    // story, including a fallback to counting everything when the report
-    // reads fail, rides on the hover title only
+    // the pipeline story rides on the hover title only
     if (pipenote) {
         $('#statOpen').attr('title', 'Counting every open record - none of ' +
             'the PTS report extracts could be read.');
@@ -208,8 +196,7 @@ function renderPipeline(pipe, stages) {
 }
 
 
-// horizontal pill bars, one per programmer, count labels at the bar ends.
-// Blue for assigned programmers, red for the Unassigned bucket
+// pill bars per programmer, Unassigned in red
 function renderLoad(load) {
     var names = Object.keys(load);
     if (names.length === 0) {
@@ -222,8 +209,7 @@ function renderLoad(load) {
     var labelW = 110, valueW = 34, rowH = 26, barH = 12, w = 560;
     var plotW = w - labelW - valueW;
     var h = names.length * rowH + 6;
-    // width 100% + viewBox scales the chart to the card - no minimum width,
-    // so the page can always shrink to the space beside the LCC menu
+    // viewBox scaling keeps the chart inside the card
     var svg = '<svg width="100%" viewBox="0 0 ' + w + ' ' + h +
               '" role="img" aria-label="Open projects per programmer">';
 
@@ -255,12 +241,9 @@ function renderLoad(load) {
 }
 
 
-// status donut: stroke-drawn segments with small gaps, total in the center,
-// legend alongside. Gray is deliberate for On hold - it reads as inactive
+// status donut with the total in the center
 function renderDonut(status, labels) {
-    // the layout template's four buckets in its sampled colors: active blue,
-    // waiting amber, on hold gray, est-not-needed green - counted over the
-    // assigned working set, so the chart says where assigned work stands
+    // template colors: blue, amber, gray, green buckets
     var colors = { active: '#185fa5', waituser: '#eda100',
                    onhold: '#898781', estnotneed: '#1baf7a' };
     $.each(labels, function (key) {
@@ -273,8 +256,7 @@ function renderDonut(status, labels) {
     var c = size / 2, circ = 2 * Math.PI * r;
     var segs = 0;
     $.each(status, function (k, cnt) { if (cnt > 0) { segs += 1; } });
-    // gaps only make sense between segments - a lone segment draws the
-    // full unbroken ring
+    // gaps only between segments
     var gap = (segs > 1) ? 2 : 0;
     var svg = '<svg width="' + size + '" height="' + size +
               '" role="img" aria-label="Assigned projects by status">';
@@ -320,10 +302,7 @@ function renderDonut(status, labels) {
 }
 
 
-// the writer returns plain text: a profile-name line then sentences per
-// developer, and a closing week overview. Render each block as its own
-// section - the name as a heading, project numbers as links back to the
-// project screen - so the report scans as sections, not a wall of text
+// render the writer's text as per-developer sections
 function weeklyHtml(text) {
     function body(s) {
         return esc(s).replace(/\n/g, '<br>')
@@ -360,8 +339,7 @@ function renderWeekly(w) {
         return s.length === 8
             ? s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4) : s;
     }
-    // just the period and when it was generated - who ran it and how stay
-    // in the cache file and the activity log
+    // just the period and the generated time
     $('#weeklyMeta').text(slashes(w.from) + ' - ' + slashes(w.to) +
         ' · generated ' + w.generated_at);
     $('#weeklyText').html(weeklyHtml(w.text));
@@ -369,9 +347,7 @@ function renderWeekly(w) {
 }
 
 
-// the period calendar: a month grid that opens under the field. Pick any
-// day and the whole reporting period highlights - its Mon-Sun week in
-// week mode, its calendar month in month mode
+// month-grid calendar; a day picks its week or month
 var calView = null;    // the month the grid is showing {y, m}
 var calAnchor = null;  // the day last picked
 var CAL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -385,9 +361,7 @@ function ymd(d) {
 }
 
 
-// the reporting period the anchor day resolves to under the current mode;
-// everything built at midnight through the date constructor so the grid's
-// range comparison holds at both ends
+// resolve the anchor day per mode, all at midnight
 function calPeriod() {
     var d = calAnchor, from, to;
     if ($('#selWkMode').val() === 'month') {
@@ -468,8 +442,7 @@ function fillFilters(resp) {
     var curPgmr = $('#selPgmr').val() || '';
     var curStage = $('#selStage').val() || '';
 
-    // only the tracked developers (and Unassigned) get filter entries - the
-    // same names the monthly spreadsheet groups under
+    // filter lists the tracked developers plus Unassigned
     var have = {};
     $.each(resp.projects, function (i, p) {
         have[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
@@ -494,8 +467,7 @@ function fillFilters(resp) {
 }
 
 
-// compact chip labels so every stage reads whole beside the sidebar; the
-// full wording rides on the hover title
+// short chip labels; full wording on hover
 var sgShort = { needsinfo: 'Needs info', awaiting: 'Awaiting', 'new': 'New' };
 
 function stageChip(stage) {
@@ -533,8 +505,7 @@ function renderTable() {
             x = stageOrder.indexOf(x); y = stageOrder.indexOf(y);
         }
         if (sortKey === 'sched') {
-            // the formatted MM/DD/YYYY would sort month-first; the raw
-            // YYYYMMDD sorts chronologically, no-date rows first
+            // raw YYYYMMDD sorts chronologically
             x = a.schedraw; y = b.schedraw;
         }
         if (sortKey === 'sub') { x = a.subraw; y = b.subraw; }

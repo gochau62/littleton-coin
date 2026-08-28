@@ -14,12 +14,7 @@
 /* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
 /*                     SRCMBR(PRJTRK001S)                            */
 /*********************************************************************/
-/*                                                                   */
-/* PRTIMEP field names confirmed from QSYS2.SYSCOLUMNS 08/25/26:     */
-/* PT# (project #), PTPGMR (programmer), PTDATE (ccyymmdd) and       */
-/* PTTIME (hours, xx.xx). The project column is PT#, matching the    */
-/* PR# style of PRPROJP rather than PRESTMTP's PRPROJ#.              */
-/*                                                                   */
+/* PRTIMEP columns confirmed via SYSCOLUMNS 08/25/26                 */
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
 /* |                                                                |*/
@@ -50,12 +45,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         DECLARE WKFILE  VARCHAR(10)   DEFAULT '';
         DECLARE WKNOTES VARCHAR(600)  DEFAULT '';
 
-        /* Every project outside the 90000-90999 internal range, with the
-           newest estimate and the summed programming time riding along.
-           INKEY1 = 'Y' includes completed and rejected projects; 'N'
-           returns open work only. The dashboard derives the steering
-           committee stage and the status buckets from these columns in
-           ProjectTracking_model.php - keep this cursor a plain read. */
+        -- LIST: projects with newest estimate and summed hours
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT P.PR# AS PJNUM,
                    RTRIM(P.PRDESC) AS PJDESC,
@@ -99,10 +89,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                     OR (P.PRACOM = 0 AND RTRIM(P.PRRESCOD) <> 'REJ'))
              ORDER BY P.PR#;
 
-        /* Time entries in a date range, for the weekly activity digest.
-           Dates are the 8 digit YYYYMMDD numbers the green screen writes.
-           The internal 90000-90999 buckets are excluded to match C1/C4 -
-           the digest covers project work, not vacation/meeting time. */
+        -- TIME: time entries in a date range
         DECLARE C2 CURSOR WITH RETURN FOR
             SELECT T.PT# AS TMPROJ,
                    RTRIM(T.PTPGMR) AS TMUSER,
@@ -113,20 +100,10 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                AND T.PT# NOT BETWEEN 90000 AND 90999
              ORDER BY T.PTPGMR, T.PT#;
 
-        /* WebNotes comment index rows for project comments in a date
-           range - the comment text itself lives in IFS files, so the
-           who/when/what-kind columns come back along with the path and
-           time that name each comment's file, letting the PHP read the
-           text the way the legacy project screen does. The index file's
-           name and library are site-specific (they live in the web
-           tree's WebNotes/webNotesModel.php, not in any source here),
-           so the NOTES branch below finds the file by its WN* columns
-           in the catalog and reads it directly - no name or library
-           guessing from any caller's job. C3 opens over S3, prepared
-           there. */
+        -- NOTES: comment index rows; file located by its columns
         DECLARE C3 CURSOR WITH RETURN FOR S3;
 
-        /* Projects completed in a date range, for the weekly digest. */
+        -- COMP: projects completed in a date range
         DECLARE C4 CURSOR WITH RETURN FOR
             SELECT P.PR# AS PJNUM,
                    RTRIM(P.PRDESC) AS PJDESC,
@@ -137,8 +114,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                AND P.PR# NOT BETWEEN 90000 AND 90999
              ORDER BY P.PRPGMR, P.PR#;
 
-        /* The programmer/estimator list the legacy pages load their
-           dropdowns from. */
+        -- PGMR: the programmer/estimator dropdown list
         DECLARE C5 CURSOR WITH RETURN FOR
             SELECT RTRIM(G.PGDEVPRF) AS PGPROFILE
               FROM LSCPRDLIB/PRIDTRANSP G
@@ -155,12 +131,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
 
-            /* find the WebNotes index file by its columns: the one
-               file on the box carrying all seven WN* columns the read
-               needs. Prefer a physical file over a logical, and a
-               production library over a *DEV* one, when more than one
-               qualifies. No rows leaves WKLIB/WKFILE at their ''
-               defaults, caught just below. */
+            -- locate the WebNotes file by its WN* columns
             SELECT C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME
               INTO WKLIB, WKFILE
               FROM QSYS2/SYSCOLUMNS C

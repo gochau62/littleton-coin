@@ -24,16 +24,11 @@ if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-3.7-flash'); 
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
-// the activity log lives in the LCCOnline_logs folder beside the PHP, like
-// every other tool's log. The weekly summary cache does NOT - LCCOnline_logs
-// is web-served and the Clario purge job empties it monthly, so anything
-// durable goes in a folder outside the htdocs tree
+// log in LCCOnline_logs; durable cache outside htdocs
 define('PRJ_ACT_LOG', __DIR__ . '/LCCOnline_logs/projecttracking_activity.log');
 define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
 
-// steering committee pipeline stages, in the order the dashboard shows them.
-// 'complete' and 'rejected' also come back from prjStage() but are not pipeline
-// cells - the dashboard counts the live SC pipeline, where neither can appear
+// SC pipeline stages in display order
 $GLOBALS['prjStages'] = array(
     'new'       => 'New request',
     'awaiting'  => 'Awaiting review',
@@ -42,27 +37,19 @@ $GLOBALS['prjStages'] = array(
     'approved'  => 'Approved',
 );
 
-// status labels for the donut and the by-developer column. Statuses come
-// straight from the green screen's Work Status (PRWRKSTS): every distinct
-// value joins this map at read time under its own name, and open projects
-// nobody has statused fall in the one shipped bucket
+// labels for stored Work Status values
 $GLOBALS['prjStatuses'] = array(
     'notset' => 'Not set',
 );
 
-// the Work Status codes the green screen's dropdown writes, spelled out for
-// the screens. A code not listed here still shows under its stored value -
-// add it here when the dropdown gains one
+// spells out the dropdown's Work Status codes
 $GLOBALS['prjWrkLabels'] = array(
     'ACT' => 'Active',
     'HLD' => 'Hold',
     'WUF' => 'Waiting user feedback',
 );
 
-// the donut's four buckets, straight from the layout template. Every
-// assigned project falls in exactly one - derived from the legacy fields,
-// so the chart is never dominated by projects nobody has statused (the
-// by-developer Status column is separate: it shows PRWRKSTS as stored)
+// the donut's four buckets from the layout template
 $GLOBALS['prjStatusBuckets'] = array(
     'active'     => 'Active',
     'waituser'   => 'Waiting on user',
@@ -70,25 +57,19 @@ $GLOBALS['prjStatusBuckets'] = array(
     'estnotneed' => 'Est. not needed',
 );
 
-// the developers the monthly Projects-by-developer spreadsheet tracks. The
-// by-developer groups, the programmer filters, the load chart and the Excel
-// download show these profiles (plus Unassigned) and no one else - a project
-// assigned to any other profile stays out of those views. Edit this list
-// when the team changes.
+// developers the monthly spreadsheet tracks; edit when team changes
 $GLOBALS['prjDevelopers'] = array(
     'CMCBETH', 'DCOTE', 'GCHAU', 'JTAYLOR', 'KRAINVILLE', 'TCONNOLLY',
 );
 
 
-// true when the profile is one of the tracked developers above
+// true for a tracked developer profile
 function prjTrackedDev($pgmr) {
     return in_array(strtoupper(trim($pgmr)), $GLOBALS['prjDevelopers'], true);
 }
 
 
-// append one line to the activity log, with the write suppressed so a bad one
-// never takes the app down, and if it still fails the reason and the line fall
-// to php.log so nothing is lost
+// append one activity log line; failures fall to php.log
 function prjActLog($user, $action, $detail = '') {
     $line = date('Y-m-d H:i:s') . ' ' .
             ($user !== '' ? $user : 'unknown') . ' ' .
@@ -102,7 +83,7 @@ function prjActLog($user, $action, $detail = '') {
 }
 
 
-// record the real Db2 error for the caller and the log, then return false
+// record the Db2 error, return false
 function prjFail($where) {
     $GLOBALS['prjErr'] = $where . ': ' . db2_stmt_error() . ' ' . db2_stmt_errormsg();
     error_log('ProjectTracking ' . $GLOBALS['prjErr']);
@@ -110,8 +91,7 @@ function prjFail($where) {
 }
 
 
-// shared runner for PRJTRK001S: prepare, bind each parameter in order,
-// execute, and collect every row as an associative array
+// prepare, bind, execute, fetch all rows
 function prjFetchAll($conn, $sql, $params = array()) {
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return prjFail("prepare $sql"); }
@@ -130,9 +110,7 @@ function prjFetchAll($conn, $sql, $params = array()) {
 }
 
 
-// PROGRAM NAME PRJTRK001S type LIST: every non-internal project with its
-// newest estimate and summed hours. $includeComplete 'Y' adds completed and
-// rejected projects; the default returns open work only
+// LIST: projects with newest estimate and summed hours
 function prjProjects($conn, $includeComplete = 'N') {
     $rows = prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                         array('LIST', $includeComplete === 'Y' ? 'Y' : 'N', ''));
@@ -140,15 +118,12 @@ function prjProjects($conn, $includeComplete = 'N') {
 
     $out = array();
     foreach ($rows as $row) {
-        // record 0 is a legacy catch-all bucket (no name, thousands of
-        // hours), not a project - keep it off every screen
+        // record 0 is a legacy catch-all, skip it
         if (intval($row['PJNUM']) <= 0) { continue; }
         $row['STAGE']  = prjStage($row);
         $row['STATUS'] = prjStatus($row);
 
-        // each distinct Work Status value joins the shared map so the donut
-        // and the by-developer column show it under its own name - spelled
-        // out for the codes the dropdown writes (Act, Hld, Wuf)
+        // register each stored Work Status label once
         if ($row['STATUS'] !== '' && $row['STATUS'] !== 'notset'
             && !isset($GLOBALS['prjStatuses'][$row['STATUS']])) {
             $wrk = strtoupper(trim(strval($row['PJWRKSTS'] ?? '')));
@@ -161,51 +136,37 @@ function prjProjects($conn, $includeComplete = 'N') {
 }
 
 
-// PROGRAM NAME PRJTRK001S type TIME: time entries in a YYYYMMDD date range
+// TIME: time entries in a date range
 function prjTime($conn, $from, $to) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('TIME', strval(intval($from)), strval(intval($to))));
 }
 
 
-// PROGRAM NAME PRJTRK001S type NOTES: project comment index rows in a range
+// NOTES: comment index rows in a range
 function prjNotes($conn, $from, $to) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('NOTES', strval(intval($from)), strval(intval($to))));
 }
 
 
-// PROGRAM NAME PRJTRK001S type COMP: projects completed in a range
+// COMP: projects completed in a range
 function prjCompleted($conn, $from, $to) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('COMP', strval(intval($from)), strval(intval($to))));
 }
 
 
-// PROGRAM NAME PRJTRK001S type PGMR: the programmer profile list
+// PGMR: the programmer profile list
 function prjProgrammers($conn) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('PGMR', '', ''));
 }
 
 
-/* ---------------------------------------------------------------------------
-   The steering committee "pipeline universe".
+// SC pipeline universe: the four PTS report extracts
 
-   The monthly Projects-by-developer spreadsheet is built from the four PTS
-   report extracts (the PROJ_Reports screen): SC workload, projects submitted
-   this meeting cycle, projects for SC review, and the Formula Friday list.
-   A project the committee is actually tracking appears in at least one of
-   them. The dashboard counts open projects against that same universe so its
-   numbers match the spreadsheet; anything open in the file but absent from
-   every report is "stale" - typically records from prior decades that were
-   never closed out - and is counted separately.
---------------------------------------------------------------------------- */
-
-// the SC meeting window the workload/submitted reports run for: the Monday
-// before the previous meeting through the Sunday before the next one. The
-// meeting is the first Thursday of the month - the same calculation the
-// legacy PROJ_Reports_ctl.php makes (Dennis Cote 7/19/2012, project 120021)
+// SC meeting window, same math as PROJ_Reports_ctl.php
 function prjMeetingWindow() {
     $today = intval(date('Ymd'));
 
@@ -234,18 +195,7 @@ function prjMeetingWindow() {
 }
 
 
-// the set of project numbers on any of the four PTS report extracts, keyed
-// by number. These are the SAME stored procedures the legacy PROJ_Reports
-// screen downloads through, so the dashboard can never drift from the
-// spreadsheet. The four procs return different record layouts, so the
-// project-number column is found by VALIDATION: for each report, the column
-// whose values line up with the most real project numbers ($projects) wins.
-// A report whose columns match nothing contributes nothing. Returns null
-// when no usable numbers came back at all - callers then skip pipeline
-// filtering instead of showing an empty dashboard. What each report gave is
-// left in $GLOBALS['prjPipeInfo'] for the activity log.
-// Note: the workload file (PRWKLDP) is rebuilt by the Reports screen's
-// "Submit SC Reports" button, so that slice is as fresh as the last refresh
+// union the four PTS reports; project column found by validation
 function prjPipelineNums($conn, $projects) {
     list($from, $to) = prjMeetingWindow();
 
@@ -295,9 +245,7 @@ function prjPipelineNums($conn, $projects) {
 }
 
 
-// a pipeline set that matches not one open project means the reports and
-// the project file disagree (stale work file, wrong library) - fall back
-// to no filtering rather than presenting an empty dashboard as the truth
+// no overlap with open projects means no filtering
 function prjPipelineCheck($projects, $pipe) {
     if ($pipe === null) { return null; }
     foreach ($projects as $row) {
@@ -310,9 +258,7 @@ function prjPipelineCheck($projects, $pipe) {
 }
 
 
-// stamp each project row with PIPE = 1 (on the SC reports) or 0 (stale).
-// A null pipeline set - reports unreadable - marks everything in, so the
-// dashboard degrades to the old count-everything behavior instead of hiding
+// stamp PIPE 1/0; null pipeline marks everything in
 function prjMarkPipeline(&$projects, $pipe) {
     foreach ($projects as &$row) {
         $row['PIPE'] = ($pipe === null || isset($pipe[intval($row['PJNUM'])])) ? 1 : 0;
@@ -321,24 +267,7 @@ function prjMarkPipeline(&$projects, $pipe) {
 }
 
 
-/* ---------------------------------------------------------------------------
-   Stage and status derivations.
-
-   The green screen never carried a single "SC stage" column - the stage is
-   implied by which fields are filled in. These two functions are the ONE
-   place that mapping lives, shared by the dashboard, the assignments page,
-   the Excel download and the weekly summary. If the steering committee wants
-   a bucket drawn differently, change it here and every screen follows.
---------------------------------------------------------------------------- */
-
-// steering committee stage for one project row:
-//   rejected   - resolution code REJ
-//   complete   - actual completion date on file
-//   approved   - the steering committee assigned it a priority
-//   new        - no estimate on file yet (just submitted)
-//   parked     - estimated, but the department priority was zeroed out
-//   needsinfo  - estimated, but no scheduled completion date yet
-//   awaiting   - estimated and scheduled, waiting on the committee
+// steering committee stage derived from the legacy fields
 function prjStage($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return 'rejected'; }
     if (intval($row['PJCOMPDATE']) > 0)   { return 'complete'; }
@@ -350,11 +279,7 @@ function prjStage($row) {
 }
 
 
-// donut bucket for one project, the first design's derivation:
-//   estnotneed - fire projects (type FR) go straight to work, no estimate
-//   onhold     - department priority zeroed out after estimating
-//   active     - scheduled completion date on file ("in-play")
-//   waituser   - everything else is waiting on the requestor or committee
+// donut bucket per project, the first design's rules
 function prjStatusBucket($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
     if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
@@ -365,10 +290,7 @@ function prjStatusBucket($row) {
 }
 
 
-// status for one open project: the green screen's own Work Status
-// (PRWRKSTS, the dropdown on the project edit screen) and nothing else -
-// never derived from priorities or schedules. Blank means nobody has
-// statused the project yet
+// status is PRWRKSTS only; blank shows Not set
 function prjStatus($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
     if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
@@ -378,10 +300,7 @@ function prjStatus($row) {
 }
 
 
-// roll one project list up into everything the dashboard draws: the stat
-// tiles, the pipeline counts, the per-programmer load and the status donut.
-// Rows stamped PIPE=0 (open but on none of the PTS reports) only feed the
-// stale counter, so every number matches the monthly spreadsheet
+// roll projects up into tiles, pipeline, load, donut
 function prjDashboardRollup($projects) {
     $tiles = array('open' => 0, 'new' => 0, 'screview' => 0,
                    'unassigned' => 0, 'stale' => 0);
@@ -410,15 +329,13 @@ function prjDashboardRollup($projects) {
                 $tiles['unassigned'] += 1;
                 $pgmr = 'Unassigned';
             }
-            // only the tracked developers (and Unassigned) get a bar on the
-            // load chart, matching the monthly spreadsheet's groups
+            // load chart bars: tracked developers plus Unassigned
             if ($pgmr === 'Unassigned' || prjTrackedDev($pgmr)) {
                 if (!isset($load[$pgmr])) { $load[$pgmr] = 0; }
                 $load[$pgmr] += 1;
             }
 
-            // the donut covers the assigned working set - open pipeline
-            // projects sitting with one of the tracked developers
+            // donut counts assigned tracked projects only
             if (prjTrackedDev($pgmr)) {
                 $bucket = prjStatusBucket($row);
                 if (isset($status[$bucket])) { $status[$bucket] += 1; }
@@ -426,8 +343,7 @@ function prjDashboardRollup($projects) {
         }
     }
 
-    // busiest programmer first, with the Unassigned bucket always last so it
-    // reads as the red call-to-action bar the layout template shows
+    // busiest first, Unassigned last in red
     $unassigned = $load['Unassigned'] ?? 0;
     unset($load['Unassigned']);
     arsort($load);
@@ -438,11 +354,7 @@ function prjDashboardRollup($projects) {
 }
 
 
-/* ---------------------------------------------------------------------------
-   Weekly activity digest + AI summary.
---------------------------------------------------------------------------- */
-
-// the reporting week is the most recently finished Monday..Sunday
+// the last finished Monday through Sunday
 function prjWeekRange() {
     $lastSunday = strtotime('last sunday');
     $monday = strtotime('-6 days', $lastSunday);
@@ -450,12 +362,7 @@ function prjWeekRange() {
 }
 
 
-// read one comment's text off the IFS, the same way the legacy project
-// screen shows it: the index row names the folder, and the file inside it is
-// prefix + project + date + time with the time zero-padded to six digits.
-// Returns '' when the file is missing or unreadable - the digest still
-// counts the comment, it just has no words for it. Old compiles of
-// PRJTRK001S return no NTPATH/NTTIME, which lands here as '' too
+// read a comment's IFS file like the legacy screen
 function prjNoteText($n) {
     $path = trim(strval($n['NTPATH'] ?? ''));
     if ($path === '' || !isset($n['NTTIME'])) { return ''; }
@@ -465,8 +372,7 @@ function prjNoteText($n) {
             strval(intval($n['NTDATE'])) . $time;
     $txt = @file_get_contents($file, false, null, 0, 8000);
     if ($txt === false) { return ''; }
-    // the files carry the screen's HTML - the digest wants plain words, so
-    // tags become spaces (not nothing, which would glue sentences together)
+    // strip the HTML; tags become spaces
     $txt = html_entity_decode(preg_replace('/<[^>]*>/', ' ', $txt), ENT_QUOTES);
     $txt = trim(preg_replace('/\s+/', ' ', $txt));
     if (strlen($txt) > 400) {
@@ -477,17 +383,11 @@ function prjNoteText($n) {
 }
 
 
-// gather what each developer did in the range: hours by project, comments by
-// type - with each comment's own words read off the IFS - and completions.
-// Everything the summary says comes from this digest, so the model has
-// nothing to invent
+// gather each developer's hours, comments, completions
 function prjWeeklyDigest($conn, $from, $to) {
     $time = prjTime($conn, $from, $to);
     if ($time === false) { return false; }
-    // the WebNotes index is the one feed with a site-specific home; if
-    // that read fails the week still summarizes without comment counts
-    // rather than erroring the whole card - the reason lands in the
-    // activity log and the card's meta line
+    // a failed notes read skips comment info, not the summary
     $GLOBALS['prjNotesNote'] = '';
     $notes = prjNotes($conn, $from, $to);
     if ($notes === false) {
@@ -498,7 +398,7 @@ function prjWeeklyDigest($conn, $from, $to) {
     $completed = prjCompleted($conn, $from, $to);
     if ($completed === false) { return false; }
 
-    // project descriptions for the numbers that show up in the digest
+    // project descriptions for the digest numbers
     $projects = prjProjects($conn, 'Y');
     if ($projects === false) { return false; }
     $desc = array();
@@ -511,8 +411,7 @@ function prjWeeklyDigest($conn, $from, $to) {
                    'comments' => array(), 'notes' => array(),
                    'completed' => array());
 
-    // total budget for comment text in the digest, so one heavy week can't
-    // blow the prompt up - the per-type counts still cover every comment
+    // cap comment text so the prompt stays small
     $txtBudget = 15000;
     $txtDropped = 0;
 
@@ -541,8 +440,7 @@ function prjWeeklyDigest($conn, $from, $to) {
         }
         $dev[$user]['comments'][$type] += 1;
 
-        // the comment's own words, budget allowing, so the summary can say
-        // what was actually done rather than just how many notes were left
+        // attach the comment's words within budget
         $text = ($txtBudget > 0) ? prjNoteText($n) : '';
         if ($text !== '') {
             if (strlen($text) <= $txtBudget) {
@@ -576,10 +474,7 @@ function prjWeeklyDigest($conn, $from, $to) {
 }
 
 
-// where the cached weekly summary lives; one file per week ending date, plus
-// a "latest" copy the dashboard reads without knowing the date. The folder
-// sits outside the served docroot - the digest is per-developer activity
-// data and must only reach the browser through the authorized endpoint
+// cache file per period end, plus a latest copy
 function prjWeeklyPath($weekEnd) {
     return PRJ_DATA_DIR . '/projecttracking_weekly_' . intval($weekEnd) . '.json';
 }
@@ -609,8 +504,7 @@ function prjWeeklyWrite($summary) {
 }
 
 
-// the deterministic summary used when no API key is configured or the API
-// call fails - plain per-developer lines straight from the digest
+// deterministic fallback summary when the API fails
 function prjFallbackSummary($digest) {
     $lines = array();
     foreach ($digest['developers'] as $user => $d) {
@@ -646,14 +540,11 @@ function prjFallbackSummary($digest) {
 function prjGeminiConfigured() { return GEMINI_API_KEY !== ''; }
 
 
-// gemini call reports land in the activity log, the way the Sellbrite
-// loader's gsLog lines land in its own
+// gemini call reports land in the activity log
 function prjAiLog($msg) { prjActLog('agent', 'GEMINI', $msg); }
 
 
-// asks for a JSON answer - the same caller as the Sellbrite loader's
-// geminiJson: system instruction + user text in, meta call report out.
-// $think caps Gemini's internal reasoning tokens
+// JSON-mode gemini call, same shape as the Sellbrite loader
 function prjGeminiJson($system, $user, &$meta = array(), $think = 0)
 {
     // if not key set return error
@@ -699,7 +590,7 @@ function prjGeminiJson($system, $user, &$meta = array(), $think = 0)
         return null;
     }
 
-    // return token usage data, then dig the answer text out of the response
+    // token usage, then dig out the answer text
     $meta['tokens'] = (int) ($resp['usageMetadata']['totalTokenCount'] ?? 0);
     $fin = (string) ($resp['candidates'][0]['finishReason'] ?? '');
     if ($fin !== '' && $fin !== 'STOP') { prjAiLog('gemini finishReason=' . $fin . ' (answer truncated - raise maxOutputTokens?)'); }
@@ -714,9 +605,7 @@ function prjGeminiJson($system, $user, &$meta = array(), $think = 0)
 }
 
 
-// the weekly summary writer: one prjGeminiJson call over the digest, asking
-// for its answer as JSON the way every loader prompt does.
-// Returns array(ok, text-or-error, model-used)
+// the summary writer: one JSON call over the digest
 function prjAiSummary($digest) {
     if (!prjGeminiConfigured()) {
         return array(false, 'GEMINI_API_KEY not set in ProjectTracking_model.php.', '');
@@ -753,7 +642,7 @@ function prjAiSummary($digest) {
     $user = 'Period ' . $digest['from'] . ' through ' . $digest['to'] .
             ". Digest:\n" . json_encode($digest);
 
-    // a small thinking budget, like the loader's listing-writing calls keep
+    // small thinking budget like the loader uses
     $a = prjGeminiJson($sys, $user, $m, 512);
     if (!is_array($a) || trim((string) ($a['summary'] ?? '')) === '') {
         return array(false, ($m['error'] ?? '') !== '' ? $m['error']
@@ -763,8 +652,7 @@ function prjAiSummary($digest) {
 }
 
 
-// build the digest for the last finished week (or an explicit range), get the
-// AI write-up - falling back to the deterministic one - and cache the result
+// digest, AI write-up with fallback, cache the result
 function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
     if ($from <= 0 || $to <= 0) {
         list($from, $to) = prjWeekRange();

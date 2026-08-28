@@ -16,12 +16,11 @@
 <!--  * Project   - 260082                              *  -->
 <!--  ***************************************************   */
 
-// the shared styles and header come from ProjectTracking_dsp.php
+// shared styles and header from ProjectTracking_dsp.php
 function dspProjectDevelopers() {
     prjStyles();
 ?>
-<!-- stdPage is the shared layout hook that seats a page beside the nav menu,
-     same as every legacy PROJ_* screen -->
+<!-- stdPage seats the page beside the nav menu -->
 <div id="stdPage">
 <div class="pt-app">
 

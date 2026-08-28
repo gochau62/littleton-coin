@@ -16,20 +16,12 @@
 <!--  * Project   - 260082                              *  -->
 <!--  ***************************************************   */
 
-// the stylesheet is shared by the dashboard and the developers page so the
-// two screens read as one tool
+// the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-E - view-source and search "PT build" to confirm
-     the deployed copy is current -->
+<!-- PT build 2026-08-28-F - deploy marker, check via view-source -->
 <style>
-/* All the styling for the Project Tracking screens lives here, not in a
-   shared stylesheet.
-
-   The design system: near-black ink on white cards over a cool gray page,
-   one blue as the working color, red reserved for things needing attention,
-   small uppercase labels for structure, tabular numerals for every figure.
-   Spacing runs on a 4px rhythm. */
+/* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
         --pt-orange: #eb6834; --pt-green: #008300; --pt-amber: #b07b0e;
         --pt-yellow: #eda100; --pt-gray: #98a2b3;
@@ -43,10 +35,7 @@ function prjStyles() {
         --pt-shadow: 0 1px 2px rgba(16, 24, 40, .05);
         --pt-mono: "Cascadia Mono", Consolas, "Courier New", monospace; }
 
-/* the house rule the other tools follow (see the Requisitions screen): the
-   page sits inside the framework page beside the LCC sidebar, so it never
-   assumes the whole window - it takes the width it is given (roughly 700px
-   beside the menu) and everything inside stays within it */
+/* house rule: take the given width, never more */
 #stdPage { min-width: 0; max-width: 100%; }
 .pt-app { min-width: 0; max-width: 100%; box-sizing: border-box;
           container-type: inline-size;
@@ -63,12 +52,12 @@ function prjStyles() {
            border-radius: 10px; box-shadow: var(--pt-shadow);
            padding: 1.1rem 1.25rem; margin: 0 0 1rem; }
 
-/* card headings are small uppercase labels, so the numbers carry the weight */
+/* small uppercase labels, numbers carry the weight */
 .pt-card h2 { font-size: .72rem; font-weight: 600; letter-spacing: .07em;
               text-transform: uppercase; color: var(--pt-muted);
               margin: 0 0 .85rem; }
 
-/* the title card: page title, updated line, cross-link to the other page */
+/* title card: title, updated line, cross-link */
 .pt-head { display: flex; align-items: center; gap: .85rem;
            padding: .95rem 1.25rem; }
 .pt-head h1 { font-size: 1.2rem; font-weight: 650; letter-spacing: -.01em;
@@ -94,7 +83,7 @@ function prjStyles() {
                    margin-top: .35rem; font-variant-numeric: tabular-nums; }
 .pt-stat.pt-warn .pt-val { color: var(--pt-red); }
 
-/* steering committee pipeline: quiet white cells, a colored rule per stage */
+/* pipeline cells with a colored rule per stage */
 .pt-pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
 .pt-seg { border: 1px solid var(--pt-line); border-top-width: 3px;
           border-top-color: var(--pt-gray); border-radius: 8px;
@@ -109,14 +98,12 @@ function prjStyles() {
 .pt-seg-approved  { border-top-color: var(--pt-green); }
 .pt-seg-rejected  { border-top-color: var(--pt-red); }
 
-/* the two chart cards side by side */
-/* minmax(0,*) lets the tracks shrink below their content, so the page
-   never demands more width than the space beside the sidebar offers */
+/* chart cards side by side; tracks can shrink */
 .pt-charts { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem;
              margin: 0 0 1rem; align-items: stretch; }
 .pt-charts .pt-card { margin: 0; display: flex; flex-direction: column; }
 .pt-chartbox { width: 100%; overflow-x: auto; }
-/* the donut centers in whatever height the taller bar chart card sets */
+/* donut centers in the bar chart's height */
 .pt-donutrow { display: flex; align-items: center; justify-content: center;
                gap: 2rem; flex-wrap: wrap; flex: 1; padding: .25rem 0; }
 .pt-legend { font-size: .82rem; }
@@ -165,12 +152,7 @@ function prjStyles() {
 .pt-btn-primary:hover { background: var(--pt-blue-dk);
                         border-color: var(--pt-blue-dk); color: #fff; }
 
-/* the project table scrolls inside its card with the heading row staying put.
-   fixed layout with percentage columns and NO minimum width matters here:
-   the LCC Online frame floats the menu on the left, and any hard minimum
-   (a min-width, or an auto table of nowrap cells) makes the whole page too
-   wide to sit beside it, dropping the content below the menu. Long values
-   ellipsize inside their columns instead of forcing the page wider */
+/* fixed layout, no minimum widths, values ellipsize */
 .pt-tablewrap { overflow: auto; max-height: 30rem; max-width: 100%;
                 contain: inline-size;
                 border: 1px solid var(--pt-line); border-radius: 8px; }
@@ -196,9 +178,7 @@ function prjStyles() {
 /* two-line headings for the narrow priority/date columns */
 .pt-grid thead th.pt-wrap { white-space: normal; line-height: 1.15; }
 
-/* the LCC framework styles bare table/th/td site-wide (green headers, black
-   cell borders, auto layout); these put the tool's own look back with the
-   #stdPage weight - fixed layout is what keeps every group's columns equal */
+/* override the framework's site-wide table styling */
 #stdPage table.pt-grid { table-layout: fixed; width: 100%;
                          border-collapse: separate; border-spacing: 0; }
 #stdPage .pt-grid th, #stdPage .pt-grid td { border: 0; background: transparent; }
@@ -234,9 +214,7 @@ function prjStyles() {
 .pt-chip-rejected  { background: var(--pt-chip-red);   color: var(--pt-red); }
 .pt-chip-complete  { background: var(--pt-chip-green); color: var(--pt-green); }
 
-/* weekly summary card: one section per developer, the profile name as a
-   small heading and a hairline between sections, so the report reads as
-   a professional overview rather than a wall of text */
+/* weekly summary: one section per developer */
 .pt-weekly-meta { color: var(--pt-faint); font-size: .76rem; margin: 0 0 .6rem; }
 .pt-weekly-text { font-size: .85rem; line-height: 1.55;
                   max-height: 24rem; overflow: auto; color: var(--pt-text); }
@@ -252,10 +230,7 @@ function prjStyles() {
                border: 1px solid var(--pt-line-soft); border-radius: 8px;
                color: var(--pt-muted); }
 .pt-weekly-note { color: var(--pt-amber); font-size: .78rem; margin-top: .6rem; }
-/* the period picker beside Generate: week or month mode plus a calendar
-   field that opens a month grid; pick any day and the whole reporting
-   week (or month) highlights. Preset to the prior week so an untouched
-   Generate reports on the last finished week */
+/* period picker: mode, calendar field, Generate */
 .pt-wkbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
             margin: .85rem 0 0; }
 .pt-wkbar select {
@@ -312,9 +287,7 @@ function prjStyles() {
     .pt-charts { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* the media query above sees the WINDOW, but beside the sidebar the page
-   only gets ~700px while the window is far wider - so the same restacking
-   also keys off the width the page itself was given */
+/* container query restacks beside the sidebar too */
 @container (max-width: 880px) {
     .pt-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pt-stat { padding: .3rem 1rem; }
@@ -328,7 +301,7 @@ function prjStyles() {
 }
 
 
-// the shared title card; $active names the current page's nav link
+// shared title card; $active names the current page
 function prjHeader($title, $subtitle, $active) {
 ?>
     <div class="pt-card pt-head">
@@ -337,7 +310,7 @@ function prjHeader($title, $subtitle, $active) {
             <div class="pt-sub"><?php echo $subtitle; ?></div>
         </div>
         <div class="pt-nav">
-            <?php // the title names the page, so the nav just links across
+            <?php // nav just links across to the other page
                   if ($active === 'dashboard') { ?>
                 <a href="ProjectDevelopers_ctl.php">Projects by developer</a>
             <?php } else { ?>
@@ -352,8 +325,7 @@ function prjHeader($title, $subtitle, $active) {
 function dspProjectTracking() {
     prjStyles();
 ?>
-<!-- stdPage is the shared layout hook that seats a page beside the nav menu,
-     same as every legacy PROJ_* screen -->
+<!-- stdPage seats the page beside the nav menu -->
 <div id="stdPage">
 <div class="pt-app">
 
@@ -440,8 +412,7 @@ function dspProjectTracking() {
         </div>
         <div class="pt-tablewrap">
             <table class="pt-grid" id="tblProjects">
-                <!-- numbers and dates get fixed pixel columns so they never
-                     ellipsize; the text columns absorb any squeeze -->
+                <!-- fixed pixel columns for numbers and dates -->
                 <colgroup><col style="width:76px"><col style="width:22%">
                 <col style="width:88px"><col style="width:11%">
                 <col style="width:11%"><col style="width:6%">

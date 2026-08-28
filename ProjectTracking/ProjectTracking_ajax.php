@@ -16,14 +16,13 @@
 <!--  * Project   - 260082                              *  -->
 <!--  ***************************************************   */
 
-// AJAX endpoint, buffer from byte 0 so stray include output can't corrupt the JSON
+// buffer output so nothing corrupts the JSON
 ob_start();
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
 
-// the same vendored PhpSpreadsheet copy the other loaders read uploads with -
-// only needed for the Excel download action
+// vendored PhpSpreadsheet, only for the download action
 $prjVendor = '/www/seidenphp/htdocs/vendor/autoload.php';
 if (file_exists($prjVendor)) { require_once $prjVendor; }
 
@@ -40,9 +39,7 @@ if (function_exists('getDB2PConn')) { $conn = getDB2PConn($user, $password); }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// every JSON reply - including a failure on the download action's path -
-// purges the buffer and claims the content type itself, so stray include
-// output can never ride along and no reply goes out as text/html
+// purge the buffer, claim the content type, reply
 function prjOut($arr) {
     while (ob_get_level() > 0) { ob_end_clean(); }
     if (!headers_sent()) { header('Content-Type: application/json'); }
@@ -57,7 +54,7 @@ function prjOutFail($msg = '') {
 }
 
 
-// a stored YYYYMMDD number as MM/DD/YYYY, blank when there is no date
+// YYYYMMDD as MM/DD/YYYY, blank when no date
 function prjFmtDate($dec) {
     $s = strval(intval($dec));
     if (strlen($s) !== 8) { return ''; }
@@ -65,7 +62,7 @@ function prjFmtDate($dec) {
 }
 
 
-// trim a project row down to what the screens render, so the JSON stays small
+// trim a row to what the screens render
 function prjRowOut($row) {
     return array(
         'num'    => intval($row['PJNUM']),
@@ -80,23 +77,20 @@ function prjRowOut($row) {
         'low'    => floatval($row['PJESTLOW']),
         'hi'     => floatval($row['PJESTHI']),
         'hours'  => floatval($row['PJHOURS']),
-        // submitted (created) date; ?? 0 keeps the page alive until the
-        // recompiled PRJTRK001S that returns PJSUBDATE is on the box
+        // ?? 0 tolerates an old PRJTRK001S compile
         'sub'    => prjFmtDate($row['PJSUBDATE'] ?? 0),
         'subraw' => intval($row['PJSUBDATE'] ?? 0),
         'sched'  => prjFmtDate($row['PJSCHDATE']),
-        // the raw YYYYMMDD rides along so the table can sort the formatted
-        // date chronologically instead of month-first
+        // raw date so the table sorts chronologically
         'schedraw' => intval($row['PJSCHDATE']),
         'comp'   => prjFmtDate($row['PJCOMPDATE']),
-        // 1 = on the PTS report extracts (the SC pipeline), 0 = stale
+        // 1 = on the SC pipeline, 0 = stale
         'pipe'   => intval($row['PIPE'] ?? 1),
     );
 }
 
 
-// group project rows by programmer the way the Projects-by-developer
-// spreadsheet does: busiest first, the Unassigned bucket last
+// group rows by programmer, Unassigned last
 function prjGroupByPgmr($projects) {
     $groups = array();
     foreach ($projects as $row) {
@@ -117,19 +111,14 @@ if (!$conn) {
     prjOutFail("No database connection - sign in to LCC Online first.");
 }
 
-// level 20 is the developers group (10 is only the minimum to use LCCOnline)
+// level 20 is the developers group
 if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 20) != "yes") {
     prjOutFail("Current user profile is not authorized to use this tool.");
 }
 
 switch ($action) {
 
-    // everything the dashboard draws in one round trip: the stat tiles, the
-    // pipeline, the two charts, the project table, and the cached weekly
-    // summary. Counts are scoped to the SC pipeline - the union of the four
-    // PTS report extracts the monthly spreadsheet is built from - so the
-    // open number matches the spreadsheet; open records on none of those
-    // reports only feed the stale counter and stay off the dashboard table
+    // everything the dashboard draws in one round trip
     case 'dashboard':
         $projects = prjProjects($conn, 'N');
         if ($projects === false) { prjOutFail(); }
@@ -143,8 +132,7 @@ switch ($action) {
             $out[] = prjRowOut($row);
         }
 
-        // the summary text is the deliverable; the digest behind it stays in
-        // the cache file where it can be checked, not in every page load
+        // the digest stays in the cache file
         $weekly = prjWeeklyRead();
         if (is_array($weekly)) { unset($weekly['digest']); }
 
@@ -155,22 +143,17 @@ switch ($action) {
                      "status" => $rollup['status'],
                      "load" => $rollup['load'],
                      "stages" => $GLOBALS['prjStages'],
-                     // the donut's four fixed buckets - the by-developer
-                     // page gets the stored PRWRKSTS labels instead
+                     // the donut's four fixed buckets
                      "statuses" => $GLOBALS['prjStatusBuckets'],
                      "developers" => $GLOBALS['prjDevelopers'],
                      "projects" => $out,
                      "weekly" => $weekly,
-                     // true when the PTS report reads produced nothing usable
-                     // and the dashboard fell back to counting all open work;
-                     // pipeinfo says what each report proc returned
+                     // true when the count fell back to everything
                      "pipenote" => ($pipe === null),
                      "pipeinfo" => $GLOBALS['prjPipeInfo'] ?? '',
                      "updated" => date('M j, Y')));
 
-    // the assignments page rows; complete=Y adds finished and rejected work.
-    // Every row carries its pipe flag so the page can hide stale records
-    // client-side and still offer the include-stale checkbox
+    // the assignments rows; complete=Y adds finished work
     case 'assignments':
         $includeComplete = (($_POST['complete'] ?? $_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
@@ -189,16 +172,12 @@ switch ($action) {
                      "projects" => $out,
                      "updated" => date('M j, Y')));
 
-    // build this week's digest, write the AI summary, cache it. POST only so
-    // a crawler or prefetch can't burn an API call
+    // digest, AI summary, cache; POST only
     case 'weeklygenerate':
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             prjOutFail("The weekly summary is generated with a POST.");
         }
-        // optional explicit period from the card's picker - the client
-        // sends a resolved Mon-Sun week or calendar month as YYYYMMDD.
-        // Junk or oversized ranges are refused; nothing sent means the
-        // default prior week
+        // optional picker period; junk or oversized ranges refused
         $from = intval($_POST['from'] ?? 0);
         $to   = intval($_POST['to'] ?? 0);
         if ($from > 0 || $to > 0) {
@@ -210,12 +189,11 @@ switch ($action) {
         }
         list($ok, $result) = prjGenerateWeekly($conn, $user, $from, $to);
         if (!$ok) { prjOutFail($result); }
-        // the digest rides in the cache file for reference, not in the response
+        // the digest stays out of the response
         unset($result['digest']);
         prjOut(array("ok" => true, "weekly" => $result));
 
-    // the assignments view as a workbook, grouped per programmer the way the
-    // Projects-by-developer spreadsheet lays it out
+    // the assignments view as a workbook, grouped per programmer
     case 'download':
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\Spreadsheet')) {
             prjOutFail("The spreadsheet library is not available on this server.");
@@ -227,9 +205,7 @@ switch ($action) {
         prjMarkPipeline($projects,
             prjPipelineCheck($projects, prjPipelineNums($conn, $projects)));
 
-        // stale open records stay out of the workbook unless asked for, the
-        // same visibility rule the page applies; finished work already on
-        // the sheet (complete=Y) is governed by that checkbox alone
+        // stale records stay out unless asked for
         if ($includeStale !== 'Y') {
             $projects = array_values(array_filter($projects, function ($row) {
                 return intval($row['PIPE']) === 1 ||
@@ -237,8 +213,7 @@ switch ($action) {
             }));
         }
 
-        // only the tracked developers' groups (and Unassigned) go in the
-        // workbook - the same groups the monthly spreadsheet carries
+        // tracked developers plus Unassigned only
         $projects = array_values(array_filter($projects, function ($row) {
             $pgmr = trim($row['PJPGMR']);
             return $pgmr === '' || prjTrackedDev($pgmr);
@@ -288,7 +263,7 @@ switch ($action) {
                 ), NULL, 'A' . $r);
                 $r += 1;
             }
-            $r += 1; // blank row between programmers, like the source sheet
+            $r += 1; // blank row between programmers
         }
 
         prjActLog($user, 'DOWNLOAD', 'complete=' . $includeComplete .
