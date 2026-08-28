@@ -35,8 +35,11 @@ function prjStyles() {
         --pt-shadow: 0 1px 2px rgba(16, 24, 40, .05);
         --pt-mono: "Cascadia Mono", Consolas, "Courier New", monospace; }
 
-/* house rule: take the given width, never more */
-#stdPage { min-width: 0; max-width: 100%; }
+/* house rule: take the given width, never more. Both carry the page grey
+   so the framework's blue never shows behind the content. No width here -
+   the app sits beside the floated menu and fills what is left */
+#stdPage { min-width: 0; max-width: 100%; box-sizing: border-box;
+           background: var(--pt-bg); }
 .pt-app { min-width: 0; max-width: 100%; box-sizing: border-box;
           container-type: inline-size;
           font-family: "Segoe UI", -apple-system, system-ui, Roboto,
@@ -74,13 +77,17 @@ function prjStyles() {
 .pt-head .pt-nav a.pt-btn:hover { background: var(--pt-blue-dk);
            border-color: var(--pt-blue-dk); color: #fff; }
 
-/* the stat strip: four cards on the page, no wrapper around them */
+/* the stat strip: four cards with a colored top rule, like the pipeline */
 .pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: .75rem; margin: 0 0 1rem; }
 .pt-stat { background: var(--pt-card); border: 1px solid var(--pt-line);
+           border-top-width: 3px; border-top-color: var(--pt-gray);
            border-radius: 10px; box-shadow: var(--pt-shadow);
-           padding: .7rem .9rem .8rem; transition: border-color .12s ease; }
-.pt-stat:hover { border-color: var(--pt-blue); }
+           padding: .7rem .9rem .8rem; }
+.pt-stat[data-tile=open]       { border-top-color: var(--pt-blue); }
+.pt-stat[data-tile=new]        { border-top-color: var(--pt-blue); }
+.pt-stat[data-tile=review]     { border-top-color: var(--pt-yellow); }
+.pt-stat[data-tile=unassigned] { border-top-color: var(--pt-red); }
 .pt-stat .pt-lbl { font-size: .7rem; font-weight: 600; letter-spacing: .06em;
                    text-transform: uppercase; color: var(--pt-muted); }
 .pt-stat .pt-val { font-size: 1.75rem; font-weight: 650; letter-spacing: -.02em;
