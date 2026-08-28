@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-K - deploy marker, check via view-source -->
+<!-- PT build 2026-08-28-L - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -106,7 +106,13 @@ function prjStyles() {
 .pt-seg:hover { border-color: var(--pt-blue); }
 .pt-legrow { padding: .1rem .25rem; border-radius: 6px; }
 .pt-legrow:hover { background: var(--pt-line-soft); }
-.pt-arc:hover { opacity: .85; }
+.pt-arc { transition: opacity .12s ease; }
+.pt-arc:hover { opacity: .7; }
+/* the load chart highlights the whole row on hover, no tooltip */
+.pt-barbg { fill: transparent; }
+.pt-barname { fill: var(--pt-muted); }
+.pt-bar:hover .pt-barbg { fill: var(--pt-line-soft); }
+.pt-bar:hover .pt-barname { fill: var(--pt-text); font-weight: 600; }
 
 /* pipeline cells with a colored rule per stage */
 .pt-pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
@@ -137,12 +143,6 @@ function prjStyles() {
 .pt-dot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
 .pt-legend .pt-cnt { color: var(--pt-muted); margin-left: .25rem;
                      font-variant-numeric: tabular-nums; }
-
-/* chart hover tooltip, positioned by JS */
-#ptTip { position: fixed; display: none; pointer-events: none; z-index: 30;
-         background: var(--pt-text); color: #fff; font-size: .76rem;
-         padding: .35rem .6rem; border-radius: 7px; max-width: 320px;
-         box-shadow: 0 4px 12px rgba(16, 24, 40, .18); }
 
 /* filters over the table */
 .pt-toolbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
@@ -320,9 +320,7 @@ function prjStyles() {
     .pt-pipe { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .pt-charts { grid-template-columns: minmax(0, 1fr); }
 }
-</style>
-<div id="ptTip"></div>
-<?php
+</style><?php
 }
 
 

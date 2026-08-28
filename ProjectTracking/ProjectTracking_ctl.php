@@ -140,19 +140,6 @@ function attr(s) {
 }
 
 
-// chart hover tooltip helpers - one shared floating div
-function tipShow(evt, html) {
-    $('#ptTip').html(html).css({
-        display: 'block',
-        left: (evt.clientX + 14) + 'px',
-        top: (evt.clientY + 14) + 'px'
-    });
-}
-
-
-function tipHide() { $('#ptTip').hide(); }
-
-
 function loadDashboard() {
     postAjax({ action: 'dashboard' }, function (resp) {
         dashData = resp;
@@ -253,25 +240,24 @@ function renderLoad(load) {
         var color = (name === 'Unassigned') ? '#d03b3b' : '#2a78d6';
         var label = (name === 'Unassigned') ? 'Unassigned' : name;
 
-        svg += '<g class="pt-bar" data-name="' + attr(label) + '" data-count="' + count + '">' +
-               '<text x="' + (labelW - 8) + '" y="' + (y + barH - 2) +
-               '" text-anchor="end" font-size="11" fill="#667085">' + esc(label) + '</text>' +
+        // the row band sits behind everything: it takes the hover highlight
+        // and catches the click across the whole row
+        svg += '<g class="pt-bar" data-name="' + attr(label) + '" data-count="' + count +
+               '"><rect class="pt-barbg" x="0" y="' + (y - 5) + '" width="' + w +
+               '" height="' + (rowH - 2) + '" rx="6"></rect>' +
+               '<text class="pt-barname" x="' + (labelW - 8) + '" y="' + (y + barH - 2) +
+               '" text-anchor="end" font-size="11">' + esc(label) + '</text>' +
                '<rect x="' + labelW + '" y="' + y + '" width="' + len +
                '" height="' + barH + '" rx="' + (barH / 2) + '" fill="' + color + '"></rect>' +
                '<text x="' + (labelW + len + 6) + '" y="' + (y + barH - 2) +
                '" font-size="11" font-weight="600" fill="#101828">' + count + '</text>' +
-               '<rect x="0" y="' + (y - 4) + '" width="' + w + '" height="' + rowH +
-               '" fill="transparent"></rect>' +
                '</g>';
     });
     svg += '</svg>';
     $('#loadChart').html(svg);
 
-    $('#loadChart .pt-bar').on('mousemove', function (evt) {
-        var n = $(this).data('name'), c = $(this).data('count');
-        tipShow(evt, esc(n) + ' &mdash; ' + c + ' open project' + (c === 1 ? '' : 's') +
-                ' (click to list)');
-    }).on('mouseleave', tipHide).on('click', function () {
+    // no tooltip here - the row highlights instead, like the cards do
+    $('#loadChart .pt-bar').on('click', function () {
         showInTable({ pgmr: $(this).data('name') });
     });
 }
@@ -353,11 +339,8 @@ function renderDonut(status, labels) {
     $('#statusLegend .pt-legrow').on('click', function () {
         openStatus($(this).data('status'));
     });
-    $('#statusDonut .pt-arc').on('mousemove', function (evt) {
-        tipShow(evt, esc($(this).data('label')) + ' &mdash; ' +
-                $(this).data('count') + ' (' + $(this).data('pct') + '%)' +
-                ' (click to list)');
-    }).on('mouseleave', tipHide).on('click', function () {
+    // the segment lightens on hover; the legend beside it carries the counts
+    $('#statusDonut .pt-arc').on('click', function () {
         openStatus($(this).data('key'));
     });
 }
