@@ -41,8 +41,10 @@
 
 <!--  Begin Content Here -->
 <?php
-// the frame stashes this address here, so a bookmark returns after sign-on
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+
+// record where the person was headed so sign-on can send them back
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // authority level 20, the developers group
 $authorized = "yes";
