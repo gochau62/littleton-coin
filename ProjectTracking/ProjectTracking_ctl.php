@@ -309,12 +309,10 @@ function renderWeekly(w) {
         return s.length === 8
             ? s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4) : s;
     }
-    var how = (w.source === 'ai')
-        ? 'written by ' + (w.model || 'Claude')
-        : 'plain rollup (no AI summary available)';
+    // just the week and when it was generated - who ran it and how stay in
+    // the cache file and the activity log
     $('#weeklyMeta').text('Week ' + slashes(w.from) + ' - ' + slashes(w.to) +
-        ' · generated ' + w.generated_at + ' by ' + w.generated_by +
-        ' · ' + how);
+        ' · generated ' + w.generated_at);
     $('#weeklyText').text(w.text);
     $('#weeklyNote').text(w.source === 'fallback' && w.note ? w.note : '');
 }
