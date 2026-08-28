@@ -136,16 +136,28 @@ function prjTime($conn, $from, $to) {
 }
 
 
-// NOTES: comment index rows for a list of projects, like the project screen
+// comment index rows per project through PHP0003S, the same procedure the
+// project screen's getRecordsWebNotes calls against WBNOTEIDXP
 function prjNotes($conn, $projNums) {
-    $list = array();
+    $out = array();
     foreach (array_slice(array_unique($projNums), 0, 150) as $num) {
         $n = intval($num);
-        if ($n > 0) { $list[] = "'" . $n . "'"; }
+        if ($n <= 0) { continue; }
+        $rows = prjFetchAll($conn, "CALL PHP0003S(?, ?)",
+                            array(strval($n), 'PROJ_'));
+        if ($rows === false) { continue; }
+        foreach ($rows as $r) {
+            $out[] = array(
+                'NTPROJ' => trim(strval($r['WNIDVAL'] ?? $n)),
+                'NTUSER' => trim(strval($r['WNUSER'] ?? '')),
+                'NTDATE' => intval($r['WNDATE'] ?? 0),
+                'NTTIME' => intval($r['WNTIME'] ?? 0),
+                'NTTYPE' => trim(strval($r['WNTYPE'] ?? '')),
+                'NTPATH' => trim(strval($r['WNPATH'] ?? '')),
+            );
+        }
     }
-    if (empty($list)) { return array(); }
-    return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
-                       array('NOTES', implode(',', $list), ''));
+    return $out;
 }
 
 
@@ -369,12 +381,17 @@ function prjNoteText($n) {
     while (strlen($time) < 6) { $time = '0' . $time; }
     $stem = 'PROJ_' . trim(strval($n['NTPROJ'])) . strval(intval($n['NTDATE']));
 
-    // the index stores the path the way the screen uses it - relative to
-    // the docroot - so try it as given, beside this file, and under the
-    // server's document root
-    $dirs = array(rtrim($path, '/'), __DIR__ . '/' . trim($path, '/'));
+    // the saver strips the leading WebNotes/ and writes from that folder,
+    // so the file sits under this screen's own WebNotes directory
+    $inner = $path;
+    if (stripos($inner, 'WebNotes/') === 0) { $inner = substr($inner, 9); }
+    $inner = trim($inner, '/');
+    $dirs = array(__DIR__ . '/WebNotes/' . $inner,
+                  __DIR__ . '/' . trim($path, '/'),
+                  rtrim($path, '/'));
     if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-        $dirs[] = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/' . trim($path, '/');
+        $dirs[] = rtrim($_SERVER['DOCUMENT_ROOT'], '/') .
+                  '/LCCOnline/WebNotes/' . $inner;
     }
 
     $txt = false;

@@ -4,7 +4,7 @@
 /*                                                                   */
 /* Program Narrative - Read-only data feeds for the Project          */
 /*                     Tracking dashboard rewrite, one result set    */
-/*                     per type: LIST TIME NOTES COMP PGMR CHGLOG.   */
+/*                     per type: LIST TIME COMP PGMR CHGLOG.        */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -15,6 +15,7 @@
 /*                     SRCMBR(PRJTRK001S)                            */
 /*********************************************************************/
 /* PRTIMEP columns confirmed via SYSCOLUMNS 08/25/26                 */
+/* Comments are NOT here - the screens read WBNOTEIDXP via PHP0003S   */
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
 /* |                                                                |*/
@@ -28,7 +29,7 @@
 
 CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         IN INTYPE VARCHAR(10),
-        IN INKEY1 VARCHAR(1200),
+        IN INKEY1 VARCHAR(20),
         IN INKEY2 VARCHAR(20)
         )
 
@@ -41,9 +42,6 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         DECLARE WKFROM  DECIMAL(8, 0) DEFAULT 0;
         DECLARE WKTO    DECIMAL(8, 0) DEFAULT 0;
         DECLARE WKALL   VARCHAR(1)    DEFAULT 'N';
-        DECLARE WKLIB   VARCHAR(10)   DEFAULT '';
-        DECLARE WKFILE  VARCHAR(10)   DEFAULT '';
-        DECLARE WKNOTES VARCHAR(2000) DEFAULT '';
 
         -- LIST: projects with newest estimate and summed hours
         DECLARE C1 CURSOR WITH RETURN FOR
@@ -100,9 +98,6 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                AND T.PT# NOT BETWEEN 90000 AND 90999
              ORDER BY T.PTPGMR, T.PT#;
 
-        -- NOTES: comment index rows; file located by its columns
-        DECLARE C3 CURSOR WITH RETURN FOR S3;
-
         -- COMP: projects completed in a date range
         DECLARE C4 CURSOR WITH RETURN FOR
             SELECT P.PR# AS PJNUM,
@@ -138,52 +133,6 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
             OPEN C2;
-        ELSEIF INTYPE = 'NOTES' THEN
-            SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
-            SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
-
-            -- locate the WebNotes file by its WN* columns
-            SELECT C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME
-              INTO WKLIB, WKFILE
-              FROM QSYS2/SYSCOLUMNS C
-              JOIN QSYS2/SYSTABLES T
-                ON T.SYSTEM_TABLE_SCHEMA = C.SYSTEM_TABLE_SCHEMA
-               AND T.SYSTEM_TABLE_NAME = C.SYSTEM_TABLE_NAME
-             WHERE C.SYSTEM_COLUMN_NAME IN
-                   ('WNPREFIX', 'WNIDVAL', 'WNUSER', 'WNDATE', 'WNTIME',
-                    'WNTYPE', 'WNPATH')
-             GROUP BY C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME,
-                      T.TABLE_TYPE
-            HAVING COUNT(DISTINCT C.SYSTEM_COLUMN_NAME) = 7
-             ORDER BY CASE WHEN T.TABLE_TYPE IN ('P', 'T') THEN 1 ELSE 2 END,
-                      CASE WHEN C.SYSTEM_TABLE_SCHEMA LIKE '%DEV%'
-                           THEN 2 ELSE 1 END,
-                      C.SYSTEM_TABLE_SCHEMA, C.SYSTEM_TABLE_NAME
-             FETCH FIRST 1 ROW ONLY;
-
-            IF WKLIB = '' OR WKFILE = '' THEN
-                SIGNAL SQLSTATE '75012'
-                    SET MESSAGE_TEXT =
-                        'No WebNotes index file (WN* columns) in the catalogs';
-            END IF;
-
-            /* read by project the way the project screen does - INKEY1 is
-               a quoted, comma separated list of the projects worked on.
-               No date test here; the PHP keeps the period's rows */
-            SET WKNOTES = 'SELECT RTRIM(W.WNIDVAL) AS NTPROJ, '
-                   CONCAT 'RTRIM(W.WNUSER) AS NTUSER, '
-                   CONCAT 'W.WNDATE AS NTDATE, '
-                   CONCAT 'RTRIM(W.WNTYPE) AS NTTYPE, '
-                   CONCAT 'RTRIM(W.WNPATH) AS NTPATH, '
-                   CONCAT 'W.WNTIME AS NTTIME '
-                   CONCAT 'FROM ' CONCAT WKLIB CONCAT '/' CONCAT WKFILE
-                   CONCAT ' W '
-                   CONCAT 'WHERE RTRIM(W.WNPREFIX) LIKE ''PROJ%'' '
-                   CONCAT 'AND RTRIM(W.WNIDVAL) IN ('
-                   CONCAT COALESCE(NULLIF(TRIM(INKEY1), ''), '''''')
-                   CONCAT ') ORDER BY W.WNIDVAL, W.WNDATE, W.WNTIME';
-            PREPARE S3 FROM WKNOTES;
-            OPEN C3;
         ELSEIF INTYPE = 'COMP' THEN
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
@@ -197,6 +146,6 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         ELSE
             SIGNAL SQLSTATE '75011'
                 SET MESSAGE_TEXT =
-                    'Type must be LIST TIME NOTES COMP PGMR CHGLOG';
+                    'Type must be LIST TIME COMP PGMR CHGLOG';
         END IF;
     END;
