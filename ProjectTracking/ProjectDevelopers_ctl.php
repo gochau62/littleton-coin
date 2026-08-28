@@ -256,10 +256,9 @@ function renderGroups() {
     var html = '';
     $.each(names, function (i, name) {
         var list = groups[name];
-        var head = (name === 'Unassigned') ? 'Unassigned Pgmr' : name;
         html += '<div class="pt-group"><h3' +
                 (name === 'Unassigned' ? ' class="pt-unassigned"' : '') + '>' +
-                esc(head) + ' <span class="pt-cnt">&mdash; ' + list.length +
+                esc(name) + ' <span class="pt-cnt">&mdash; ' + list.length +
                 ' project' + (list.length === 1 ? '' : 's') + '</span></h3>' +
                 groupTable(list) + '</div>';
     });
