@@ -53,8 +53,36 @@ for the planned team/sub-department tagging.
    card's meta line says so.
 3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
    the developers group (level 10 is only the minimum to use LCC Online).
+   `PRJTRK001S` compiles with `DYNUSRPRF(*OWNER)`, so when it moves to
+   `LSCPRDLIB` its owner and `*PUBLIC` authority should match the PTS
+   procedures beside it.
 4. The Excel download uses the vendored PhpSpreadsheet at
    `/www/seidenphp/htdocs/vendor/autoload.php`, same as the other loaders.
+
+## Libraries — how names are resolved, and what to watch
+
+Procedure calls go out **unqualified first**, so the job's library list
+decides which copy answers — the same way the legacy screens work, and the
+reason a developer can put a test library ahead of `LSCPRDLIB` and exercise
+this code against test data. Only when the plain name fails to prepare does
+`prjFetchAll()` retry it library-qualified (`PRJ_PROC_LIB` for
+`PRJTRK001S`, `PRJ_LEGACY_LIB` for `PHP0003S`), and it writes a `LIBRARY`
+line to the activity log when it does — a fallback means a job's library
+list is short, which is worth knowing rather than papering over.
+
+Two things to settle before this is fully production:
+
+- **`PRJTRK001S` still lives in `LSCDEVLIBP`**, a development library, while
+  the screens run in production. It belongs in `LSCPRDLIB` next to the
+  `PTS00xxS` procedures. When it moves, change `PRJ_PROC_LIB` to
+  `LSCPRDLIB` and the fallback and the library list agree again.
+- **The cursors inside the procedure hard-qualify their files**
+  (`LSCPRDLIB/PRPROJP`, `LSCPRDLIB/PRTIMEP`, …). That is deliberate but it
+  means a job whose library list points at test data still reads
+  production through this procedure, and a file-level `OVRDBF` will not
+  redirect it the way an unqualified read would. Leave it qualified for a
+  production-only tool; drop the `LSCPRDLIB/` prefixes if the procedure
+  should follow the library list like the rest of the shop.
 
 ## The stage/status mapping — the one thing to review
 

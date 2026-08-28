@@ -105,11 +105,16 @@ function prjSqlTries($sql) {
 // prepare, bind, execute, fetch all rows
 function prjFetchAll($conn, $sql, $params = array()) {
     $stmt = false;
-    foreach (prjSqlTries($sql) as $try) {
+    $used = '';
+    foreach (prjSqlTries($sql) as $i => $try) {
         $stmt = @db2_prepare($conn, $try);
-        if ($stmt) { break; }
+        if ($stmt) { $used = ($i > 0) ? $try : ''; break; }
     }
     if (!$stmt) { return prjFail("prepare $sql"); }
+    // a fallback means the job's library list is short
+    if ($used !== '') {
+        prjActLog('agent', 'LIBRARY', 'library list missed - used ' . $used);
+    }
 
     foreach ($params as $i => $p) {
         $GLOBALS['prjP' . $i] = $p;
