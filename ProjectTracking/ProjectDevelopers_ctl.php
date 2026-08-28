@@ -83,10 +83,6 @@ $(document).ready(function () {
         searchTimer = setTimeout(renderGroups, 250);
     });
     $('#selPgmr').on('change', renderGroups);
-    $('#btnDownload').on('click', function () {
-        // a plain navigation so the browser handles the workbook download
-        window.location = 'ProjectTracking_ajax.php?action=download';
-    });
 });
 
 

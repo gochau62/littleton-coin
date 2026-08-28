@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-27-N - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-28-A - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -68,14 +68,9 @@ function prjStyles() {
               text-transform: uppercase; color: var(--pt-muted);
               margin: 0 0 .85rem; }
 
-/* the title card: app mark, page title, updated line, section nav */
+/* the title card: page title, updated line, cross-link to the other page */
 .pt-head { display: flex; align-items: center; gap: .85rem;
            padding: .95rem 1.25rem; }
-.pt-mark { width: 38px; height: 38px; border-radius: 9px; flex: 0 0 auto;
-           background: linear-gradient(135deg, var(--pt-blue), var(--pt-blue-dk));
-           color: #fff; display: flex; align-items: center;
-           justify-content: center; font-weight: 700; font-size: 1rem;
-           letter-spacing: .02em; }
 .pt-head h1 { font-size: 1.2rem; font-weight: 650; letter-spacing: -.01em;
               margin: 0; }
 .pt-head .pt-sub { color: var(--pt-muted); font-size: .78rem;
@@ -88,8 +83,6 @@ function prjStyles() {
 .pt-head .pt-nav a { color: var(--pt-muted); text-decoration: none;
                      font-weight: 500; padding: .35rem 0; }
 .pt-head .pt-nav a:hover { color: var(--pt-blue); }
-.pt-head .pt-nav .pt-here { color: var(--pt-text); font-weight: 600;
-                   padding: .35rem 0; border-bottom: 2px solid var(--pt-blue); }
 
 /* the stat strip: one card, four figures separated by hairlines */
 .pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -287,18 +280,16 @@ function prjStyles() {
 function prjHeader($title, $subtitle, $active) {
 ?>
     <div class="pt-card pt-head">
-        <div class="pt-mark">PT</div>
         <div>
             <h1><?php echo $title; ?></h1>
             <div class="pt-sub"><?php echo $subtitle; ?></div>
         </div>
         <div class="pt-nav">
-            <?php if ($active === 'dashboard') { ?>
-                <span class="pt-here">Overview</span> &nbsp;&nbsp;
+            <?php // the title names the page, so the nav just links across
+                  if ($active === 'dashboard') { ?>
                 <a href="ProjectDevelopers_ctl.php">Projects by developer</a>
             <?php } else { ?>
-                <a href="ProjectTracking_ctl.php">Overview</a> &nbsp;&nbsp;
-                <span class="pt-here">Projects by developer</span>
+                <a href="ProjectTracking_ctl.php">Overview</a>
             <?php } ?>
         </div>
     </div>

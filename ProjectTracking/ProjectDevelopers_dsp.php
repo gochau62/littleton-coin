@@ -34,8 +34,6 @@ function dspProjectDevelopers() {
         <div class="pt-toolbar">
             <input type="text" id="txtSearch" placeholder="Search project # or description">
             <select id="selPgmr"><option value="">All developers</option></select>
-            <button type="button" class="pt-btn pt-btn-primary" id="btnDownload">
-                Download to Excel</button>
         </div>
     </div>
 
