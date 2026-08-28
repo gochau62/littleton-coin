@@ -25,6 +25,10 @@ if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativela
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
 // log in LCCOnline_logs; durable cache outside htdocs
+// where the procedures live, for when the library list does not carry them
+if (!defined('PRJ_PROC_LIB'))   { define('PRJ_PROC_LIB', 'LSCDEVLIBP'); }
+if (!defined('PRJ_LEGACY_LIB')) { define('PRJ_LEGACY_LIB', 'LSCPRDLIB'); }
+
 define('PRJ_ACT_LOG', __DIR__ . '/LCCOnline_logs/projecttracking_activity.log');
 define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
 
@@ -84,9 +88,27 @@ function prjFail($where) {
 }
 
 
+// the same call qualified every way the connection might want it, so the
+// procedure is found whatever the job's library list holds
+function prjSqlTries($sql) {
+    $tries = array($sql);
+    foreach (array('PRJTRK001S', 'PHP0003S') as $proc) {
+        if (strpos($sql, $proc) === false) { continue; }
+        $lib = ($proc === 'PRJTRK001S') ? PRJ_PROC_LIB : PRJ_LEGACY_LIB;
+        $tries[] = str_replace($proc, $lib . '.' . $proc, $sql);
+        $tries[] = str_replace($proc, $lib . '/' . $proc, $sql);
+    }
+    return $tries;
+}
+
+
 // prepare, bind, execute, fetch all rows
 function prjFetchAll($conn, $sql, $params = array()) {
-    $stmt = db2_prepare($conn, $sql);
+    $stmt = false;
+    foreach (prjSqlTries($sql) as $try) {
+        $stmt = @db2_prepare($conn, $try);
+        if ($stmt) { break; }
+    }
     if (!$stmt) { return prjFail("prepare $sql"); }
 
     foreach ($params as $i => $p) {
