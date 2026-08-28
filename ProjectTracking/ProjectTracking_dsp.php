@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-B - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-28-C - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -370,7 +370,7 @@ function dspProjectTracking() {
             generated yet.</div>
         <div class="pt-weekly-note" id="weeklyNote"></div>
         <p style="margin:.85rem 0 0">
-            <button type="button" class="pt-btn" id="btnWeekly">Generate for last week</button>
+            <button type="button" class="pt-btn" id="btnWeekly">Generate</button>
         </p>
     </div>
 

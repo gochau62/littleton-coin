@@ -346,13 +346,13 @@ function generateWeekly() {
     var btn = $('#btnWeekly');
     btn.prop('disabled', true).text('Generating...');
     $.post('ProjectTracking_ajax.php', { action: 'weeklygenerate' }, function (resp) {
-        btn.prop('disabled', false).text('Generate for last week');
+        btn.prop('disabled', false).text('Generate');
         if (resp && resp.ok) { renderWeekly(resp.weekly); }
         else {
             showErrorMessage((resp && resp.msg) ? resp.msg : 'The weekly summary failed.');
         }
     }, 'json').fail(function () {
-        btn.prop('disabled', false).text('Generate for last week');
+        btn.prop('disabled', false).text('Generate');
         showErrorMessage('Server error - see the log.');
     });
 }
