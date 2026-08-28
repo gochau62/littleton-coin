@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-F - deploy marker, check via view-source -->
+<!-- PT build 2026-08-28-G - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -82,6 +82,13 @@ function prjStyles() {
 .pt-stat .pt-val { font-size: 1.9rem; font-weight: 650; letter-spacing: -.02em;
                    margin-top: .35rem; font-variant-numeric: tabular-nums; }
 .pt-stat.pt-warn .pt-val { color: var(--pt-red); }
+
+/* everything that navigates or filters shows a pointer */
+.pt-seg, .pt-legrow, .pt-rowlink, .pt-bar, .pt-arc { cursor: pointer; }
+.pt-seg:hover { border-color: var(--pt-blue); }
+.pt-legrow { padding: .1rem .25rem; border-radius: 6px; }
+.pt-legrow:hover { background: var(--pt-line-soft); }
+.pt-arc:hover { opacity: .85; }
 
 /* pipeline cells with a colored rule per stage */
 .pt-pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
@@ -193,7 +200,7 @@ function prjStyles() {
 .pt-st::before { content: "\25CF\00a0"; font-size: .6rem; }
 .pt-st-active     { color: #185fa5; }
 .pt-st-waituser   { color: var(--pt-amber); }
-.pt-st-onhold     { color: #898781; }
+.pt-st-onhold     { color: #7a5af8; }
 .pt-st-estnotneed { color: var(--pt-green); }
 .pt-st-other      { color: var(--pt-blue-dk); }
 .pt-st-notset     { color: var(--pt-faint); font-weight: 500; }

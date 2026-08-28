@@ -75,8 +75,15 @@ $(document).ready(function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderGroups, 250);
     });
-    $('#selPgmr').on('change', renderGroups);
+    $('#selPgmr, #selStatus').on('change', renderGroups);
 });
+
+
+// the dashboard's donut links here with ?status=<key>
+function urlStatus() {
+    var m = /[?&]status=([^&]*)/.exec(window.location.search);
+    return m ? decodeURIComponent(m[1]) : '';
+}
 
 
 // HTML escape for element text
@@ -106,6 +113,7 @@ function loadProjectDevelopers() {
             asgData = resp;
             $('#ptUpdated').text('updated ' + resp.updated);
             fillDevFilter();
+            fillStatusFilter();
             renderGroups();
         }, 'json').fail(function () {
             if (seq !== loadSeq) { return; }
@@ -136,6 +144,18 @@ function fillDevFilter() {
                 (n === current ? ' selected' : '') + '>' + esc(n) + '</option>';
     });
     $('#selPgmr').html(opts);
+}
+
+
+// status choices, preselected from the URL on first load
+function fillStatusFilter() {
+    var current = $('#selStatus').val() || urlStatus();
+    var opts = '<option value="">All statuses</option>';
+    $.each(asgData.statuses || {}, function (key, label) {
+        opts += '<option value="' + attr(key) + '"' +
+                (key === current ? ' selected' : '') + '>' + esc(label) + '</option>';
+    });
+    $('#selStatus').html(opts);
 }
 
 
@@ -188,7 +208,8 @@ function groupTable(rows) {
         '</tr></thead><tbody>';
     $.each(rows, function (i, p) {
         var est = (p.low || p.hi) ? (p.low + '–' + p.hi) : '';
-        html += '<tr>' +
+        // the whole row opens the project screen
+        html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
             '<td>' + statusChip(p.status) + '</td>' +
@@ -211,10 +232,12 @@ function renderGroups() {
     var q = $('#txtSearch').val().trim().toLowerCase();
     var fPgmr = $('#selPgmr').val();
 
+    var fStatus = $('#selStatus').val() || '';
     var rows = $.grep(visibleRows(), function (p) {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
         if (fPgmr !== '' && (p.pgmr === '' ? 'Unassigned' : p.pgmr) !== fPgmr) { return false; }
+        if (fStatus !== '' && p.status !== fStatus) { return false; }
         return true;
     });
 
@@ -241,6 +264,11 @@ function renderGroups() {
 
     $('#groupList').html(html ||
         '<div class="pt-card pt-empty">No projects match.</div>');
+
+    $('#groupList .pt-rowlink').on('click', function (e) {
+        if ($(e.target).is('a')) { return; }
+        window.location = 'PROJ_ctl.php?projnum=' + $(this).data('num');
+    });
 }
 </script>
 

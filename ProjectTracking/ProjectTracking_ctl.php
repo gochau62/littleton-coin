@@ -183,14 +183,33 @@ function renderTiles(t, pipenote) {
 }
 
 
+// clicking a cell filters the table below to that stage
 function renderPipeline(pipe, stages) {
     var html = '';
     $.each(stages, function (key, label) {
-        html += '<div class="pt-seg pt-seg-' + key + '">' +
+        html += '<div class="pt-seg pt-seg-' + key + '" data-stage="' + key +
+                '" title="Show the ' + attr(label) + ' projects">' +
                 '<div class="pt-val">' + (pipe[key] || 0) + '</div>' +
                 '<div class="pt-lbl">' + esc(label) + '</div></div>';
     });
     $('#pipeRow').html(html);
+    $('#pipeRow .pt-seg').on('click', function () {
+        showInTable({ stage: $(this).data('stage') });
+    });
+}
+
+
+// point the project table's filters at one slice and scroll to it
+function showInTable(f) {
+    $('#selStage').val(f.stage !== undefined ? f.stage : '');
+    $('#selPgmr').val(f.pgmr !== undefined ? f.pgmr : '');
+    if ($('#selStage').val() === null) { $('#selStage').val(''); }
+    if ($('#selPgmr').val() === null) { $('#selPgmr').val(''); }
+    renderTable();
+    var card = $('#tblProjects').closest('.pt-card');
+    if (card.length) {
+        $('html, body').animate({ scrollTop: card.offset().top - 12 }, 200);
+    }
 }
 
 
@@ -234,18 +253,32 @@ function renderLoad(load) {
 
     $('#loadChart .pt-bar').on('mousemove', function (evt) {
         var n = $(this).data('name'), c = $(this).data('count');
-        tipShow(evt, esc(n) + ' &mdash; ' + c + ' open project' + (c === 1 ? '' : 's'));
-    }).on('mouseleave', tipHide);
+        tipShow(evt, esc(n) + ' &mdash; ' + c + ' open project' + (c === 1 ? '' : 's') +
+                ' (click to list)');
+    }).on('mouseleave', tipHide).on('click', function () {
+        showInTable({ pgmr: $(this).data('name') });
+    });
 }
 
 
 // status donut with the total in the center
 function renderDonut(status, labels) {
-    // template colors: blue, amber, gray, green buckets
-    var colors = { active: '#185fa5', waituser: '#eda100',
-                   onhold: '#898781', estnotneed: '#1baf7a' };
-    $.each(labels, function (key) {
-        if (!colors[key]) { colors[key] = '#7a5af8'; }
+    // color by the status wording: active blue, waiting amber, hold
+    // purple, done green, unstatused grey
+    var palette = ['#0ba5ec', '#d03b3b', '#1c5cab', '#b07b0e'];
+    var pi = 0;
+    var colors = {};
+    $.each(labels, function (key, label) {
+        var l = String(label).toLowerCase();
+        if (key === 'notset') { colors[key] = '#cbd2dc'; }
+        else if (l.indexOf('hold') >= 0) { colors[key] = '#7a5af8'; }
+        else if (l.indexOf('wait') >= 0) { colors[key] = '#eda100'; }
+        else if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
+                 l.indexOf('prog') >= 0) { colors[key] = '#185fa5'; }
+        else if (l.indexOf('test') >= 0 || l.indexOf('comp') >= 0 ||
+                 l.indexOf('done') >= 0 || l.indexOf('impl') >= 0 ||
+                 l.indexOf('needed') >= 0) { colors[key] = '#1baf7a'; }
+        else { colors[key] = palette[pi % palette.length]; pi += 1; }
     });
     var total = 0;
     $.each(status, function (k, c) { total += c; });
@@ -271,6 +304,7 @@ function renderDonut(status, labels) {
             var dash = Math.max(len - gap, 0.5);
             var pct = Math.round(100 * cnt / total);
             svg += '<circle class="pt-arc" data-label="' + esc(label) +
+                   '" data-key="' + attr(key) +
                    '" data-count="' + cnt + '" data-pct="' + pct + '"' +
                    ' cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none"' +
                    ' stroke="' + colors[key] + '" stroke-width="' + stroke + '"' +
@@ -286,17 +320,29 @@ function renderDonut(status, labels) {
            ' font-size="10" fill="#667085">assigned</text></svg>';
     $('#statusDonut').html(svg);
 
+    // segments and legend rows open the by-developer page on that status
     var leg = '';
     $.each(labels, function (key, label) {
-        leg += '<div><span class="pt-dot" style="background:' + colors[key] + '"></span>' +
+        leg += '<div class="pt-legrow" data-status="' + attr(key) +
+               '" title="Show the ' + attr(label) + ' projects by developer">' +
+               '<span class="pt-dot" style="background:' + colors[key] + '"></span>' +
                esc(label) + '<span class="pt-cnt">' + (status[key] || 0) + '</span></div>';
     });
     $('#statusLegend').html(leg);
 
+    function openStatus(key) {
+        window.location = 'ProjectDevelopers_ctl.php?status=' + encodeURIComponent(key);
+    }
+    $('#statusLegend .pt-legrow').on('click', function () {
+        openStatus($(this).data('status'));
+    });
     $('#statusDonut .pt-arc').on('mousemove', function (evt) {
         tipShow(evt, esc($(this).data('label')) + ' &mdash; ' +
-                $(this).data('count') + ' (' + $(this).data('pct') + '%)');
-    }).on('mouseleave', tipHide);
+                $(this).data('count') + ' (' + $(this).data('pct') + '%)' +
+                ' (click to list)');
+    }).on('mouseleave', tipHide).on('click', function () {
+        openStatus($(this).data('key'));
+    });
 }
 
 
@@ -517,7 +563,7 @@ function renderTable() {
     $.each(rows, function (i, p) {
         var pgmr = (p.pgmr === '')
             ? '<span class="pt-unassigned">Unassigned</span>' : esc(p.pgmr);
-        html += '<tr>' +
+        html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + esc(p.sub) + '</td>' +
@@ -531,6 +577,11 @@ function renderTable() {
     });
     $('#gridBody').html(html ||
         '<tr><td colspan="9" class="pt-empty">No projects match.</td></tr>');
+
+    $('#gridBody .pt-rowlink').on('click', function (e) {
+        if ($(e.target).is('a')) { return; }
+        window.location = 'PROJ_ctl.php?projnum=' + $(this).data('num');
+    });
 }
 </script>
 

@@ -142,8 +142,7 @@ switch ($action) {
                      "status" => $rollup['status'],
                      "load" => $rollup['load'],
                      "stages" => $GLOBALS['prjStages'],
-                     // the donut's four fixed buckets
-                     "statuses" => $GLOBALS['prjStatusBuckets'],
+                     "statuses" => $GLOBALS['prjStatuses'],
                      "developers" => $GLOBALS['prjDevelopers'],
                      "projects" => $out,
                      "weekly" => $weekly,
