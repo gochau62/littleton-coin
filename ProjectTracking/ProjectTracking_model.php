@@ -353,13 +353,31 @@ function prjWeekRange() {
 // read a comment's IFS file like the legacy screen
 function prjNoteText($n) {
     $path = trim(strval($n['NTPATH'] ?? ''));
-    if ($path === '' || !isset($n['NTTIME'])) { return ''; }
+    if ($path === '' || !isset($n['NTTIME'])) {
+        // an old PRJTRK001S returns no path/time columns at all
+        $GLOBALS['prjNoteNoCols'] = ($GLOBALS['prjNoteNoCols'] ?? 0) + 1;
+        return '';
+    }
     $time = strval(intval($n['NTTIME']));
     while (strlen($time) < 6) { $time = '0' . $time; }
-    $file = $path . '/PROJ_' . trim(strval($n['NTPROJ'])) .
+    $name = '/PROJ_' . trim(strval($n['NTPROJ'])) .
             strval(intval($n['NTDATE'])) . $time;
-    $txt = @file_get_contents($file, false, null, 0, 8000);
-    if ($txt === false) { return ''; }
+
+    // the index stores the path the way the screen uses it - relative to
+    // the docroot - so try it as given, then beside this file
+    $tries = array($path . $name, __DIR__ . '/' . ltrim($path, '/') . $name);
+    $txt = false;
+    foreach ($tries as $file) {
+        $txt = @file_get_contents($file, false, null, 0, 8000);
+        if ($txt !== false) { break; }
+    }
+    if ($txt === false) {
+        $GLOBALS['prjNoteNoFile'] = ($GLOBALS['prjNoteNoFile'] ?? 0) + 1;
+        if (empty($GLOBALS['prjNoteSample'])) {
+            $GLOBALS['prjNoteSample'] = $tries[0];
+        }
+        return '';
+    }
     // strip the HTML; tags become spaces
     $txt = html_entity_decode(preg_replace('/<[^>]*>/', ' ', $txt), ENT_QUOTES);
     $txt = trim(preg_replace('/\s+/', ' ', $txt));
@@ -377,6 +395,9 @@ function prjWeeklyDigest($conn, $from, $to) {
     if ($time === false) { return false; }
     // a failed notes read skips comment info, not the summary
     $GLOBALS['prjNotesNote'] = '';
+    $GLOBALS['prjNoteNoCols'] = 0;
+    $GLOBALS['prjNoteNoFile'] = 0;
+    $GLOBALS['prjNoteSample'] = '';
     $notes = prjNotes($conn, $from, $to);
     if ($notes === false) {
         $GLOBALS['prjNotesNote'] =
@@ -440,20 +461,19 @@ function prjWeeklyDigest($conn, $from, $to) {
         }
         $dev[$user]['comments'][$type] += 1;
 
-        // attach the comment's words within budget
+        // attach the comment's words within budget; with no readable text
+        // the comment still rides along so the summary can name it
         $text = ($txtBudget > 0) ? prjNoteText($n) : '';
-        if ($text !== '') {
-            if (strlen($text) <= $txtBudget) {
-                $txtBudget -= strlen($text);
-                $dev[$user]['notes'][] = array(
-                    'num'  => intval(trim($n['NTPROJ'])),
-                    'date' => intval($n['NTDATE']),
-                    'type' => $type,
-                    'text' => $text);
-            } else {
-                $txtDropped += 1;
-            }
+        if ($text !== '' && strlen($text) > $txtBudget) {
+            $txtDropped += 1;
+            $text = '';
         }
+        if ($text !== '') { $txtBudget -= strlen($text); }
+        $dev[$user]['notes'][] = array(
+            'num'  => intval(trim($n['NTPROJ'])),
+            'date' => intval($n['NTDATE']),
+            'type' => $type,
+            'text' => $text);
     }
 
     // project changes stand on their own - anyone can make them, and they
@@ -486,6 +506,21 @@ function prjWeeklyDigest($conn, $from, $to) {
     if ($txtDropped > 0) {
         $out['comments_note'] = $txtDropped .
             ' comment texts were left out of the digest for size';
+    }
+
+    // say why comment text is missing rather than reporting hours only
+    $why = '';
+    if (intval($GLOBALS['prjNoteNoCols']) > 0) {
+        $why = 'comment text unavailable - recompile PRJTRK001S';
+    } elseif (intval($GLOBALS['prjNoteNoFile']) > 0) {
+        $why = intval($GLOBALS['prjNoteNoFile']) .
+               ' comment files could not be read (first: ' .
+               $GLOBALS['prjNoteSample'] . ')';
+    }
+    if ($why !== '') {
+        $GLOBALS['prjNotesNote'] = trim(
+            ($GLOBALS['prjNotesNote'] !== '' ? $GLOBALS['prjNotesNote'] . '; ' : '') . $why);
+        prjActLog('agent', 'NOTES', $why);
     }
     return $out;
 }

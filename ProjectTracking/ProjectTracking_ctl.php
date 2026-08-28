@@ -387,7 +387,8 @@ function renderWeekly(w) {
     $('#weeklyMeta').text(slashes(w.from) + ' - ' + slashes(w.to) +
         ' · generated ' + w.generated_at);
     $('#weeklyText').html(weeklyHtml(w.text));
-    $('#weeklyNote').text(w.source === 'fallback' && w.note ? w.note : '');
+    // the note also carries feed problems on an otherwise good run
+    $('#weeklyNote').text(w.note || '');
 }
 
 
