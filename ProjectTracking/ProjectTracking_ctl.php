@@ -91,6 +91,12 @@ $(document).ready(function () {
         renderTable();
     });
     $('#btnWeekly').on('click', generateWeekly);
+
+    // preset the period picker to the prior week, so Generate with nothing
+    // changed reports on the last finished Mon-Sun week
+    var m = new Date();
+    m.setDate(m.getDate() - ((m.getDay() + 6) % 7) - 7);
+    $('#dtWkDate').val(isoDate(m));
 });
 
 
@@ -309,7 +315,7 @@ function weeklyHtml(text) {
         if (b === '') { return; }
         var lines = b.split('\n');
         var first = lines[0].trim().replace(/:$/, '');
-        if (/^week overview/i.test(first)) {
+        if (/^((week|month|period)\s+)?overview/i.test(first)) {
             html += '<div class="pt-wk-total">' + body(b) + '</div>';
         } else if (lines.length > 1 && /^[A-Z][A-Z0-9 ._-]{1,14}$/.test(first)) {
             html += '<div class="pt-wk-dev"><h3>' + esc(first) + '</h3><p>' +
@@ -333,19 +339,60 @@ function renderWeekly(w) {
         return s.length === 8
             ? s.substr(4, 2) + '/' + s.substr(6, 2) + '/' + s.substr(0, 4) : s;
     }
-    // just the week and when it was generated - who ran it and how stay in
-    // the cache file and the activity log
-    $('#weeklyMeta').text('Week ' + slashes(w.from) + ' - ' + slashes(w.to) +
+    // just the period and when it was generated - who ran it and how stay
+    // in the cache file and the activity log
+    $('#weeklyMeta').text(slashes(w.from) + ' - ' + slashes(w.to) +
         ' · generated ' + w.generated_at);
     $('#weeklyText').html(weeklyHtml(w.text));
     $('#weeklyNote').text(w.source === 'fallback' && w.note ? w.note : '');
 }
 
 
+// the period picker's date arrives as yyyy-mm-dd text; parse it by parts -
+// new Date(string) would read it as UTC and shift a day in this timezone
+function pickedDate() {
+    var v = $('#dtWkDate').val();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { return null; }
+    var p = v.split('-');
+    return new Date(+p[0], p[1] - 1, +p[2]);
+}
+
+
+function ymd(d) {
+    return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+
+function isoDate(d) {
+    var mm = String(d.getMonth() + 1), dd = String(d.getDate());
+    if (mm.length < 2) { mm = '0' + mm; }
+    if (dd.length < 2) { dd = '0' + dd; }
+    return d.getFullYear() + '-' + mm + '-' + dd;
+}
+
+
 function generateWeekly() {
+    // resolve the picked date to its Mon-Sun week or its calendar month;
+    // with the picker empty the server falls back to the prior week
+    var post = { action: 'weeklygenerate' };
+    var d = pickedDate();
+    if (d) {
+        var from, to;
+        if ($('#selWkMode').val() === 'month') {
+            from = new Date(d.getFullYear(), d.getMonth(), 1);
+            to   = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        } else {
+            from = new Date(d);
+            from.setDate(from.getDate() - ((from.getDay() + 6) % 7));
+            to = new Date(from);
+            to.setDate(from.getDate() + 6);
+        }
+        post.from = ymd(from);
+        post.to = ymd(to);
+    }
     var btn = $('#btnWeekly');
     btn.prop('disabled', true).text('Generating...');
-    $.post('ProjectTracking_ajax.php', { action: 'weeklygenerate' }, function (resp) {
+    $.post('ProjectTracking_ajax.php', post, function (resp) {
         btn.prop('disabled', false).text('Generate');
         if (resp && resp.ok) { renderWeekly(resp.weekly); }
         else {

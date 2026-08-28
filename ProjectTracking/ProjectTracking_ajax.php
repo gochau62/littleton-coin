@@ -195,7 +195,20 @@ switch ($action) {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             prjOutFail("The weekly summary is generated with a POST.");
         }
-        list($ok, $result) = prjGenerateWeekly($conn, $user);
+        // optional explicit period from the card's picker - the client
+        // sends a resolved Mon-Sun week or calendar month as YYYYMMDD.
+        // Junk or oversized ranges are refused; nothing sent means the
+        // default prior week
+        $from = intval($_POST['from'] ?? 0);
+        $to   = intval($_POST['to'] ?? 0);
+        if ($from > 0 || $to > 0) {
+            $f = DateTime::createFromFormat('!Ymd', strval($from));
+            $t = DateTime::createFromFormat('!Ymd', strval($to));
+            if (!$f || !$t || $f > $t || $f->diff($t)->days > 45) {
+                prjOutFail("Pick a single week or month to report on.");
+            }
+        }
+        list($ok, $result) = prjGenerateWeekly($conn, $user, $from, $to);
         if (!$ok) { prjOutFail($result); }
         // the digest rides in the cache file for reference, not in the response
         unset($result['digest']);

@@ -20,7 +20,7 @@
 // two screens read as one tool
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-C - view-source and search "PT build" to confirm
+<!-- PT build 2026-08-28-D - view-source and search "PT build" to confirm
      the deployed copy is current -->
 <style>
 /* All the styling for the Project Tracking screens lives here, not in a
@@ -252,6 +252,15 @@ function prjStyles() {
                border: 1px solid var(--pt-line-soft); border-radius: 8px;
                color: var(--pt-muted); }
 .pt-weekly-note { color: var(--pt-amber); font-size: .78rem; margin-top: .6rem; }
+/* the period picker beside Generate: week-of or month-of plus a calendar
+   date, preset to the prior week so an untouched Generate reports on the
+   last finished week */
+.pt-wkbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+            margin: .85rem 0 0; }
+.pt-wkbar select, .pt-wkbar input[type=date] {
+            padding: .42rem .6rem; border: 1px solid var(--pt-field);
+            border-radius: 8px; font: inherit; font-size: .84rem;
+            background: var(--pt-card); color: var(--pt-text); }
 
 /* per-developer group blocks on the developers page */
 .pt-group h3 { font-size: .92rem; font-weight: 650; letter-spacing: -.005em;
@@ -369,9 +378,14 @@ function dspProjectTracking() {
         <div class="pt-weekly-text" id="weeklyText">No weekly summary has been
             generated yet.</div>
         <div class="pt-weekly-note" id="weeklyNote"></div>
-        <p style="margin:.85rem 0 0">
+        <div class="pt-wkbar">
+            <select id="selWkMode">
+                <option value="week">Week of</option>
+                <option value="month">Month of</option>
+            </select>
+            <input type="date" id="dtWkDate">
             <button type="button" class="pt-btn" id="btnWeekly">Generate</button>
-        </p>
+        </div>
     </div>
 
     <div class="pt-card">
