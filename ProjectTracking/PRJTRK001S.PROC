@@ -4,7 +4,7 @@
 /*                                                                   */
 /* Program Narrative - Read-only data feeds for the Project          */
 /*                     Tracking dashboard rewrite, one result set    */
-/*                     per type: LIST TIME NOTES COMP PGMR.          */
+/*                     per type: LIST TIME NOTES COMP PGMR CHGLOG.   */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -120,6 +120,17 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
               FROM LSCPRDLIB/PRIDTRANSP G
              ORDER BY G.PGDEVPRF;
 
+        -- CHGLOG: project change history rows in a date range
+        DECLARE C6 CURSOR WITH RETURN FOR
+            SELECT L.PCH# AS CLPROJ,
+                   RTRIM(L.PCHUSER) AS CLUSER,
+                   L.PCHDATE AS CLDATE,
+                   RTRIM(L.PCHTEXT) AS CLTEXT
+              FROM LSCPRDLIB/PRCHGLOGP L
+             WHERE L.PCHDATE BETWEEN WKFROM AND WKTO
+               AND L.PCH# NOT BETWEEN 90000 AND 90999
+             ORDER BY L.PCHUSER, L.PCH#, L.PCHDATE, L.PCHTIME;
+
         IF INTYPE = 'LIST' THEN
             SET WKALL = UPPER(TRIM(COALESCE(NULLIF(INKEY1, ''), 'N')));
             OPEN C1;
@@ -175,8 +186,13 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             OPEN C4;
         ELSEIF INTYPE = 'PGMR' THEN
             OPEN C5;
+        ELSEIF INTYPE = 'CHGLOG' THEN
+            SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
+            SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
+            OPEN C6;
         ELSE
             SIGNAL SQLSTATE '75011'
-                SET MESSAGE_TEXT = 'Type must be LIST TIME NOTES COMP PGMR';
+                SET MESSAGE_TEXT =
+                    'Type must be LIST TIME NOTES COMP PGMR CHGLOG';
         END IF;
     END;

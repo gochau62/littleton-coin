@@ -14,7 +14,7 @@ built to the dashboard layout template (`docs/Picture1.png`). The legacy
 | Projects by developer | `ProjectDevelopers_ctl.php` / `_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
 | Data + logic | `ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Gemini call |
 | JSON/Excel endpoint | `ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
-| Db2 procedure | `PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR` |
+| Db2 procedure | `PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR`, `CHGLOG` (PRCHGLOGP change history) |
 
 Everything is **read-only** against the project files — the new screens change
 no data. Project numbers link back to the existing `PROJ_ctl.php` detail
@@ -156,7 +156,15 @@ actually done or decided — progress, blockers, who is being waited on — not
 just how many notes were left. Text is capped (1,200 chars per comment,
 ~15k per digest) so a heavy week cannot overrun the prompt; the counts
 always cover every comment. Period matching goes by the comment's posted
-date, not dates written inside the text. This needs the current `PRJTRK001S`, whose NOTES set
+date, not dates written inside the text.
+
+The digest also carries the period's **change history** (`CHGLOG` read of
+`PRCHGLOGP`, the same audit file the emailed change notices run on): short
+one-liners per developer - status moves, new estimates, reassignments,
+saves - so the summary can say what moved on a project even when nobody
+wrote a comment. Both the comment text and the change history need the
+current `PRJTRK001S`; on an older compile the summary still generates and
+the card's meta note says which feed was skipped. This needs the current `PRJTRK001S`, whose NOTES set
 returns the path/time columns that name each file — on an older compile the
 summary still generates from counts alone.
 
