@@ -70,12 +70,28 @@ this code against test data. Only when the plain name fails to prepare does
 line to the activity log when it does — a fallback means a job's library
 list is short, which is worth knowing rather than papering over.
 
+Comments are the exception, and deliberately so. The index read is written
+`LSCPRDLIB.WBNOTEIDXP` in `PRJ_NOTES_FILE`, hard-qualified, because there
+are 29 copies of that file on the box and only the production one holds
+current rows — the dev copy stops at 2019. The comment text is read from
+`PRJ_WEBNOTES_DIR` for the same reason, after this instance's own
+`WebNotes/` folder. So the dashboard reports on real comments whether it
+runs under `seidendev` or `seidenphp`. If the direct read is ever refused,
+`prjNotes()` falls back to `CALL PHP0003S` project by project and says so
+in `prjNotesNote`.
+
+`PRJ_DATA_DIR` is the opposite case: it is derived from this file's own
+location, so each instance caches its weekly summaries beside itself
+instead of dev overwriting production's.
+
 Two things to settle before this is fully production:
 
 - **`PRJTRK001S` still lives in `LSCDEVLIBP`**, a development library, while
-  the screens run in production. It belongs in `LSCPRDLIB` next to the
-  `PTS00xxS` procedures. When it moves, change `PRJ_PROC_LIB` to
-  `LSCPRDLIB` and the fallback and the library list agree again.
+  the screens run in production. `seidendev`'s library list carries that
+  library and `seidenphp`'s does not, which is why the same page can read
+  hours on one instance and fail on the other — the fallback covers it for
+  now. It belongs in `LSCPRDLIB` next to the `PTS00xxS` procedures; when it
+  moves, change `PRJ_PROC_LIB` to `LSCPRDLIB` and the two agree again.
 - **The cursors inside the procedure hard-qualify their files**
   (`LSCPRDLIB/PRPROJP`, `LSCPRDLIB/PRTIMEP`, …). That is deliberate but it
   means a job whose library list points at test data still reads

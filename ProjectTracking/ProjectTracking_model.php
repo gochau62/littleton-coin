@@ -29,8 +29,14 @@ if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 if (!defined('PRJ_PROC_LIB'))   { define('PRJ_PROC_LIB', 'LSCDEVLIBP'); }
 if (!defined('PRJ_LEGACY_LIB')) { define('PRJ_LEGACY_LIB', 'LSCPRDLIB'); }
 
+// comments live in production, whichever instance is running
+if (!defined('PRJ_NOTES_FILE'))   { define('PRJ_NOTES_FILE', 'LSCPRDLIB.WBNOTEIDXP'); }
+if (!defined('PRJ_WEBNOTES_DIR')) { define('PRJ_WEBNOTES_DIR', '/www/seidenphp/htdocs/LCCOnline/WebNotes'); }
+
 define('PRJ_ACT_LOG', __DIR__ . '/LCCOnline_logs/projecttracking_activity.log');
-define('PRJ_DATA_DIR', '/www/seidenphp/ProjectTracking_data');
+
+// data dir beside this instance, dev and production each keep their own
+define('PRJ_DATA_DIR', dirname(dirname(__DIR__)) . '/ProjectTracking_data');
 
 // SC pipeline stages in display order
 $GLOBALS['prjStages'] = array(
@@ -163,9 +169,38 @@ function prjTime($conn, $from, $to) {
 }
 
 
-// comment index rows per project through PHP0003S, the same procedure the
-// project screen's getRecordsWebNotes calls against WBNOTEIDXP
-function prjNotes($conn, $projNums) {
+// index columns renamed, and only the period's rows kept
+function prjNoteRows($rows, $from, $to) {
+    $out = array();
+    foreach ($rows as $r) {
+        $d = intval($r['WNDATE'] ?? 0);
+        if ($d < intval($from) || $d > intval($to)) { continue; }
+        $out[] = array(
+            'NTPROJ' => trim(strval($r['WNIDVAL'] ?? '')),
+            'NTUSER' => trim(strval($r['WNUSER'] ?? '')),
+            'NTDATE' => $d,
+            'NTTIME' => intval($r['WNTIME'] ?? 0),
+            'NTTYPE' => trim(strval($r['WNTYPE'] ?? '')),
+            'NTPATH' => trim(strval($r['WNPATH'] ?? '')),
+        );
+    }
+    return $out;
+}
+
+
+// the comment index for a date range, read straight from production
+function prjNotes($conn, $from, $to, $projNums = array()) {
+    $sql = "SELECT RTRIM(WNIDVAL) AS WNIDVAL, RTRIM(WNUSER) AS WNUSER, " .
+           "WNDATE, WNTIME, RTRIM(WNTYPE) AS WNTYPE, " .
+           "RTRIM(WNPATH) AS WNPATH FROM " . PRJ_NOTES_FILE . " " .
+           "WHERE RTRIM(WNPREFIX) = 'PROJ_' AND WNDATE BETWEEN ? AND ? " .
+           "ORDER BY WNUSER, WNIDVAL, WNDATE, WNTIME";
+    $rows = prjFetchAll($conn, $sql,
+                        array(strval(intval($from)), strval(intval($to))));
+    if ($rows !== false) { return prjNoteRows($rows, $from, $to); }
+
+    // index out of reach, so ask the project screen's procedure instead
+    $GLOBALS['prjNotesNote'] = 'comment index unread - asked PHP0003S per project';
     $out = array();
     foreach (array_slice(array_unique($projNums), 0, 150) as $num) {
         $n = intval($num);
@@ -173,16 +208,7 @@ function prjNotes($conn, $projNums) {
         $rows = prjFetchAll($conn, "CALL PHP0003S(?, ?)",
                             array(strval($n), 'PROJ_'));
         if ($rows === false) { continue; }
-        foreach ($rows as $r) {
-            $out[] = array(
-                'NTPROJ' => trim(strval($r['WNIDVAL'] ?? $n)),
-                'NTUSER' => trim(strval($r['WNUSER'] ?? '')),
-                'NTDATE' => intval($r['WNDATE'] ?? 0),
-                'NTTIME' => intval($r['WNTIME'] ?? 0),
-                'NTTYPE' => trim(strval($r['WNTYPE'] ?? '')),
-                'NTPATH' => trim(strval($r['WNPATH'] ?? '')),
-            );
-        }
+        $out = array_merge($out, prjNoteRows($rows, $from, $to));
     }
     return $out;
 }
@@ -415,6 +441,7 @@ function prjNoteText($n) {
     $inner = trim($inner, '/');
     $dirs = array(__DIR__ . '/WebNotes/' . $inner,
                   __DIR__ . '/' . trim($path, '/'),
+                  PRJ_WEBNOTES_DIR . '/' . $inner,
                   rtrim($path, '/'));
     if (!empty($_SERVER['DOCUMENT_ROOT'])) {
         $dirs[] = rtrim($_SERVER['DOCUMENT_ROOT'], '/') .
@@ -454,20 +481,14 @@ function prjWeeklyDigest($conn, $from, $to) {
     if ($time === false) { return false; }
     $GLOBALS['prjNotesNote'] = '';
 
-    // comments come back per project, so gather the projects worked on
+    // projects worked on, in case the per-project read is needed
     $worked = array();
     foreach ($time as $t) {
         $n = intval($t['TMPROJ']);
         if ($n > 0) { $worked[$n] = true; }
     }
-    $notes = prjNotes($conn, array_keys($worked));
+    $notes = prjNotes($conn, $from, $to, array_keys($worked));
     if ($notes === false) { $notes = array(); }
-
-    // keep the period's comments; the read itself is not date filtered
-    $notes = array_values(array_filter($notes, function ($n) use ($from, $to) {
-        $d = intval($n['NTDATE'] ?? 0);
-        return $d >= intval($from) && $d <= intval($to);
-    }));
     // change history degrades the same way on an old proc compile
     $chglog = prjChgLog($conn, $from, $to);
     if ($chglog === false) {

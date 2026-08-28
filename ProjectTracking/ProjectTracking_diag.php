@@ -98,6 +98,11 @@ if (function_exists('chkAutUsr') && $conn) {
 }
 ptdOut('connection', $conn ? 'open' : 'NONE');
 ptdOut('authorized', strval($authorized));
+// dev and production see different libraries and folders
+foreach (array('PRJ_PROC_LIB', 'PRJ_NOTES_FILE', 'PRJ_WEBNOTES_DIR',
+               'PRJ_DATA_DIR') as $c) {
+    if (defined($c)) { ptdOut($c, strval(constant($c))); }
+}
 ptdOut('');
 
 if ($authorized != 'yes') {
@@ -209,7 +214,8 @@ ptdOut('');
 
 /* 4 - the report's own read */
 ptdOut('4. THE REPORT READ - prjNotes()');
-$notes = function_exists('prjNotes') ? prjNotes($conn, array($proj)) : false;
+$notes = function_exists('prjNotes')
+         ? prjNotes($conn, 20000101, 29991231, array($proj)) : false;
 if ($notes === false) {
     ptdOut('  model not loaded, mapping step 1 instead');
     $notes = array();
@@ -282,7 +288,7 @@ if ($dTime === false) {
     ptdOut('  traced project in that list',
            isset($wk[$proj]) ? 'YES' : 'NO - no comment of its can be read');
 
-    $all = prjNotes($conn, array_keys($wk));
+    $all = prjNotes($conn, $dFrom, $dTo, array_keys($wk));
     ptdOut('  comment rows for those projects', strval(count($all)));
 
     $inPeriod = array();
