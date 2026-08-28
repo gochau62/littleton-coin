@@ -39,7 +39,8 @@ $GLOBALS['prjStages'] = array(
 
 // labels for stored Work Status values
 $GLOBALS['prjStatuses'] = array(
-    'notset' => 'Not set',
+    'notset'     => 'Not set',
+    'estnotneed' => 'Est. not needed',
 );
 
 // spells out the dropdown's Work Status codes
@@ -278,12 +279,16 @@ function prjStage($row) {
 }
 
 
-// status is PRWRKSTS only; blank shows Not set
+// the stored Work Status wins; a blank one on a fire project reads
+// Est. not needed, otherwise Not set
 function prjStatus($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
     if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
     $wrk = trim(strval($row['PJWRKSTS'] ?? ''));
-    if ($wrk === '') { return 'notset'; }
+    if ($wrk === '') {
+        return (trim(strval($row['PJTYPE'] ?? '')) === 'FR')
+               ? 'estnotneed' : 'notset';
+    }
     return 'w' . preg_replace('/[^a-z0-9]/', '', strtolower($wrk));
 }
 

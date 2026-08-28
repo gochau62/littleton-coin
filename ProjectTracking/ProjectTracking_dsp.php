@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-G - deploy marker, check via view-source -->
+<!-- PT build 2026-08-28-H - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -67,20 +67,24 @@ function prjStyles() {
 .pt-head .pt-sub a { color: var(--pt-blue); text-decoration: none;
                      font-weight: 600; }
 .pt-head .pt-sub a:hover { text-decoration: underline; }
-.pt-head .pt-nav { margin-left: auto; font-size: .82rem; white-space: nowrap;
-                   color: var(--pt-faint); }
-.pt-head .pt-nav a { color: var(--pt-muted); text-decoration: none;
-                     font-weight: 500; padding: .35rem 0; }
-.pt-head .pt-nav a:hover { color: var(--pt-blue); }
+.pt-head .pt-nav { margin-left: auto; white-space: nowrap; }
+.pt-head .pt-nav a.pt-btn { text-decoration: none; color: var(--pt-text); }
+.pt-head .pt-nav a.pt-btn:hover { color: var(--pt-blue); }
 
-/* the stat strip: one card, four figures separated by hairlines */
-.pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.pt-stat { padding: .3rem 1.5rem; border-left: 1px solid var(--pt-line-soft); }
-.pt-stat:first-child { border-left: 0; padding-left: .3rem; }
+/* the stat strip: four boxes with a colored top rule, like the pipeline */
+.pt-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .75rem; }
+.pt-stat { border: 1px solid var(--pt-line); border-top-width: 3px;
+           border-top-color: var(--pt-gray); border-radius: 8px;
+           padding: .6rem .85rem .7rem; background: var(--pt-card); }
 .pt-stat .pt-lbl { font-size: .72rem; font-weight: 600; letter-spacing: .06em;
                    text-transform: uppercase; color: var(--pt-muted); }
-.pt-stat .pt-val { font-size: 1.9rem; font-weight: 650; letter-spacing: -.02em;
-                   margin-top: .35rem; font-variant-numeric: tabular-nums; }
+.pt-stat .pt-val { font-size: 1.7rem; font-weight: 650; letter-spacing: -.02em;
+                   margin-top: .25rem; font-variant-numeric: tabular-nums; }
+.pt-stat-open   { border-top-color: var(--pt-blue); }
+.pt-stat-new    { border-top-color: var(--pt-blue); }
+.pt-stat-review { border-top-color: var(--pt-yellow); }
+.pt-stat-unasgn { border-top-color: var(--pt-red); }
 .pt-stat.pt-warn .pt-val { color: var(--pt-red); }
 
 /* everything that navigates or filters shows a pointer */
@@ -203,7 +207,7 @@ function prjStyles() {
 .pt-st-onhold     { color: #7a5af8; }
 .pt-st-estnotneed { color: var(--pt-green); }
 .pt-st-other      { color: var(--pt-blue-dk); }
-.pt-st-notset     { color: var(--pt-faint); font-weight: 500; }
+.pt-st-notset     { color: #06b6d4; }
 .pt-grid a { color: var(--pt-blue); text-decoration: none;
              font-family: var(--pt-mono); font-size: .8rem; font-weight: 600; }
 .pt-grid a:hover { text-decoration: underline; }
@@ -317,11 +321,11 @@ function prjHeader($title, $subtitle, $active) {
             <div class="pt-sub"><?php echo $subtitle; ?></div>
         </div>
         <div class="pt-nav">
-            <?php // nav just links across to the other page
+            <?php // one button across to the other page
                   if ($active === 'dashboard') { ?>
-                <a href="ProjectDevelopers_ctl.php">Projects by developer</a>
+                <a class="pt-btn" href="ProjectDevelopers_ctl.php">Projects by developer &rsaquo;</a>
             <?php } else { ?>
-                <a href="ProjectTracking_ctl.php">Overview</a>
+                <a class="pt-btn" href="ProjectTracking_ctl.php">&lsaquo; Overview</a>
             <?php } ?>
         </div>
     </div>
@@ -343,19 +347,19 @@ function dspProjectTracking() {
 
     <div class="pt-card">
         <div class="pt-stats">
-            <div class="pt-stat" id="statOpen">
+            <div class="pt-stat pt-stat-open" id="statOpen">
                 <div class="pt-lbl">Open projects</div>
                 <div class="pt-val" id="tileOpen">&ndash;</div>
             </div>
-            <div class="pt-stat">
+            <div class="pt-stat pt-stat-new">
                 <div class="pt-lbl">New requests</div>
                 <div class="pt-val" id="tileNew">&ndash;</div>
             </div>
-            <div class="pt-stat">
+            <div class="pt-stat pt-stat-review">
                 <div class="pt-lbl">Awaiting SC review</div>
                 <div class="pt-val" id="tileReview">&ndash;</div>
             </div>
-            <div class="pt-stat pt-warn">
+            <div class="pt-stat pt-stat-unasgn pt-warn">
                 <div class="pt-lbl">Unassigned</div>
                 <div class="pt-val" id="tileUnassigned">&ndash;</div>
             </div>

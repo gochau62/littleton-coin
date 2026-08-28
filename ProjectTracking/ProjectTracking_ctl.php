@@ -29,7 +29,7 @@
 <script type='text/javascript' src='jQuery/jquery.js'></script>
 <script type="text/javascript">
 
-    document.title = "Project Tracking - Overview";
+    document.title = "Project Tracking";
 
     // show the red error box with a message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
@@ -270,7 +270,8 @@ function renderDonut(status, labels) {
     var colors = {};
     $.each(labels, function (key, label) {
         var l = String(label).toLowerCase();
-        if (key === 'notset') { colors[key] = '#cbd2dc'; }
+        if (key === 'notset') { colors[key] = '#06b6d4'; }
+        else if (key === 'estnotneed') { colors[key] = '#1baf7a'; }
         else if (l.indexOf('hold') >= 0) { colors[key] = '#7a5af8'; }
         else if (l.indexOf('wait') >= 0) { colors[key] = '#eda100'; }
         else if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||

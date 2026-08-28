@@ -29,7 +29,7 @@
 <script type='text/javascript' src='jQuery/jquery.js'></script>
 <script type="text/javascript">
 
-    document.title = "Project Tracking - Projects by Developer";
+    document.title = "Project Tracking";
 
     // show the red error box with a message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
@@ -173,13 +173,15 @@ function stageChip(stage) {
 // status dot colored by the stored Work Status wording
 function stClass(status, label) {
     if (status === 'notset') { return 'pt-st-notset'; }
+    if (status === 'estnotneed') { return 'pt-st-estnotneed'; }
     var l = label.toLowerCase();
     if (l.indexOf('hold') >= 0) { return 'pt-st-onhold'; }
     if (l.indexOf('wait') >= 0) { return 'pt-st-waituser'; }
     if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
         l.indexOf('prog') >= 0) { return 'pt-st-active'; }
     if (l.indexOf('test') >= 0 || l.indexOf('comp') >= 0 ||
-        l.indexOf('done') >= 0 || l.indexOf('impl') >= 0) { return 'pt-st-estnotneed'; }
+        l.indexOf('done') >= 0 || l.indexOf('impl') >= 0 ||
+        l.indexOf('needed') >= 0) { return 'pt-st-estnotneed'; }
     return 'pt-st-other';
 }
 
