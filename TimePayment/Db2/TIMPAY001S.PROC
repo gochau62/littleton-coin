@@ -69,11 +69,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
              ORDER BY T.TPTTIERLO
              FETCH FIRST 1 ROW ONLY;
 
-        /* GO-LIVE: TPITEMSP reads LSCDEVLIBP while testing - flip both
-           cursors (and TIMPAY003S) to LSCPRDLIB when the tool goes live */
+        /* LIVE: TPITEMSP points at production - to test against the dev
+           copy, flip both cursors (and TIMPAY003S) to LSCDEVLIBP */
         DECLARE C5 CURSOR WITH RETURN FOR
             SELECT T.TPITEM, T.TPSRCD, T.TPPLAN, T.TPEXDATE
-              FROM LSCDEVLIBP/TPITEMSP T
+              FROM LSCPRDLIB/TPITEMSP T
              WHERE T.TPITEM = INKEY1
                AND T.TPSRCD = INKEY2
              FETCH FIRST 1 ROW ONLY;
@@ -84,7 +84,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
                    T.TPSRCD, T.TPPLAN,
                    COALESCE(RTRIM(P.PPDESC), '') AS TPPLDS,
                    T.TPEXDATE
-              FROM LSCDEVLIBP/TPITEMSP T
+              FROM LSCPRDLIB/TPITEMSP T
               LEFT JOIN LSCPRDLIB/ITMMSTL1 I
                 ON I.IISKU# = T.TPITEM
               LEFT JOIN LSCPRDLIB/TPPLANSP P
