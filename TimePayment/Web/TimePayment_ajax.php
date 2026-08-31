@@ -59,11 +59,11 @@ function tpyCellText($v) {
 }
 
 
-// a stored YYYYMMDD number as MM/DD/YYYY for the report
+// a stored YYYYMMDD number shown the house way, like the green screen: no leading zero on the month and a two digit year - 5/11/27
 function tpyFmtDate($dec) {
     $s = strval(intval($dec));
     if (strlen($s) !== 8) { return ''; }
-    return substr($s, 4, 2) . '/' . substr($s, 6, 2) . '/' . substr($s, 0, 4);
+    return intval(substr($s, 4, 2)) . '/' . substr($s, 6, 2) . '/' . substr($s, 2, 2);
 }
 
 
