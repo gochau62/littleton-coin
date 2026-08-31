@@ -148,6 +148,9 @@ function uploadFile() {
         success: function (resp) {
             $('#btnUpload').prop('disabled', false);
             if (!resp || !resp.ok) {
+                // a mid-file halt still hands back what happened up to the failing
+                // row - show it, and refresh the grid since those rows are on file
+                if (resp && resp.report) { renderResults(resp); loadGrid(); }
                 swal('Upload failed', (resp && resp.msg) ? resp.msg : 'Request failed.', 'error');
                 return;
             }

@@ -226,11 +226,23 @@ function tpyList($conn, $q = '') {
 }
 
 
+// commit the unit of work - on a journaled table (the SQL-created dev copy is one) an uncommitted write rolls back when the script exits, so each
+// written row is committed on the spot; then a failure further down the spreadsheet really does leave the rows above it on file
+function tpyCommit($conn) {
+    if (!function_exists('db2_commit')) { return true; }
+    if (!db2_commit($conn)) { return tpyFail('commit'); }
+    return true;
+}
+
+
 // PROGRAM NAME TIMPAY003S: write one time payment record, updating it when the item/source key is already on TPITEMSP and inserting it when it is not
 function tpyUpsert($conn, $item, $src, $plan, $expDate) {
-    return tpyExec($conn, "CALL TIMPAY003S(?, ?, ?, ?)",
-                   array(tpyCleanItem($item), tpyCleanSrc($src),
-                         tpyCleanPlan($plan), intval($expDate)),
-                   'TIMPAY003S');
+    if (!tpyExec($conn, "CALL TIMPAY003S(?, ?, ?, ?)",
+                 array(tpyCleanItem($item), tpyCleanSrc($src),
+                       tpyCleanPlan($plan), intval($expDate)),
+                 'TIMPAY003S')) {
+        return false;
+    }
+    return tpyCommit($conn);
 }
 ?>
