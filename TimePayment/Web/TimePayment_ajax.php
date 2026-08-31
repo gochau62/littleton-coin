@@ -49,18 +49,6 @@ function tpyOutFail($msg = '') {
 }
 
 
-// a Db2 failure mid-file stops the run cold; what happened up to that row rides back with the error so the screen can still show it. Written rows are
-// committed one by one, so the rows above the failing one really are on file
-function tpyOutHalt($rowNum, $report, $added, $updated, $errors) {
-    tpyOut(array("ok" => false,
-                 "msg" => 'Row ' . $rowNum . ' stopped the upload ('
-                        . ($GLOBALS['tpyErr'] ?: 'unknown error')
-                        . '). Rows above it are on file; the rest were not processed.',
-                 "report" => $report, "added" => $added,
-                 "updated" => $updated, "errors" => $errors));
-}
-
-
 // a spreadsheet cell as text: Excel hands whole numbers (item numbers, source codes, plans) back as floats, so those lose the trailing .0 here
 function tpyCellText($v) {
     if ($v === null) { return ''; }
@@ -199,9 +187,16 @@ switch ($action) {
             // an entirely blank row is just Excel padding, not an error
             if ($item === '' && $src === '' && $plan === '' && $expTxt === '') { continue; }
 
-            // item # against the item master
+            // item # against the item master; a Db2 error on any lookup or write skips the row like any other exception, so one bad call can never
+            // stop the run - the report carries the reason and the run always reaches the last row
             $found = tpyGetItem($conn, $item);
-            if ($found === false) { tpyOutHalt($row, $report, $added, $updated, $errors); }
+            if ($found === false) {
+                $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
+                                  'exp' => $expShow, 'status' => 'error',
+                                  'msg' => 'Database error checking the item (' . $GLOBALS['tpyErr'] . ').');
+                $errors++;
+                continue;
+            }
             if ($found === null) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
                                   'exp' => $expShow, 'status' => 'error',
@@ -212,7 +207,13 @@ switch ($action) {
 
             // source code against OEPSRCE
             $found = tpyGetSource($conn, $src);
-            if ($found === false) { tpyOutHalt($row, $report, $added, $updated, $errors); }
+            if ($found === false) {
+                $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
+                                  'exp' => $expShow, 'status' => 'error',
+                                  'msg' => 'Database error checking the source code (' . $GLOBALS['tpyErr'] . ').');
+                $errors++;
+                continue;
+            }
             if ($found === null) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
                                   'exp' => $expShow, 'status' => 'error',
@@ -224,7 +225,13 @@ switch ($action) {
             if ($plan !== '') {
                 // a plan Marketing typed must exist on TPPLANSP - per Dennis this is an error condition, not something to quietly ignore
                 $found = tpyGetPlan($conn, $plan);
-                if ($found === false) { tpyOutHalt($row, $report, $added, $updated, $errors); }
+                if ($found === false) {
+                    $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
+                                      'exp' => $expShow, 'status' => 'error',
+                                      'msg' => 'Database error checking the plan (' . $GLOBALS['tpyErr'] . ').');
+                    $errors++;
+                    continue;
+                }
                 if ($found === null) {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
                                       'exp' => $expShow, 'status' => 'error',
@@ -236,10 +243,22 @@ switch ($action) {
                 // no plan given: price the item the way OP0800R does and tie the price out to the TPTIERSP ranges. A price outside every range
                 // (under $99.00) skips the row onto the report - per Josh those get looked at individually, not defaulted into a plan
                 $price = tpyItemPrice($conn, $item, $src);
-                if ($price === false) { tpyOutHalt($row, $report, $added, $updated, $errors); }
+                if ($price === false) {
+                    $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => '',
+                                      'exp' => $expShow, 'status' => 'error',
+                                      'msg' => 'Could not price the item (' . $GLOBALS['tpyErr'] . ').');
+                    $errors++;
+                    continue;
+                }
 
                 $tier = tpyTierPlan($conn, $price);
-                if ($tier === false) { tpyOutHalt($row, $report, $added, $updated, $errors); }
+                if ($tier === false) {
+                    $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => '',
+                                      'exp' => $expShow, 'status' => 'error',
+                                      'msg' => 'Database error reading the plan ranges (' . $GLOBALS['tpyErr'] . ').');
+                    $errors++;
+                    continue;
+                }
                 if ($tier === null || $tier === '') {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => '',
                                       'exp' => $expShow, 'status' => 'error',
@@ -269,10 +288,20 @@ switch ($action) {
 
             // all four columns are good: update the record when the item/source key is already on TPITEMSP, add it when it is not
             $existing = tpyGetRecord($conn, $item, $src);
-            if ($existing === false) { tpyOutHalt($row, $report, $added, $updated, $errors); }
+            if ($existing === false) {
+                $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
+                                  'exp' => $expShow, 'status' => 'error',
+                                  'msg' => 'Database error checking for an existing record (' . $GLOBALS['tpyErr'] . ').');
+                $errors++;
+                continue;
+            }
 
             if (!tpyUpsert($conn, $item, $src, $plan, $expDate)) {
-                tpyOutHalt($row, $report, $added, $updated, $errors);
+                $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
+                                  'exp' => $expShow, 'status' => 'error',
+                                  'msg' => 'The write failed (' . $GLOBALS['tpyErr'] . ').');
+                $errors++;
+                continue;
             }
 
             if ($existing === null) { $added++; } else { $updated++; }
