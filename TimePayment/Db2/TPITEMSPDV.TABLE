@@ -1,0 +1,41 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - TPITEMSPDV.TABLE                              */
+/*                                                                   */
+/* Program Narrative - Rebuild the LSCDEVLIBP test copy of TPITEMSP  */
+/*                     that the procs read and write while testing.  */
+/*                     Drop and recreate beats clearing it: a table  */
+/*                     born from SQL CREATE TABLE has no maximum     */
+/*                     size, so the SQL0904 a CRTDUPOBJ copy hits    */
+/*                     on the full production load cannot recur.     */
+/*                     The seed INSERT is optional - the test        */
+/*                     spreadsheet expects an EMPTY table.           */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 08/31/2026                                    */
+/* Run Instructions  - ACS Run SQL Scripts, or RUNSQLSTM             */
+/*                     SRCFILE(LSCDEVLIBP/QSQLSRC)                   */
+/*                     SRCMBR(TPITEMSPDV)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+DROP TABLE LSCDEVLIBP/TPITEMSP;
+
+CREATE TABLE LSCDEVLIBP/TPITEMSP LIKE LSCPRDLIB/TPITEMSP;
+
+-- optional seed; leave it off to start the test pass from empty
+INSERT INTO LSCDEVLIBP/TPITEMSP
+  SELECT * FROM LSCPRDLIB/TPITEMSP;
