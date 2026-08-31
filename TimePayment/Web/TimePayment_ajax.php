@@ -178,6 +178,12 @@ switch ($action) {
             $expRaw = $cells[0][3];
             $expTxt = tpyCellText($expRaw);
 
+            // resolve the date up front so the report shows a readable date even when
+            // the row fails an earlier check - an Excel date cell is a raw serial
+            // number like 46752 until it is converted
+            $expDate = tpyNormDate($expRaw);
+            $expShow = $expDate > 0 ? tpyFmtDate($expDate) : $expTxt;
+
             // an entirely blank row is just Excel padding, not an error
             if ($item === '' && $src === '' && $plan === '' && $expTxt === '') { continue; }
 
@@ -189,7 +195,7 @@ switch ($action) {
             if ($found === false) { tpyOutFail($halt . $GLOBALS['tpyErr'] . ') - rows above it were already written.'); }
             if ($found === null) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
-                                  'exp' => $expTxt, 'status' => 'error',
+                                  'exp' => $expShow, 'status' => 'error',
                                   'msg' => 'Item is not on the Item Master.');
                 $errors++;
                 continue;
@@ -200,7 +206,7 @@ switch ($action) {
             if ($found === false) { tpyOutFail($halt . $GLOBALS['tpyErr'] . ') - rows above it were already written.'); }
             if ($found === null) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
-                                  'exp' => $expTxt, 'status' => 'error',
+                                  'exp' => $expShow, 'status' => 'error',
                                   'msg' => 'Source code is not on OEPSRCE.');
                 $errors++;
                 continue;
@@ -212,7 +218,7 @@ switch ($action) {
                 if ($found === false) { tpyOutFail($halt . $GLOBALS['tpyErr'] . ') - rows above it were already written.'); }
                 if ($found === null) {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
-                                      'exp' => $expTxt, 'status' => 'error',
+                                      'exp' => $expShow, 'status' => 'error',
                                       'msg' => 'Plan is not on the time payment plan file.');
                     $errors++;
                     continue;
@@ -227,7 +233,7 @@ switch ($action) {
                 if ($tier === false) { tpyOutFail($halt . $GLOBALS['tpyErr'] . ') - rows above it were already written.'); }
                 if ($tier === null || $tier === '') {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => '',
-                                      'exp' => $expTxt, 'status' => 'error',
+                                      'exp' => $expShow, 'status' => 'error',
                                       'msg' => 'Item price ($' . number_format($price, 2) .
                                                ') falls outside the time payment plan ranges.');
                     $errors++;
@@ -237,17 +243,16 @@ switch ($action) {
             }
 
             // expiration date: a real date, written as YYYYMMDD, and not already passed
-            $expDate = tpyNormDate($expRaw);
             if ($expDate === 0) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
-                                  'exp' => $expTxt, 'status' => 'error',
+                                  'exp' => $expShow, 'status' => 'error',
                                   'msg' => 'Expiration date is not a valid date.');
                 $errors++;
                 continue;
             }
             if ($expDate < $today) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
-                                  'exp' => tpyFmtDate($expDate), 'status' => 'error',
+                                  'exp' => $expShow, 'status' => 'error',
                                   'msg' => 'Expiration date has already passed.');
                 $errors++;
                 continue;
@@ -263,7 +268,7 @@ switch ($action) {
 
             if ($existing === null) { $added++; } else { $updated++; }
             $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
-                              'exp' => tpyFmtDate($expDate),
+                              'exp' => $expShow,
                               'status' => $existing === null ? 'added' : 'updated',
                               'msg' => $existing === null ? 'Added.' : 'Updated the existing record.');
         }
