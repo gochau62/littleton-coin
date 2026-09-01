@@ -280,6 +280,7 @@ function renderDonut(status, labels) {
         if (key === 'notset') { colors[key] = '#06b6d4'; }
         else if (key === 'estnotneed') { colors[key] = '#1baf7a'; }
         else if (l.indexOf('hold') >= 0) { colors[key] = '#7a5af8'; }
+        else if (l.indexOf('queue') >= 0) { colors[key] = '#db2777'; }
         else if (l.indexOf('wait') >= 0) { colors[key] = '#eda100'; }
         else if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
                  l.indexOf('prog') >= 0) { colors[key] = '#185fa5'; }

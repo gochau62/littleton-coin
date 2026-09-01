@@ -51,6 +51,7 @@ $GLOBALS['prjStages'] = array(
 $GLOBALS['prjStatuses'] = array(
     'notset'     => 'Not set',
     'estnotneed' => 'Est. not needed',
+    'winq'       => 'In Queue',
 );
 
 // spells out the dropdown's Work Status codes
@@ -58,6 +59,13 @@ $GLOBALS['prjWrkLabels'] = array(
     'ACT' => 'Active',
     'HLD' => 'Hold',
     'WUF' => 'Waiting user feedback',
+    'INQ' => 'In Queue',
+);
+
+// codes that mean the same status, whichever the dropdown carries
+$GLOBALS['prjWrkAlias'] = array(
+    'QUE' => 'INQ',
+    'QUEUE' => 'INQ',
 );
 
 // developers the monthly spreadsheet tracks; edit when team changes
@@ -355,11 +363,12 @@ function prjStage($row) {
 function prjStatus($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
     if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
-    $wrk = trim(strval($row['PJWRKSTS'] ?? ''));
+    $wrk = strtoupper(trim(strval($row['PJWRKSTS'] ?? '')));
     if ($wrk === '') {
         return (trim(strval($row['PJTYPE'] ?? '')) === 'FR')
                ? 'estnotneed' : 'notset';
     }
+    $wrk = $GLOBALS['prjWrkAlias'][$wrk] ?? $wrk;
     return 'w' . preg_replace('/[^a-z0-9]/', '', strtolower($wrk));
 }
 

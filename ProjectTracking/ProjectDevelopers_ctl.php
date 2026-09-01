@@ -181,6 +181,7 @@ function stClass(status, label) {
     if (status === 'estnotneed') { return 'pt-st-estnotneed'; }
     var l = label.toLowerCase();
     if (l.indexOf('hold') >= 0) { return 'pt-st-onhold'; }
+    if (l.indexOf('queue') >= 0) { return 'pt-st-inqueue'; }
     if (l.indexOf('wait') >= 0) { return 'pt-st-waituser'; }
     if (l.indexOf('activ') >= 0 || l.indexOf('work') >= 0 ||
         l.indexOf('prog') >= 0) { return 'pt-st-active'; }

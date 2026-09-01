@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-08-28-L - deploy marker, check via view-source -->
+<!-- PT build 2026-09-01-A - deploy marker, check via view-source -->
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;
@@ -219,6 +219,7 @@ function prjStyles() {
 .pt-st-active     { color: #185fa5; }
 .pt-st-waituser   { color: var(--pt-amber); }
 .pt-st-onhold     { color: #7a5af8; }
+.pt-st-inqueue    { color: #db2777; }
 .pt-st-estnotneed { color: var(--pt-green); }
 .pt-st-other      { color: var(--pt-blue-dk); }
 .pt-st-notset     { color: #06b6d4; }

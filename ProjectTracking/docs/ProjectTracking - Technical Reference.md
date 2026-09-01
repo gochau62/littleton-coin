@@ -114,28 +114,30 @@ screen, the Excel download and the weekly summary all read from them:
   waiting on the committee). `rejected` and `complete` still come back from
   `prjStage()` for the by-developer page, but they are not pipeline cells —
   the pipeline card shows the live SC pipeline, where neither can appear.
-- **Status** comes in two flavors:
-  - The **by-developer column and the Excel download** show the green
-    screen's own **Work Status** (`PRWRKSTS`, the dropdown on the project
-    edit screen), read as-is — it moves the moment someone changes it on
-    the edit screen. The dropdown stores short codes, so
-    `$GLOBALS['prjWrkLabels']` in the model spells them out (`ACT` →
-    Active, `HLD` → Hold, `WUF` → Waiting user feedback); an unlisted
-    code still shows under its stored value, and a blank one reads
-    `Not set`.
-  - The **donut** shows the layout template's four buckets over the
-    **assigned working set** (open pipeline projects sitting with a
-    tracked developer), derived by `prjStatusBucket()` the way the first
-    design did: `Est. not needed` (fire projects, type FR) → `On hold`
-    (estimated, dept priority zeroed) → `Active` (scheduled completion
-    date on file) → `Waiting on user`. Most projects carry no stored Work
-    Status, so a PRWRKSTS donut would be one gray "not set" ring — the
-    derived buckets classify every assigned project.
+- **Status** is the green screen's own **Work Status** (`PRWRKSTS`, the
+  dropdown on the project edit screen), read as-is — it moves the moment
+  someone changes it there. The by-developer column, the Excel download
+  and the donut all count the same value, so the donut and the column can
+  never disagree; the donut's total is the **assigned working set** (open
+  pipeline projects sitting with a tracked developer).
 
-The stage and bucket rules are a best-effort reading of how the legacy
-code used the fields. If the steering committee draws a stage or a donut
-bucket differently, change `prjStage()` or `prjStatusBucket()` — nothing
-else needs touching.
+  The dropdown stores short codes, so `$GLOBALS['prjWrkLabels']` spells
+  them out: `ACT` → Active, `HLD` → Hold, `WUF` → Waiting user feedback,
+  `INQ` → In Queue. An unlisted code still shows under its stored value.
+  A blank one reads `Not set`, except on a fire project (type `FR`) where
+  it reads `Est. not needed`.
+
+  Adding a status is three edits: the code and its wording in
+  `prjWrkLabels`, the key in `$GLOBALS['prjStatuses']` if it should be
+  listed before any project carries it, and a color — `renderDonut()` in
+  `ProjectTracking_ctl.php` and a `.pt-st-*` rule in the display file both
+  pick their color off the **wording**, not the code, so one word in the
+  label is what ties them together. `$GLOBALS['prjWrkAlias']` folds two
+  codes onto one status when the file's spelling is not settled.
+
+The stage rules are a best-effort reading of how the legacy code used the
+fields. If the steering committee draws a stage differently, change
+`prjStage()` — nothing else needs touching.
 
 ## How "open projects" is counted — matching the monthly spreadsheet
 
