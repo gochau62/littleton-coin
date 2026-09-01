@@ -20,6 +20,11 @@
 function prjStyles() {
 ?>
 <!-- PT build 2026-09-01-A - deploy marker, check via view-source -->
+<script>
+// where the legacy project screens answer from
+var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
+function projUrl(num) { return PT_LEGACY + 'PROJ_ctl.php?projnum=' + num; }
+</script>
 <style>
 /* one blue working color, red for attention, 4px rhythm */
 :root { --pt-blue: #2a78d6; --pt-blue-dk: #1c5cab; --pt-red: #d03b3b;

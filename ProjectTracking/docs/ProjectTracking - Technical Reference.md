@@ -84,6 +84,14 @@ in `prjNotesNote`.
 location, so each instance caches its weekly summaries beside itself
 instead of dev overwriting production's.
 
+Project-number links follow the same rule. `PROJ_ctl.php` only works
+against production, so `prjLegacyBase()` returns `PRJ_LEGACY_URL` when the
+dashboard is running anywhere else and an empty string when it is running
+under `PRJ_PROD_ROOT` — dev links out, production stays relative, and
+nothing needs changing when this promotes. The pages call `projUrl(num)`
+rather than writing the path themselves. Following such a link from dev
+lands on production's sign-on first, which then returns to the project.
+
 Two things to settle before this is fully production:
 
 - **`PRJTRK001S` still lives in `LSCDEVLIBP`**, a development library, while

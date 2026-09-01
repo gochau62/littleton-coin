@@ -357,7 +357,7 @@ function weeklyHtml(text) {
     function body(s) {
         return esc(s).replace(/\n/g, '<br>')
             .replace(/\b(\d{5,6})\b/g,
-                '<a class="pt-wk-num" href="PROJ_ctl.php?projnum=$1">$1</a>');
+                '<a class="pt-wk-num" href="' + projUrl('$1') + '">$1</a>');
     }
     var html = '';
     $.each(String(text).split(/\n\s*\n/), function (i, b) {
@@ -572,7 +572,7 @@ function renderTable() {
         var pgmr = (p.pgmr === '')
             ? '<span class="pt-unassigned">Unassigned</span>' : esc(p.pgmr);
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '">' + p.num + '</a></td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +
@@ -588,7 +588,7 @@ function renderTable() {
 
     $('#gridBody .pt-rowlink').on('click', function (e) {
         if ($(e.target).is('a')) { return; }
-        window.location = 'PROJ_ctl.php?projnum=' + $(this).data('num');
+        window.location = projUrl($(this).data('num'));
     });
 }
 </script>

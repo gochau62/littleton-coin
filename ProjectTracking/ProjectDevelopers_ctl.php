@@ -218,7 +218,7 @@ function groupTable(rows) {
         var est = (p.low || p.hi) ? (p.low + '–' + p.hi) : '';
         // the whole row opens the project screen
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="PROJ_ctl.php?projnum=' + p.num + '">' + p.num + '</a></td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '">' + p.num + '</a></td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
             '<td>' + statusChip(p.status) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
@@ -275,7 +275,7 @@ function renderGroups() {
 
     $('#groupList .pt-rowlink').on('click', function (e) {
         if ($(e.target).is('a')) { return; }
-        window.location = 'PROJ_ctl.php?projnum=' + $(this).data('num');
+        window.location = projUrl($(this).data('num'));
     });
 }
 </script>

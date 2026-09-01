@@ -29,6 +29,10 @@ if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 if (!defined('PRJ_PROC_LIB'))   { define('PRJ_PROC_LIB', 'LSCDEVLIBP'); }
 if (!defined('PRJ_LEGACY_LIB')) { define('PRJ_LEGACY_LIB', 'LSCPRDLIB'); }
 
+// the legacy project screens only work against production
+if (!defined('PRJ_PROD_ROOT')) { define('PRJ_PROD_ROOT', '/www/seidenphp/'); }
+if (!defined('PRJ_LEGACY_URL')) { define('PRJ_LEGACY_URL', 'http://lcc1:10088/LCCOnline/'); }
+
 // comments live in production, whichever instance is running
 if (!defined('PRJ_NOTES_FILE'))   { define('PRJ_NOTES_FILE', 'LSCPRDLIB.WBNOTEIDXP'); }
 if (!defined('PRJ_WEBNOTES_DIR')) { define('PRJ_WEBNOTES_DIR', '/www/seidenphp/htdocs/LCCOnline/WebNotes'); }
@@ -74,7 +78,15 @@ $GLOBALS['prjDevelopers'] = array(
 );
 
 
+// blank in production, so its own links stay relative
+function prjLegacyBase() {
+    return (strpos(__DIR__, PRJ_PROD_ROOT) === 0) ? '' : PRJ_LEGACY_URL;
+}
+
+
 // true for a tracked developer profile
+
+
 function prjTrackedDev($pgmr) {
     return in_array(strtoupper(trim($pgmr)), $GLOBALS['prjDevelopers'], true);
 }
