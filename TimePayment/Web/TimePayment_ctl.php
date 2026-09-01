@@ -65,6 +65,11 @@ if ($authorized != "yes") {
 <script>
 // Item Time Payment upload frontend logic (upload, results report, review grid)
 var gridToday = 0;
+var gridRows = [];
+// which records the grid shows: all (default), active only, or expired only
+var gridShow = 'all';
+// the grid opens sorted the way the file is keyed, item then source
+var gridSort = { key: 'TPITEM', dir: 1 };
 // brief pause before the search runs, so it does not fire on every keystroke
 var gridSearchTimer = null;
 
@@ -79,6 +84,18 @@ $(document).ready(function () {
     $('#txtSearch').on('input', function () {
         clearTimeout(gridSearchTimer);
         gridSearchTimer = setTimeout(loadGrid, 300);
+    });
+    // the Show list and the sort work on the loaded rows, no server round trip
+    $('#selShow').on('change', function () {
+        gridShow = $(this).val();
+        renderGrid();
+    });
+    // click a column header to sort by it; click again to flip direction
+    $('#tblGrid thead').on('click', 'th[data-sortkey]', function () {
+        var key = $(this).data('sortkey');
+        if (gridSort.key === key) { gridSort.dir = -gridSort.dir; }
+        else { gridSort.key = key; gridSort.dir = 1; }
+        renderGrid();
     });
 });
 
@@ -204,18 +221,47 @@ function renderResults(resp) {
 function loadGrid() {
     postAjax({ action: 'list', q: $('#txtSearch').val().trim() }, function (resp) {
         gridToday = resp.today || 0;
-        renderGrid(resp.rows || []);
+        gridRows = resp.rows || [];
+        renderGrid();
     });
 }
 
 
-function renderGrid(rows) {
+function isExpired(r) {
+    return gridToday > 0 && parseInt(r.TPEXDATE, 10) < gridToday;
+}
+
+
+// header sort: the date column compares as a number, everything else ignores case
+function gridCompare(a, b) {
+    var k = gridSort.key, av, bv;
+    if (k === 'TPEXDATE') { av = +a.TPEXDATE || 0; bv = +b.TPEXDATE || 0; }
+    else {
+        av = String(a[k] == null ? '' : a[k]).toLowerCase();
+        bv = String(b[k] == null ? '' : b[k]).toLowerCase();
+    }
+    if (av < bv) { return -gridSort.dir; }
+    if (av > bv) { return gridSort.dir; }
+    return 0;
+}
+
+
+function renderGrid() {
+    // Show narrows to active or expired; the sort works on a copy so the
+    // server order is kept underneath
+    var rows = gridRows;
+    if (gridShow !== 'all') {
+        rows = $.grep(gridRows, function (r) {
+            return gridShow === 'expired' ? isExpired(r) : !isExpired(r);
+        });
+    }
+    rows = rows.slice().sort(gridCompare);
+
     var html = '';
     $.each(rows, function (i, r) {
-        // an expired record stays in the grid but reads as done with, its date in red;
-        // hovering the item shows its item master description, like the screen can't
-        var expired = gridToday > 0 && parseInt(r.TPEXDATE, 10) < gridToday;
-        html += '<tr' + (expired ? ' class="tp-expired"' : '') + '>' +
+        // an expired record stays visible but reads as done with; hovering the
+        // item shows its item master description, like the screen can't
+        html += '<tr' + (isExpired(r) ? ' class="tp-expired"' : '') + '>' +
             '<td class="tp-mono" title="' + attr(r.TPDESC) + '">' + esc(r.TPITEM) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPPLAN) + '</td>' +
@@ -223,9 +269,26 @@ function renderGrid(rows) {
             '<td class="tp-exp">' + fmtDate(r.TPEXDATE) + '</td>' +
             '</tr>';
     });
+    var emptyMsg = gridShow === 'expired' ? 'No expired records match.'
+                 : gridShow === 'active' ? 'No active records match.'
+                 : 'No time payment records match.';
     $('#gridBody').html(html ||
-        '<tr><td colspan="5" class="tp-empty">No time payment records match.</td></tr>');
-    $('#lblCount').text(rows.length + ' record' + (rows.length === 1 ? '' : 's'));
+        '<tr><td colspan="5" class="tp-empty">' + emptyMsg + '</td></tr>');
+    $('#lblCount').text(rows.length === gridRows.length
+        ? rows.length + ' record' + (rows.length === 1 ? '' : 's')
+        : rows.length + ' of ' + gridRows.length + ' records');
+    updateSortIndicators();
+}
+
+
+// paint the up/down arrow on the active sort header
+function updateSortIndicators() {
+    $('#tblGrid thead th[data-sortkey]').each(function () {
+        var th = $(this);
+        var active = th.data('sortkey') === gridSort.key;
+        th.toggleClass('tp-sorted', active);
+        th.find('.tp-sortind').text(active ? (gridSort.dir === 1 ? ' ▲' : ' ▼') : '');
+    });
 }
 </script>
 <!--  End Content Here -->

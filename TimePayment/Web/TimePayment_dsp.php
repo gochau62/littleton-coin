@@ -80,10 +80,17 @@ function dspTimePayment() {
                     inset 0 1px 0 0 #333, 0 2px 0 0 #333; }
 .tp-grid tbody td { padding: .35rem .7rem; border-bottom: 1px solid var(--tp-line);
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tp-grid tbody tr:nth-child(even) { background: #f7faf8; }
+/* stripe every other record so a wide row is easy to follow across */
+.tp-grid tbody tr:nth-child(even) td { background: #ebf3ee; }
 .tp-grid .tp-mono { font-family: var(--tp-mono); }
 .tp-grid .tp-msg { white-space: normal; }
 .tp-empty { color: var(--tp-muted); padding: .6rem .7rem; }
+
+/* clickable sort headers, the same pattern as the Requisitions grid */
+.tp-grid thead th[data-sortkey] { cursor: pointer; user-select: none; }
+.tp-grid thead th[data-sortkey]:hover { background: #dbeee2; }
+.tp-grid thead th.tp-sorted { background: #d3ecdd; }
+.tp-grid thead th .tp-sortind { color: var(--tp-green); font-size: .7rem; margin-left: .2rem; }
 
 /* one word per row outcome */
 .tp-st { font-weight: 700; font-size: .8rem; }
@@ -91,14 +98,21 @@ function dspTimePayment() {
 .tp-st-updated { color: var(--tp-blue); }
 .tp-st-error { color: var(--tp-red); }
 
-/* an expired record stays in the grid but reads as done with, its date in red */
-tr.tp-expired td { color: #9aa39d; }
-tr.tp-expired td.tp-exp { color: var(--tp-red); }
+/* an expired record reads as done with: a red tinted row that beats the stripe,
+   a struck-through item number, and the date itself in red */
+.tp-grid tbody tr.tp-expired td { background: #fdeeec; color: #8a6f6c; }
+.tp-grid tbody tr.tp-expired:nth-child(even) td { background: #fae4e1; }
+.tp-grid tbody tr.tp-expired td:first-child { text-decoration: line-through; }
+.tp-grid tbody tr.tp-expired td.tp-exp { color: var(--tp-red); font-weight: 700; }
 
-/* the search box over the records table, with the count on the right */
+/* the search box and Show list over the records table, with the count on the right */
 .tp-toolbar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin: 0 0 .6rem; }
 .tp-filter { flex: 1 1 200px; max-width: 300px; padding: .4rem .65rem;
              border: 1px solid var(--tp-line); border-radius: 6px; }
+.tp-show { color: var(--tp-muted); font-size: .85rem; user-select: none; }
+.tp-showsel { margin-left: .3rem; padding: .35rem .5rem; font-size: .85rem;
+              border: 1px solid var(--tp-line); border-radius: 6px; background: #fff;
+              color: var(--tp-text); }
 .tp-count { color: var(--tp-muted); font-size: .82rem; margin-left: auto; }
 </style>
 
@@ -141,6 +155,13 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
         <h2>Records on file</h2>
         <div class="tp-toolbar">
             <input type="text" class="tp-filter" id="txtSearch" placeholder="Search item # or source code">
+            <label class="tp-show">Show
+                <select id="selShow" class="tp-showsel">
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="expired">Expired</option>
+                </select>
+            </label>
             <span class="tp-count" id="lblCount"></span>
         </div>
         <!-- the same columns, in the same order, as the green screen subfile; the item
@@ -150,8 +171,11 @@ tr.tp-expired td.tp-exp { color: var(--tp-red); }
                 <colgroup><col style="width:15%"><col style="width:12%"><col style="width:8%">
                 <col style="width:45%"><col style="width:20%"></colgroup>
                 <thead><tr>
-                    <th>Item</th><th>Source</th><th>Plan</th>
-                    <th>Description</th><th>Expire Date</th>
+                    <th data-sortkey="TPITEM">Item<span class="tp-sortind"></span></th>
+                    <th data-sortkey="TPSRCD">Source<span class="tp-sortind"></span></th>
+                    <th data-sortkey="TPPLAN">Plan<span class="tp-sortind"></span></th>
+                    <th data-sortkey="TPPLDS">Description<span class="tp-sortind"></span></th>
+                    <th data-sortkey="TPEXDATE">Expire Date<span class="tp-sortind"></span></th>
                 </tr></thead>
                 <tbody id="gridBody"></tbody>
             </table>
