@@ -109,9 +109,12 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
             OPEN C5;
         ELSEIF INTYPE = 'LIST' THEN
             SET SRCH = UPPER(TRIM(COALESCE(INKEY1, '')));
-            /* anything that expired five or more years ago stays off the
-               grid - it is history, not something anyone maintains */
-            SET WKCUT = DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP - 5 YEARS,
+            /* anything that expired two or more years ago stays off the
+               grid: recently expired records exist to be renewed for the
+               next run of a campaign, and two years covers comparing a
+               season against the same season last year - older than that
+               is history, not something anyone maintains */
+            SET WKCUT = DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP - 2 YEARS,
                                            'YYYYMMDD'), 8, 0);
             OPEN C6;
         ELSE
