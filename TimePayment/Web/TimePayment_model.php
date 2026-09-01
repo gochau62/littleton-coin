@@ -219,7 +219,8 @@ function tpyGetRecord($conn, $item, $src) {
 }
 
 
-// PROGRAM NAME TIMPAY001S type LIST: every record on file for the review grid, narrowed by the search box
+// PROGRAM NAME TIMPAY001S type LIST: the records on file for the review grid, narrowed by the search box; anything that expired five or more years
+// ago stays off the grid entirely
 function tpyList($conn, $q = '') {
     return tpyFetchAll($conn, "CALL TIMPAY001S(?, ?, ?)",
                        array('LIST', substr(trim((string)$q), 0, 20), ''));

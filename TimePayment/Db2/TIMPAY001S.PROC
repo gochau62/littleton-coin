@@ -40,6 +40,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
     BEGIN
         DECLARE SRCH   VARCHAR(20)   DEFAULT '';
         DECLARE WKPRIC DECIMAL(9, 2) DEFAULT 0;
+        DECLARE WKCUT  DECIMAL(8, 0) DEFAULT 0;
 
         DECLARE C1 CURSOR WITH RETURN FOR
             SELECT I.IISKU# AS TPITEM,
@@ -89,9 +90,10 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
                 ON I.IISKU# = T.TPITEM
               LEFT JOIN LSCPRDLIB/TPPLANSP P
                 ON P.PPPLAN = T.TPPLAN
-             WHERE SRCH = ''
-                OR UPPER(T.TPITEM) LIKE '%' || SRCH || '%'
-                OR UPPER(T.TPSRCD) LIKE '%' || SRCH || '%'
+             WHERE T.TPEXDATE >= WKCUT
+               AND ( SRCH = ''
+                  OR UPPER(T.TPITEM) LIKE '%' || SRCH || '%'
+                  OR UPPER(T.TPSRCD) LIKE '%' || SRCH || '%' )
              ORDER BY T.TPITEM, T.TPSRCD;
 
         IF INTYPE = 'ITEM' THEN
@@ -107,6 +109,10 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
             OPEN C5;
         ELSEIF INTYPE = 'LIST' THEN
             SET SRCH = UPPER(TRIM(COALESCE(INKEY1, '')));
+            /* anything that expired five or more years ago stays off the
+               grid - it is history, not something anyone maintains */
+            SET WKCUT = DEC(VARCHAR_FORMAT(CURRENT TIMESTAMP - 5 YEARS,
+                                           'YYYYMMDD'), 8, 0);
             OPEN C6;
         ELSE
             SIGNAL SQLSTATE '75011'
