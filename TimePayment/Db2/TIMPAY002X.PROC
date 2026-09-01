@@ -1,0 +1,56 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - TIMPAY002X                                    */
+/*                                                                   */
+/* Program Narrative - TEST STUB for TIMPAY002S: answers the item    */
+/*                     price from the LSCDEVLIBP/TPPRICEDV table     */
+/*                     instead of calling the OE0337R price module,  */
+/*                     so the blank-plan path can be tested end to   */
+/*                     end before the real external registration is  */
+/*                     tied out.  Same name and parameter signature  */
+/*                     as the real thing, so nothing else changes:   */
+/*                     compiling TIMPAY002S (the external version)   */
+/*                     replaces this stub, and compiling this        */
+/*                     member puts the stub back.                    */
+/*                     An item missing from TPPRICEDV prices at 0,   */
+/*                     which lands outside every tier range and      */
+/*                     skips the row onto the exception report.      */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 09/03/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(TIMPAY002X)                            */
+/*********************************************************************/
+/*                                                                   */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project -                                                     |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
+        INOUT PRITEM CHAR(10),
+        INOUT PRSRCC CHAR(10),
+        INOUT PRCUS# CHAR(10),
+        INOUT PRQTY  DECIMAL(5, 0),
+        INOUT PRPRIC DECIMAL(9, 2)
+        )
+
+        LANGUAGE SQL
+        READS SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        SET PRPRIC = COALESCE(
+            (SELECT P.PRPRIC
+               FROM LSCDEVLIBP/TPPRICEDV P
+              WHERE P.PRITEM = TIMPAY002S.PRITEM), 0);
+    END;
