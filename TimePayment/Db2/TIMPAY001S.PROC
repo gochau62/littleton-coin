@@ -92,8 +92,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY001S (
              WHERE SRCH = ''
                 OR UPPER(T.TPITEM) LIKE '%' || SRCH || '%'
                 OR UPPER(T.TPSRCD) LIKE '%' || SRCH || '%'
-             ORDER BY T.TPITEM, T.TPSRCD
-             FETCH FIRST 500 ROWS ONLY;
+             ORDER BY T.TPITEM, T.TPSRCD;
 
         IF INTYPE = 'ITEM' THEN
             OPEN C1;
