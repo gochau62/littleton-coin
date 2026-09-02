@@ -59,9 +59,9 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY003S (
                 SET MESSAGE_TEXT = 'Expiration date must be today or later';
         END IF;
 
-        /* TESTING: writes go to the LSCDEVLIBP copy of TPITEMSP - for
-           live use, flip both statements (and TIMPAY001S C5/C6) */
-        UPDATE LSCDEVLIBP/TPITEMSP
+        /* LIVE: writes go to production TPITEMSP - to test against the
+           dev copy, flip both statements (and TIMPAY001S C5/C6) */
+        UPDATE LSCPRDLIB/TPITEMSP
            SET TPPLAN = INPLAN,
                TPEXDATE = INEXPD
          WHERE TPITEM = INITEM
@@ -70,7 +70,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY003S (
         GET DIAGNOSTICS ROWCNT = ROW_COUNT;
 
         IF ROWCNT = 0 THEN
-            INSERT INTO LSCDEVLIBP/TPITEMSP
+            INSERT INTO LSCPRDLIB/TPITEMSP
                 (TPITEM, TPSRCD, TPPLAN, TPEXDATE)
             VALUES (INITEM, INSRCE, INPLAN, INEXPD);
         END IF;
