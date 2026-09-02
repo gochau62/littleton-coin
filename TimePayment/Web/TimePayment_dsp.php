@@ -142,8 +142,8 @@ function dspTimePayment($user) {
         <div class="tp-tablewrap">
             <table class="tp-grid" id="tblResults">
                 <colgroup><col style="width:7%"><col style="width:14%"><col style="width:10%">
-                <col style="width:8%"><col style="width:13%"><col style="width:10%">
-                <col style="width:38%"></colgroup>
+                <col style="width:7%"><col style="width:13%"><col style="width:12%">
+                <col style="width:37%"></colgroup>
                 <thead><tr>
                     <th>Row</th><th>Item #</th><th>Source</th><th>Plan</th>
                     <th>Expiration</th><th>Result</th><th>Detail</th>

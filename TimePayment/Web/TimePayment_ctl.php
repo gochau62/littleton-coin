@@ -205,6 +205,9 @@ function renderResults(resp) {
                       : '');
     $('#resSummary').html(summary);
 
+    // the outcome word as it reads on the screen: Added, Updated, or Skipped for a row that did not go through
+    var stLabel = { added: 'Added', updated: 'Updated', error: 'Skipped' };
+
     var html = '';
     $.each(resp.report || [], function (i, r) {
         html += '<tr>' +
@@ -213,7 +216,7 @@ function renderResults(resp) {
             '<td class="tp-mono">' + esc(r.src) + '</td>' +
             '<td class="tp-mono">' + esc(r.plan) + '</td>' +
             '<td>' + esc(r.exp) + '</td>' +
-            '<td><span class="tp-st tp-st-' + esc(r.status) + '">' + esc(r.status) + '</span></td>' +
+            '<td><span class="tp-st tp-st-' + esc(r.status) + '">' + esc(stLabel[r.status] || r.status) + '</span></td>' +
             '<td class="tp-msg" title="' + attr(r.msg) + '">' + esc(r.msg) + '</td>' +
             '</tr>';
     });
