@@ -269,9 +269,8 @@ function renderGrid() {
                  : 'No time payment records match.';
     $('#gridBody').html(html ||
         '<tr><td colspan="5" class="tp-empty">' + emptyMsg + '</td></tr>');
-    $('#lblCount').text(rows.length === gridRows.length
-        ? rows.length + ' record' + (rows.length === 1 ? '' : 's')
-        : rows.length + ' of ' + gridRows.length + ' records');
+    // the count always reads shown of total, so All says 9810 of 9810 the same way Active says 7200 of 9810
+    $('#lblCount').text(rows.length + ' of ' + gridRows.length + ' record' + (gridRows.length === 1 ? '' : 's'));
     updateSortIndicators();
 }
 
