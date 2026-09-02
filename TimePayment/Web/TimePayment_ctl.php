@@ -37,10 +37,10 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// an unsigned visit is about to be bounced to the sign on, so the address asked for is kept in the session first; the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight to this page work
+// keep the address for the sign on to land the person back here after signing in, which is what makes a bookmark work
 if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
-// check users authority (10 is the minimum to use LCCOnline; 50 here because the upload writes a production pricing file, same as the other loaders)
+// check users authority - 10 is the LCCOnline minimum, 50 here because the upload writes a production file
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     $authConn   = getDB2PConn($user, $password);
@@ -255,7 +255,7 @@ function renderGrid() {
 
     var html = '';
     $.each(rows, function (i, r) {
-        // an expired record stays visible but reads as done with; hovering the item shows its item master description, like the screen can't
+        // an expired record stays visible but reads as done with; hovering the item shows its item master description
         html += '<tr' + (isExpired(r) ? ' class="tp-expired"' : '') + '>' +
             '<td class="tp-mono" title="' + attr(r.TPDESC) + '">' + esc(r.TPITEM) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +

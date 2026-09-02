@@ -18,16 +18,16 @@
 
 $GLOBALS['tpyErr'] = '';
 
-// the file widths the keys are written against: the item master key is CHAR(10), the source code (SRCCOD) is CHAR(6) on OEPSRCE, and the plan is a two digit code like '02'
+// the file widths the keys are written against: item CHAR(10), source code CHAR(6) on OEPSRCE, plan two digits
 define('TPY_ITEM_LEN', 10);
 define('TPY_SRC_LEN', 6);
 define('TPY_PLAN_LEN', 2);
 
-// activity log path in the LCCOnline_logs folder beside the PHP, which is writable by the web profile while the docroot itself is not
+// activity log path in the LCCOnline_logs folder beside the PHP, writable by the web profile while the docroot is not
 define('TPY_ACT_LOG', __DIR__ . '/LCCOnline_logs/timepayment_activity.log');
 
 
-// append one line to the activity log, with the write suppressed so a bad one never takes the app down; if it still fails the reason and the line fall to php.log so nothing is lost
+// append one line to the activity log, write suppressed so a bad one never takes the app down; failures fall to php.log
 function tpyActLog($user, $action, $detail = '') {
     $line = date('Y-m-d H:i:s') . ' ' .
             ($user !== '' ? $user : 'unknown') . ' ' .
@@ -49,7 +49,7 @@ function tpyFail($where) {
 }
 
 
-// shared runner for every proc that returns a result set: prepare, bind each parameter in order, execute, and collect every row as an associative array
+// shared runner for every proc returning a result set: prepare, bind each parameter in order, execute, collect rows
 function tpyFetchAll($conn, $sql, $params = array()) {
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return tpyFail("prepare $sql"); }
@@ -101,13 +101,13 @@ function tpyCleanPlan($plan) {
 }
 
 
-// turn whatever the spreadsheet cell holds into the YYYYMMDD number TPITEMSP carries, 0 when it is not a real date; Excel hands date cells back as serial numbers, and Marketing may also type slashes or hyphens, so all of those land here
+// the cell as the YYYYMMDD number TPITEMSP carries, 0 if not a real date; Excel serials, slashes and hyphens land here
 function tpyNormDate($v) {
     if ($v === null) { return 0; }
 
     if (is_numeric($v) && !is_string($v)) {
         $n = floatval($v);
-        // an eight digit number is already YYYYMMDD; anything smaller is an Excel serial date, which runs out at 2958465 (9999-12-31), so the two ranges cannot collide
+        // eight digits is already YYYYMMDD; anything smaller is an Excel serial, which tops out at 2958465
         if ($n >= 19000101 && $n <= 29991231 && $n == floor($n)) {
             $s = strval(intval($n));
             return checkdate(intval(substr($s, 4, 2)), intval(substr($s, 6, 2)),
@@ -161,7 +161,7 @@ function tpyGetSource($conn, $src) {
 }
 
 
-// PROGRAM NAME TIMPAY001S type PLAN: one exact plan from TPPLANSP, for the rows where Marketing filled in the plan column; no row back means the plan is not valid, which per Dennis is an error condition rather than something to guess at
+// PROGRAM NAME TIMPAY001S type PLAN: one exact plan from TPPLANSP; none back is a bad typed plan, an error per Dennis
 function tpyGetPlan($conn, $plan) {
     $rows = tpyFetchAll($conn, "CALL TIMPAY001S(?, ?, ?)",
                         array('PLAN', tpyCleanPlan($plan), ''));
@@ -170,7 +170,7 @@ function tpyGetPlan($conn, $plan) {
 }
 
 
-// PROGRAM NAME TIMPAY001S type TIER: the plan whose TPTIERSP price range covers the given item price; null back means the price falls outside every range (under $99.00), and per Josh that row is skipped onto the exception report instead of defaulted into a plan
+// PROGRAM NAME TIMPAY001S type TIER: the plan whose TPTIERSP range covers the price; none is under $99, a skip per Josh
 function tpyTierPlan($conn, $price) {
     $rows = tpyFetchAll($conn, "CALL TIMPAY001S(?, ?, ?)",
                         array('TIER', number_format(floatval($price), 2, '.', ''), ''));
@@ -179,7 +179,7 @@ function tpyTierPlan($conn, $price) {
 }
 
 
-// PROGRAM NAME TIMPAY002S: the item price retrieval module OE0337R, called the way OP0800R calls it - the ten parameters mirror the program's Dcl-PR (LSCARCLIB/QRPGLESRC mbr OE0337R), the item number and source code are the only non-blank values passed, and the price comes back in WKPRIC
+// PROGRAM NAME TIMPAY002S: the OE0337R price module called like OP0800R does - item and source in, price back in WKPRIC
 function tpyItemPrice($conn, $item, $srcCod) {
     $sql = "CALL TIMPAY002S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -213,7 +213,7 @@ function tpyItemPrice($conn, $item, $srcCod) {
 }
 
 
-// PROGRAM NAME TIMPAY001S type ONE: the TPITEMSP record for one item and source code, so the upload knows whether it is about to add or update
+// PROGRAM NAME TIMPAY001S type ONE: the TPITEMSP record for one item and source, so the upload knows add from update
 function tpyGetRecord($conn, $item, $src) {
     $rows = tpyFetchAll($conn, "CALL TIMPAY001S(?, ?, ?)",
                         array('ONE', tpyCleanItem($item), tpyCleanSrc($src)));
@@ -222,14 +222,14 @@ function tpyGetRecord($conn, $item, $src) {
 }
 
 
-// PROGRAM NAME TIMPAY001S type LIST: the records on file for the review grid, narrowed by the search box; anything that expired two or more years ago stays off the grid entirely
+// PROGRAM NAME TIMPAY001S type LIST: the review grid records, narrowed by the search box; expired 2+ years stays off
 function tpyList($conn, $q = '') {
     return tpyFetchAll($conn, "CALL TIMPAY001S(?, ?, ?)",
                        array('LIST', substr(trim((string)$q), 0, 20), ''));
 }
 
 
-// commit the unit of work - on a journaled table an uncommitted write rolls back when the script exits, so each written row is committed on the spot and a failure further down the spreadsheet really does leave the rows above it on file
+// commit each row on the spot: on a journaled table an uncommitted write rolls back when the script exits
 function tpyCommit($conn) {
     if (!function_exists('db2_commit')) { return true; }
     if (!db2_commit($conn)) { return tpyFail('commit'); }
@@ -237,7 +237,7 @@ function tpyCommit($conn) {
 }
 
 
-// PROGRAM NAME TIMPAY003S: write one time payment record, updating it when the item/source key is already on TPITEMSP and inserting it when it is not
+// PROGRAM NAME TIMPAY003S: write one time payment record - update when the item/source key is on TPITEMSP, else insert
 function tpyUpsert($conn, $item, $src, $plan, $expDate) {
     if (!tpyExec($conn, "CALL TIMPAY003S(?, ?, ?, ?)",
                  array(tpyCleanItem($item), tpyCleanSrc($src),

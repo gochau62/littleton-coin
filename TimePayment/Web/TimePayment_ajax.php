@@ -49,7 +49,7 @@ function tpyOutFail($msg = '') {
 }
 
 
-// a spreadsheet cell as text: Excel hands whole numbers (item numbers, source codes, plans) back as floats, so those lose the trailing .0 here
+// a cell as text: Excel hands whole numbers (items, sources, plans) back as floats, so the trailing .0 goes here
 function tpyCellText($v) {
     if ($v === null) { return ''; }
     if (is_numeric($v) && !is_string($v) && floatval($v) == floor(floatval($v))) {
@@ -59,7 +59,7 @@ function tpyCellText($v) {
 }
 
 
-// a stored YYYYMMDD number shown the house way, like the green screen: no leading zero on the month and a two digit year - 5/11/27
+// a stored YYYYMMDD shown the green screen way: no leading zero on the month, two digit year - 5/11/27
 function tpyFmtDate($dec) {
     $s = strval(intval($dec));
     if (strlen($s) !== 8) { return ''; }
@@ -67,7 +67,7 @@ function tpyFmtDate($dec) {
 }
 
 
-// e-mail the exception report to whoever ran the upload, the way the Order File import does - only the rows that were skipped ride along, since the good rows are already on TPITEMSP
+// e-mail the skipped rows to whoever ran the upload, the way the Order File import does its exception report
 function tpyEmailExceptions($user, $report, $fileName) {
     if (!function_exists('sendMSG')) {
         error_log('TimePayment: EZMail sendMSG is unavailable - the exception report was not e-mailed');
@@ -136,7 +136,7 @@ switch ($action) {
         $writer->save('php://output');
         exit;
 
-    // the upload itself: validate each row the way the project write-up lays it out, write the good ones to TPITEMSP, and e-mail the skipped ones back to the user as the exception report
+    // the upload: validate each row per the write-up, write the good ones to TPITEMSP, e-mail the skipped ones back
     case 'upload':
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
             tpyOutFail("The spreadsheet library is not available on this server.");
@@ -176,14 +176,14 @@ switch ($action) {
             $expRaw = $cells[0][3];
             $expTxt = tpyCellText($expRaw);
 
-            // resolve the date up front so the report shows a readable date even when the row fails an earlier check - an Excel date cell is a raw serial number like 46752 until it is converted
+            // resolve the date first so the report shows a real date, not an Excel serial like 46752, when a row fails
             $expDate = tpyNormDate($expRaw);
             $expShow = $expDate > 0 ? tpyFmtDate($expDate) : $expTxt;
 
             // an entirely blank row is just Excel padding, not an error
             if ($item === '' && $src === '' && $plan === '' && $expTxt === '') { continue; }
 
-            // item # against the item master; a Db2 error on any lookup or write skips the row like any other exception, so one bad call can never stop the run - the report carries the reason and the run always reaches the last row
+            // item # against the item master; a Db2 error on any call skips the row as an exception, not the whole run
             $found = tpyGetItem($conn, $item);
             if ($found === false) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
@@ -218,7 +218,7 @@ switch ($action) {
             }
 
             if ($plan !== '') {
-                // a plan Marketing typed must exist on TPPLANSP - per Dennis this is an error condition, not something to quietly ignore
+                // a typed plan must exist on TPPLANSP - per Dennis a bad one is an error, not something to ignore
                 $found = tpyGetPlan($conn, $plan);
                 if ($found === false) {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
@@ -235,7 +235,7 @@ switch ($action) {
                     continue;
                 }
             } else {
-                // no plan given: price the item the way OP0800R does and tie the price out to the TPTIERSP ranges; a price outside every range (under $99.00) skips the row onto the report - per Josh those get looked at individually, not defaulted into a plan
+                // no plan: price the item like OP0800R and tie it to the TPTIERSP ranges; no range skips the row
                 $price = tpyItemPrice($conn, $item, $src);
                 if ($price === false) {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => '',
@@ -280,7 +280,7 @@ switch ($action) {
                 continue;
             }
 
-            // all four columns are good: update the record when the item/source key is already on TPITEMSP, add it when it is not
+            // all four columns are good: update when the item/source key is already on TPITEMSP, add when it is not
             $existing = tpyGetRecord($conn, $item, $src);
             if ($existing === false) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
