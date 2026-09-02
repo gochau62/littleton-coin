@@ -1722,4 +1722,56 @@ function getProjectDeveloperRate($conn) {
 
 //kjr
 
+// PRJTRK002S: programmers on a project and their comments
+function callPRJTRK002S($conn, $type, $proj, $pgmr = '', $sts = '', $date = 0,
+                        $user = '', $text = '', $seq = 0, $date2 = 0) {
+	$stmt = db2_prepare($conn, "Call PRJTRK002S(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+	if (!$stmt) {
+		putLCCOnlineLogRec("PRJTRK002S prepare error: " . db2_stmt_errormsg());
+		return false;
+	}
+	$p1 = $type;             $p2 = (int) $proj;
+	$p3 = strtoupper($pgmr); $p4 = strtoupper($sts);
+	$p5 = (int) $date;       $p6 = (int) $date2;
+	$p7 = strtoupper($user); $p8 = $text;
+	$p9 = (int) $seq;
+	for ($i = 1; $i <= 9; $i++) {
+		db2_bind_param($stmt, $i, "p" . $i, DB2_PARAM_IN);
+	}
+	if (!db2_execute($stmt)) {
+		putLCCOnlineLogRec("PRJTRK002S " . $type . " error: " . db2_stmt_errormsg());
+		return false;
+	}
+	// only the list types hand back rows
+	$rows = array();
+	if (in_array($type, array('PGLIST', 'CMLIST', 'ASGN', 'CMRANGE'))) {
+		while ($row = db2_fetch_assoc($stmt)) { $rows[] = $row; }
+	}
+	return $rows;
+}
+
+function getProjPgmrs($conn, $proj) {
+	return callPRJTRK002S($conn, 'PGLIST', $proj);
+}
+
+function saveProjPgmr($conn, $proj, $pgmr, $sts, $date, $user) {
+	return callPRJTRK002S($conn, 'PGSAVE', $proj, $pgmr, $sts, $date, $user) !== false;
+}
+
+function removeProjPgmr($conn, $proj, $pgmr) {
+	return callPRJTRK002S($conn, 'PGDEL', $proj, $pgmr) !== false;
+}
+
+function getProjPgmrComments($conn, $proj) {
+	return callPRJTRK002S($conn, 'CMLIST', $proj);
+}
+
+function addProjPgmrComment($conn, $proj, $pgmr, $user, $text) {
+	return callPRJTRK002S($conn, 'CMADD', $proj, $pgmr, '', 0, $user, $text) !== false;
+}
+
+function removeProjPgmrComment($conn, $proj, $seq) {
+	return callPRJTRK002S($conn, 'CMDEL', $proj, '', '', 0, '', '', $seq) !== false;
+}
+
 ?>

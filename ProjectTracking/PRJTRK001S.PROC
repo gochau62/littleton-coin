@@ -4,7 +4,9 @@
 /*                                                                   */
 /* Program Narrative - Read-only data feeds for the Project          */
 /*                     Tracking dashboard rewrite, one result set    */
-/*                     per type: LIST TIME COMP PGMR CHGLOG.        */
+/*                     per type: LIST TIME COMP PGMR CHGLOG         */
+/*                     STATUS. Programmer assignments are in         */
+/*                     PRJTRK002S so this compiles without them.     */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -57,6 +59,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    RTRIM(P.PRTYPE) AS PJTYPE,
                    RTRIM(P.PRWRKSTS) AS PJWRKSTS,
                    P.PRSUBD AS PJSUBDATE,
+                   P.PRESTR AS PJSTRDATE,
                    P.PRECOM AS PJSCHDATE,
                    P.PRACOM AS PJCOMPDATE,
                    RTRIM(P.PRRESCOD) AS PJRESCOD,
@@ -126,6 +129,13 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                AND L.PCH# NOT BETWEEN 90000 AND 90999
              ORDER BY L.PCHUSER, L.PCH#, L.PCHDATE, L.PCHTIME;
 
+        -- STATUS: the work status dropdown, code and wording
+        DECLARE C7 CURSOR WITH RETURN FOR
+            SELECT RTRIM(S.PRSCODE) AS STCODE,
+                   RTRIM(S.PRSDESC) AS STDESC
+              FROM LSCPRDLIB/PRSTATUSP S
+             ORDER BY S.PRSDESC;
+
         IF INTYPE = 'LIST' THEN
             SET WKALL = UPPER(TRIM(COALESCE(NULLIF(INKEY1, ''), 'N')));
             OPEN C1;
@@ -143,9 +153,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
             SET WKFROM = DECIMAL(COALESCE(NULLIF(TRIM(INKEY1), ''), '0'), 8, 0);
             SET WKTO   = DECIMAL(COALESCE(NULLIF(TRIM(INKEY2), ''), '0'), 8, 0);
             OPEN C6;
+        ELSEIF INTYPE = 'STATUS' THEN
+            OPEN C7;
         ELSE
             SIGNAL SQLSTATE '75011'
                 SET MESSAGE_TEXT =
-                    'Type must be LIST TIME COMP PGMR CHGLOG';
+                    'Type must be LIST TIME COMP PGMR CHGLOG STATUS';
         END IF;
     END;

@@ -191,11 +191,20 @@ function stClass(status, label) {
     return 'pt-st-other';
 }
 
-function statusChip(status) {
+function statusChip(status, p) {
     if (!status) { return ''; }
     var full = (asgData.statuses && asgData.statuses[status]) || status;
-    return '<span class="pt-st ' + stClass(status, full) + '" title="' + attr(full) + '">' +
-           esc(full) + '</span>';
+    var html = '<span class="pt-st ' + stClass(status, full) + '" title="' + attr(full) + '">' +
+               esc(full) + '</span>';
+    // a queued project says when it starts
+    if (p && p.start && full.toLowerCase().indexOf('queue') >= 0) {
+        html += ' <span class="pt-cnt" title="Scheduled start">starts ' + esc(p.start) + '</span>';
+    }
+    // an additional programmer's own status on a shared project
+    if (p && p.addl) {
+        html += ' <span class="pt-cnt" title="Also on this project">shared</span>';
+    }
+    return html;
 }
 
 
@@ -220,7 +229,7 @@ function groupTable(rows) {
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="' + projUrl(p.num) + '">' + p.num + '</a></td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
-            '<td>' + statusChip(p.status) + '</td>' +
+            '<td>' + statusChip(p.status, p) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
             '<td class="pt-num" title="Dept priority ' + p.deptpr +
                 ', SC priority ' + p.scpr + '">' + p.deptpr + ' / ' + p.scpr + '</td>' +

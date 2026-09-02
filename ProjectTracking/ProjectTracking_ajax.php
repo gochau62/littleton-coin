@@ -84,6 +84,11 @@ function prjRowOut($row) {
         // raw date so the table sorts chronologically
         'schedraw' => intval($row['PJSCHDATE']),
         'comp'   => prjFmtDate($row['PJCOMPDATE']),
+        // scheduled start, what In Queue waits for
+        'start'    => prjFmtDate($row['PJSTRDATE'] ?? 0),
+        'startraw' => intval($row['PJSTRDATE'] ?? 0),
+        // 1 = an additional programmer's row, own status
+        'addl'   => intval($row['ADDL'] ?? 0),
         // 1 = on the SC pipeline, 0 = stale
         'pipe'   => intval($row['PIPE'] ?? 1),
     );
@@ -122,13 +127,16 @@ switch ($action) {
     case 'dashboard':
         $projects = prjProjects($conn, 'N');
         if ($projects === false) { prjOutFail(); }
+        $projects = prjWithAssignments($conn, $projects);
         $pipe = prjPipelineCheck($projects, prjPipelineNums($conn, $projects));
         prjMarkPipeline($projects, $pipe);
         $rollup = prjDashboardRollup($projects);
 
+        // the table lists each project once, under its primary
         $out = array();
         foreach ($projects as $row) {
             if (intval($row['PIPE']) === 0) { continue; }
+            if (intval($row['ADDL'] ?? 0) === 1) { continue; }
             $out[] = prjRowOut($row);
         }
 
@@ -156,6 +164,7 @@ switch ($action) {
         $includeComplete = (($_POST['complete'] ?? $_GET['complete'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
         if ($projects === false) { prjOutFail(); }
+        $projects = prjWithAssignments($conn, $projects);
         prjMarkPipeline($projects,
             prjPipelineCheck($projects, prjPipelineNums($conn, $projects)));
 
@@ -199,6 +208,7 @@ switch ($action) {
         $includeStale    = (($_GET['stale'] ?? '') === 'Y') ? 'Y' : 'N';
         $projects = prjProjects($conn, $includeComplete);
         if ($projects === false) { prjOutFail(); }
+        $projects = prjWithAssignments($conn, $projects);
         prjMarkPipeline($projects,
             prjPipelineCheck($projects, prjPipelineNums($conn, $projects)));
 

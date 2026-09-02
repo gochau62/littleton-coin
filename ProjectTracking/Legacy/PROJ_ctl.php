@@ -12,7 +12,7 @@
 	include("StartBlockHead.php");
 ?>
 <!--<body onload="projCalcPayback(); setInitialTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">-->
-<body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">
+<body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general'); wrkStsChanged()">
 <?php
 	include("StartBlockBody.php");
 ?>
@@ -259,6 +259,7 @@ projCalcPayback();
 //	require_once("Utils/common_functions.php");
 	require_once("PROJ_dsp.php");
 	require_once("PROJ_model.php");
+	require_once("PROJ_pgmrs_dsp.php");
 	require_once("LCEMPLOYP_model.php");
 	require_once("LNKDOCP_model.php");
 	require_once("LCDEPTP_model.php");
@@ -802,7 +803,15 @@ projCalcPayback();
 	else {
 	    $screenData['pgmrTime'] .= "<tr><td class='txtData'>&nbsp;&nbsp;&nbsp;Total </td><td>".$timeTotal." hours</td></tr></table>";
 	}
-	
+
+	// every programmer on the project, shown under the time box
+	if (is_numeric($_GET['projnum'])) {
+		$pgmrCanEdit = ($screenData['PAPRJMNGR'] == 'Y' || $_SESSION['usrclass'] == '*PGMR     '
+		                || $_SESSION['usrclass'] == '*SYSOPR   ');
+		$screenData['pgmrTime'] .= renderProjPgmrPanel($conn2, $projRecord, $pgmrCanEdit,
+		                                                $screenUser, $screenData['PAPRJMNGR'] == 'Y');
+	}
+
 	
 	
 	//***********************************//
@@ -891,7 +900,8 @@ projCalcPayback();
 	$queryArray = getRecsPRSTATUSP($conn2);
 	
 	$selAttribs = array("id" => "projWrkSts",
-						"name" => "projWrkSts");
+						"name" => "projWrkSts",
+						"onchange" => "wrkStsChanged()");
 	if ($screenData['PAPRJMNGR'] != 'Y' && $_SESSION['usrclass'] != '*PGMR     ' || $_SESSION['usrclass'] != '*SYSOPR   ') {
 		$selAttribs['readonly'] =  "true";
 	}
@@ -903,7 +913,14 @@ projCalcPayback();
 	
 //	$screenData['html']['PRWRKSTS'] = loadListboxFromFile($conn, $queryArray, $selAttribs, $optAttribs);
 	$screenData['html']['PRWRKSTS'] = loadListboxFromArray($queryArray, $selAttribs, $optAttribs);
-	
+
+	// In Queue carries its scheduled start date beside the dropdown
+	if ($screenData['PAPRJMNGR'] == 'Y' || $_SESSION['usrclass'] == '*PGMR     ' || $_SESSION['usrclass'] == '*SYSOPR   ') {
+		$screenData['html']['PRWRKSTS'] .= " <span id='inqDateWrap' style='display:none'>queued to start "
+			. "<input type='date' id='projQueueDate' name='projQueueDate' value='"
+			. pgmrIsoDate($screenData['PRESTR']) . "' onchange='queueDateChanged()' /></span>";
+	}
+
 	$screenData['html']['PRFORCE2SC'] = "<input type='checkbox' name='projForce2SC' value='Y' ";
 	if ($screenData['PRFORCE2SC'] == 'Y') {
 		$screenData['html']['PRFORCE2SC'] .= "checked "; 

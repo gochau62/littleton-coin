@@ -102,6 +102,19 @@ Two things to settle before this is fully production:
   production-only tool; drop the `LSCPRDLIB/` prefixes if the procedure
   should follow the library list like the rest of the shop.
 
+## Programmers on a project
+
+Since 09/02 a project can carry more than one programmer, each with a
+status and start date of their own, and comments filed under each name.
+The data lives in `PRPGMASGP` / `PRPGMCMTP` behind `PRJTRK002S`; the
+project screen draws the panel from `PROJ_pgmrs_dsp.php`; the dashboard
+adds one row per additional programmer (`prjWithAssignments()`, flagged
+`ADDL`) and the weekly digest reads their comments (`CMRANGE`). The
+design, the file layouts and the order to install things are in
+*Project programmers - design.md* beside this file. The status wording
+itself now comes from `PRSTATUSP` through the `STATUS` read, so a code
+added to the dropdown shows up here with no code change.
+
 ## The stage/status mapping — the one thing to review
 
 The mapping lives in exactly two functions in

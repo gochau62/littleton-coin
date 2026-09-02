@@ -85,6 +85,70 @@ function flipShowHide(action, editorDiv, aDiv, parms) {
 	}
 }
 
+// In Queue shows its scheduled start date beside the status
+function wrkStsChanged() {
+	var sel = document.getElementById('projWrkSts');
+	var wrap = document.getElementById('inqDateWrap');
+	if (!sel || !wrap) { return; }
+	wrap.style.display = (sel.value == 'INQ') ? 'inline' : 'none';
+}
+
+// the queue date is the project's scheduled start date
+function queueDateChanged() {
+	var q = document.getElementById('projQueueDate');
+	var s = document.forms.projForm ? document.forms.projForm.projSchdStart : null;
+	if (!q || !s || q.value == '') { return; }
+	var p = q.value.split('-');
+	if (p.length == 3) { s.value = p[1] + '/' + p[2] + '/' + p[0]; }
+	if (typeof activateSave == 'function') { activateSave(); }
+}
+
+// programmers panel: post a change, swap in the panel that comes back
+function pgmrPost(data) {
+	data.projNum = document.getElementById('projectNumber').value.trim();
+	jQuery.post('PROJ_ajax_request_post.php', data, function (html) {
+		if (String(html).indexOf('ERROR:') === 0) {
+			swal('Programmer update failed', String(html).substr(6), 'error');
+			return;
+		}
+		jQuery('#pgmrPanel').replaceWith(html);
+	}).fail(function () {
+		swal('Programmer update failed', 'Server error, refresh the page and try again', 'error');
+	});
+}
+
+function pgmrAdd() {
+	var p = jQuery('#pgmrAdd').val();
+	if (!p) { return; }
+	pgmrPost({ action: 'pgmrSave', pgmr: p, sts: '', date: '' });
+}
+
+function pgmrSave(p) {
+	var row = jQuery('#pgmrPanel tr[data-pgmr="' + p + '"]');
+	pgmrPost({ action: 'pgmrSave', pgmr: p,
+	           sts: row.find('.pgmrSts').val() || '',
+	           date: row.find('.pgmrDate').val() || '' });
+}
+
+function pgmrRemove(p) {
+	swal({ title: 'Remove ' + p + ' from this project?',
+	       text: 'Their comments stay on file.', type: 'warning',
+	       showCancelButton: true, confirmButtonText: 'Remove' },
+	     function (yes) { if (yes) { pgmrPost({ action: 'pgmrRemove', pgmr: p }); } });
+}
+
+function pgmrCommentAdd(p) {
+	var t = jQuery('#pgmrCmtTxt_' + p).val().trim();
+	if (t == '') { return; }
+	pgmrPost({ action: 'pgmrCommentAdd', pgmr: p, text: t });
+}
+
+function pgmrCommentRemove(seq) {
+	swal({ title: 'Remove this comment?', type: 'warning',
+	       showCancelButton: true, confirmButtonText: 'Remove' },
+	     function (yes) { if (yes) { pgmrPost({ action: 'pgmrCommentRemove', seq: seq }); } });
+}
+
 function chgProgrammer(){
 
 //	alert("NOTICE: Changing programmer also automatically\nchanges developer rate on Pay Back tab.")

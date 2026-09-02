@@ -118,9 +118,9 @@ function prjFail($where) {
 // procedure is found whatever the job's library list holds
 function prjSqlTries($sql) {
     $tries = array($sql);
-    foreach (array('PRJTRK001S', 'PHP0003S') as $proc) {
+    foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S') as $proc) {
         if (strpos($sql, $proc) === false) { continue; }
-        $lib = ($proc === 'PRJTRK001S') ? PRJ_PROC_LIB : PRJ_LEGACY_LIB;
+        $lib = ($proc === 'PHP0003S') ? PRJ_LEGACY_LIB : PRJ_PROC_LIB;
         $tries[] = str_replace($proc, $lib . '.' . $proc, $sql);
         $tries[] = str_replace($proc, $lib . '/' . $proc, $sql);
     }
@@ -158,6 +158,7 @@ function prjFetchAll($conn, $sql, $params = array()) {
 
 // LIST: projects with newest estimate and summed hours
 function prjProjects($conn, $includeComplete = 'N') {
+    prjStatusLabels($conn);
     $rows = prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                         array('LIST', $includeComplete === 'Y' ? 'Y' : 'N', ''));
     if ($rows === false) { return false; }
@@ -168,17 +169,39 @@ function prjProjects($conn, $includeComplete = 'N') {
         if (intval($row['PJNUM']) <= 0) { continue; }
         $row['STAGE']  = prjStage($row);
         $row['STATUS'] = prjStatus($row);
-
-        // register each stored Work Status label once
-        if ($row['STATUS'] !== '' && $row['STATUS'] !== 'notset'
-            && !isset($GLOBALS['prjStatuses'][$row['STATUS']])) {
-            $wrk = strtoupper(trim(strval($row['PJWRKSTS'] ?? '')));
-            $GLOBALS['prjStatuses'][$row['STATUS']] =
-                $GLOBALS['prjWrkLabels'][$wrk] ?? ucfirst(strtolower($wrk));
-        }
+        prjRegisterStatus($row);
         $out[] = $row;
     }
     return $out;
+}
+
+
+// register a stored Work Status label the first time it is seen
+function prjRegisterStatus($row) {
+    $key = $row['STATUS'];
+    if ($key === '' || $key === 'notset' || isset($GLOBALS['prjStatuses'][$key])) { return; }
+    $wrk = strtoupper(trim(strval($row['PJWRKSTS'] ?? '')));
+    $wrk = $GLOBALS['prjWrkAlias'][$wrk] ?? $wrk;
+    $GLOBALS['prjStatuses'][$key] =
+        $GLOBALS['prjWrkLabels'][$wrk] ?? ucfirst(strtolower($wrk));
+}
+
+
+// STATUS: the dropdown file's wording over the built-in list
+function prjStatusLabels($conn) {
+    if (!empty($GLOBALS['prjStatusLoaded'])) { return; }
+    $GLOBALS['prjStatusLoaded'] = true;
+    $rows = prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)", array('STATUS', '', ''));
+    // an old compile keeps the built-in wording
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return; }
+    foreach ($rows as $r) {
+        $code = strtoupper(trim(strval($r['STCODE'] ?? '')));
+        $desc = trim(strval($r['STDESC'] ?? ''));
+        if ($code === '' || $desc === '') { continue; }
+        $GLOBALS['prjWrkLabels'][$code] = $desc;
+        $key = 'w' . preg_replace('/[^a-z0-9]/', '', strtolower($code));
+        if (isset($GLOBALS['prjStatuses'][$key])) { $GLOBALS['prjStatuses'][$key] = $desc; }
+    }
 }
 
 
@@ -252,6 +275,50 @@ function prjChgLog($conn, $from, $to) {
 function prjProgrammers($conn) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('PGMR', '', ''));
+}
+
+
+// PRJTRK002S reads; empty until the procedure is on the box
+function prjCall002($conn, $type, $from = 0, $to = 0) {
+    $rows = prjFetchAll($conn, "CALL PRJTRK002S(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        array($type, '0', '', '', strval(intval($from)),
+                              strval(intval($to)), '', '', '0'));
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return array(); }
+    return $rows;
+}
+
+
+// ASGN: additional programmers on open projects, each with own status
+function prjAssignments($conn) {
+    return prjCall002($conn, 'ASGN');
+}
+
+
+// CMRANGE: comments filed under programmers in a date range
+function prjPgmrComments($conn, $from, $to) {
+    return prjCall002($conn, 'CMRANGE', $from, $to);
+}
+
+
+// one more row per additional programmer, carrying that person's status
+function prjWithAssignments($conn, $projects) {
+    $byNum = array();
+    foreach ($projects as $i => $row) { $byNum[intval($row['PJNUM'])] = $i; }
+    foreach (prjAssignments($conn) as $a) {
+        $num = intval($a['AGPROJ'] ?? 0);
+        if (!isset($byNum[$num])) { continue; }
+        $row  = $projects[$byNum[$num]];
+        $pgmr = strtoupper(trim(strval($a['AGPGMR'] ?? '')));
+        if ($pgmr === '' || $pgmr === strtoupper(trim($row['PJPGMR']))) { continue; }
+        $row['PJPGMR']    = $pgmr;
+        $row['PJWRKSTS']  = trim(strval($a['AGWRKSTS'] ?? ''));
+        $row['PJSTRDATE'] = intval($a['AGSTRDATE'] ?? 0);
+        $row['ADDL']      = 1;
+        $row['STATUS']    = prjStatus($row);
+        prjRegisterStatus($row);
+        $projects[] = $row;
+    }
+    return $projects;
 }
 
 
@@ -397,18 +464,22 @@ function prjDashboardRollup($projects) {
     foreach ($projects as $row) {
         $stage = $row['STAGE'];
         $open = ($stage !== 'complete' && $stage !== 'rejected');
+        // an additional programmer's row counts for load and status only
+        $addl = (intval($row['ADDL'] ?? 0) === 1);
 
         if (isset($row['PIPE']) && intval($row['PIPE']) === 0) {
-            if ($open) { $tiles['stale'] += 1; }
+            if ($open && !$addl) { $tiles['stale'] += 1; }
             continue;
         }
 
-        if (isset($pipeline[$stage])) { $pipeline[$stage] += 1; }
+        if (isset($pipeline[$stage]) && !$addl) { $pipeline[$stage] += 1; }
 
         if ($open) {
-            $tiles['open'] += 1;
-            if ($stage === 'new') { $tiles['new'] += 1; }
-            if ($stage === 'awaiting' || $stage === 'needsinfo') { $tiles['screview'] += 1; }
+            if (!$addl) {
+                $tiles['open'] += 1;
+                if ($stage === 'new') { $tiles['new'] += 1; }
+                if ($stage === 'awaiting' || $stage === 'needsinfo') { $tiles['screview'] += 1; }
+            }
 
             $pgmr = trim($row['PJPGMR']);
             if ($pgmr === '') {
@@ -579,6 +650,26 @@ function prjWeeklyDigest($conn, $from, $to) {
             'num'  => intval(trim($n['NTPROJ'])),
             'date' => intval($n['NTDATE']),
             'type' => $type,
+            'text' => $text);
+    }
+
+    // comments filed under a programmer's name count as that person's work
+    foreach (prjPgmrComments($conn, $from, $to) as $c) {
+        $user = strtoupper(trim(strval($c['CMPGMR'] ?? '')));
+        if ($user === '' || !prjTrackedDev($user)) { continue; }
+        $text = trim(strval($c['CMTEXT'] ?? ''));
+        if ($text === '') { continue; }
+        if (!isset($dev[$user])) { $dev[$user] = $blank; }
+        $dev[$user]['comments']['PgmrCmt'] = ($dev[$user]['comments']['PgmrCmt'] ?? 0) + 1;
+        if (strlen($text) > 1200) { $text = substr($text, 0, 1200) . '...'; }
+        if ($txtBudget < strlen($text)) { $txtDropped += 1; $text = ''; }
+        else { $txtBudget -= strlen($text); }
+        $who = strtoupper(trim(strval($c['CMUSER'] ?? '')));
+        $dev[$user]['notes'][] = array(
+            'num'  => intval($c['CMPROJ'] ?? 0),
+            'date' => intval($c['CMDATE'] ?? 0),
+            'type' => 'PgmrCmt',
+            'by'   => $who,
             'text' => $text);
     }
 
@@ -763,7 +854,9 @@ function prjAiSummary($digest) {
         "comments they wrote by type (ComntIT = IT comment, ComntGen = general, " .
         "ComntSC = steering committee, ComntPB = payback, Descrip = description), " .
         "the text of the IT comments they wrote (the notes array: project " .
-        "num, date, type, text), and the projects they completed. A " .
+        "num, date, type, text; type PgmrCmt is a comment filed under that " .
+        "developer's name on the project screen, 'by' says who wrote it), " .
+        "and the projects they completed. A " .
         "separate top-level changes array lists project admin activity by " .
         "anyone - new projects, setup and description edits, payback " .
         "entries, status moves.\n" .

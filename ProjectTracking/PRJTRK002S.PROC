@@ -1,0 +1,185 @@
+/*-------------------------------------------------------------------*/
+/*                                                                   */
+/* Program Name      - PRJTRK002S                                    */
+/*                                                                   */
+/* Program Narrative - The programmers on a project and the          */
+/*                     comments filed under each one, for the        */
+/*                     project screen and the dashboard. One type    */
+/*                     per call:                                     */
+/*                       PGLIST  programmers on a project            */
+/*                       PGSAVE  add a programmer or change status   */
+/*                       PGDEL   take a programmer off               */
+/*                       CMLIST  comments on a project               */
+/*                       CMADD   file a comment under a programmer   */
+/*                       CMDEL   flag a comment removed              */
+/*                       ASGN    every programmer on open projects   */
+/*                               (the dashboard's read)              */
+/*                       CMRANGE comments dated INDATE to INDATE2    */
+/*                               (the weekly report's read)          */
+/*                                                                   */
+/* Author            - G Chau                                        */
+/*                     Littleton Coin Company                        */
+/*                     Littleton NH                                  */
+/*                                                                   */
+/* Date Written      - 09/01/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/*                     SRCMBR(PRJTRK002S)                            */
+/*                     Files are in LSCDEVLIBP until promotion.      */
+/*********************************************************************/
+/* Tables are created by PRJTRK_TABLES; run that first.              */
+/* __________________________________________________________________*/
+/* |                  Maintenance History                           |*/
+/* |                                                                |*/
+/* | Programmer -                Date -                             |*/
+/* |  Purpose -                                                     |*/
+/* |  Project - 260082                                              |*/
+/* |                                                                |*/
+/* ------------------------------------------------------------------*/
+/*                                                                   */
+/*-------------------------------------------------------------------*/
+
+CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
+        IN INTYPE VARCHAR(10),
+        IN INPROJ DECIMAL(6, 0),
+        IN INPGMR VARCHAR(10),
+        IN INSTS  VARCHAR(3),
+        IN INDATE DECIMAL(8, 0),
+        IN INDATE2 DECIMAL(8, 0),
+        IN INUSER VARCHAR(10),
+        IN INTEXT VARCHAR(4000),
+        IN INSEQ  INTEGER
+        )
+
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        DYNAMIC RESULT SETS 1
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER, COMMIT = *NONE
+
+    BEGIN
+        DECLARE WKROWS  INTEGER       DEFAULT 0;
+        DECLARE WKDATE  DECIMAL(8, 0) DEFAULT 0;
+        DECLARE WKTIME  DECIMAL(6, 0) DEFAULT 0;
+
+        -- PGLIST: each programmer with status wording and own hours
+        DECLARE C1 CURSOR WITH RETURN FOR
+            SELECT RTRIM(A.PGAPGMR) AS PGPGMR,
+                   RTRIM(A.PGAWRKSTS) AS PGWRKSTS,
+                   RTRIM(COALESCE(S.PRSDESC, '')) AS PGWRKDESC,
+                   A.PGASTRDTE AS PGSTRDATE,
+                   COALESCE(T.PGHOURS, 0) AS PGHOURS,
+                   RTRIM(A.PGAADDUSR) AS PGADDUSR,
+                   A.PGAADDDTE AS PGADDDATE
+              FROM LSCDEVLIBP/PRPGMASGP A
+              LEFT JOIN LSCPRDLIB/PRSTATUSP S
+                ON RTRIM(S.PRSCODE) = RTRIM(A.PGAWRKSTS)
+              LEFT JOIN (
+                   SELECT PT#, PTPGMR, SUM(PTTIME) AS PGHOURS
+                     FROM LSCPRDLIB/PRTIMEP
+                    GROUP BY PT#, PTPGMR
+                   ) T
+                ON T.PT# = A.PGAPROJ
+               AND RTRIM(T.PTPGMR) = RTRIM(A.PGAPGMR)
+             WHERE A.PGAPROJ = INPROJ
+             ORDER BY A.PGAADDDTE, A.PGAADDTME, A.PGAPGMR;
+
+        -- CMLIST: live comments, newest first under each programmer
+        DECLARE C2 CURSOR WITH RETURN FOR
+            SELECT C.PGCSEQ AS CMSEQ,
+                   RTRIM(C.PGCPGMR) AS CMPGMR,
+                   RTRIM(C.PGCUSER) AS CMUSER,
+                   C.PGCDATE AS CMDATE,
+                   C.PGCTIME AS CMTIME,
+                   C.PGCTEXT AS CMTEXT
+              FROM LSCDEVLIBP/PRPGMCMTP C
+             WHERE C.PGCPROJ = INPROJ
+               AND C.PGCDELETE <> 'Y'
+             ORDER BY C.PGCPGMR, C.PGCDATE DESC, C.PGCTIME DESC;
+
+        -- ASGN: additional programmers on open projects, own status
+        DECLARE C3 CURSOR WITH RETURN FOR
+            SELECT A.PGAPROJ AS AGPROJ,
+                   RTRIM(A.PGAPGMR) AS AGPGMR,
+                   RTRIM(A.PGAWRKSTS) AS AGWRKSTS,
+                   A.PGASTRDTE AS AGSTRDATE
+              FROM LSCDEVLIBP/PRPGMASGP A
+              JOIN LSCPRDLIB/PRPROJP P
+                ON P.PR# = A.PGAPROJ
+             WHERE P.PRACOM = 0
+               AND RTRIM(P.PRRESCOD) <> 'REJ'
+             ORDER BY A.PGAPGMR, A.PGAPROJ;
+
+        -- CMRANGE: comments in a date range across projects
+        DECLARE C4 CURSOR WITH RETURN FOR
+            SELECT C.PGCPROJ AS CMPROJ,
+                   C.PGCSEQ AS CMSEQ,
+                   RTRIM(C.PGCPGMR) AS CMPGMR,
+                   RTRIM(C.PGCUSER) AS CMUSER,
+                   C.PGCDATE AS CMDATE,
+                   C.PGCTIME AS CMTIME,
+                   C.PGCTEXT AS CMTEXT
+              FROM LSCDEVLIBP/PRPGMCMTP C
+             WHERE C.PGCDATE BETWEEN INDATE AND INDATE2
+               AND C.PGCDELETE <> 'Y'
+             ORDER BY C.PGCPGMR, C.PGCPROJ, C.PGCDATE, C.PGCTIME;
+
+        SET WKDATE = YEAR(CURRENT DATE) * 10000
+                   + MONTH(CURRENT DATE) * 100
+                   + DAY(CURRENT DATE);
+        SET WKTIME = HOUR(CURRENT TIME) * 10000
+                   + MINUTE(CURRENT TIME) * 100
+                   + SECOND(CURRENT TIME);
+
+        IF INTYPE = 'PGLIST' THEN
+            OPEN C1;
+
+        ELSEIF INTYPE = 'PGSAVE' THEN
+            UPDATE LSCDEVLIBP/PRPGMASGP
+               SET PGAWRKSTS = COALESCE(INSTS, ' '),
+                   PGASTRDTE = COALESCE(INDATE, 0),
+                   PGACHGUSR = COALESCE(INUSER, ' '),
+                   PGACHGDTE = WKDATE,
+                   PGACHGTME = WKTIME
+             WHERE PGAPROJ = INPROJ
+               AND RTRIM(PGAPGMR) = RTRIM(INPGMR);
+            GET DIAGNOSTICS WKROWS = ROW_COUNT;
+            IF WKROWS = 0 THEN
+                INSERT INTO LSCDEVLIBP/PRPGMASGP
+                       (PGAPROJ, PGAPGMR, PGAWRKSTS, PGASTRDTE,
+                        PGAADDUSR, PGAADDDTE, PGAADDTME)
+                VALUES (INPROJ, INPGMR, COALESCE(INSTS, ' '),
+                        COALESCE(INDATE, 0), COALESCE(INUSER, ' '),
+                        WKDATE, WKTIME);
+            END IF;
+
+        ELSEIF INTYPE = 'PGDEL' THEN
+            DELETE FROM LSCDEVLIBP/PRPGMASGP
+             WHERE PGAPROJ = INPROJ
+               AND RTRIM(PGAPGMR) = RTRIM(INPGMR);
+
+        ELSEIF INTYPE = 'CMLIST' THEN
+            OPEN C2;
+
+        ELSEIF INTYPE = 'CMADD' THEN
+            INSERT INTO LSCDEVLIBP/PRPGMCMTP
+                   (PGCPROJ, PGCPGMR, PGCUSER, PGCDATE, PGCTIME, PGCTEXT)
+            VALUES (INPROJ, INPGMR, COALESCE(INUSER, ' '),
+                    WKDATE, WKTIME, COALESCE(INTEXT, ''));
+
+        ELSEIF INTYPE = 'CMDEL' THEN
+            UPDATE LSCDEVLIBP/PRPGMCMTP
+               SET PGCDELETE = 'Y'
+             WHERE PGCSEQ = INSEQ
+               AND PGCPROJ = INPROJ;
+
+        ELSEIF INTYPE = 'ASGN' THEN
+            OPEN C3;
+
+        ELSEIF INTYPE = 'CMRANGE' THEN
+            OPEN C4;
+
+        ELSE
+            SIGNAL SQLSTATE '75011'
+                SET MESSAGE_TEXT =
+                    'Type: PGLIST PGSAVE PGDEL CMLIST CMADD CMDEL ASGN CMRANGE';
+        END IF;
+    END;

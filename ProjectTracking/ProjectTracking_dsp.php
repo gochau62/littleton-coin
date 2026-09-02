@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-01-A - deploy marker, check via view-source -->
+<!-- PT build 2026-09-02-A - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
