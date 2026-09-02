@@ -5,6 +5,12 @@
 /* Program Narrative - Registers the OE0337R item price retrieval    */
 /*                     module as a stored procedure, for pricing     */
 /*                     items whose plan column was left blank.       */
+/*                     The parameter list mirrors the program's      */
+/*                     Dcl-PR in LSCARCLIB/QRPGLESRC mbr OE0337R:    */
+/*                     ten parameters, item and source code the      */
+/*                     only non-blank/non-zero values passed (the    */
+/*                     way OP0800R calls it), and the item price     */
+/*                     passed back in WKPRIC.                        */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -18,20 +24,26 @@
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
 /* |                                                                |*/
-/* | Programmer -                Date -                             |*/
-/* |  Purpose -                                                     |*/
-/* |  Project -                                                     |*/
+/* | Programmer - G Chau         Date - 09/01/2026                  |*/
+/* |  Purpose - Parameter list tied out to OE0337R's source         |*/
+/* |            (was a five parameter placeholder)                  |*/
+/* |  Project - 230077                                              |*/
 /* |                                                                |*/
 /* ------------------------------------------------------------------*/
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
 CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
-        INOUT PRITEM CHAR(10),
-        INOUT PRSRCC CHAR(10),
-        INOUT PRCUS# CHAR(10),
-        INOUT PRQTY  DECIMAL(5, 0),
-        INOUT PRPRIC DECIMAL(9, 2)
+        INOUT WKITEM  CHAR(10),
+        INOUT WKSELT  CHAR(10),
+        INOUT WKSRCD  CHAR(6),
+        INOUT WKPRIC  DECIMAL(9, 2),
+        INOUT WKCPRC  DECIMAL(9, 2),
+        INOUT WKDISC  DECIMAL(9, 2),
+        INOUT WKADJC  CHAR(3),
+        INOUT WKSHRV  DECIMAL(9, 0),
+        INOUT WKCUST# DECIMAL(10, 0),
+        INOUT WKMTLV  DECIMAL(3, 0)
         )
 
         LANGUAGE RPGLE

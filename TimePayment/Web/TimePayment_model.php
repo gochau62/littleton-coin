@@ -185,28 +185,38 @@ function tpyTierPlan($conn, $price) {
 }
 
 
-// PROGRAM NAME TIMPAY002S: the item price retrieval module OE0337R, called the way OP0800R calls it - the item number and source code are the only
-// non-blank (or non-zero) parameters, and the price comes back out in PRPRIC
+// PROGRAM NAME TIMPAY002S: the item price retrieval module OE0337R, called the way OP0800R calls it - the ten parameters mirror the program's Dcl-PR
+// (LSCARCLIB/QRPGLESRC mbr OE0337R), the item number and source code are the only non-blank/non-zero values passed, and the price comes back in WKPRIC
 function tpyItemPrice($conn, $item, $srcCod) {
-    $sql = "CALL TIMPAY002S(?, ?, ?, ?, ?)";
+    $sql = "CALL TIMPAY002S(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    $prItem = tpyCleanItem($item);
-    $prSrcc = tpyCleanSrc($srcCod);
-    $prCust = '';
-    $prQty  = 0;
-    $prPric = 0;
+    $wkItem = tpyCleanItem($item);
+    $wkSelt = '';
+    $wkSrcd = tpyCleanSrc($srcCod);
+    $wkPric = 0;
+    $wkCprc = 0;
+    $wkDisc = 0;
+    $wkAdjc = '';
+    $wkShrv = 0;
+    $wkCust = 0;
+    $wkMtlv = 0;
 
     $stmt = db2_prepare($conn, $sql);
     if (!$stmt) { return tpyFail("prepare TIMPAY002S"); }
 
-    db2_bind_param($stmt, 1, "prItem", DB2_PARAM_INOUT);
-    db2_bind_param($stmt, 2, "prSrcc", DB2_PARAM_INOUT);
-    db2_bind_param($stmt, 3, "prCust", DB2_PARAM_INOUT);
-    db2_bind_param($stmt, 4, "prQty", DB2_PARAM_INOUT);
-    db2_bind_param($stmt, 5, "prPric", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 1, "wkItem", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 2, "wkSelt", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 3, "wkSrcd", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 4, "wkPric", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 5, "wkCprc", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 6, "wkDisc", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 7, "wkAdjc", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 8, "wkShrv", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 9, "wkCust", DB2_PARAM_INOUT);
+    db2_bind_param($stmt, 10, "wkMtlv", DB2_PARAM_INOUT);
 
     if (!db2_execute($stmt)) { return tpyFail("execute TIMPAY002S"); }
-    return floatval($prPric);
+    return floatval($wkPric);
 }
 
 
