@@ -66,8 +66,8 @@ var gridToday = 0;
 var gridRows = [];
 // which records the grid shows: all (default), active only, or expired only
 var gridShow = 'all';
-// the grid opens sorted the way the file is keyed, item then source
-var gridSort = { key: 'TPITEM', dir: 1 };
+// the grid opens on expiration date, newest first, so the offers still running are at the top
+var gridSort = { key: 'TPEXDATE', dir: -1 };
 // brief pause before the search runs, so it does not fire on every keystroke
 var gridSearchTimer = null;
 
