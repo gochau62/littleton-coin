@@ -14,7 +14,7 @@ built to the dashboard layout template (`docs/Picture1.png`). The legacy
 | Projects by developer | `ProjectDevelopers_ctl.php` / `_dsp.php` | The monthly "Projects by developer" spreadsheet as a live page: grouped per programmer ("CMCBETH — 7 projects"), Unassigned last in red, search/filter, Excel download |
 | Data + logic | `ProjectTracking_model.php` | Db2 reads via PRJTRK001S, the SC-stage and status derivations, dashboard rollups, the weekly digest, and the Gemini call |
 | JSON/Excel endpoint | `ProjectTracking_ajax.php` | `dashboard`, `assignments`, `weeklygenerate`, `download` actions |
-| Db2 procedure | `PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `NOTES`, `COMP`, `PGMR`, `CHGLOG` (PRCHGLOGP change history) |
+| Db2 procedure | `PRJTRK001S.PROC` | One read-only procedure, `INTYPE` selects the result set: `LIST` (projects + newest estimate + summed hours), `TIME`, `COMP`, `PGMR`, `CHGLOG` (PRCHGLOGP change history). Comments are not here — the model reads the WebNotes index directly |
 
 Everything is **read-only** against the project files — the new screens change
 no data. Project numbers link back to the existing `PROJ_ctl.php` detail
@@ -42,15 +42,9 @@ for the planned team/sub-department tagging.
    `PRSUBD AS PJSUBDATE` for the Overview's Submitted column and
    `PRWRKSTS AS PJWRKSTS` for the Work Status (until the recompiled
    procedure is on the box the Submitted column shows blank and every
-   open project's status reads "Not set"),
-   and the NOTES read now locates the WebNotes index itself — the file's
-   name and library are site-specific (they live only in the web tree's
-   `WebNotes/webNotesModel.php`), so at run time the procedure finds the
-   file carrying the five `WN*` columns in `QSYS2/SYSCOLUMNS` (preferring
-   a physical file and a non-`*DEV*` library) and reads it directly. No
-   library list, on any job, is involved. If the read still fails, the
-   weekly summary generates anyway — comment counts are skipped and the
-   card's meta line says so.
+   open project's status reads "Not set"), and `CHGLOG` for the
+   report's change-history section. The comment feed does not go through
+   the procedure, so nothing about it changes at compile time.
 3. Authority: both screens and the endpoint require `LCCONLINE` level 20,
    the developers group (level 10 is only the minimum to use LCC Online).
    `PRJTRK001S` compiles with `DYNUSRPRF(*OWNER)`, so when it moves to
@@ -202,37 +196,33 @@ write-up of the last finished week (Mon–Sun): where each developer's time
 went (`PRTIMEP` hours by project), their comment activity, and completions —
 the same ground the hand-written "Project by Dev" spreadsheet covered.
 
-Comments contribute more than counts, and they are read **by project, the
-way `PROJ_ctl.php` reads them** — not by date. The digest collects the
-projects with time logged in the period, asks `NOTES` for those projects'
-comment index rows (`WNIDVAL IN (…)`, prefix `PROJ%`, no date test in SQL),
-keeps the rows whose date falls in the period, then reads each comment's
+Comments contribute more than counts. The digest reads the period's
+comment index rows in one statement — `LSCPRDLIB.WBNOTEIDXP`, prefix
+`PROJ_`, `WNDATE` between the period's dates — then reads each comment's
 **text** off the IFS (`prefix + project + date + time`), strips the HTML,
 and hands the words to the writer so the summary can say what was actually
 done or decided — progress, blockers, who is being waited on — not just how
 many notes were left. Only `ComntIT` comments feed the per-developer
-sections. Text is capped (1,200 chars per comment,
-~15k per digest) so a heavy week cannot overrun the prompt; the counts
-always cover every comment. Period matching goes by the comment's posted
+sections; a comment on a project with no hours that week still counts.
+Text is capped (1,200 chars per comment, ~15k per digest) so a heavy week
+cannot overrun the prompt. Period matching goes by the comment's posted
 date, not dates written inside the text.
 
 The digest also carries the period's **change history** (`CHGLOG` read of
 `PRCHGLOGP`, the same audit file the emailed change notices run on): short
-one-liners per developer - status moves, new estimates, reassignments,
-saves - so the summary can say what moved on a project even when nobody
-wrote a comment. Both the comment text and the change history need the
-current `PRJTRK001S`; on an older compile the summary still generates and
-the card's meta note says which feed was skipped. This needs the current `PRJTRK001S`, whose NOTES set
-returns the path/time columns that name each file — on an older compile the
-summary still generates from counts alone.
+one-liners - status moves, new estimates, reassignments, saves - so the
+summary can say what moved on a project even when nobody wrote a comment.
+The change history needs the current `PRJTRK001S`; on an older compile the
+summary still generates and the card's meta note says the feed was skipped.
 
 - **Generate** posts `action=weeklygenerate`. The model builds a JSON digest
   from Db2 and sends it through `prjGeminiJson()` — a copy of the Sellbrite
   loader's `geminiJson()` caller (JSON-mode `generateContent`, thinking
   budget, meta call report, activity-log lines) against `gemini-3.7-flash`.
   The result caches in
-  `/www/seidenphp/ProjectTracking_data/` (created on first write; the web
-  profile needs write access there) as
+  `ProjectTracking_data/` beside the running instance (`/www/seidenphp/…`
+  in production, `/www/seidendev/…` on dev; created on first write, the
+  web profile needs write access there) as
   `projecttracking_weekly_<weekend>.json` plus a `_latest` copy the
   dashboard reads. One run per week is the intended cadence; a week's
   digest is a few thousand tokens, so a run costs pennies.
