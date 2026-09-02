@@ -74,6 +74,9 @@ var gridSearchTimer = null;
 $(document).ready(function () {
     loadGrid();
 
+    tickClock();
+    setInterval(tickClock, 1000);
+
     $('#btnUpload').on('click', uploadFile);
     // the template download is a plain navigation so the browser handles the file
     $('#btnTemplate').on('click', function () {
@@ -121,6 +124,13 @@ function esc(s) {
 // esc() for attribute values (quotes escaped too), for the hover titles on clipped cells
 function attr(s) {
     return esc(s).replace(/"/g, '&quot;');
+}
+
+
+// the running date and time in the title bar, same as Story Card
+function tickClock() {
+    var d = new Date();
+    $('#tpClock').text(d.toLocaleDateString() + '  ' + d.toLocaleTimeString());
 }
 
 
