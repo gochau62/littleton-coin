@@ -16,7 +16,7 @@
 <!--  * Project   - 230077                              *  -->
 <!--  ***************************************************   */
 
-function dspTimePayment() {
+function dspTimePayment($user) {
 ?>
 
 <style>
@@ -30,11 +30,11 @@ function dspTimePayment() {
 .tp-app { font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
           color: var(--tp-text); background: var(--tp-bg); padding: 0 0 2rem 0; }
 
-/* dark green title bar, with the date and time on the right the way Story Card shows them */
+/* dark green title bar, with the signed in user and the date and time on the right the way Story Card shows them */
 .tp-topbar { display: flex; align-items: center; justify-content: space-between;
              background: var(--tp-green-dk); color: #fff; padding: .6rem 1.25rem; }
 .tp-topbar h1 { font-size: 1.15rem; font-weight: 600; margin: 0; }
-.tp-topbar-right { font-size: .85rem; opacity: .9; }
+.tp-topbar-right { display: flex; gap: 1rem; font-size: .85rem; opacity: .9; }
 
 /* each section sits in a rounded white card on the grey page */
 .tp-card { background: #fff; border: 1px solid var(--tp-line); border-radius: 8px;
@@ -118,7 +118,10 @@ function dspTimePayment() {
 
     <div class="tp-topbar">
         <h1>Time Payment Maintenance</h1>
-        <div class="tp-topbar-right"><span id="tpClock"></span></div>
+        <div class="tp-topbar-right">
+            <span id="tpUser"><?php echo htmlspecialchars($user); ?></span>
+            <span id="tpClock"></span>
+        </div>
     </div>
 
     <div class="tp-card">

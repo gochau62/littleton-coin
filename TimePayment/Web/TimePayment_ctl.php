@@ -57,7 +57,7 @@ if ($authorized != "yes") {
     tpyActLog($user, 'OPEN');
 
     include "TimePayment_dsp.php";
-    dspTimePayment();
+    dspTimePayment($user);
 ?>
 
 <script>
