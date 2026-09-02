@@ -96,11 +96,10 @@ function dspTimePayment() {
 .tp-st-updated { color: var(--tp-blue); }
 .tp-st-error { color: var(--tp-red); }
 
-/* an expired record reads as done with: red tinted row beating the stripe, struck-through item number, date in red */
+/* an expired record reads as done with: red tinted row beating the stripe, date in red */
 .tp-grid tbody tr.tp-expired td { background: #fdeeec; color: #8a6f6c; }
 .tp-grid tbody tr.tp-expired:nth-child(even) td { background: #fae4e1; }
-.tp-grid tbody tr.tp-expired td:first-child { text-decoration: line-through; }
-.tp-grid tbody tr.tp-expired td.tp-exp { color: var(--tp-red); font-weight: 700; }
+.tp-grid tbody tr.tp-expired td.tp-exp { color: var(--tp-red); }
 
 /* the search box and Show list over the records table, with the count on the right */
 .tp-toolbar { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin: 0 0 .6rem; }
