@@ -31,7 +31,7 @@
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 
-    document.title = "Time Payment Items Maintenance";
+    document.title = "Time Payment Maintenance";
 </script>
 
 <?php

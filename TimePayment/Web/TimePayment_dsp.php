@@ -115,7 +115,7 @@ function dspTimePayment() {
 <div class="tp-app">
 
     <div class="tp-topbar">
-        <h1>Time Payment Items Maintenance</h1>
+        <h1>Time Payment Maintenance</h1>
     </div>
 
     <div class="tp-card">
