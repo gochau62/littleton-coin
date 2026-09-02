@@ -2,15 +2,18 @@
 /*                                                                   */
 /* Program Name      - TIMPAY002S                                    */
 /*                                                                   */
-/* Program Narrative - Registers the OE0337R item price retrieval    */
-/*                     module as a stored procedure, for pricing     */
-/*                     items whose plan column was left blank.       */
-/*                     The parameter list mirrors the program's      */
-/*                     Dcl-PR in LSCARCLIB/QRPGLESRC mbr OE0337R:    */
-/*                     ten parameters, item and source code the      */
-/*                     only non-blank/non-zero values passed (the    */
-/*                     way OP0800R calls it), and the item price     */
-/*                     passed back in WKPRIC.                        */
+/* Program Narrative - Prices one item through the OE0337R item      */
+/*                     price retrieval module, for the rows whose    */
+/*                     plan column was left blank.  The parameter    */
+/*                     list mirrors the program's Dcl-PR in          */
+/*                     LSCARCLIB/QRPGLESRC mbr OE0337R: ten          */
+/*                     parameters, item and source code the only     */
+/*                     non-blank values passed (the way OP0800R      */
+/*                     calls it), and the price passed back in       */
+/*                     WKPRIC.  An SQL procedure rather than an      */
+/*                     external registration so that compiling it    */
+/*                     creates a program object like every other     */
+/*                     proc, which is what the RFP promotes.         */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
@@ -29,11 +32,17 @@
 /* |            (was a five parameter placeholder)                  |*/
 /* |  Project - 230077                                              |*/
 /* |                                                                |*/
+/* | Programmer - G Chau         Date - 09/02/2026                  |*/
+/* |  Purpose - SQL procedure calling OE0337R in place of the       |*/
+/* |            external registration, which created no object      |*/
+/* |            for the RFP to promote                              |*/
+/* |  Project - 230077                                              |*/
+/* |                                                                |*/
 /* ------------------------------------------------------------------*/
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
+CREATE OR REPLACE PROCEDURE TIMPAY002S (
         INOUT WKITEM  CHAR(10),
         INOUT WKSELT  CHAR(10),
         INOUT WKSRCD  CHAR(6),
@@ -46,9 +55,12 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
         INOUT WKMTLV  DECIMAL(3, 0)
         )
 
-        LANGUAGE RPGLE
-        SPECIFIC TIMPAY002S
-        NOT DETERMINISTIC
-        NO SQL
-        EXTERNAL NAME 'LSCPGMLIB/OE0337R'
-        PARAMETER STYLE GENERAL;
+        LANGUAGE SQL
+        MODIFIES SQL DATA
+        SET OPTION DBGVIEW = *SOURCE, DYNUSRPRF = *OWNER
+
+    BEGIN
+        -- OE0337R is a plain RPG program, so it is called by name as declared
+        CALL LSCPGMLIB/OE0337R(WKITEM, WKSELT, WKSRCD, WKPRIC, WKCPRC,
+                               WKDISC, WKADJC, WKSHRV, WKCUST#, WKMTLV);
+    END;

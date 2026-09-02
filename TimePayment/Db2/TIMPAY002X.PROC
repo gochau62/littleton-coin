@@ -6,10 +6,10 @@
 /*                     price from the LSCDEVLIBP/TPPRICEDV table     */
 /*                     instead of calling the OE0337R price module,  */
 /*                     so the blank-plan path can be tested end to   */
-/*                     end before the real external registration is  */
-/*                     tied out.  Same name and parameter signature  */
-/*                     as the real thing, so nothing else changes:   */
-/*                     compiling TIMPAY002S (the external version)   */
+/*                     end without touching the price module.  Same  */
+/*                     name and parameter signature as the real      */
+/*                     thing, so nothing else changes: compiling     */
+/*                     TIMPAY002S (the one that calls OE0337R)       */
 /*                     replaces this stub, and compiling this        */
 /*                     member puts the stub back.                    */
 /*                     An item missing from TPPRICEDV prices at 0,   */
@@ -36,7 +36,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY002S (
+CREATE OR REPLACE PROCEDURE TIMPAY002S (
         INOUT WKITEM  CHAR(10),
         INOUT WKSELT  CHAR(10),
         INOUT WKSRCD  CHAR(6),

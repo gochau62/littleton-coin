@@ -26,7 +26,7 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE LSCDEVLIBP/TIMPAY003S (
+CREATE OR REPLACE PROCEDURE TIMPAY003S (
         IN INITEM CHAR(10),
         IN INSRCE CHAR(6),
         IN INPLAN CHAR(2),
