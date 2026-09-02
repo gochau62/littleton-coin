@@ -65,19 +65,27 @@ function dspTimePayment() {
    the search matches 0 rows or 500, and the fixed table layout below keeps long
    values from widening the block until it slips under the LCCOnline sidebar */
 .tp-tablewrap { overflow: auto; max-height: 22rem; }
-.tp-fixedbox { height: 22rem; }
+/* the box is pinned with a minimum height rather than a plain height on purpose: a
+   plain height gave the framework's table rule something to stretch to, so a search
+   matching three records spread them over the whole box; against a minimum height a
+   percentage height has nothing to resolve to, and the rows keep their own size
+   whether there are three of them or three hundred */
+.tp-fixedbox { min-height: 22rem; }
 /* borders stay uncollapsed so the frozen header can carry its own lines */
 .tp-grid { width: 100%; min-width: 680px; table-layout: fixed;
            border-collapse: separate; border-spacing: 0; font-size: .86rem; }
-/* shadows, not borders, so the black lines travel with the sticky header
-   instead of scrolling away with the rows underneath it */
+/* shadows, not borders, so the black lines travel with the sticky header instead of
+   scrolling away with the rows underneath it - and all of them inset, so the bottom
+   line is drawn inside the header cell itself and stays attached to it no matter how
+   the row is sized or how far the grid has scrolled */
 .tp-grid thead th { position: sticky; top: 0; z-index: 5; background: var(--tp-accent);
                     color: var(--tp-green-dk); text-align: left; padding: .45rem .7rem;
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
                     border: none;
-                    box-shadow: inset -1px 0 0 0 #333, inset 0 1px 0 0 #333, 0 2px 0 0 #333; }
+                    box-shadow: inset -1px 0 0 0 #333, inset 0 1px 0 0 #333,
+                                inset 0 -2px 0 0 #333; }
 .tp-grid thead th:first-child { box-shadow: inset 1px 0 0 0 #333, inset -1px 0 0 0 #333,
-                    inset 0 1px 0 0 #333, 0 2px 0 0 #333; }
+                    inset 0 1px 0 0 #333, inset 0 -2px 0 0 #333; }
 .tp-grid tbody td { padding: .35rem .7rem; border-bottom: 1px solid var(--tp-line);
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* stripe every other record so a wide row is easy to follow across */
