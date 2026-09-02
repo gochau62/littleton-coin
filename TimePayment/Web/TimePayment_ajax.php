@@ -67,8 +67,7 @@ function tpyFmtDate($dec) {
 }
 
 
-// e-mail the exception report to whoever ran the upload, the way the Order File import does - only the rows that were skipped ride along, since the
-// good rows are already on TPITEMSP
+// e-mail the exception report to whoever ran the upload, the way the Order File import does - only the rows that were skipped ride along, since the good rows are already on TPITEMSP
 function tpyEmailExceptions($user, $report, $fileName) {
     if (!function_exists('sendMSG')) {
         error_log('TimePayment: EZMail sendMSG is unavailable - the exception report was not e-mailed');
@@ -137,8 +136,7 @@ switch ($action) {
         $writer->save('php://output');
         exit;
 
-    // the upload itself: validate each row the way the project write-up lays it out, write the good ones to TPITEMSP, and e-mail the skipped ones
-    // back to the user as the exception report
+    // the upload itself: validate each row the way the project write-up lays it out, write the good ones to TPITEMSP, and e-mail the skipped ones back to the user as the exception report
     case 'upload':
         if (!class_exists('\\PhpOffice\\PhpSpreadsheet\\IOFactory')) {
             tpyOutFail("The spreadsheet library is not available on this server.");
@@ -178,17 +176,14 @@ switch ($action) {
             $expRaw = $cells[0][3];
             $expTxt = tpyCellText($expRaw);
 
-            // resolve the date up front so the report shows a readable date even when
-            // the row fails an earlier check - an Excel date cell is a raw serial
-            // number like 46752 until it is converted
+            // resolve the date up front so the report shows a readable date even when the row fails an earlier check - an Excel date cell is a raw serial number like 46752 until it is converted
             $expDate = tpyNormDate($expRaw);
             $expShow = $expDate > 0 ? tpyFmtDate($expDate) : $expTxt;
 
             // an entirely blank row is just Excel padding, not an error
             if ($item === '' && $src === '' && $plan === '' && $expTxt === '') { continue; }
 
-            // item # against the item master; a Db2 error on any lookup or write skips the row like any other exception, so one bad call can never
-            // stop the run - the report carries the reason and the run always reaches the last row
+            // item # against the item master; a Db2 error on any lookup or write skips the row like any other exception, so one bad call can never stop the run - the report carries the reason and the run always reaches the last row
             $found = tpyGetItem($conn, $item);
             if ($found === false) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
@@ -240,8 +235,7 @@ switch ($action) {
                     continue;
                 }
             } else {
-                // no plan given: price the item the way OP0800R does and tie the price out to the TPTIERSP ranges. A price outside every range
-                // (under $99.00) skips the row onto the report - per Josh those get looked at individually, not defaulted into a plan
+                // no plan given: price the item the way OP0800R does and tie the price out to the TPTIERSP ranges; a price outside every range (under $99.00) skips the row onto the report - per Josh those get looked at individually, not defaulted into a plan
                 $price = tpyItemPrice($conn, $item, $src);
                 if ($price === false) {
                     $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => '',

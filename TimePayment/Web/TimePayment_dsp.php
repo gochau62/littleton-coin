@@ -60,24 +60,14 @@ function dspTimePayment() {
 .tp-summary .tp-bad { color: var(--tp-red); }
 .tp-summary .tp-mailed { color: var(--tp-amber); }
 
-/* both tables scroll inside their card with the heading row staying put. The card
-   footprint never follows the data: the records box holds one fixed height whether
-   the search matches 0 rows or 500, and the fixed table layout below keeps long
-   values from widening the block until it slips under the LCCOnline sidebar */
+/* both tables scroll inside their card with the heading row staying put; the records box holds one fixed height whether the search matches 0 rows or 500, and the fixed table layout keeps long values from widening the block until it slips under the LCCOnline sidebar */
 .tp-tablewrap { overflow: auto; max-height: 22rem; }
-/* the box is pinned with a minimum height rather than a plain height on purpose: a
-   plain height gave the framework's table rule something to stretch to, so a search
-   matching three records spread them over the whole box; against a minimum height a
-   percentage height has nothing to resolve to, and the rows keep their own size
-   whether there are three of them or three hundred */
+/* pinned with a minimum height, not a plain height: a plain height let the framework's table rule stretch three records over the whole box, while against a minimum a percentage height has nothing to resolve to and the rows keep their own size */
 .tp-fixedbox { min-height: 22rem; }
 /* borders stay uncollapsed so the frozen header can carry its own lines */
 .tp-grid { width: 100%; min-width: 680px; table-layout: fixed;
            border-collapse: separate; border-spacing: 0; font-size: .86rem; }
-/* shadows, not borders, so the black lines travel with the sticky header instead of
-   scrolling away with the rows underneath it - and all of them inset, so the bottom
-   line is drawn inside the header cell itself and stays attached to it no matter how
-   the row is sized or how far the grid has scrolled */
+/* inset shadows, not borders, so the black lines travel with the sticky header instead of scrolling away with the rows, and the bottom line is drawn inside the header cell so it stays attached to it however the row is sized or the grid is scrolled */
 .tp-grid thead th { position: sticky; top: 0; z-index: 5; background: var(--tp-accent);
                     color: var(--tp-green-dk); text-align: left; padding: .45rem .7rem;
                     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -106,8 +96,7 @@ function dspTimePayment() {
 .tp-st-updated { color: var(--tp-blue); }
 .tp-st-error { color: var(--tp-red); }
 
-/* an expired record reads as done with: a red tinted row that beats the stripe,
-   a struck-through item number, and the date itself in red */
+/* an expired record reads as done with: a red tinted row that beats the stripe, a struck-through item number, and the date itself in red */
 .tp-grid tbody tr.tp-expired td { background: #fdeeec; color: #8a6f6c; }
 .tp-grid tbody tr.tp-expired:nth-child(even) td { background: #fae4e1; }
 .tp-grid tbody tr.tp-expired td:first-child { text-decoration: line-through; }
@@ -172,8 +161,7 @@ function dspTimePayment() {
             </label>
             <span class="tp-count" id="lblCount"></span>
         </div>
-        <!-- the same columns, in the same order, as the green screen subfile; the item
-             master description rides on the Item cell as a hover title -->
+        <!-- the same columns, in the same order, as the green screen subfile; the item master description rides on the Item cell as a hover title -->
         <div class="tp-tablewrap tp-fixedbox">
             <table class="tp-grid" id="tblGrid">
                 <colgroup><col style="width:15%"><col style="width:12%"><col style="width:8%">

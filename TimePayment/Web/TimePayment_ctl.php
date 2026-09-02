@@ -37,9 +37,7 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
-// to this page work even when the sign on itself happens over on index
+// an unsigned visit is about to be bounced to the sign on, so the address asked for is kept in the session first; the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight to this page work
 if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // check users authority (10 is the minimum to use LCCOnline; 50 here because the upload writes a production pricing file, same as the other loaders)
@@ -126,8 +124,7 @@ function attr(s) {
 }
 
 
-// stored dates are an 8 digit yyyymmdd number, shown the way the green screen
-// shows them: 12/28/26, 2/01/27
+// stored dates are an 8 digit yyyymmdd number, shown the way the green screen shows them: 12/28/26, 2/01/27
 function fmtDate(dec) {
     var s = String(dec);
     if (s.length !== 8 || s === '00000000') { return ''; }
@@ -247,8 +244,7 @@ function gridCompare(a, b) {
 
 
 function renderGrid() {
-    // Show narrows to active or expired; the sort works on a copy so the
-    // server order is kept underneath
+    // Show narrows to active or expired; the sort works on a copy so the server order is kept underneath
     var rows = gridRows;
     if (gridShow !== 'all') {
         rows = $.grep(gridRows, function (r) {
@@ -259,8 +255,7 @@ function renderGrid() {
 
     var html = '';
     $.each(rows, function (i, r) {
-        // an expired record stays visible but reads as done with; hovering the
-        // item shows its item master description, like the screen can't
+        // an expired record stays visible but reads as done with; hovering the item shows its item master description, like the screen can't
         html += '<tr' + (isExpired(r) ? ' class="tp-expired"' : '') + '>' +
             '<td class="tp-mono" title="' + attr(r.TPDESC) + '">' + esc(r.TPITEM) + '</td>' +
             '<td class="tp-mono">' + esc(r.TPSRCD) + '</td>' +
