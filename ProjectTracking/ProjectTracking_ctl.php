@@ -69,7 +69,6 @@ var dashData = null;
 // newest submitted first until a heading is clicked
 var sortKey = 'sub';
 var sortDir = -1;
-var searchTimer = null;
 
 $(document).ready(function () {
     loadDashboard();
@@ -78,19 +77,9 @@ $(document).ready(function () {
         e.preventDefault();
         loadDashboard();
     });
-    $('#txtSearch').on('input', function () {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(renderTable, 250);
-    });
-    // Enter on a project number opens it; on words, jump to the table
-    $('#txtSearch').on('keydown', function (e) {
-        if (e.key !== 'Enter') { return; }
-        e.preventDefault();
-        var v = $(this).val().trim();
-        if (/^\d{6}$/.test(v)) { openProj(v); return; }
-        renderTable();
-        document.getElementById('tblProjects').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    // the lookup filters the table and lists matching projects
+    ptLookup({ rows: function () { return dashData ? dashData.projects : []; },
+               after: renderTable, scroll: '#tblProjects' });
     $('#selPgmr, #selStage').on('change', function () {
         reviewOnly = false;
         renderTable();
