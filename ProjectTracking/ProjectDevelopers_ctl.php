@@ -258,6 +258,11 @@ function renderGroups() {
         return true;
     });
 
+    // newest submitted first inside every group
+    rows.sort(function (a, b) {
+        return (b.subraw || 0) - (a.subraw || 0) || (b.num - a.num);
+    });
+
     // group by developer, alphabetical, Unassigned last
     var groups = {};
     $.each(rows, function (i, p) {
