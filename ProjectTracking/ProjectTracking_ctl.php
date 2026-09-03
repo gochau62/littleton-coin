@@ -82,6 +82,15 @@ $(document).ready(function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderTable, 250);
     });
+    // Enter on a project number opens it; on words, jump to the table
+    $('#txtSearch').on('keydown', function (e) {
+        if (e.key !== 'Enter') { return; }
+        e.preventDefault();
+        var v = $(this).val().trim();
+        if (/^\d{6}$/.test(v)) { openProj(v); return; }
+        renderTable();
+        document.getElementById('tblProjects').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     $('#selPgmr, #selStage').on('change', function () {
         reviewOnly = false;
         renderTable();
@@ -358,7 +367,7 @@ function weeklyHtml(text) {
     function body(s) {
         return esc(s).replace(/\n/g, '<br>')
             .replace(/\b(\d{5,6})\b/g,
-                '<a class="pt-wk-num" href="' + projUrl('$1') + '">$1</a>');
+                '<a class="pt-wk-num" href="' + projUrl('$1') + '" target="_blank" rel="noopener">$1</a>');
     }
     var html = '';
     $.each(String(text).split(/\n\s*\n/), function (i, b) {
@@ -574,7 +583,7 @@ function renderTable() {
         var pgmr = (p.pgmr === '')
             ? '<span class="pt-unassigned">Unassigned</span>' : esc(p.pgmr);
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="' + projUrl(p.num) + '">' + p.num + '</a></td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +
@@ -590,7 +599,7 @@ function renderTable() {
 
     $('#gridBody .pt-rowlink').on('click', function (e) {
         if ($(e.target).is('a')) { return; }
-        window.location = projUrl($(this).data('num'));
+        openProj($(this).data('num'));
     });
 }
 </script>

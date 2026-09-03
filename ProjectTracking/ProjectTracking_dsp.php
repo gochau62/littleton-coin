@@ -19,11 +19,13 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-01-A - deploy marker, check via view-source -->
+<!-- PT build 2026-09-02-B - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
 function projUrl(num) { return PT_LEGACY + 'PROJ_ctl.php?projnum=' + num; }
+// a project opens in its own tab so the dashboard stays put
+function openProj(num) { window.open(projUrl(num), '_blank', 'noopener'); }
 </script>
 <style>
 /* one blue working color, red for attention, 4px rhythm */
@@ -83,7 +85,19 @@ function projUrl(num) { return PT_LEGACY + 'PROJ_ctl.php?projnum=' + num; }
            font-weight: 600; padding: .12rem .3rem; border-radius: 6px; }
 .pt-refresh:hover { color: var(--pt-blue) !important;
            background: var(--pt-line-soft); text-decoration: none; }
-.pt-head .pt-nav { margin-left: auto; white-space: nowrap; }
+/* lookup and switch button travel together, right-aligned, and wrap
+   under the title as one unit when the frame is narrow */
+.pt-head { flex-wrap: wrap; }
+.pt-head .pt-tools { display: flex; align-items: center; gap: .6rem;
+           margin-left: auto; flex: 0 1 auto; }
+.pt-head .pt-goto { flex: 1 1 140px; min-width: 120px; max-width: 240px;
+           padding: .42rem .6rem; border: 1px solid var(--pt-field);
+           border-radius: 8px; font-size: .84rem; color: var(--pt-text);
+           background: var(--pt-card); }
+.pt-head .pt-goto::placeholder { color: var(--pt-faint); }
+.pt-head .pt-goto:focus { outline: none; border-color: var(--pt-blue);
+           box-shadow: 0 0 0 3px rgba(42,120,214,.15); }
+.pt-head .pt-nav { white-space: nowrap; }
 .pt-head .pt-nav a.pt-btn { text-decoration: none;
            color: var(--pt-text) !important; }
 .pt-head .pt-nav a.pt-btn:hover { color: var(--pt-blue) !important;
@@ -338,13 +352,17 @@ function prjHeader($title, $subtitle, $active) {
             <h1><?php echo $title; ?></h1>
             <div class="pt-sub"><?php echo $subtitle; ?></div>
         </div>
-        <div class="pt-nav">
-            <?php // one button across to the other page
-                  if ($active === 'dashboard') { ?>
-                <a class="pt-btn" href="ProjectDevelopers_ctl.php">Projects by developer &rsaquo;</a>
-            <?php } else { ?>
-                <a class="pt-btn" href="ProjectTracking_ctl.php">&lsaquo; Overview</a>
-            <?php } ?>
+        <div class="pt-tools">
+            <input type="text" id="txtSearch" class="pt-goto" autocomplete="off"
+                   placeholder="Project # or name" title="Type to filter. Enter on a project number opens it.">
+            <div class="pt-nav">
+                <?php // one button across to the other page
+                      if ($active === 'dashboard') { ?>
+                    <a class="pt-btn" href="ProjectDevelopers_ctl.php">Projects by developer &rsaquo;</a>
+                <?php } else { ?>
+                    <a class="pt-btn" href="ProjectTracking_ctl.php">&lsaquo; Overview</a>
+                <?php } ?>
+            </div>
         </div>
     </div>
 <?php
@@ -436,7 +454,6 @@ function dspProjectTracking() {
     <div class="pt-card">
         <h2>Projects (Assignee &amp; Stage)</h2>
         <div class="pt-toolbar">
-            <input type="text" id="txtSearch" placeholder="Search project # or description">
             <select id="selPgmr"><option value="">All assignees</option></select>
             <select id="selStage"><option value="">All stages</option></select>
         </div>
