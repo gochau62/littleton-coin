@@ -66,8 +66,9 @@ if ($authorized != "yes") {
 <script>
 // one fetch, then render every dashboard piece
 var dashData = null;
-var sortKey = 'num';
-var sortDir = 1;
+// newest submitted first until a heading is clicked
+var sortKey = 'sub';
+var sortDir = -1;
 var searchTimer = null;
 
 $(document).ready(function () {
@@ -564,7 +565,8 @@ function renderTable() {
         if (typeof x === 'string') { x = x.toLowerCase(); y = String(y).toLowerCase(); }
         if (x < y) { return -sortDir; }
         if (x > y) { return sortDir; }
-        return a.num - b.num;
+        // ties follow the direction, so newest first stays newest first
+        return sortDir * (a.num - b.num);
     });
 
     var html = '';
