@@ -73,6 +73,8 @@ function prjRowOut($row) {
         'deptpr' => intval($row['PJDEPTPR']),
         'scpr'   => intval($row['PJSCPR']),
         'stage'  => $row['STAGE'],
+        // checklist items still red, why a project is not yet reviewable
+        'missing' => $row['MISSING'] ?? array(),
         'status' => $row['STATUS'],
         'low'    => floatval($row['PJESTLOW']),
         'hi'     => floatval($row['PJESTHI']),

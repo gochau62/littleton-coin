@@ -159,6 +159,8 @@ function prjFetchAll($conn, $sql, $params = array()) {
 // LIST: projects with newest estimate and summed hours
 function prjProjects($conn, $includeComplete = 'N') {
     prjStatusLabels($conn);
+    prjDescSet($conn);
+    list($GLOBALS['prjWindowFrom']) = prjMeetingWindow();
     $rows = prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                         array('LIST', $includeComplete === 'Y' ? 'Y' : 'N', ''));
     if ($rows === false) { return false; }
@@ -167,12 +169,49 @@ function prjProjects($conn, $includeComplete = 'N') {
     foreach ($rows as $row) {
         // record 0 is a legacy catch-all, skip it
         if (intval($row['PJNUM']) <= 0) { continue; }
-        $row['STAGE']  = prjStage($row);
-        $row['STATUS'] = prjStatus($row);
+        $miss = prjChecklistMissing($row);
+        $row['MISSING'] = is_array($miss) ? $miss : array();
+        $row['STAGE']   = prjStage($row, $miss);
+        $row['STATUS']  = prjStatus($row);
         prjRegisterStatus($row);
         $out[] = $row;
     }
     return $out;
+}
+
+
+// projects with a description on file, from the WebNotes index
+function prjDescSet($conn) {
+    if (array_key_exists('prjDescSet', $GLOBALS)) { return; }
+    $GLOBALS['prjDescSet'] = null;
+    $rows = prjFetchAll($conn, "SELECT DISTINCT RTRIM(WNIDVAL) AS WNIDVAL FROM " .
+                        PRJ_NOTES_FILE . " WHERE RTRIM(WNPREFIX) = 'PROJ_' " .
+                        "AND RTRIM(WNTYPE) = 'Descrip'");
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return; }
+    $set = array();
+    foreach ($rows as $r) { $set[intval($r['WNIDVAL'])] = true; }
+    $GLOBALS['prjDescSet'] = $set;
+}
+
+
+// the project screen's SC review checklist; null on an old compile
+function prjChecklistMissing($row) {
+    if (!array_key_exists('PJESTMTR', $row)) { return null; }
+    $miss = array();
+    if (is_array($GLOBALS['prjDescSet'] ?? null)
+        && !isset($GLOBALS['prjDescSet'][intval($row['PJNUM'])])) { $miss[] = 'description'; }
+    if (trim(strval($row['PJESTMTR'])) === '')   { $miss[] = 'estimator'; }
+    if (intval($row['PJSPAPVDTE']) === 0)        { $miss[] = 'sponsor approval'; }
+    if (trim(strval($row['PJHASEST'])) !== 'Y')  { $miss[] = 'estimate'; }
+    // ongoing payback justifies itself; a fixed one needs figures
+    $pb = strtoupper(trim(strval($row['PJPAYBKTYP'])));
+    if (!($pb === 'O' || ($pb === 'F' && trim(strval($row['PJPAYBKFIG'])) === 'Y'))) {
+        $miss[] = 'payback justification';
+    }
+    // 9 is the screen's "not ranked" default, 0 is a real priority
+    if (intval($row['PJDEPTPR']) === 9)          { $miss[] = 'department priority'; }
+    if (trim(strval($row['PJTYPE'])) === '')     { $miss[] = 'project type'; }
+    return $miss;
 }
 
 
@@ -425,15 +464,26 @@ function prjMarkPipeline(&$projects, $pipe) {
 }
 
 
-// steering committee stage derived from the legacy fields
-function prjStage($row) {
-    if (trim($row['PJRESCOD']) === 'REJ') { return 'rejected'; }
-    if (intval($row['PJCOMPDATE']) > 0)   { return 'complete'; }
-    if (intval($row['PJSCPR']) > 0)       { return 'approved'; }
-    if (trim($row['PJHASEST']) !== 'Y')   { return 'new'; }
-    if (intval($row['PJDEPTPR']) <= 0)    { return 'parked'; }
-    if (intval($row['PJSCHDATE']) <= 0)   { return 'needsinfo'; }
-    return 'awaiting';
+// the resolution code is the committee's word; the checklist and the
+// meeting window sort out what it has not ruled on yet
+function prjStage($row, $miss = null) {
+    $code = strtoupper(trim(strval($row['PJRESCOD'] ?? '')));
+    if ($code === 'REJ')                 { return 'rejected'; }
+    if (intval($row['PJCOMPDATE']) > 0)  { return 'complete'; }
+    if ($code === 'ACP')                 { return 'approved'; }
+    if ($code === 'PRK')                 { return 'parked'; }
+    if ($code === 'NMI')                 { return 'needsinfo'; }
+    if (strtoupper(trim(strval($row['PJFORCE2SC'] ?? ''))) === 'Y') { return 'awaiting'; }
+    // ready for the next meeting once every checklist item is green
+    if ($miss === null) {
+        // old compile: an estimate on file stands in for the checklist
+        if (trim(strval($row['PJHASEST'])) === 'Y') { return 'awaiting'; }
+    } elseif (count($miss) === 0) {
+        return 'awaiting';
+    }
+    // still being filled in: new this SC cycle, otherwise it needs more
+    $from = intval($GLOBALS['prjWindowFrom'] ?? 0);
+    return (intval($row['PJSUBDATE'] ?? 0) >= $from) ? 'new' : 'needsinfo';
 }
 
 

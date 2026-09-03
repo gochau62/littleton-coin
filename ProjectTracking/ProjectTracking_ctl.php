@@ -520,10 +520,13 @@ function fillFilters(resp) {
 // short chip labels; full wording on hover
 var sgShort = { needsinfo: 'Needs info', awaiting: 'Awaiting', 'new': 'New' };
 
-function stageChip(stage) {
+function stageChip(stage, p) {
     var full = (dashData.stages && dashData.stages[stage]) ||
                stage.charAt(0).toUpperCase() + stage.slice(1);
-    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(full) + '">' +
+    // hovering says which checklist items are still red
+    var tip = full;
+    if (p && p.missing && p.missing.length) { tip += ' - still needs: ' + p.missing.join(', '); }
+    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
            esc(sgShort[stage] || full) + '</span>';
 }
 
@@ -588,7 +591,7 @@ function renderTable() {
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +
-            '<td>' + stageChip(p.stage) + '</td>' +
+            '<td>' + stageChip(p.stage, p) + '</td>' +
             '<td class="pt-num">' + p.deptpr + '</td>' +
             '<td class="pt-num">' + p.scpr + '</td>' +
             '<td class="pt-num">' + p.hours + '</td>' +
