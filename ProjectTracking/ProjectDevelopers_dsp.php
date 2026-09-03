@@ -31,7 +31,6 @@ function dspProjectDevelopers() {
 
     <div class="pt-card">
         <div class="pt-toolbar">
-            <input type="text" id="txtSearch" placeholder="Search project # or description">
             <select id="selPgmr"><option value="">All developers</option></select>
             <select id="selStatus"><option value="">All statuses</option></select>
         </div>

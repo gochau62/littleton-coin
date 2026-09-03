@@ -80,6 +80,15 @@ $(document).ready(function () {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(renderGroups, 250);
     });
+    // Enter on a project number opens it; on words, jump to the list
+    $('#txtSearch').on('keydown', function (e) {
+        if (e.key !== 'Enter') { return; }
+        e.preventDefault();
+        var v = $(this).val().trim();
+        if (/^\d{6}$/.test(v)) { openProj(v); return; }
+        renderGroups();
+        document.getElementById('groupList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     $('#selPgmr, #selStatus').on('change', renderGroups);
 });
 
@@ -227,7 +236,7 @@ function groupTable(rows) {
         var est = (p.low || p.hi) ? (p.low + '–' + p.hi) : '';
         // the whole row opens the project screen
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="' + projUrl(p.num) + '">' + p.num + '</a></td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
             '<td>' + stageChip(p.stage) + '</td>' +
             '<td>' + statusChip(p.status, p) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
@@ -289,7 +298,7 @@ function renderGroups() {
 
     $('#groupList .pt-rowlink').on('click', function (e) {
         if ($(e.target).is('a')) { return; }
-        window.location = projUrl($(this).data('num'));
+        openProj($(this).data('num'));
     });
 }
 </script>
