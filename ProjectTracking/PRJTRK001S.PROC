@@ -60,6 +60,16 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    P.PRECOM AS PJSCHDATE,
                    P.PRACOM AS PJCOMPDATE,
                    RTRIM(P.PRRESCOD) AS PJRESCOD,
+                   RTRIM(P.PRESTMTR) AS PJESTMTR,
+                   P.PRSPAPVDTE AS PJSPAPVDTE,
+                   RTRIM(P.PRPAYBKTYP) AS PJPAYBKTYP,
+                   CASE WHEN P.PROCST1 <> 0 OR P.PROCSTA <> 0
+                          OR P.PROSAV1 <> 0 OR P.PROSAVA <> 0
+                          OR P.PRCCST1 <> 0 OR P.PRCCSTA <> 0
+                          OR P.PRCSAV1 <> 0 OR P.PRCSAVA <> 0
+                        THEN 'Y' ELSE 'N' END AS PJPAYBKFIG,
+                   RTRIM(P.PRFORCE2SC) AS PJFORCE2SC,
+                   P.PRSCREVDTE AS PJSCREVDTE,
                    COALESCE(E.PRESTLOW, 0) AS PJESTLOW,
                    COALESCE(E.PRESTHI, 0) AS PJESTHI,
                    COALESCE(E.PRESTDATE, 0) AS PJESTDATE,

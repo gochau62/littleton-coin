@@ -165,10 +165,13 @@ function fillStatusFilter() {
 // short chip labels; full wording on hover
 var sgShort = { needsinfo: 'Needs info', awaiting: 'Awaiting', 'new': 'New' };
 
-function stageChip(stage) {
+function stageChip(stage, p) {
     var full = (asgData.stages && asgData.stages[stage]) ||
                stage.charAt(0).toUpperCase() + stage.slice(1);
-    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(full) + '">' +
+    // hovering says which checklist items are still red
+    var tip = full;
+    if (p && p.missing && p.missing.length) { tip += ' - still needs: ' + p.missing.join(', '); }
+    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
            esc(sgShort[stage] || full) + '</span>';
 }
 
@@ -217,7 +220,7 @@ function groupTable(rows) {
         // the whole row opens the project screen
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
-            '<td>' + stageChip(p.stage) + '</td>' +
+            '<td>' + stageChip(p.stage, p) + '</td>' +
             '<td>' + statusChip(p.status) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
             '<td class="pt-num" title="Dept priority ' + p.deptpr +

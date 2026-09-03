@@ -114,14 +114,36 @@ The mapping lives in exactly two functions in
 `ProjectTracking_model.php` — `prjStage()` and `prjStatus()` — and every
 screen, the Excel download and the weekly summary all read from them:
 
-- **Stage** (pipeline): the green screen never carried a single "SC stage"
-  column, so the dashboard derives it: `rejected` (PRRESCOD = REJ) →
-  `complete` (PRACOM set) → `approved` (SC priority set) → `new` (no
-  estimate yet) → `parked` (estimated, dept priority zeroed) → `needsinfo`
-  (estimated, no scheduled date) → `awaiting` (estimated + scheduled,
-  waiting on the committee). `rejected` and `complete` still come back from
-  `prjStage()` for the by-developer page, but they are not pipeline cells —
-  the pipeline card shows the live SC pipeline, where neither can appear.
+- **Stage** (pipeline) is the committee's own **resolution code**
+  (`PRRESCOD`, the dropdown on the Steering Committee tab, values from
+  `PRRESCODEP`) wherever the committee has ruled, and the tab's **review
+  checklist** where it has not. In order, first match wins:
+
+  | Stage | Rule |
+  |---|---|
+  | `rejected` | resolution `REJ` |
+  | `complete` | actual completion date set |
+  | `approved` | resolution `ACP` |
+  | `parked` | resolution `PRK` |
+  | `needsinfo` | resolution `NMI` |
+  | `awaiting` | no resolution, and either *Force SC review* is ticked or all seven checklist items are green |
+  | `new` | no resolution, checklist incomplete, submitted since the last SC meeting |
+  | `needsinfo` | no resolution, checklist incomplete, older than that |
+
+  The checklist is the same seven tests the project screen draws as green
+  checks and red X's (`prjChecklistMissing()`): a description in the
+  WebNotes index, an estimator, a sponsor approval date, an estimate, a
+  payback justification (type `O`, or `F` with figures), a department
+  priority other than **9**, and a project type. 9 is the screen's
+  "not ranked" default for both priorities; 0 is a real priority. The SC
+  priority never decides a stage — the code does, and `ACP` rows exist with
+  priority 9 while blank-code rows exist with priority 4. The items still
+  red ride along as `missing` and show when hovering the stage chip.
+
+  On a `PRJTRK001S` compile older than 09/03 the checklist columns are
+  absent; the code rules still apply and an estimate on file stands in for
+  the checklist. `rejected` and `complete` still come back for the
+  by-developer page but are not pipeline cells.
 - **Status** is the green screen's own **Work Status** (`PRWRKSTS`, the
   dropdown on the project edit screen), read as-is — it moves the moment
   someone changes it there. The by-developer column, the Excel download
@@ -143,9 +165,12 @@ screen, the Excel download and the weekly summary all read from them:
   label is what ties them together. `$GLOBALS['prjWrkAlias']` folds two
   codes onto one status when the file's spelling is not settled.
 
-The stage rules are a best-effort reading of how the legacy code used the
-fields. If the steering committee draws a stage differently, change
-`prjStage()` — nothing else needs touching.
+If the committee ever draws a stage differently, change `prjStage()` —
+nothing else needs touching. One thing to know about the pipeline
+*universe* rather than the stages: the "SC review" and "workload" lists
+the dashboard unions are built by the RPG programs `PR8000R` / `PR8001R`
+when someone presses *Submit* on the legacy Reports screen, so they are
+only as current as that screen's "Last ran on" line.
 
 ## How "open projects" is counted — matching the monthly spreadsheet
 
