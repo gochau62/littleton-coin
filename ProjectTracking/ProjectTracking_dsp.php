@@ -19,13 +19,78 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-02-B - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-A - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
 function projUrl(num) { return PT_LEGACY + 'PROJ_ctl.php?projnum=' + num; }
 // a project opens in its own tab so the dashboard stays put
 function openProj(num) { window.open(projUrl(num), '_blank', 'noopener'); }
+
+// the lookup: filters the page as you type and lists matching projects
+function ptLookup(o) {
+    var box = jQuery('#txtSearch');
+    var list = jQuery('<div class="pt-sug-list"></div>').insertAfter(box).hide();
+    var timer = null, active = -1, hits = [];
+    function h(s) { return jQuery('<span>').text(s == null ? '' : String(s)).html(); }
+    function close() { list.hide(); active = -1; }
+    function open(num) { openProj(num); close(); }
+    function mark() { list.children('.pt-sug').removeClass('on').eq(active).addClass('on'); }
+    function show() {
+        var q = box.val().trim().toLowerCase();
+        hits = []; active = -1;
+        if (q === '') { close(); return; }
+        var seen = {};
+        jQuery.each(o.rows() || [], function (i, p) {
+            if (seen[p.num]) { return; }
+            if (String(p.num).indexOf(q) === 0 ||
+                String(p.desc).toLowerCase().indexOf(q) >= 0) {
+                seen[p.num] = true; hits.push(p);
+            }
+        });
+        // newest project numbers first, eight at most
+        hits.sort(function (a, b) { return b.num - a.num; });
+        hits = hits.slice(0, 8);
+        var html = '';
+        jQuery.each(hits, function (i, p) {
+            html += '<div class="pt-sug" data-i="' + i + '"><b>' + p.num + '</b>' +
+                    '<span>' + h(p.desc) + '</span></div>';
+        });
+        list.html(html || '<div class="pt-sug pt-sug-none">No matching project</div>').show();
+    }
+    box.on('input', function () {
+        show();
+        clearTimeout(timer);
+        timer = setTimeout(o.after, 250);
+    });
+    box.on('keydown', function (e) {
+        if (e.key === 'ArrowDown' && hits.length) {
+            e.preventDefault(); active = (active + 1) % hits.length; mark(); return;
+        }
+        if (e.key === 'ArrowUp' && hits.length) {
+            e.preventDefault(); active = (active - 1 + hits.length) % hits.length; mark(); return;
+        }
+        if (e.key === 'Escape') { close(); return; }
+        if (e.key !== 'Enter') { return; }
+        e.preventDefault();
+        // a picked row, a full number, or the only match opens
+        if (active >= 0) { open(hits[active].num); return; }
+        var v = box.val().trim();
+        if (/^\d{6}$/.test(v)) { open(v); return; }
+        if (hits.length === 1) { open(hits[0].num); return; }
+        close();
+        o.after();
+        var t = document.querySelector(o.scroll);
+        if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+    // mousedown lands before the blur that closes the list
+    list.on('mousedown', '.pt-sug[data-i]', function (e) {
+        e.preventDefault();
+        open(hits[jQuery(this).data('i')].num);
+    });
+    box.on('blur', function () { setTimeout(close, 150); });
+    box.on('focus', function () { if (box.val().trim() !== '') { show(); } });
+}
 </script>
 <style>
 /* one blue working color, red for attention, 4px rhythm */
@@ -90,13 +155,30 @@ function openProj(num) { window.open(projUrl(num), '_blank', 'noopener'); }
 .pt-head { flex-wrap: wrap; }
 .pt-head .pt-tools { display: flex; align-items: center; gap: .6rem;
            margin-left: auto; flex: 0 1 auto; }
-.pt-head .pt-goto { flex: 1 1 140px; min-width: 120px; max-width: 240px;
+.pt-head .pt-lookup { position: relative; flex: 1 1 140px;
+           min-width: 120px; max-width: 240px; }
+.pt-head .pt-goto { width: 100%; box-sizing: border-box;
            padding: .42rem .6rem; border: 1px solid var(--pt-field);
            border-radius: 8px; font-size: .84rem; color: var(--pt-text);
            background: var(--pt-card); }
 .pt-head .pt-goto::placeholder { color: var(--pt-faint); }
 .pt-head .pt-goto:focus { outline: none; border-color: var(--pt-blue);
            box-shadow: 0 0 0 3px rgba(42,120,214,.15); }
+/* matching projects drop down under the box, anchored to its right edge */
+.pt-sug-list { position: absolute; top: calc(100% + 4px); right: 0;
+           width: 340px; max-width: 80vw; max-height: 280px; overflow-y: auto;
+           background: var(--pt-card); border: 1px solid var(--pt-line);
+           border-radius: 8px; box-shadow: var(--pt-shadow); z-index: 50;
+           text-align: left; }
+.pt-sug { display: flex; gap: .55rem; align-items: baseline;
+           padding: .4rem .65rem; font-size: .82rem; cursor: pointer;
+           border-bottom: 1px solid var(--pt-line-soft); }
+.pt-sug:last-child { border-bottom: 0; }
+.pt-sug b { font-family: var(--pt-mono); font-weight: 600; color: var(--pt-blue);
+           flex: 0 0 auto; }
+.pt-sug span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-sug.on, .pt-sug:hover { background: var(--pt-line-soft); }
+.pt-sug-none { color: var(--pt-muted); cursor: default; }
 .pt-head .pt-nav { white-space: nowrap; }
 .pt-head .pt-nav a.pt-btn { text-decoration: none;
            color: var(--pt-text) !important; }
@@ -353,8 +435,11 @@ function prjHeader($title, $subtitle, $active) {
             <div class="pt-sub"><?php echo $subtitle; ?></div>
         </div>
         <div class="pt-tools">
-            <input type="text" id="txtSearch" class="pt-goto" autocomplete="off"
-                   placeholder="Project # or name" title="Type to filter. Enter on a project number opens it.">
+            <span class="pt-lookup">
+                <input type="text" id="txtSearch" class="pt-goto" autocomplete="off"
+                       placeholder="Project # or Name"
+                       title="Type to filter. Pick a project from the list, or press Enter on its number, to open it.">
+            </span>
             <div class="pt-nav">
                 <?php // one button across to the other page
                       if ($active === 'dashboard') { ?>

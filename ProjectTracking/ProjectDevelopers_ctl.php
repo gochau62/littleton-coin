@@ -67,7 +67,6 @@ if ($authorized != "yes") {
 <script>
 // fetch rows, group per programmer, filter client-side
 var asgData = null;
-var searchTimer = null;
 
 $(document).ready(function () {
     loadProjectDevelopers();
@@ -76,19 +75,9 @@ $(document).ready(function () {
         e.preventDefault();
         loadProjectDevelopers();
     });
-    $('#txtSearch').on('input', function () {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(renderGroups, 250);
-    });
-    // Enter on a project number opens it; on words, jump to the list
-    $('#txtSearch').on('keydown', function (e) {
-        if (e.key !== 'Enter') { return; }
-        e.preventDefault();
-        var v = $(this).val().trim();
-        if (/^\d{6}$/.test(v)) { openProj(v); return; }
-        renderGroups();
-        document.getElementById('groupList').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    // the lookup filters the groups and lists matching projects
+    ptLookup({ rows: function () { return asgData ? visibleRows() : []; },
+               after: renderGroups, scroll: '#groupList' });
     $('#selPgmr, #selStatus').on('change', renderGroups);
 });
 
