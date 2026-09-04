@@ -245,7 +245,7 @@ function renderQueue() {
     });
     var c = [0, 0, 0];
     $.each(rows, function (i, p) { c[queueBand(p)] += 1; });
-    var since = (dashData.window && dashData.window.from) ? 'submitted since ' +
+    var since = (dashData.window && dashData.window.from) ? 'last three SC cycles, since ' +
                 dashData.window.from + ' · ' : '';
     $('#queueCounts').text(since + c[0] + ' ready · ' + c[1] + ' missing one item · ' +
                            c[2] + ' need work');
@@ -262,7 +262,7 @@ function renderQueue() {
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' +
                 p.num + '</a>' +
-                (p.fresh ? '<span class="pt-fresh" title="Submitted this SC cycle">NEW</span>' : '') +
+                (p.fresh ? '<span class="pt-fresh" title="Submitted in the last three SC cycles">NEW</span>' : '') +
             '</td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) +
                 (p.fire ? '<span class="pt-fire" title="Fire project">&#9650; fire</span>' : '') + '</td>' +
@@ -273,7 +273,7 @@ function renderQueue() {
             '<td>' + need + '</td></tr>';
     });
     $('#queueBody').html(html ||
-        '<tr><td colspan="7" class="pt-empty">Nothing new since the last meeting.</td></tr>');
+        '<tr><td colspan="7" class="pt-empty">Nothing new in the last three cycles.</td></tr>');
 
     var more = $('#queueMore');
     if (rows.length > 15) {
@@ -646,7 +646,9 @@ function renderTable() {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
         if (fPgmr !== '' && (p.pgmr === '' ? 'Unassigned' : p.pgmr) !== fPgmr) { return false; }
-        if (fStage !== '' && p.stage !== fStage) { return false; }
+        // New request is the recent-submission flag, not a stage
+        if (fStage === 'new') { if (!p.fresh) { return false; } }
+        else if (fStage !== '' && p.stage !== fStage) { return false; }
         if (reviewOnly && p.stage !== 'awaiting' && p.stage !== 'needsinfo') { return false; }
         return true;
     });
@@ -673,8 +675,7 @@ function renderTable() {
         var pgmr = (p.pgmr === '')
             ? '<span class="pt-unassigned">Unassigned</span>' : esc(p.pgmr);
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a>' +
-                (p.fresh ? '<span class="pt-fresh" title="Submitted this SC cycle">NEW</span>' : '') + '</td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +
