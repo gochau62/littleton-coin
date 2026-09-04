@@ -92,6 +92,12 @@ $(document).ready(function () {
     });
     $('#btnWeekly').on('click', generateWeekly);
     $('#selQueueDept').on('change', renderQueue);
+    $('#tblQueue thead th').on('click', function () {
+        var k = $(this).data('k');
+        if (qSortKey === k) { qSortDir = -qSortDir; }
+        else { qSortKey = k; qSortDir = (k === 'sub') ? -1 : 1; }
+        renderQueue();
+    });
     $('#queueMore').on('click', function (e) {
         e.preventDefault();
         queueAll = !queueAll;
@@ -198,8 +204,10 @@ function renderTiles(t, pipenote) {
 
 
 // clicking a cell filters the table below to that stage
-// the review queue: this SC cycle's uncoded projects, closest to ready first
+// the review queue: recent uncoded projects, newest submitted first
 var queueAll = false;
+var qSortKey = 'sub';
+var qSortDir = -1;
 
 function queueRows() {
     var dept = $('#selQueueDept').val() || '';
@@ -236,12 +244,28 @@ function fillQueueDept() {
     $('#selQueueDept').html(opts);
 }
 
+// the sort value a queue column offers
+function queueVal(p, k) {
+    if (k === 'sub')    { return p.subraw; }
+    if (k === 'deptpr') { return queueRank(p); }
+    if (k === 'needs')  { return queueBand(p); }
+    var v = p[k];
+    return (typeof v === 'string') ? v.toLowerCase() : v;
+}
+
 function renderQueue() {
     if (!dashData) { return; }
+    $('#tblQueue thead th').removeClass('pt-sort-asc pt-sort-desc');
+    $('#tblQueue thead th[data-k="' + qSortKey + '"]')
+        .addClass(qSortDir === 1 ? 'pt-sort-asc' : 'pt-sort-desc');
+
     var rows = queueRows();
     rows.sort(function (a, b) {
-        return queueBand(a) - queueBand(b) || queueRank(a) - queueRank(b) ||
-               (b.subraw - a.subraw) || (b.num - a.num);
+        var x = queueVal(a, qSortKey), y = queueVal(b, qSortKey);
+        if (x < y) { return -qSortDir; }
+        if (x > y) { return qSortDir; }
+        // ties: newest submitted, then highest number
+        return (b.subraw - a.subraw) || (b.num - a.num);
     });
     var html = '';
     $.each(rows.slice(0, queueAll ? rows.length : 15), function (i, p) {
