@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-03-C - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-D - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -217,6 +217,28 @@ function ptLookup(o) {
 
 /* pipeline cells with a colored rule per stage */
 .pt-pipe { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .75rem; }
+
+/* review queue, inside the pipeline card under the cells */
+.pt-queue { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--pt-line); }
+.pt-queue-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+           margin-bottom: .6rem; }
+.pt-queue-head h2 { margin: 0; }
+.pt-queue-counts { font-size: .78rem; color: var(--pt-muted); }
+.pt-queue-head select { margin-left: auto; padding: .3rem .5rem; font-size: .8rem;
+           border: 1px solid var(--pt-field); border-radius: 6px; background: var(--pt-card); }
+.pt-need { display: inline-block; margin: .1rem .25rem .1rem 0; padding: .1rem .4rem;
+           border-radius: 5px; font-size: .7rem; font-weight: 600; white-space: nowrap;
+           background: var(--pt-chip-amber); color: var(--pt-amber); }
+.pt-need-ready { background: var(--pt-chip-green); color: var(--pt-green); }
+.pt-need-sc    { background: var(--pt-chip-red);   color: var(--pt-red); }
+.pt-fresh { display: inline-block; margin-left: .3rem; padding: 0 .35rem; border-radius: 999px;
+           font-size: .62rem; font-weight: 700; letter-spacing: .04em; vertical-align: middle;
+           background: var(--pt-chip-blue); color: var(--pt-blue-dk); }
+.pt-fire { color: var(--pt-orange); font-size: .7rem; font-weight: 600; margin-left: .3rem;
+           white-space: nowrap; }
+.pt-queue-more { display: inline-block; margin-top: .5rem; font-size: .8rem;
+           color: var(--pt-blue) !important; text-decoration: none; }
+.pt-queue-more:hover { text-decoration: underline; }
 .pt-seg { border: 1px solid var(--pt-line); border-top-width: 3px;
           border-top-color: var(--pt-gray); border-radius: 8px;
           padding: .6rem .85rem .65rem; background: var(--pt-card); }
@@ -522,6 +544,33 @@ function dspProjectTracking() {
     <div class="pt-card">
         <h2>Steering Committee Pipeline</h2>
         <div class="pt-pipe" id="pipeRow"></div>
+
+        <!-- the review queue: uncoded projects, closest to ready first -->
+        <div class="pt-queue">
+            <div class="pt-queue-head">
+                <h2>Review queue</h2>
+                <span class="pt-queue-counts" id="queueCounts"></span>
+                <select id="selQueueDept"><option value="">All departments</option></select>
+            </div>
+            <div class="pt-tablewrap">
+                <table class="pt-grid" id="tblQueue">
+                    <colgroup><col style="width:84px"><col style="width:26%">
+                    <col style="width:11%"><col style="width:7%">
+                    <col style="width:84px"><col style="width:52px"><col></colgroup>
+                    <thead><tr>
+                        <th class="pt-num">Project</th>
+                        <th>Name</th>
+                        <th>Requested by</th>
+                        <th>Dept</th>
+                        <th class="pt-wrap">Submitted</th>
+                        <th class="pt-num pt-wrap">Dept prty</th>
+                        <th>Still needs</th>
+                    </tr></thead>
+                    <tbody id="queueBody"></tbody>
+                </table>
+            </div>
+            <a href="#" id="queueMore" class="pt-queue-more"></a>
+        </div>
     </div>
 
     <div class="pt-charts">
