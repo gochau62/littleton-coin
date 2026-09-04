@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-03-F - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-G - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -223,7 +223,6 @@ function ptLookup(o) {
 .pt-queue-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
            margin-bottom: .6rem; }
 .pt-queue-head h2 { margin: 0; }
-.pt-queue-counts { font-size: .78rem; color: var(--pt-muted); }
 .pt-queue-head select { margin-left: auto; padding: .3rem .5rem; font-size: .8rem;
            border: 1px solid var(--pt-field); border-radius: 6px; background: var(--pt-card); }
 /* the number keeps its badge beside it, and the chips wrap onto lines */
@@ -530,7 +529,7 @@ function dspProjectTracking() {
             <div class="pt-val" id="tileOpen">&ndash;</div>
         </div>
         <div class="pt-stat" data-tile="new"
-             title="Submitted in the last three SC cycles, not yet ruled on - click to list them">
+             title="Submitted in the last two SC cycles, not yet ruled on - click to list them">
             <div class="pt-lbl">New requests</div>
             <div class="pt-val" id="tileNew">&ndash;</div>
         </div>
@@ -553,7 +552,6 @@ function dspProjectTracking() {
         <div class="pt-queue">
             <div class="pt-queue-head">
                 <h2>Review queue</h2>
-                <span class="pt-queue-counts" id="queueCounts"></span>
                 <select id="selQueueDept"><option value="">All departments</option></select>
             </div>
             <div class="pt-tablewrap">

@@ -243,13 +243,6 @@ function renderQueue() {
         return queueBand(a) - queueBand(b) || queueRank(a) - queueRank(b) ||
                (b.subraw - a.subraw) || (b.num - a.num);
     });
-    var c = [0, 0, 0];
-    $.each(rows, function (i, p) { c[queueBand(p)] += 1; });
-    var since = (dashData.window && dashData.window.from) ? 'last three SC cycles, since ' +
-                dashData.window.from + ' · ' : '';
-    $('#queueCounts').text(since + c[0] + ' ready · ' + c[1] + ' missing one item · ' +
-                           c[2] + ' need work');
-
     var html = '';
     $.each(rows.slice(0, queueAll ? rows.length : 15), function (i, p) {
         var need = '';
@@ -262,7 +255,7 @@ function renderQueue() {
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' +
                 p.num + '</a>' +
-                (p.fresh ? '<span class="pt-fresh" title="Submitted in the last three SC cycles">NEW</span>' : '') +
+                (p.fresh ? '<span class="pt-fresh" title="Submitted in the last two SC cycles">NEW</span>' : '') +
             '</td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) +
                 (p.fire ? '<span class="pt-fire" title="Fire project">&#9650; fire</span>' : '') + '</td>' +
@@ -273,7 +266,7 @@ function renderQueue() {
             '<td>' + need + '</td></tr>';
     });
     $('#queueBody').html(html ||
-        '<tr><td colspan="7" class="pt-empty">Nothing new in the last three cycles.</td></tr>');
+        '<tr><td colspan="7" class="pt-empty">Nothing new in the last two cycles.</td></tr>');
 
     var more = $('#queueMore');
     if (rows.length > 15) {
@@ -624,8 +617,15 @@ function stageChip(stage, p) {
     // hovering says which checklist items are still red
     var tip = full;
     if (p && p.missing && p.missing.length) { tip += ' - still needs: ' + p.missing.join(', '); }
-    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
-           esc(sgShort[stage] || full) + '</span>';
+    var chip = '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
+               esc(sgShort[stage] || full) + '</span>';
+    // a recent submission reads New, with its stage under it when it still needs work
+    if (p && p.fresh) {
+        var fresh = '<span class="pt-chip pt-chip-new" title="' +
+                    attr('New request - ' + tip) + '">New</span>';
+        return (stage === 'awaiting') ? fresh : fresh + '<br>' + chip;
+    }
+    return chip;
 }
 
 
