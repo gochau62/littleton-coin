@@ -177,7 +177,7 @@ function stageChip(stage, p) {
     if (p && p.fresh) {
         var fresh = '<span class="pt-chip pt-chip-new" title="' +
                     attr('New request - ' + tip) + '">New</span>';
-        return (stage === 'awaiting') ? fresh : fresh + '<br>' + chip;
+        return (stage === 'awaiting' || stage === 'new') ? fresh : fresh + '<br>' + chip;
     }
     return chip;
 }
