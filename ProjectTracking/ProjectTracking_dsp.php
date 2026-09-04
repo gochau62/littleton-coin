@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-03-D - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-E - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -227,7 +227,8 @@ function ptLookup(o) {
 .pt-queue-head select { margin-left: auto; padding: .3rem .5rem; font-size: .8rem;
            border: 1px solid var(--pt-field); border-radius: 6px; background: var(--pt-card); }
 /* the number keeps its badge beside it, and the chips wrap onto lines */
-#tblQueue td:first-child, #tblQueue td:last-child { white-space: normal;
+#tblQueue td:first-child, #tblQueue td:last-child,
+#tblProjects td:first-child, .pt-group td:first-child { white-space: normal;
            overflow: visible; text-overflow: clip; }
 .pt-need { display: inline-block; margin: .1rem .25rem .1rem 0; padding: .1rem .4rem;
            border-radius: 5px; font-size: .7rem; font-weight: 600; line-height: 1.25;
@@ -501,7 +502,7 @@ function dspProjectTracking() {
         <div class="pt-tablewrap">
             <table class="pt-grid" id="tblProjects">
                 <!-- fixed pixel columns for numbers and dates -->
-                <colgroup><col style="width:76px"><col style="width:22%">
+                <colgroup><col style="width:112px"><col style="width:20%">
                 <col style="width:88px"><col style="width:11%">
                 <col style="width:11%"><col style="width:6%">
                 <col style="width:6%"><col style="width:6%">

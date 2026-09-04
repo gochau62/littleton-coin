@@ -204,7 +204,7 @@ function groupTable(rows) {
     // fixed column widths so every group's table lines up
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
         '<table class="pt-grid">' +
-        '<colgroup><col style="width:64px"><col style="width:13%">' +
+        '<colgroup><col style="width:104px"><col style="width:13%">' +
         '<col style="width:12.5%"><col style="width:48px"><col style="width:58px">' +
         '<col>' +
         '<col style="width:64px"><col style="width:56px"><col style="width:92px">' +
@@ -219,7 +219,8 @@ function groupTable(rows) {
         var est = (p.low || p.hi) ? (p.low + '–' + p.hi) : '';
         // the whole row opens the project screen
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a>' +
+                (p.fresh ? '<span class="pt-fresh" title="Submitted this SC cycle">NEW</span>' : '') + '</td>' +
             '<td>' + stageChip(p.stage, p) + '</td>' +
             '<td>' + statusChip(p.status) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
