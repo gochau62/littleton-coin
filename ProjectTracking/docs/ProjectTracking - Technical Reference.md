@@ -131,12 +131,12 @@ screen, the Excel download and the weekly summary all read from them:
 
   **New request is a flag, not a stage.** `prjFresh()` marks a project new
   when it was submitted since the Monday before the first-Thursday meeting
-  three cycles back (`prjFreshFrom(3)`) and the committee has not ruled on
+  two cycles back (`prjFreshFrom(2)`) and the committee has not ruled on
   it. It rides beside the stage, so a new project that still needs its
-  payback justification reads *Needs more info* **and** *NEW*. The New
-  request pipeline cell and tile count the flag, the Review queue under the
-  cells lists exactly those projects, and the table's "New request" stage
-  filter selects them.
+  payback justification reads *New* over *Needs info* in the stage column.
+  The New request pipeline cell and tile count the flag, the Review queue
+  under the cells lists exactly those projects with what each still
+  needs, and the table's "New request" stage filter selects them.
 
   The checklist is the same seven tests the project screen draws as green
   checks and red X's (`prjChecklistMissing()`): a description in the

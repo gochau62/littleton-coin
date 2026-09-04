@@ -75,7 +75,7 @@ function prjRowOut($row) {
         'stage'  => $row['STAGE'],
         // checklist items still red, why a project is not yet reviewable
         'missing' => $row['MISSING'] ?? array(),
-        // submitted in the last three SC cycles and not yet ruled on
+        // submitted in the last two SC cycles and not yet ruled on
         'fresh'  => prjFresh($row) ? 1 : 0,
         'fire'   => (trim(strval($row['PJTYPE'] ?? '')) === 'FR') ? 1 : 0,
         'rescode' => strtoupper(trim(strval($row['PJRESCOD'] ?? ''))),

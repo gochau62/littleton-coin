@@ -171,8 +171,15 @@ function stageChip(stage, p) {
     // hovering says which checklist items are still red
     var tip = full;
     if (p && p.missing && p.missing.length) { tip += ' - still needs: ' + p.missing.join(', '); }
-    return '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
-           esc(sgShort[stage] || full) + '</span>';
+    var chip = '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
+               esc(sgShort[stage] || full) + '</span>';
+    // a recent submission reads New, with its stage under it when it still needs work
+    if (p && p.fresh) {
+        var fresh = '<span class="pt-chip pt-chip-new" title="' +
+                    attr('New request - ' + tip) + '">New</span>';
+        return (stage === 'awaiting') ? fresh : fresh + '<br>' + chip;
+    }
+    return chip;
 }
 
 

@@ -159,7 +159,7 @@ function prjFetchAll($conn, $sql, $params = array()) {
 // LIST: projects with newest estimate and summed hours
 function prjProjects($conn, $includeComplete = 'N') {
     prjDescSet($conn);
-    $GLOBALS['prjWindowFrom'] = prjFreshFrom(3);
+    $GLOBALS['prjWindowFrom'] = prjFreshFrom(2);
     $rows = prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                         array('LIST', $includeComplete === 'Y' ? 'Y' : 'N', ''));
     if ($rows === false) { return false; }
