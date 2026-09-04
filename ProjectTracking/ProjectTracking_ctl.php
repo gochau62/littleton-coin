@@ -198,13 +198,13 @@ function renderTiles(t, pipenote) {
 
 
 // clicking a cell filters the table below to that stage
-// the review queue: uncoded pipeline projects, closest to ready first
+// the review queue: this SC cycle's uncoded projects, closest to ready first
 var queueAll = false;
 
 function queueRows() {
     var dept = $('#selQueueDept').val() || '';
     return $.grep(dashData.projects, function (p) {
-        if (p.pipe === 0) { return false; }
+        if (p.pipe === 0 || !p.fresh) { return false; }
         if (p.stage !== 'new' && p.stage !== 'awaiting' && p.stage !== 'needsinfo') { return false; }
         if (dept !== '' && p.dept !== dept) { return false; }
         return true;
@@ -245,7 +245,9 @@ function renderQueue() {
     });
     var c = [0, 0, 0];
     $.each(rows, function (i, p) { c[queueBand(p)] += 1; });
-    $('#queueCounts').text(c[0] + ' ready · ' + c[1] + ' missing one item · ' +
+    var since = (dashData.window && dashData.window.from) ? 'submitted since ' +
+                dashData.window.from + ' · ' : '';
+    $('#queueCounts').text(since + c[0] + ' ready · ' + c[1] + ' missing one item · ' +
                            c[2] + ' need work');
 
     var html = '';
@@ -271,7 +273,7 @@ function renderQueue() {
             '<td>' + need + '</td></tr>';
     });
     $('#queueBody').html(html ||
-        '<tr><td colspan="7" class="pt-empty">Nothing is waiting on the committee.</td></tr>');
+        '<tr><td colspan="7" class="pt-empty">Nothing new since the last meeting.</td></tr>');
 
     var more = $('#queueMore');
     if (rows.length > 15) {
@@ -671,7 +673,8 @@ function renderTable() {
         var pgmr = (p.pgmr === '')
             ? '<span class="pt-unassigned">Unassigned</span>' : esc(p.pgmr);
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
-            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a>' +
+                (p.fresh ? '<span class="pt-fresh" title="Submitted this SC cycle">NEW</span>' : '') + '</td>' +
             '<td title="' + attr(p.desc) + '">' + esc(p.desc) + '</td>' +
             '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +

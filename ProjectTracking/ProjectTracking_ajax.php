@@ -161,6 +161,8 @@ switch ($action) {
                      "developers" => $GLOBALS['prjDevelopers'],
                      "projects" => $out,
                      "weekly" => $weekly,
+                     // the SC cycle the NEW badge and the queue key off
+                     "window" => array('from' => prjFmtDate($GLOBALS['prjWindowFrom'] ?? 0)),
                      // true when the count fell back to everything
                      "pipenote" => ($pipe === null),
                      "pipeinfo" => $GLOBALS['prjPipeInfo'] ?? '',
