@@ -160,7 +160,7 @@ function prjFetchAll($conn, $sql, $params = array()) {
 function prjProjects($conn, $includeComplete = 'N') {
     prjStatusLabels($conn);
     prjDescSet($conn);
-    list($GLOBALS['prjWindowFrom']) = prjMeetingWindow();
+    $GLOBALS['prjWindowFrom'] = prjFreshFrom(3);
     $rows = prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                         array('LIST', $includeComplete === 'Y' ? 'Y' : 'N', ''));
     if ($rows === false) { return false; }
@@ -464,8 +464,8 @@ function prjMarkPipeline(&$projects, $pipe) {
 }
 
 
-// the resolution code is the committee's word; the checklist and the
-// meeting window sort out what it has not ruled on yet
+// the resolution code is the committee's word; the checklist decides
+// between ready and not for what it has not ruled on yet
 function prjStage($row, $miss = null) {
     $code = strtoupper(trim(strval($row['PJRESCOD'] ?? '')));
     if ($code === 'REJ')                 { return 'rejected'; }
@@ -477,13 +477,31 @@ function prjStage($row, $miss = null) {
     // ready for the next meeting once every checklist item is green
     if ($miss === null) {
         // old compile: an estimate on file stands in for the checklist
-        if (trim(strval($row['PJHASEST'])) === 'Y') { return 'awaiting'; }
-    } elseif (count($miss) === 0) {
-        return 'awaiting';
+        return (trim(strval($row['PJHASEST'])) === 'Y') ? 'awaiting' : 'needsinfo';
     }
-    // still being filled in: new this SC cycle, otherwise it needs more
+    return (count($miss) === 0) ? 'awaiting' : 'needsinfo';
+}
+
+
+// new = submitted since the meeting N cycles back and not yet ruled on;
+// it is a flag beside the stage, never a stage of its own
+function prjFresh($row) {
     $from = intval($GLOBALS['prjWindowFrom'] ?? 0);
-    return (intval($row['PJSUBDATE'] ?? 0) >= $from) ? 'new' : 'needsinfo';
+    if ($from <= 0 || intval($row['PJSUBDATE'] ?? 0) < $from) { return false; }
+    return trim(strval($row['PJRESCOD'] ?? '')) === '' && intval($row['PJCOMPDATE'] ?? 0) === 0;
+}
+
+
+// the Monday before the first-Thursday meeting N cycles back
+function prjFreshFrom($cycles = 3) {
+    list($from) = prjMeetingWindow();
+    $d = DateTime::createFromFormat('!Ymd', strval($from));
+    if (!$d || $cycles <= 1) { return intval($from); }
+    $d->modify('+3 days');
+    $d->modify('first day of -' . ($cycles - 1) . ' month');
+    $d->modify('first thursday of this month');
+    $d->modify('-3 days');
+    return intval($d->format('Ymd'));
 }
 
 
@@ -527,7 +545,8 @@ function prjDashboardRollup($projects) {
         if ($open) {
             if (!$addl) {
                 $tiles['open'] += 1;
-                if ($stage === 'new') { $tiles['new'] += 1; }
+                // the New request cell counts recent submissions on top of their stage
+                if (prjFresh($row)) { $tiles['new'] += 1; $pipeline['new'] += 1; }
                 if ($stage === 'awaiting' || $stage === 'needsinfo') { $tiles['screview'] += 1; }
             }
 

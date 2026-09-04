@@ -134,8 +134,16 @@ screen, the Excel download and the weekly summary all read from them:
   | `parked` | resolution `PRK` |
   | `needsinfo` | resolution `NMI` |
   | `awaiting` | no resolution, and either *Force SC review* is ticked or all seven checklist items are green |
-  | `new` | no resolution, checklist incomplete, submitted since the last SC meeting |
-  | `needsinfo` | no resolution, checklist incomplete, older than that |
+  | `needsinfo` | no resolution, checklist incomplete |
+
+  **New request is a flag, not a stage.** `prjFresh()` marks a project new
+  when it was submitted since the Monday before the first-Thursday meeting
+  three cycles back (`prjFreshFrom(3)`) and the committee has not ruled on
+  it. It rides beside the stage, so a new project that still needs its
+  payback justification reads *Needs more info* **and** *NEW*. The New
+  request pipeline cell and tile count the flag, the Review queue under the
+  cells lists exactly those projects, and the table's "New request" stage
+  filter selects them.
 
   The checklist is the same seven tests the project screen draws as green
   checks and red X's (`prjChecklistMissing()`): a description in the
