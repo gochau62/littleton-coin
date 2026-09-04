@@ -226,8 +226,11 @@ function ptLookup(o) {
 .pt-queue-counts { font-size: .78rem; color: var(--pt-muted); }
 .pt-queue-head select { margin-left: auto; padding: .3rem .5rem; font-size: .8rem;
            border: 1px solid var(--pt-field); border-radius: 6px; background: var(--pt-card); }
+/* the number keeps its badge beside it, and the chips wrap onto lines */
+#tblQueue td:first-child, #tblQueue td:last-child { white-space: normal;
+           overflow: visible; text-overflow: clip; }
 .pt-need { display: inline-block; margin: .1rem .25rem .1rem 0; padding: .1rem .4rem;
-           border-radius: 5px; font-size: .7rem; font-weight: 600; white-space: nowrap;
+           border-radius: 5px; font-size: .7rem; font-weight: 600; line-height: 1.25;
            background: var(--pt-chip-amber); color: var(--pt-amber); }
 .pt-need-ready { background: var(--pt-chip-green); color: var(--pt-green); }
 .pt-need-sc    { background: var(--pt-chip-red);   color: var(--pt-red); }
@@ -554,13 +557,13 @@ function dspProjectTracking() {
             </div>
             <div class="pt-tablewrap">
                 <table class="pt-grid" id="tblQueue">
-                    <colgroup><col style="width:84px"><col style="width:26%">
-                    <col style="width:11%"><col style="width:7%">
+                    <colgroup><col style="width:116px"><col style="width:24%">
+                    <col style="width:12%"><col style="width:7%">
                     <col style="width:84px"><col style="width:52px"><col></colgroup>
                     <thead><tr>
                         <th class="pt-num">Project</th>
                         <th>Name</th>
-                        <th>Requested by</th>
+                        <th>Requester</th>
                         <th>Dept</th>
                         <th class="pt-wrap">Submitted</th>
                         <th class="pt-num pt-wrap">Dept prty</th>

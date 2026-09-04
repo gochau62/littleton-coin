@@ -252,7 +252,7 @@ function renderQueue() {
     $.each(rows.slice(0, queueAll ? rows.length : 15), function (i, p) {
         var need = '';
         if (p.rescode === 'NMI') {
-            need += '<span class="pt-need pt-need-sc">committee: needs more information</span>';
+            need += '<span class="pt-need pt-need-sc" title="The committee asked for more information">committee: more info</span>';
         } else if (!(p.missing || []).length) {
             need = '<span class="pt-need pt-need-ready">Ready</span>';
         }
