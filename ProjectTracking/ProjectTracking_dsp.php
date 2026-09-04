@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-03-G - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-H - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -560,13 +560,13 @@ function dspProjectTracking() {
                     <col style="width:12%"><col style="width:7%">
                     <col style="width:84px"><col style="width:52px"><col></colgroup>
                     <thead><tr>
-                        <th class="pt-num">Project</th>
-                        <th>Name</th>
-                        <th>Requester</th>
-                        <th>Dept</th>
-                        <th class="pt-wrap">Submitted</th>
-                        <th class="pt-num pt-wrap">Dept prty</th>
-                        <th>Still needs</th>
+                        <th data-k="num" class="pt-num">Project</th>
+                        <th data-k="desc">Name</th>
+                        <th data-k="rqst">Requester</th>
+                        <th data-k="dept">Dept</th>
+                        <th data-k="sub" class="pt-wrap">Submitted</th>
+                        <th data-k="deptpr" class="pt-num pt-wrap">Dept prty</th>
+                        <th data-k="needs">Still needs</th>
                     </tr></thead>
                     <tbody id="queueBody"></tbody>
                 </table>
