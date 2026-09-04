@@ -91,6 +91,12 @@ $(document).ready(function () {
         renderTable();
     });
     $('#btnWeekly').on('click', generateWeekly);
+    $('#selQueueDept').on('change', renderQueue);
+    $('#queueMore').on('click', function (e) {
+        e.preventDefault();
+        queueAll = !queueAll;
+        renderQueue();
+    });
 
     // preset the calendar to the prior week, at midnight
     var t = new Date();
@@ -150,6 +156,8 @@ function loadDashboard() {
         $('#ptUpdated').text('updated ' + resp.updated);
         renderTiles(resp.tiles, resp.pipenote);
         renderPipeline(resp.pipeline, resp.stages);
+        fillQueueDept();
+        renderQueue();
         renderLoad(resp.load);
         renderDonut(resp.status, resp.statuses);
         renderWeekly(resp.weekly);
@@ -190,6 +198,94 @@ function renderTiles(t, pipenote) {
 
 
 // clicking a cell filters the table below to that stage
+// the review queue: uncoded pipeline projects, closest to ready first
+var queueAll = false;
+
+function queueRows() {
+    var dept = $('#selQueueDept').val() || '';
+    return $.grep(dashData.projects, function (p) {
+        if (p.pipe === 0) { return false; }
+        if (p.stage !== 'new' && p.stage !== 'awaiting' && p.stage !== 'needsinfo') { return false; }
+        if (dept !== '' && p.dept !== dept) { return false; }
+        return true;
+    });
+}
+
+// 0 ready, 1 one item short, 2 more; the committee's NMI is work too
+function queueBand(p) {
+    if (p.rescode === 'NMI') { return 2; }
+    var n = (p.missing || []).length;
+    return n === 0 ? 0 : (n === 1 ? 1 : 2);
+}
+
+// fire first, then department priority 1-8; 0 and 9 are unranked
+function queueRank(p) {
+    var pr = (p.deptpr >= 1 && p.deptpr <= 8) ? p.deptpr : 99;
+    return (p.fire ? 0 : 1000) + pr;
+}
+
+function fillQueueDept() {
+    var cur = $('#selQueueDept').val() || '';
+    var depts = {};
+    $.each(dashData.projects, function (i, p) { if (p.dept) { depts[p.dept] = true; } });
+    var opts = '<option value="">All departments</option>';
+    $.each(Object.keys(depts).sort(), function (i, d) {
+        opts += '<option value="' + attr(d) + '"' + (d === cur ? ' selected' : '') + '>' +
+                esc(d) + '</option>';
+    });
+    $('#selQueueDept').html(opts);
+}
+
+function renderQueue() {
+    if (!dashData) { return; }
+    var rows = queueRows();
+    rows.sort(function (a, b) {
+        return queueBand(a) - queueBand(b) || queueRank(a) - queueRank(b) ||
+               (b.subraw - a.subraw) || (b.num - a.num);
+    });
+    var c = [0, 0, 0];
+    $.each(rows, function (i, p) { c[queueBand(p)] += 1; });
+    $('#queueCounts').text(c[0] + ' ready · ' + c[1] + ' missing one item · ' +
+                           c[2] + ' need work');
+
+    var html = '';
+    $.each(rows.slice(0, queueAll ? rows.length : 15), function (i, p) {
+        var need = '';
+        if (p.rescode === 'NMI') {
+            need += '<span class="pt-need pt-need-sc">committee: needs more information</span>';
+        } else if (!(p.missing || []).length) {
+            need = '<span class="pt-need pt-need-ready">Ready</span>';
+        }
+        $.each(p.missing || [], function (j, m) { need += '<span class="pt-need">' + esc(m) + '</span>'; });
+        html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
+            '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' +
+                p.num + '</a>' +
+                (p.fresh ? '<span class="pt-fresh" title="Submitted this SC cycle">NEW</span>' : '') +
+            '</td>' +
+            '<td title="' + attr(p.desc) + '">' + esc(p.desc) +
+                (p.fire ? '<span class="pt-fire" title="Fire project">&#9650; fire</span>' : '') + '</td>' +
+            '<td>' + esc(p.rqst) + '</td>' +
+            '<td>' + esc(p.dept) + '</td>' +
+            '<td>' + esc(p.sub) + '</td>' +
+            '<td class="pt-num">' + ((p.deptpr >= 1 && p.deptpr <= 8) ? p.deptpr : '') + '</td>' +
+            '<td>' + need + '</td></tr>';
+    });
+    $('#queueBody').html(html ||
+        '<tr><td colspan="7" class="pt-empty">Nothing is waiting on the committee.</td></tr>');
+
+    var more = $('#queueMore');
+    if (rows.length > 15) {
+        more.text(queueAll ? 'Show the first 15' : 'Show all ' + rows.length).show();
+    } else {
+        more.hide();
+    }
+    $('#queueBody .pt-rowlink').on('click', function (e) {
+        if ($(e.target).is('a')) { return; }
+        openProj($(this).data('num'));
+    });
+}
+
+
 function renderPipeline(pipe, stages) {
     var html = '';
     $.each(stages, function (key, label) {
