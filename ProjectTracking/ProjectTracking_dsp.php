@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-03-B - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-C - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -466,6 +466,37 @@ function dspProjectTracking() {
                     '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
                     'dashboard'); ?>
 
+    <!-- the project list sits first, right under the lookup -->
+    <div class="pt-card">
+        <h2>Projects (Assignee &amp; Stage)</h2>
+        <div class="pt-toolbar">
+            <select id="selPgmr"><option value="">All assignees</option></select>
+            <select id="selStage"><option value="">All stages</option></select>
+        </div>
+        <div class="pt-tablewrap">
+            <table class="pt-grid" id="tblProjects">
+                <!-- fixed pixel columns for numbers and dates -->
+                <colgroup><col style="width:76px"><col style="width:22%">
+                <col style="width:88px"><col style="width:11%">
+                <col style="width:11%"><col style="width:6%">
+                <col style="width:6%"><col style="width:6%">
+                <col style="width:88px"></colgroup>
+                <thead><tr>
+                    <th data-k="num" class="pt-num">Project</th>
+                    <th data-k="desc">Name</th>
+                    <th data-k="sub" class="pt-wrap">Submitted</th>
+                    <th data-k="pgmr">Assigned</th>
+                    <th data-k="stage">SC stage</th>
+                    <th data-k="deptpr" class="pt-num pt-wrap">Dept prty</th>
+                    <th data-k="scpr" class="pt-num pt-wrap">SC prty</th>
+                    <th data-k="hours" class="pt-num">Hours</th>
+                    <th data-k="sched" class="pt-wrap">Sched comp</th>
+                </tr></thead>
+                <tbody id="gridBody"></tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="pt-card">
     <div class="pt-stats">
         <div class="pt-stat" id="statOpen" data-tile="open"
@@ -533,36 +564,6 @@ function dspProjectTracking() {
                 </div>
             </div>
             <button type="button" class="pt-btn" id="btnWeekly">Generate</button>
-        </div>
-    </div>
-
-    <div class="pt-card">
-        <h2>Projects (Assignee &amp; Stage)</h2>
-        <div class="pt-toolbar">
-            <select id="selPgmr"><option value="">All assignees</option></select>
-            <select id="selStage"><option value="">All stages</option></select>
-        </div>
-        <div class="pt-tablewrap">
-            <table class="pt-grid" id="tblProjects">
-                <!-- fixed pixel columns for numbers and dates -->
-                <colgroup><col style="width:76px"><col style="width:22%">
-                <col style="width:88px"><col style="width:11%">
-                <col style="width:11%"><col style="width:6%">
-                <col style="width:6%"><col style="width:6%">
-                <col style="width:88px"></colgroup>
-                <thead><tr>
-                    <th data-k="num" class="pt-num">Project</th>
-                    <th data-k="desc">Name</th>
-                    <th data-k="sub" class="pt-wrap">Submitted</th>
-                    <th data-k="pgmr">Assigned</th>
-                    <th data-k="stage">SC stage</th>
-                    <th data-k="deptpr" class="pt-num pt-wrap">Dept prty</th>
-                    <th data-k="scpr" class="pt-num pt-wrap">SC prty</th>
-                    <th data-k="hours" class="pt-num">Hours</th>
-                    <th data-k="sched" class="pt-wrap">Sched comp</th>
-                </tr></thead>
-                <tbody id="gridBody"></tbody>
-            </table>
         </div>
     </div>
 
