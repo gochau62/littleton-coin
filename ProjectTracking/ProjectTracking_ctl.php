@@ -531,20 +531,8 @@ function stageChip(stage, p) {
 }
 
 
-// while the box has text the projects card sits right under the header
-var projHome = null;
-function liftProjects(up) {
-    var card = $('#tblProjects').closest('.pt-card');
-    if (!projHome) { projHome = $('<div id="projHome"></div>').insertBefore(card); }
-    var lifted = card.prev().is('.pt-head');
-    if (up && !lifted) { card.insertAfter($('.pt-head')); }
-    if (!up && lifted) { card.insertAfter(projHome); }
-}
-
-
 function renderTable() {
     if (!dashData) { return; }
-    liftProjects($('#txtSearch').val().trim() !== '');
 
     // mark the active sort column with a direction arrow
     $('#tblProjects thead th').removeClass('pt-sort-asc pt-sort-desc');
