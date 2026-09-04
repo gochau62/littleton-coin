@@ -244,6 +244,12 @@ function fillQueueDept() {
     $('#selQueueDept').html(opts);
 }
 
+// checklist wording shortened to a chip; hover carries the full name
+var needShort = { 'sponsor approval': 'sponsor', 'payback justification': 'payback',
+                  'department priority': 'dept prty', 'project type': 'type',
+                  'description': 'descrip' };
+
+
 // the sort value a queue column offers
 function queueVal(p, k) {
     if (k === 'sub')    { return p.subraw; }
@@ -275,7 +281,10 @@ function renderQueue() {
         } else if (!(p.missing || []).length) {
             need = '<span class="pt-need pt-need-ready">Ready</span>';
         }
-        $.each(p.missing || [], function (j, m) { need += '<span class="pt-need">' + esc(m) + '</span>'; });
+        $.each(p.missing || [], function (j, m) {
+            need += '<span class="pt-need" title="' + attr(m) + '">' +
+                    esc(needShort[m] || m) + '</span>';
+        });
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' +
                 p.num + '</a>' +
@@ -643,11 +652,12 @@ function stageChip(stage, p) {
     if (p && p.missing && p.missing.length) { tip += ' - still needs: ' + p.missing.join(', '); }
     var chip = '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
                esc(sgShort[stage] || full) + '</span>';
-    // a recent submission reads New, with its stage under it when it still needs work
+    // a recent submission reads New, with Needs info beside it when short
     if (p && p.fresh) {
         var fresh = '<span class="pt-chip pt-chip-new" title="' +
                     attr('New request - ' + tip) + '">New</span>';
-        return (stage === 'awaiting' || stage === 'new') ? fresh : fresh + '<br>' + chip;
+        if (stage === 'awaiting' || stage === 'new') { return fresh; }
+        if (stage === 'needsinfo') { return fresh + chip; }
     }
     return chip;
 }
@@ -704,14 +714,14 @@ function renderTable() {
             '<td>' + esc(p.sub) + '</td>' +
             '<td>' + pgmr + '</td>' +
             '<td>' + stageChip(p.stage, p) + '</td>' +
-            '<td class="pt-num">' + p.deptpr + '</td>' +
-            '<td class="pt-num">' + p.scpr + '</td>' +
+            '<td class="pt-num" title="Dept priority ' + p.deptpr +
+                ', SC priority ' + p.scpr + '">' + p.deptpr + ' / ' + p.scpr + '</td>' +
             '<td class="pt-num">' + p.hours + '</td>' +
             '<td>' + esc(p.sched) + '</td>' +
             '</tr>';
     });
     $('#gridBody').html(html ||
-        '<tr><td colspan="9" class="pt-empty">No projects match.</td></tr>');
+        '<tr><td colspan="8" class="pt-empty">No projects match.</td></tr>');
 
     $('#gridBody .pt-rowlink').on('click', function (e) {
         if ($(e.target).is('a')) { return; }

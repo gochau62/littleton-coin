@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-03-H - deploy marker, check via view-source -->
+<!-- PT build 2026-09-03-I - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -228,8 +228,11 @@ function ptLookup(o) {
 /* the number keeps its badge beside it, and the chips wrap onto lines */
 #tblQueue td:first-child, #tblQueue td:last-child { white-space: normal;
            overflow: visible; text-overflow: clip; }
-.pt-need { display: inline-block; margin: .1rem .25rem .1rem 0; padding: .1rem .4rem;
-           border-radius: 5px; font-size: .7rem; font-weight: 600; line-height: 1.25;
+/* short chips that flow, so a row stays one or two lines tall */
+#tblQueue tbody td { padding-top: .35rem; padding-bottom: .35rem; }
+.pt-need { display: inline-block; margin: 1px 2px 1px 0; padding: 0 .3rem;
+           border-radius: 4px; font-size: .68rem; font-weight: 600; line-height: 1.5;
+           white-space: nowrap;
            background: var(--pt-chip-amber); color: var(--pt-amber); }
 .pt-need-ready { background: var(--pt-chip-green); color: var(--pt-green); }
 .pt-need-sc    { background: var(--pt-chip-red);   color: var(--pt-red); }
@@ -310,15 +313,15 @@ function ptLookup(o) {
            border-spacing: 0; font-size: .84rem; }
 
 .pt-grid thead th { position: sticky; top: 0; z-index: 5; background: #fafbfc;
-           color: var(--pt-muted); font-size: .7rem; font-weight: 600;
-           letter-spacing: .05em; text-transform: uppercase; text-align: left;
-           padding: .55rem .45rem; white-space: nowrap; cursor: pointer;
+           color: var(--pt-muted); font-size: .68rem; font-weight: 700;
+           letter-spacing: 0; text-transform: uppercase; text-align: left;
+           padding: .55rem .3rem; white-space: nowrap; cursor: pointer;
            border-bottom: 1px solid var(--pt-line); user-select: none; }
 .pt-grid thead th:hover { color: var(--pt-text); }
 .pt-grid thead th.pt-num { text-align: right; }
 .pt-grid thead th.pt-sort-asc::after  { content: " \2191"; color: var(--pt-blue); }
 .pt-grid thead th.pt-sort-desc::after { content: " \2193"; color: var(--pt-blue); }
-.pt-grid tbody td { padding: .5rem .45rem;
+.pt-grid tbody td { padding: .5rem .3rem;
            border-bottom: 1px solid var(--pt-line-soft); white-space: nowrap;
            overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
 .pt-grid tbody tr:last-child td { border-bottom: 0; }
@@ -327,6 +330,11 @@ function ptLookup(o) {
 .pt-grid tbody tr:hover td { background: #f8fafc; }
 /* two-line headings for the narrow priority/date columns */
 .pt-grid thead th.pt-wrap { white-space: normal; line-height: 1.15; }
+/* the sort arrow never wraps onto a line of its own */
+.pt-grid thead th::after { white-space: nowrap; }
+.pt-grid thead th.pt-sort-asc, .pt-grid thead th.pt-sort-desc { white-space: nowrap; }
+/* a heading trims rather than spilling into the next column */
+.pt-grid thead th { overflow: hidden; text-overflow: ellipsis; }
 
 /* override the framework's site-wide table styling */
 #stdPage table.pt-grid { table-layout: fixed; width: 100%;
@@ -356,7 +364,10 @@ function ptLookup(o) {
 
 /* stage chips in the table */
 .pt-chip { display: inline-block; padding: .14rem .4rem; border-radius: 5px;
-           font-size: .72rem; font-weight: 600; letter-spacing: .01em; }
+           font-size: .72rem; font-weight: 600; letter-spacing: .01em;
+           white-space: nowrap; vertical-align: middle; }
+/* New and its stage sit side by side on one line */
+.pt-chip + .pt-chip { margin-left: 3px; }
 .pt-chip-new       { background: var(--pt-chip-blue);  color: var(--pt-blue-dk); }
 .pt-chip-awaiting  { background: var(--pt-chip-gray);  color: var(--pt-muted); }
 .pt-chip-needsinfo { background: var(--pt-chip-amber); color: var(--pt-amber); }
@@ -500,21 +511,19 @@ function dspProjectTracking() {
         <div class="pt-tablewrap">
             <table class="pt-grid" id="tblProjects">
                 <!-- fixed pixel columns for numbers and dates -->
-                <colgroup><col style="width:76px"><col style="width:22%">
-                <col style="width:88px"><col style="width:11%">
-                <col style="width:11%"><col style="width:6%">
-                <col style="width:6%"><col style="width:6%">
-                <col style="width:88px"></colgroup>
+                <colgroup><col style="width:62px"><col>
+                <col style="width:96px"><col style="width:98px">
+                <col style="width:114px"><col style="width:68px">
+                <col style="width:56px"><col style="width:90px"></colgroup>
                 <thead><tr>
                     <th data-k="num" class="pt-num">Project</th>
                     <th data-k="desc">Name</th>
-                    <th data-k="sub" class="pt-wrap">Submitted</th>
+                    <th data-k="sub">Submitted</th>
                     <th data-k="pgmr">Assigned</th>
                     <th data-k="stage">SC stage</th>
-                    <th data-k="deptpr" class="pt-num pt-wrap">Dept prty</th>
-                    <th data-k="scpr" class="pt-num pt-wrap">SC prty</th>
+                    <th data-k="deptpr" class="pt-num" title="Department priority / SC priority">Prty D/S</th>
                     <th data-k="hours" class="pt-num">Hours</th>
-                    <th data-k="sched" class="pt-wrap">Sched comp</th>
+                    <th data-k="sched">Sched comp</th>
                 </tr></thead>
                 <tbody id="gridBody"></tbody>
             </table>
@@ -556,16 +565,16 @@ function dspProjectTracking() {
             </div>
             <div class="pt-tablewrap">
                 <table class="pt-grid" id="tblQueue">
-                    <colgroup><col style="width:116px"><col style="width:24%">
-                    <col style="width:12%"><col style="width:7%">
-                    <col style="width:84px"><col style="width:52px"><col></colgroup>
+                    <colgroup><col style="width:104px"><col style="width:15%">
+                    <col style="width:92px"><col style="width:44px">
+                    <col style="width:98px"><col style="width:44px"><col></colgroup>
                     <thead><tr>
                         <th data-k="num" class="pt-num">Project</th>
                         <th data-k="desc">Name</th>
                         <th data-k="rqst">Requester</th>
                         <th data-k="dept">Dept</th>
-                        <th data-k="sub" class="pt-wrap">Submitted</th>
-                        <th data-k="deptpr" class="pt-num pt-wrap">Dept prty</th>
+                        <th data-k="sub">Submitted</th>
+                        <th data-k="deptpr" class="pt-num" title="Department priority">Prty</th>
                         <th data-k="needs">Still needs</th>
                     </tr></thead>
                     <tbody id="queueBody"></tbody>

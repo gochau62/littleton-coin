@@ -173,11 +173,12 @@ function stageChip(stage, p) {
     if (p && p.missing && p.missing.length) { tip += ' - still needs: ' + p.missing.join(', '); }
     var chip = '<span class="pt-chip pt-chip-' + esc(stage) + '" title="' + attr(tip) + '">' +
                esc(sgShort[stage] || full) + '</span>';
-    // a recent submission reads New, with its stage under it when it still needs work
+    // a recent submission reads New, with Needs info beside it when short
     if (p && p.fresh) {
         var fresh = '<span class="pt-chip pt-chip-new" title="' +
                     attr('New request - ' + tip) + '">New</span>';
-        return (stage === 'awaiting' || stage === 'new') ? fresh : fresh + '<br>' + chip;
+        if (stage === 'awaiting' || stage === 'new') { return fresh; }
+        if (stage === 'needsinfo') { return fresh + chip; }
     }
     return chip;
 }
@@ -199,11 +200,16 @@ function stClass(status, label) {
     return 'pt-st-other';
 }
 
+// long status wording trimmed to fit; hover carries the full label
+var stShort = { 'Waiting user feedback': 'Waiting user',
+                'Waiting for user feedback': 'Waiting user',
+                'Est. not needed': 'No est. needed' };
+
 function statusChip(status, p) {
     if (!status) { return ''; }
     var full = (asgData.statuses && asgData.statuses[status]) || status;
     var html = '<span class="pt-st ' + stClass(status, full) + '" title="' + attr(full) + '">' +
-               esc(full) + '</span>';
+               esc(stShort[full] || full) + '</span>';
     // a queued project says when it starts
     if (p && p.start && full.toLowerCase().indexOf('queue') >= 0) {
         html += ' <span class="pt-cnt" title="Scheduled start">starts ' + esc(p.start) + '</span>';
@@ -220,10 +226,10 @@ function groupTable(rows) {
     // fixed column widths so every group's table lines up
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
         '<table class="pt-grid">' +
-        '<colgroup><col style="width:64px"><col style="width:13%">' +
-        '<col style="width:12.5%"><col style="width:48px"><col style="width:58px">' +
+        '<colgroup><col style="width:62px"><col style="width:104px">' +
+        '<col style="width:112px"><col style="width:44px"><col style="width:56px">' +
         '<col>' +
-        '<col style="width:64px"><col style="width:56px"><col style="width:92px">' +
+        '<col style="width:66px"><col style="width:52px"><col style="width:92px">' +
         '</colgroup><thead><tr>' +
         '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Status</th><th>Dept</th>' +
         '<th class="pt-num pt-wrap" title="Department priority / SC priority">Prty D/S</th>' +
