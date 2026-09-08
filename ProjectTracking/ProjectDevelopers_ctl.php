@@ -152,14 +152,33 @@ function groupOrder(names) {
 
 function fillDevFilter() {
     var current = $('#selPgmr').val() || '';
-    var pgmrs = {};
-    $.each(visibleRows(), function (i, p) { pgmrs[groupKey(p)] = true; });
-    var opts = '<option value="">All developers</option>';
+    var pgmrs = {}, others = {};
+    $.each(visibleRows(), function (i, p) {
+        var key = groupKey(p);
+        pgmrs[key] = true;
+        if (key === 'Other') { others[p.pgmr] = true; }
+    });
+    var opt = function (value, label) {
+        return '<option value="' + attr(value) + '"' +
+               (value === current ? ' selected' : '') + '>' + esc(label) + '</option>';
+    };
+    var opts = opt('', 'All developers');
     $.each(groupOrder(Object.keys(pgmrs)), function (i, n) {
-        opts += '<option value="' + attr(n) + '"' +
-                (n === current ? ' selected' : '') + '>' + esc(n) + '</option>';
+        if (n !== 'Other') { opts += opt(n, n); return; }
+        // the Other group, then each programmer inside it
+        opts += '<optgroup label="Other">' + opt('Other', 'All other');
+        $.each(Object.keys(others).sort(), function (j, o) { opts += opt(o, o); });
+        opts += '</optgroup>';
     });
     $('#selPgmr').html(opts);
+}
+
+
+// true when the row matches the developer filter choice
+function pgmrMatch(p, choice) {
+    if (choice === '') { return true; }
+    if (choice === 'Other' || choice === 'Unassigned') { return groupKey(p) === choice; }
+    return p.pgmr === choice;
 }
 
 
@@ -287,7 +306,7 @@ function renderGroups() {
     var rows = $.grep(visibleRows(), function (p) {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
-        if (fPgmr !== '' && groupKey(p) !== fPgmr) { return false; }
+        if (!pgmrMatch(p, fPgmr)) { return false; }
         if (fStatus !== '' && p.status !== fStatus) { return false; }
         return true;
     });
@@ -305,6 +324,14 @@ function renderGroups() {
         groups[key].push(p);
     });
     var names = groupOrder(Object.keys(groups));
+
+    // Other reads programmer by programmer, newest first inside each
+    if (groups['Other']) {
+        groups['Other'].sort(function (a, b) {
+            return (a.pgmr < b.pgmr) ? -1 : (a.pgmr > b.pgmr) ? 1 :
+                   (b.subraw || 0) - (a.subraw || 0) || (b.num - a.num);
+        });
+    }
 
     var html = '';
     $.each(names, function (i, name) {
