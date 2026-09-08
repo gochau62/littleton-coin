@@ -74,8 +74,7 @@ $GLOBALS['prjWrkAlias'] = array(
 
 // developers the monthly spreadsheet tracks; edit when team changes
 $GLOBALS['prjDevelopers'] = array(
-    'CMCBETH', 'DCOTE', 'GCHAU', 'JTAYLOR', 'KRAINVILLE', 'STRIPATHIP',
-    'TCONNOLLY',
+    'CMCBETH', 'DCOTE', 'GCHAU', 'JTAYLOR', 'KRAINVILLE', 'TCONNOLLY',
 );
 
 
@@ -88,6 +87,14 @@ function prjLegacyBase() {
 // true for a tracked developer profile
 function prjTrackedDev($pgmr) {
     return in_array(strtoupper(trim($pgmr)), $GLOBALS['prjDevelopers'], true);
+}
+
+
+// group heading: the developer, Other for anyone else, Unassigned
+function prjGroupKey($pgmr) {
+    $pgmr = strtoupper(trim($pgmr));
+    if ($pgmr === '') { return 'Unassigned'; }
+    return prjTrackedDev($pgmr) ? $pgmr : 'Other';
 }
 
 

@@ -216,10 +216,11 @@ closed out. Stale records:
 The developer groups themselves are pinned to the team the monthly
 spreadsheet tracks: `$GLOBALS['prjDevelopers']` at the top of
 `ProjectTracking_model.php` (CMCBETH, DCOTE, GCHAU, JTAYLOR, KRAINVILLE,
-STRIPATHIP, TCONNOLLY). The by-developer page, the programmer filters, the load chart
-and the workbook show those profiles plus Unassigned and no one else — a
-row assigned to any other profile stays out of those views. Edit that one
-list when the team changes.
+TCONNOLLY). Each of those profiles gets its own group on the by-developer
+page and in the workbook. Every other programmer lands together under one
+**Other** group, which carries an extra *Assigned* column so the row still
+says who owns it; Unassigned comes last. The load chart on the dashboard
+stays roster-only. Edit that one list when the team changes.
 
 Two caveats. `PRWKLDP` is rebuilt by the Reports screen's *Submit SC
 Reports* button, so the workload slice is only as fresh as the last refresh

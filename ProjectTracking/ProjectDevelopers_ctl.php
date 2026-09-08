@@ -125,24 +125,37 @@ function loadProjectDevelopers() {
 }
 
 
-// pipeline rows for tracked developers plus Unassigned only
+// every pipeline row; grouping decides where it lands
 function visibleRows() {
-    var devs = asgData.developers || [];
     return $.grep(asgData.projects, function (p) {
-        if (p.pipe === 0) { return false; }
-        return p.pgmr === '' || $.inArray(p.pgmr, devs) !== -1;
+        return p.pipe !== 0;
     });
+}
+
+
+// group heading: the developer, Other for anyone else, Unassigned
+function groupKey(p) {
+    if (p.pgmr === '') { return 'Unassigned'; }
+    var devs = asgData.developers || [];
+    return ($.inArray(p.pgmr, devs) !== -1) ? p.pgmr : 'Other';
+}
+
+
+// developers alphabetical, then Other, then Unassigned
+function groupOrder(names) {
+    var tail = ['Other', 'Unassigned'];
+    var head = $.grep(names, function (n) { return $.inArray(n, tail) === -1; }).sort();
+    $.each(tail, function (i, n) { if ($.inArray(n, names) !== -1) { head.push(n); } });
+    return head;
 }
 
 
 function fillDevFilter() {
     var current = $('#selPgmr').val() || '';
     var pgmrs = {};
-    $.each(visibleRows(), function (i, p) {
-        pgmrs[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
-    });
+    $.each(visibleRows(), function (i, p) { pgmrs[groupKey(p)] = true; });
     var opts = '<option value="">All developers</option>';
-    $.each(Object.keys(pgmrs).sort(), function (i, n) {
+    $.each(groupOrder(Object.keys(pgmrs)), function (i, n) {
         opts += '<option value="' + attr(n) + '"' +
                 (n === current ? ' selected' : '') + '>' + esc(n) + '</option>';
     });
@@ -222,16 +235,22 @@ function statusChip(status, p) {
 }
 
 
-function groupTable(rows) {
+function groupTable(rows, showPgmr) {
     // fixed column widths so every group's table lines up
     var html = '<div class="pt-card" style="margin-top:.3rem"><div class="pt-tablewrap">' +
-        '<table class="pt-grid">' +
-        '<colgroup><col style="width:62px"><col style="width:104px">' +
+        // the extra column gets a floor so the description keeps its room
+        '<table class="pt-grid"' + (showPgmr ? ' style="min-width:800px"' : '') + '>' +
+        '<colgroup><col style="width:62px">' +
+        (showPgmr ? '<col style="width:100px">' : '') +
+        '<col style="width:104px">' +
         '<col style="width:112px"><col style="width:44px"><col style="width:56px">' +
         '<col>' +
         '<col style="width:66px"><col style="width:52px"><col style="width:92px">' +
         '</colgroup><thead><tr>' +
-        '<th class="pt-num">Pjt#</th><th>SC stage</th><th>Status</th><th>Dept</th>' +
+        '<th class="pt-num">Pjt#</th>' +
+        // the Other group still says who is assigned
+        (showPgmr ? '<th>Assigned</th>' : '') +
+        '<th>SC stage</th><th>Status</th><th>Dept</th>' +
         '<th class="pt-num pt-wrap" title="Department priority / SC priority">Prty D/S</th>' +
         '<th>Description</th>' +
         '<th class="pt-num" title="Estimate, low to high hours">Est</th>' +
@@ -242,6 +261,7 @@ function groupTable(rows) {
         // the whole row opens the project screen
         html += '<tr class="pt-rowlink" data-num="' + p.num + '">' +
             '<td class="pt-num"><a href="' + projUrl(p.num) + '" target="_blank" rel="noopener">' + p.num + '</a></td>' +
+            (showPgmr ? '<td title="' + attr(p.pgmr) + '">' + esc(p.pgmr) + '</td>' : '') +
             '<td>' + stageChip(p.stage, p) + '</td>' +
             '<td>' + statusChip(p.status, p) + '</td>' +
             '<td>' + esc(p.dept) + '</td>' +
@@ -267,7 +287,7 @@ function renderGroups() {
     var rows = $.grep(visibleRows(), function (p) {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
-        if (fPgmr !== '' && (p.pgmr === '' ? 'Unassigned' : p.pgmr) !== fPgmr) { return false; }
+        if (fPgmr !== '' && groupKey(p) !== fPgmr) { return false; }
         if (fStatus !== '' && p.status !== fStatus) { return false; }
         return true;
     });
@@ -277,16 +297,14 @@ function renderGroups() {
         return (b.subraw || 0) - (a.subraw || 0) || (b.num - a.num);
     });
 
-    // group by developer, alphabetical, Unassigned last
+    // group by developer, then Other, then Unassigned
     var groups = {};
     $.each(rows, function (i, p) {
-        var key = (p.pgmr === '') ? 'Unassigned' : p.pgmr;
+        var key = groupKey(p);
         if (!groups[key]) { groups[key] = []; }
         groups[key].push(p);
     });
-    var names = Object.keys(groups).sort();
-    var un = names.indexOf('Unassigned');
-    if (un !== -1) { names.splice(un, 1); names.push('Unassigned'); }
+    var names = groupOrder(Object.keys(groups));
 
     var html = '';
     $.each(names, function (i, name) {
@@ -295,7 +313,7 @@ function renderGroups() {
                 (name === 'Unassigned' ? ' class="pt-unassigned"' : '') + '>' +
                 esc(name) + ' <span class="pt-cnt">&mdash; ' + list.length +
                 ' project' + (list.length === 1 ? '' : 's') + '</span></h3>' +
-                groupTable(list) + '</div>';
+                groupTable(list, name === 'Other') + '</div>';
     });
 
     $('#groupList').html(html ||

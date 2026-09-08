@@ -105,16 +105,17 @@ function prjRowOut($row) {
 function prjGroupByPgmr($projects) {
     $groups = array();
     foreach ($projects as $row) {
-        $pgmr = trim($row['PJPGMR']);
-        if ($pgmr === '') { $pgmr = 'Unassigned'; }
+        $pgmr = prjGroupKey($row['PJPGMR']);
         if (!isset($groups[$pgmr])) { $groups[$pgmr] = array(); }
         $groups[$pgmr][] = $row;
     }
-    $unassigned = $groups['Unassigned'] ?? null;
-    unset($groups['Unassigned']);
+    // developers alphabetical, then Other, then Unassigned
+    $tail = array();
+    foreach (array('Other', 'Unassigned') as $key) {
+        if (isset($groups[$key])) { $tail[$key] = $groups[$key]; unset($groups[$key]); }
+    }
     ksort($groups);
-    if ($unassigned !== null) { $groups['Unassigned'] = $unassigned; }
-    return $groups;
+    return $groups + $tail;
 }
 
 
@@ -228,22 +229,17 @@ switch ($action) {
             }));
         }
 
-        // tracked developers plus Unassigned only
-        $projects = array_values(array_filter($projects, function ($row) {
-            $pgmr = trim($row['PJPGMR']);
-            return $pgmr === '' || prjTrackedDev($pgmr);
-        }));
-
         $book  = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $book->getActiveSheet();
         $sheet->setTitle('Projects by developer');
 
-        $heads = array('Pjt#', 'SC Stage', 'Status', 'Dept', 'Dept Prty',
+        // Assigned names the programmer inside the Other group
+        $heads = array('Pjt#', 'Assigned', 'SC Stage', 'Status', 'Dept', 'Dept Prty',
                        'SC Prty', 'Description', 'Low Est', 'Hi Est', 'Hours',
                        'Sched Comp', 'Comp Date');
-        $widths = array('A' => 10, 'B' => 16, 'C' => 15, 'D' => 8, 'E' => 10,
-                        'F' => 9, 'G' => 52, 'H' => 9, 'I' => 9, 'J' => 9,
-                        'K' => 12, 'L' => 12);
+        $widths = array('A' => 10, 'B' => 13, 'C' => 16, 'D' => 15, 'E' => 8, 'F' => 10,
+                        'G' => 9, 'H' => 52, 'I' => 9, 'J' => 9, 'K' => 9,
+                        'L' => 12, 'M' => 12);
         foreach ($widths as $col => $w) {
             $sheet->getColumnDimension($col)->setWidth($w);
         }
@@ -253,17 +249,18 @@ switch ($action) {
             $count = count($rows);
             $sheet->setCellValue('A' . $r,
                 $pgmr . ' - ' . $count . ' project' . ($count === 1 ? '' : 's'));
-            $sheet->mergeCells('A' . $r . ':L' . $r);
+            $sheet->mergeCells('A' . $r . ':M' . $r);
             $sheet->getStyle('A' . $r)->getFont()->setBold(true)->setSize(12);
             $r += 1;
 
             $sheet->fromArray($heads, NULL, 'A' . $r);
-            $sheet->getStyle('A' . $r . ':L' . $r)->getFont()->setBold(true);
+            $sheet->getStyle('A' . $r . ':M' . $r)->getFont()->setBold(true);
             $r += 1;
 
             foreach ($rows as $row) {
                 $sheet->fromArray(array(
                     intval($row['PJNUM']),
+                    trim($row['PJPGMR']),
                     $GLOBALS['prjStages'][$row['STAGE']] ?? ucfirst($row['STAGE']),
                     $GLOBALS['prjStatuses'][$row['STATUS']] ?? '',
                     trim($row['PJDEPT']),
