@@ -557,28 +557,28 @@ function prjDashboardRollup($projects) {
             }
 
             $pgmr = trim($row['PJPGMR']);
-            if ($pgmr === '') {
-                $tiles['unassigned'] += 1;
-                $pgmr = 'Unassigned';
-            }
-            // load chart bars: tracked developers plus Unassigned
-            if ($pgmr === 'Unassigned' || prjTrackedDev($pgmr)) {
-                if (!isset($load[$pgmr])) { $load[$pgmr] = 0; }
-                $load[$pgmr] += 1;
-            }
+            if ($pgmr === '') { $tiles['unassigned'] += 1; }
+
+            // load chart bars: a developer each, everyone else under Other
+            $bar = prjGroupKey($pgmr);
+            if (!isset($load[$bar])) { $load[$bar] = 0; }
+            $load[$bar] += 1;
 
             // donut: the assigned project's own Work Status, Not set included
-            if (prjTrackedDev($pgmr) && isset($status[$row['STATUS']])) {
+            if ($pgmr !== '' && isset($status[$row['STATUS']])) {
                 $status[$row['STATUS']] += 1;
             }
         }
     }
 
-    // busiest first, Unassigned last in red
-    $unassigned = $load['Unassigned'] ?? 0;
-    unset($load['Unassigned']);
+    // busiest first, then Other, Unassigned last in red
+    $tail = array();
+    foreach (array('Other', 'Unassigned') as $key) {
+        if (!empty($load[$key])) { $tail[$key] = $load[$key]; }
+        unset($load[$key]);
+    }
     arsort($load);
-    if ($unassigned > 0) { $load['Unassigned'] = $unassigned; }
+    $load = array_merge($load, $tail);
 
     return array('tiles' => $tiles, 'pipeline' => $pipeline,
                  'status' => $status, 'load' => $load);
@@ -686,8 +686,8 @@ function prjWeeklyDigest($conn, $from, $to) {
 
     foreach ($time as $t) {
         $user = trim($t['TMUSER']);
-        // the report covers the tracked developers, nobody else
-        if ($user === '' || !prjTrackedDev($user)) { continue; }
+        // everyone who logged work; the split into Other comes later
+        if ($user === '') { continue; }
         $num = intval($t['TMPROJ']);
         // skip the legacy catch-all bucket, same as prjProjects
         if ($num <= 0) { continue; }
@@ -702,7 +702,7 @@ function prjWeeklyDigest($conn, $from, $to) {
 
     foreach ($notes as $n) {
         $user = trim($n['NTUSER']);
-        if ($user === '' || !prjTrackedDev($user)) { continue; }
+        if ($user === '') { continue; }
         // only IT comments describe the work; the other types are project
         // admin and belong in the changes section
         $type = trim($n['NTTYPE']);
@@ -731,7 +731,7 @@ function prjWeeklyDigest($conn, $from, $to) {
     // comments filed under a programmer's name count as that person's work
     foreach (prjPgmrComments($conn, $from, $to) as $c) {
         $user = strtoupper(trim(strval($c['CMPGMR'] ?? '')));
-        if ($user === '' || !prjTrackedDev($user)) { continue; }
+        if ($user === '') { continue; }
         $text = trim(strval($c['CMTEXT'] ?? ''));
         if ($text === '') { continue; }
         if (!isset($dev[$user])) { $dev[$user] = $blank; }
@@ -766,15 +766,23 @@ function prjWeeklyDigest($conn, $from, $to) {
 
     foreach ($completed as $c) {
         $user = trim($c['PJPGMR']);
-        if ($user === '' || !prjTrackedDev($user)) { continue; }
+        if ($user === '') { continue; }
         if (!isset($dev[$user])) { $dev[$user] = $blank; }
         $dev[$user]['completed'][] = array(
             'num' => intval($c['PJNUM']), 'desc' => trim($c['PJDESC']));
     }
 
     ksort($dev);
-    $out = array('from' => $from, 'to' => $to, 'developers' => $dev,
+    // the tracked team writes up one section each, everyone else shares Other
+    $team = array();
+    $other = array();
+    foreach ($dev as $who => $d) {
+        if (prjTrackedDev($who)) { $team[$who] = $d; } else { $other[$who] = $d; }
+    }
+
+    $out = array('from' => $from, 'to' => $to, 'developers' => $team,
                  'changes' => $changes);
+    if (!empty($other)) { $out['other_programmers'] = $other; }
     if ($txtDropped > 0) {
         $out['comments_note'] = $txtDropped .
             ' comment texts were left out of the digest for size';
@@ -814,32 +822,44 @@ function prjWeeklyWrite($summary) {
 }
 
 
+// one person's hours, comments and completions for the fallback
+function prjFallbackLines($user, $d, &$lines) {
+    $lines[] = $user . ':';
+    if ($d['hours_total'] > 0) {
+        $projLines = array();
+        foreach ($d['projects'] as $num => $p) {
+            $projLines[] = $num . ' ' . $p['desc'] . ' (' .
+                           rtrim(rtrim(number_format($p['hours'], 2), '0'), '.') . ' hrs)';
+        }
+        $lines[] = '  Time: ' .
+                   rtrim(rtrim(number_format($d['hours_total'], 2), '0'), '.') .
+                   ' hours - ' . implode('; ', $projLines);
+    }
+    if (!empty($d['comments'])) {
+        $cmt = array();
+        foreach ($d['comments'] as $type => $cnt) { $cmt[] = $cnt . ' ' . $type; }
+        $lines[] = '  Comments: ' . implode(', ', $cmt);
+    }
+    foreach ($d['completed'] as $c) {
+        $lines[] = '  Completed: ' . $c['num'] . ' ' . $c['desc'];
+    }
+    $lines[] = '';
+}
+
+
 // deterministic fallback summary when the API fails
 function prjFallbackSummary($digest) {
     $lines = array();
     foreach ($digest['developers'] as $user => $d) {
-        $lines[] = $user . ':';
-        if ($d['hours_total'] > 0) {
-            $projLines = array();
-            foreach ($d['projects'] as $num => $p) {
-                $projLines[] = $num . ' ' . $p['desc'] . ' (' .
-                               rtrim(rtrim(number_format($p['hours'], 2), '0'), '.') . ' hrs)';
-            }
-            $lines[] = '  Time: ' .
-                       rtrim(rtrim(number_format($d['hours_total'], 2), '0'), '.') .
-                       ' hours - ' . implode('; ', $projLines);
-        }
-        if (!empty($d['comments'])) {
-            $cmt = array();
-            foreach ($d['comments'] as $type => $cnt) { $cmt[] = $cnt . ' ' . $type; }
-            $lines[] = '  Comments: ' . implode(', ', $cmt);
-        }
-        foreach ($d['completed'] as $c) {
-            $lines[] = '  Completed: ' . $c['num'] . ' ' . $c['desc'];
-        }
-        $lines[] = '';
+        prjFallbackLines($user, $d, $lines);
     }
-    if (empty($digest['developers'])) {
+    // the rest of the programmers keep their names under one heading
+    $other = $digest['other_programmers'] ?? array();
+    if (!empty($other)) {
+        $lines[] = 'OTHER PROGRAMMERS';
+        foreach ($other as $user => $d) { prjFallbackLines($user, $d, $lines); }
+    }
+    if (empty($digest['developers']) && empty($other)) {
         $lines[] = 'No time, comments, or completions were recorded this week.';
     }
     return trim(implode("\n", $lines));
@@ -931,7 +951,9 @@ function prjAiSummary($digest) {
         "the text of the IT comments they wrote (the notes array: project " .
         "num, date, type, text; type PgmrCmt is a comment filed under that " .
         "developer's name on the project screen, 'by' says who wrote it), " .
-        "and the projects they completed. A " .
+        "and the projects they completed. An other_programmers object may " .
+        "hold the same shape for people outside the tracked team who logged " .
+        "work this period. A " .
         "separate top-level changes array lists project admin activity by " .
         "anyone - new projects, setup and description edits, payback " .
         "entries, status moves.\n" .
@@ -954,13 +976,21 @@ function prjAiSummary($digest) {
         "activity. If a developer has very little activity, one sentence is fine.\n" .
         "5. Only the developers in the digest get a section. Never write a " .
         "section for anyone who only appears in the changes array.\n" .
-        "6. After the developer sections, add a section headed exactly " .
+        "6. The other_programmers object is people outside the tracked team. " .
+        "They get no section of their own. Cover them together in one " .
+        "section headed exactly OTHER PROGRAMMERS, naming each person and " .
+        "saying in one or two sentences what they worked on, what their " .
+        "comments report, and anything they completed. Skip the section " .
+        "when the object is absent or empty.\n" .
+        "7. After those, add a section headed exactly " .
         "PROJECT UPDATES: two to four sentences on the changes array - new " .
         "projects, setup and description edits, status moves - naming who " .
         "made them. Skip the section when the array is empty.\n" .
-        "7. Close with one sentence on the whole period, starting " .
-        "\"Overview:\" (total hours, completions).\n" .
-        "8. Plain text inside the summary - no markdown symbols, no tables; " .
+        "8. Close with one sentence on the whole period, starting " .
+        "\"Overview:\" (total hours, completions), counting everyone.\n" .
+        "9. Section order: the developer sections, then OTHER PROGRAMMERS, " .
+        "then PROJECT UPDATES, then the Overview line.\n" .
+        "10. Plain text inside the summary - no markdown symbols, no tables; " .
         "separate sections with blank lines.\n" .
         'Return ONLY JSON {"summary": "the full summary text"}.';
 

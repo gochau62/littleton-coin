@@ -213,14 +213,31 @@ closed out. Stale records:
   screens show the working list, like the monthly spreadsheet. The ajax
   endpoint still honors `complete=Y` / `stale=Y` for ad-hoc pulls.
 
-The developer groups themselves are pinned to the team the monthly
-spreadsheet tracks: `$GLOBALS['prjDevelopers']` at the top of
-`ProjectTracking_model.php` (CMCBETH, DCOTE, GCHAU, JTAYLOR, KRAINVILLE,
-TCONNOLLY). Each of those profiles gets its own group on the by-developer
-page and in the workbook. Every other programmer lands together under one
-**Other** group, which carries an extra *Assigned* column so the row still
-says who owns it; Unassigned comes last. The load chart on the dashboard
-stays roster-only. Edit that one list when the team changes.
+### The roster and Other
+
+The named developer groups are pinned to the team the monthly spreadsheet
+tracks: `$GLOBALS['prjDevelopers']` at the top of `ProjectTracking_model.php`
+(CMCBETH, DCOTE, GCHAU, JTAYLOR, KRAINVILLE, TCONNOLLY). Edit that one list
+when the team changes. `prjGroupKey()` turns a programmer profile into its
+heading — the profile itself for a roster name, `Other` for anyone else,
+`Unassigned` for a blank. Nobody's work is dropped for being off the roster;
+the roster only decides whether they are named on their own or grouped:
+
+| Where | Roster developer | Everyone else |
+| --- | --- | --- |
+| By-developer page, Excel workbook | own group | one **Other** group, with an *Assigned* column naming them |
+| Dashboard projects table | row shows the profile | row shows the profile |
+| Assignee / developer filter | own choice | an **Other** optgroup: *All other*, then each name |
+| Dashboard load chart | own bar | one slate **Other** bar, clickable like the rest |
+| Status donut | counted | counted (every assigned project) |
+| Weekly AI summary | own section | one **OTHER PROGRAMMERS** section naming each |
+
+In the weekly digest, `prjWeeklyDigest()` gathers hours, IT comments,
+programmer comments and completions for every profile, then splits the result
+into `developers` (roster) and `other_programmers` (the rest). Project admin
+work — new projects, description and setup edits — still lands in the
+top-level `changes` array rather than giving its author a section, so a
+requester who only writes a description never reads as a developer.
 
 Two caveats. `PRWKLDP` is rebuilt by the Reports screen's *Submit SC
 Reports* button, so the workload slice is only as fresh as the last refresh

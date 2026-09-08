@@ -365,8 +365,10 @@ function renderLoad(load) {
         var count = load[name];
         var y = i * rowH + 6;
         var len = Math.max(barH, Math.round(plotW * count / max));
-        var color = (name === 'Unassigned') ? '#d03b3b' : '#2a78d6';
-        var label = (name === 'Unassigned') ? 'Unassigned' : name;
+        // Unassigned red, the Other grouping slate, a person blue
+        var color = (name === 'Unassigned') ? '#d03b3b'
+                  : (name === 'Other') ? '#64748b' : '#2a78d6';
+        var label = name;
 
         // the row band sits behind everything: it takes the hover highlight
         // and catches the click across the whole row
@@ -490,7 +492,7 @@ function weeklyHtml(text) {
         var first = lines[0].trim().replace(/:$/, '');
         if (/^((week|month|period)\s+)?overview/i.test(first)) {
             html += '<div class="pt-wk-total">' + body(b) + '</div>';
-        } else if (lines.length > 1 && /^[A-Z][A-Z0-9 ._-]{1,14}$/.test(first)) {
+        } else if (lines.length > 1 && /^[A-Z][A-Z0-9 ._-]{1,20}$/.test(first)) {
             html += '<div class="pt-wk-dev"><h3>' + esc(first) + '</h3><p>' +
                     body(lines.slice(1).join('\n').trim()) + '</p></div>';
         } else {
@@ -611,24 +613,47 @@ function generateWeekly() {
 }
 
 
+// group key: the developer, Other for anyone else, Unassigned
+function groupKey(p) {
+    if (p.pgmr === '') { return 'Unassigned'; }
+    var devs = (dashData && dashData.developers) || [];
+    return ($.inArray(p.pgmr, devs) !== -1) ? p.pgmr : 'Other';
+}
+
+
+// true when the row matches the assignee filter choice
+function pgmrMatch(p, choice) {
+    if (choice === '') { return true; }
+    if (choice === 'Other' || choice === 'Unassigned') { return groupKey(p) === choice; }
+    return p.pgmr === choice;
+}
+
+
 function fillFilters(resp) {
     // keep the current selections across a refresh
     var curPgmr = $('#selPgmr').val() || '';
     var curStage = $('#selStage').val() || '';
 
-    // filter lists the tracked developers plus Unassigned
-    var have = {};
+    // the tracked developers, then everyone else under Other, then Unassigned
+    var have = {}, others = {};
     $.each(resp.projects, function (i, p) {
-        have[p.pgmr === '' ? 'Unassigned' : p.pgmr] = true;
+        have[groupKey(p)] = true;
+        if (groupKey(p) === 'Other') { others[p.pgmr] = true; }
     });
     var names = $.grep((resp.developers || []).slice().sort(), function (n) {
         return have[n] === true;
     });
-    if (have['Unassigned']) { names.push('Unassigned'); }
-    var opts = '<option value="">All assignees</option>';
-    $.each(names, function (i, n) {
-        opts += '<option value="' + attr(n) + '">' + esc(n) + '</option>';
-    });
+    var opt = function (value, label) {
+        return '<option value="' + attr(value) + '">' + esc(label) + '</option>';
+    };
+    var opts = opt('', 'All assignees');
+    $.each(names, function (i, n) { opts += opt(n, n); });
+    if (have['Other']) {
+        opts += '<optgroup label="Other">' + opt('Other', 'All other');
+        $.each(Object.keys(others).sort(), function (i, o) { opts += opt(o, o); });
+        opts += '</optgroup>';
+    }
+    if (have['Unassigned']) { opts += opt('Unassigned', 'Unassigned'); }
     $('#selPgmr').html(opts).val(curPgmr);
     if ($('#selPgmr').val() === null) { $('#selPgmr').val(''); }
 
@@ -679,7 +704,7 @@ function renderTable() {
     var rows = $.grep(dashData.projects, function (p) {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
-        if (fPgmr !== '' && (p.pgmr === '' ? 'Unassigned' : p.pgmr) !== fPgmr) { return false; }
+        if (!pgmrMatch(p, fPgmr)) { return false; }
         // New request is the recent-submission flag, not a stage
         if (fStage === 'new') { if (!p.fresh) { return false; } }
         else if (fStage !== '' && p.stage !== fStage) { return false; }
