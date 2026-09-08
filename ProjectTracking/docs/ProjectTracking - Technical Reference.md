@@ -213,10 +213,13 @@ closed out. Stale records:
   screens show the working list, like the monthly spreadsheet. The ajax
   endpoint still honors `complete=Y` / `stale=Y` for ad-hoc pulls.
 
-The developer groups themselves are pinned to the team the monthly
-spreadsheet tracks: `$GLOBALS['prjDevelopers']` at the top of
-`ProjectTracking_model.php` (CMCBETH, DCOTE, GCHAU, JTAYLOR, KRAINVILLE,
-TCONNOLLY). The by-developer page, the programmer filters, the load chart
+The developer views show **every programmer**. `prjLoadDevelopers()` builds
+the roster on each load from the programmer dropdown file (`PRIDTRANSP`
+through the `PGMR` read) plus anyone holding a project, so a new hire
+appears without a code change. To drop somebody, add their profile to
+`$GLOBALS['prjDevExclude']` at the top of `ProjectTracking_model.php`; it
+is empty today. `$GLOBALS['prjDevelopers']` is the loaded roster, not a
+list to edit. The by-developer page, the programmer filters, the load chart
 and the workbook show those profiles plus Unassigned and no one else — a
 row assigned to any other profile stays out of those views. Edit that one
 list when the team changes.
