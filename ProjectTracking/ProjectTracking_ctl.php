@@ -621,39 +621,23 @@ function groupKey(p) {
 }
 
 
-// true when the row matches the assignee filter choice
-function pgmrMatch(p, choice) {
-    if (choice === '') { return true; }
-    if (choice === 'Other' || choice === 'Unassigned') { return groupKey(p) === choice; }
-    return p.pgmr === choice;
-}
-
-
 function fillFilters(resp) {
     // keep the current selections across a refresh
     var curPgmr = $('#selPgmr').val() || '';
     var curStage = $('#selStage').val() || '';
 
-    // the tracked developers, then everyone else under Other, then Unassigned
-    var have = {}, others = {};
-    $.each(resp.projects, function (i, p) {
-        have[groupKey(p)] = true;
-        if (groupKey(p) === 'Other') { others[p.pgmr] = true; }
-    });
+    // the tracked developers, then Other, then Unassigned
+    var have = {};
+    $.each(resp.projects, function (i, p) { have[groupKey(p)] = true; });
     var names = $.grep((resp.developers || []).slice().sort(), function (n) {
         return have[n] === true;
     });
-    var opt = function (value, label) {
-        return '<option value="' + attr(value) + '">' + esc(label) + '</option>';
-    };
-    var opts = opt('', 'All assignees');
-    $.each(names, function (i, n) { opts += opt(n, n); });
-    if (have['Other']) {
-        opts += '<optgroup label="Other">' + opt('Other', 'All other');
-        $.each(Object.keys(others).sort(), function (i, o) { opts += opt(o, o); });
-        opts += '</optgroup>';
-    }
-    if (have['Unassigned']) { opts += opt('Unassigned', 'Unassigned'); }
+    if (have['Other']) { names.push('Other'); }
+    if (have['Unassigned']) { names.push('Unassigned'); }
+    var opts = '<option value="">All assignees</option>';
+    $.each(names, function (i, n) {
+        opts += '<option value="' + attr(n) + '">' + esc(n) + '</option>';
+    });
     $('#selPgmr').html(opts).val(curPgmr);
     if ($('#selPgmr').val() === null) { $('#selPgmr').val(''); }
 
@@ -704,7 +688,7 @@ function renderTable() {
     var rows = $.grep(dashData.projects, function (p) {
         if (q !== '' && String(p.num).indexOf(q) === -1 &&
             p.desc.toLowerCase().indexOf(q) === -1) { return false; }
-        if (!pgmrMatch(p, fPgmr)) { return false; }
+        if (fPgmr !== '' && groupKey(p) !== fPgmr) { return false; }
         // New request is the recent-submission flag, not a stage
         if (fStage === 'new') { if (!p.fresh) { return false; } }
         else if (fStage !== '' && p.stage !== fStage) { return false; }

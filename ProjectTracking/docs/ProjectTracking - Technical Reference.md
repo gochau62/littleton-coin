@@ -227,7 +227,7 @@ the roster only decides whether they are named on their own or grouped:
 | --- | --- | --- |
 | By-developer page, Excel workbook | own group | one **Other** group, with an *Assigned* column naming them |
 | Dashboard projects table | row shows the profile | row shows the profile |
-| Assignee / developer filter | own choice | an **Other** optgroup: *All other*, then each name |
+| Assignee / developer filter | own choice | one **Other** choice covering them all |
 | Dashboard load chart | own bar | one slate **Other** bar, clickable like the rest |
 | Status donut | counted | counted (every assigned project) |
 | Weekly AI summary | own section | one **OTHER PROGRAMMERS** section naming each |
