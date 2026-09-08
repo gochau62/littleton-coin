@@ -72,11 +72,11 @@ $GLOBALS['prjWrkAlias'] = array(
     'QUEUE' => 'INQ',
 );
 
-// every programmer shows; this list is loaded from the box each time
-$GLOBALS['prjDevelopers'] = array();
-
-// profiles to keep off the developer views; add names here to drop them
-$GLOBALS['prjDevExclude'] = array();
+// developers the monthly spreadsheet tracks; edit when team changes
+$GLOBALS['prjDevelopers'] = array(
+    'CMCBETH', 'DCOTE', 'GCHAU', 'JTAYLOR', 'KRAINVILLE', 'STRIPATHIP',
+    'TCONNOLLY',
+);
 
 
 // blank in production, so its own links stay relative
@@ -85,38 +85,9 @@ function prjLegacyBase() {
 }
 
 
-// true for any programmer profile that has not been excluded
+// true for a tracked developer profile
 function prjTrackedDev($pgmr) {
-    $p = strtoupper(trim(strval($pgmr)));
-    if ($p === '') { return false; }
-    foreach ($GLOBALS['prjDevExclude'] as $x) {
-        if ($p === strtoupper(trim($x))) { return false; }
-    }
-    // before the roster loads, nobody is filtered out
-    return empty($GLOBALS['prjDevelopers'])
-           || in_array($p, $GLOBALS['prjDevelopers'], true);
-}
-
-
-// the roster: the programmer dropdown file plus anyone holding a
-// project, less the excluded names
-function prjLoadDevelopers($conn, $seen = array()) {
-    $list = array();
-    $rows = prjProgrammers($conn);
-    // an unreadable list just means the projects decide
-    if ($rows === false) { $GLOBALS['prjErr'] = ''; $rows = array(); }
-    foreach ($rows as $r) {
-        $p = strtoupper(trim(strval($r['PGPROFILE'] ?? '')));
-        if ($p !== '') { $list[$p] = true; }
-    }
-    foreach ($seen as $p => $yes) {
-        if ($p !== '') { $list[$p] = true; }
-    }
-    foreach ($GLOBALS['prjDevExclude'] as $x) {
-        unset($list[strtoupper(trim($x))]);
-    }
-    ksort($list);
-    $GLOBALS['prjDevelopers'] = array_keys($list);
+    return in_array(strtoupper(trim($pgmr)), $GLOBALS['prjDevelopers'], true);
 }
 
 
@@ -194,11 +165,9 @@ function prjProjects($conn, $includeComplete = 'N') {
     if ($rows === false) { return false; }
 
     $out = array();
-    $seen = array();
     foreach ($rows as $row) {
         // record 0 is a legacy catch-all, skip it
         if (intval($row['PJNUM']) <= 0) { continue; }
-        $seen[strtoupper(trim(strval($row['PJPGMR'] ?? '')))] = true;
         $miss = prjChecklistMissing($row);
         $row['MISSING'] = is_array($miss) ? $miss : array();
         $row['STAGE']   = prjStage($row, $miss);
@@ -206,7 +175,6 @@ function prjProjects($conn, $includeComplete = 'N') {
         prjRegisterStatus($row);
         $out[] = $row;
     }
-    prjLoadDevelopers($conn, $seen);
     return $out;
 }
 
