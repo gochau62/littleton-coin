@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - Project_ctl.php                   *  -->
+<!--  * Program Name - ProjectDetail_ctl.php             *  -->
 <!--  *                                                 *  -->
 <!--  * Author    -  G CHAU                             *  -->
 <!--  *              Littleton Coin Company             *  -->
@@ -192,7 +192,7 @@ var scrGeneral = [
 
 $(document).ready(function () {
     if (scrNum <= 0) {
-        paneError('No project number. Open this screen as Project_ctl.php?projnum=260084');
+        paneError('No project number. Open this screen as ProjectDetail_ctl.php?projnum=260084');
         return;
     }
     loadProject();

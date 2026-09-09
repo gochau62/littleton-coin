@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - Time_ctl.php                     *  -->
+<!--  * Program Name - ProjectTimeEntry_ctl.php         *  -->
 <!--  *                                                 *  -->
 <!--  * Author    -  G CHAU                             *  -->
 <!--  *              Littleton Coin Company             *  -->
