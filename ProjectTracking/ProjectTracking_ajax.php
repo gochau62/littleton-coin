@@ -62,6 +62,14 @@ function prjFmtDate($dec) {
 }
 
 
+// YYYYMMDD as YYYY-MM-DD, what a date input reads and writes
+function prjIsoDate($dec) {
+    $s = strval(intval($dec));
+    if (strlen($s) !== 8) { return ''; }
+    return substr($s, 0, 4) . '-' . substr($s, 4, 2) . '-' . substr($s, 6, 2);
+}
+
+
 // trim a row to what the screens render
 function prjRowOut($row) {
     return array(
@@ -123,6 +131,10 @@ function prjProjectOut($r) {
         'rescod'   => $s('PRRESCOD'),
         'force2sc' => $s('PRFORCE2SC'),
         'usracpt'  => $s('PRUSRACPT'),
+        'anlpln'   => $s('PRANLPLN'),
+        // the three-way the legacy screen shows as radio buttons
+        'kind'     => ($s('PRTYPE') === 'FR') ? 'fire'
+                      : (($s('PRANLPLN') === 'Y') ? 'annual' : 'regular'),
         'paybktyp' => $s('PRPAYBKTYP'),
         'deptpr'   => $d('PRUPTY'),
         'scpr'     => $d('PRPRTY'),
@@ -136,6 +148,9 @@ function prjProjectOut($r) {
         'spapv'    => prjFmtDate($d('PRSPAPVDTE')),
         'screv'    => prjFmtDate($d('PRSCREVDTE')),
         'subraw'   => $d('PRSUBD'),
+        // the same dates again, in the shape a date input wants
+        'spapviso' => prjIsoDate($d('PRSPAPVDTE')),
+        'neediso'  => prjIsoDate($d('PRNEED')),
         'status'   => prjStatus(prjMasterAsList($r)),
         'stage'    => prjStage(prjMasterAsList($r)),
     );
@@ -373,6 +388,11 @@ switch ($action) {
         usort($hits, function ($a, $b) { return $b['num'] - $a['num']; });
         prjOut(array("ok" => true, "hits" => array_slice($hits, 0, 8)));
 
+    // the sub-departments under one department, as the dropdown changes
+    case 'subdepts':
+        $dept = trim(strval($_POST['dept'] ?? $_GET['dept'] ?? ''));
+        prjOut(array("ok" => true, "subdept" => prjSubDeptList($conn, $dept)));
+
     // one project for the detail screen, with its dropdown choices
     case 'project':
         $asked = trim(strval($_POST['num'] ?? $_GET['num'] ?? ''));
@@ -395,9 +415,12 @@ switch ($action) {
         $out['isnew'] = $isNew ? 1 : 0;
         $out['desc'] = $isNew ? '' : prjProjectDesc($conn, $num);
 
+        $lists = prjProjectLists($conn);
+        $lists['subdept'] = prjSubDeptList($conn, $out['dept']);
+
         prjOut(array("ok" => true,
                      "proj" => $out,
-                     "lists" => prjProjectLists($conn),
+                     "lists" => $lists,
                      "statuses" => $GLOBALS['prjStatuses'],
                      "stages" => $GLOBALS['prjStages'],
                      "updated" => date('M j, Y')));

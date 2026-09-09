@@ -359,18 +359,24 @@ function prjProjectDesc($conn, $num) {
 // The legacy screen asks for it the moment ?projnum=newproj is opened,
 // so this is called at exactly the same point and no more often.
 function prjNextProjNum($conn) {
-    $sql = "CALL PT0028S(?)";
+    // the production data area is the only one that counts, so it is named
+    // first - an unqualified call finds whatever the library list holds,
+    // which on the dev instance is a different PROJNXT with its own count
+    $tries = array("CALL " . PRJ_LEGACY_LIB . ".PT0028S(?)",
+                   "CALL " . PRJ_LEGACY_LIB . "/PT0028S(?)",
+                   "CALL PT0028S(?)");
     $stmt = false;
-    foreach (prjSqlTries($sql) as $try) {
+    foreach ($tries as $try) {
         $stmt = @db2_prepare($conn, $try);
         if ($stmt) { break; }
     }
-    if (!$stmt) { return prjFail("prepare $sql"); }
+    if (!$stmt) { return prjFail("prepare next project number"); }
 
-    $GLOBALS['prjNextNum'] = '';
-    db2_bind_param($stmt, 1, 'prjNextNum', DB2_PARAM_OUT);
-    if (!db2_execute($stmt)) { return prjFail("execute $sql"); }
-    return intval($GLOBALS['prjNextNum']);
+    // db2_bind_param names a variable in this scope, not in $GLOBALS
+    $nextNumber = '';
+    db2_bind_param($stmt, 1, 'nextNumber', DB2_PARAM_OUT);
+    if (!db2_execute($stmt)) { return prjFail("execute next project number"); }
+    return intval($nextNumber);
 }
 
 
@@ -431,6 +437,22 @@ function prjDeptList($conn) {
 }
 
 
+// LCC0001S again, this time for one department's sub-departments
+function prjSubDeptList($conn, $dept) {
+    $dept = trim(strval($dept));
+    if ($dept === '') { return array(); }
+    $rows = prjFetchAll($conn, "CALL LCC0001S(?, ?)", array($dept, 'ALL'));
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return array(); }
+    $out = array();
+    foreach ($rows as $r) {
+        $code = trim(strval($r['LDSUBDEPT'] ?? $r['LDDEPT'] ?? ''));
+        if ($code === '' || isset($out[$code])) { continue; }
+        $out[$code] = trim(strval($r['LDSUBDESC'] ?? $r['LDDESC'] ?? '')) ?: $code;
+    }
+    return $out;
+}
+
+
 // the dropdown choices the project screen fills in
 function prjProjectLists($conn) {
     return array(
@@ -463,11 +485,21 @@ $GLOBALS['prjSaveNums'] = array('PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA',
 
 // the General tab's own fields, screen name => column
 $GLOBALS['prjGeneralFields'] = array(
-    'name'    => 'PRDESC',
-    'rqst'    => 'PRRQST',
-    'sponsor' => 'PRSPONSR',
-    'dept'    => 'PRDEPT',
+    'name'     => 'PRDESC',
+    'rqst'     => 'PRRQST',
+    'sponsor'  => 'PRSPONSR',
+    'dept'     => 'PRDEPT',
+    'subdept'  => 'PRSUBDEPT',
+    'deptpr'   => 'PRUPTY',
+    'spapv'    => 'PRSPAPVDTE',
+    'need'     => 'PRNEED',
+    'usracpt'  => 'PRUSRACPT',
+    'type'     => 'PRTYPE',
+    'anlpln'   => 'PRANLPLN',
 );
+
+// fields the screen posts as yyyy-mm-dd but the file stores as a number
+$GLOBALS['prjGeneralDates'] = array('spapv', 'need');
 
 
 // PTS0027S rewrites the whole row, so every column is passed in the
@@ -492,6 +524,12 @@ function prjSaveProject($conn, $num, $posted, $user, $isNew = false) {
         $was = trim(strval($rec[$col] ?? ''));
         $now = trim(strval($posted[$key]));
         if ($key === 'name') { $now = substr($now, 0, 50); }
+        if (in_array($key, $GLOBALS['prjGeneralDates'], true)) {
+            // 2026-09-09 back to 20260909, blank back to 0
+            $now = strval(intval(str_replace('-', '', $now)));
+            $was = strval(intval($was));
+        }
+        if ($key === 'deptpr') { $now = strval(intval($now)); $was = strval(intval($was)); }
         if ($now === $was) { continue; }
         $rec[$col] = $now;
         $changes[] = array('col' => $col, 'was' => $was, 'now' => $now);

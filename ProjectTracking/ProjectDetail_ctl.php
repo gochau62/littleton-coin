@@ -129,6 +129,12 @@ if ($authorized != "yes") {
         border-bottom: 1px solid var(--pt-line-soft); }
 .pt-fld .pt-ro:empty::after { content: '\2014'; color: var(--pt-faint); }
 
+/* the three-way project type, and the acceptance tick */
+.pt-radios { display: flex; gap: 1.1rem; flex-wrap: wrap; padding: .25rem 0; }
+.pt-radio { display: inline-flex; align-items: center; gap: .35rem;
+        font-size: .84rem; color: var(--pt-text); cursor: pointer; }
+.pt-radio input { width: auto; margin: 0; }
+
 .pt-note { font-size: .78rem; color: var(--pt-muted); margin: 0 0 .85rem; }
 .pt-saved { font-size: .8rem; font-weight: 600; color: var(--pt-green);
         align-self: center; }
@@ -191,10 +197,19 @@ var scrGeneral = [
       hint: 'Descriptive, clear, 50 chars max' },
     { key: 'desc',    label: 'Description', wide: true, ro: true, area: true,
       hint: 'Edit to add a description...' },
+    { key: 'kind',    label: 'Project type', wide: true, radio: [
+        ['regular', 'Regular'], ['fire', 'Fire'],
+        ['annual', 'For annual planning only'] ] },
     { key: 'rqst',    label: 'Requestor', list: 'rqst' },
-    { key: 'sponsor', label: 'Sponsor', list: 'sponsor' },
     { key: 'sub',     label: 'Created date', ro: true },
-    { key: 'dept',    label: 'Requesting dept', list: 'dept' }
+    { key: 'sponsor', label: 'Sponsor', list: 'sponsor' },
+    { key: 'spapv',   label: 'Sponsor approval date', date: true },
+    { key: 'need',    label: 'Need by date', date: true },
+    { key: 'dept',    label: 'Requesting department', list: 'dept' },
+    { key: 'subdept', label: 'Sub dept', list: 'subdept' },
+    { key: 'deptpr',  label: 'Department priority', num: true, max: 1 },
+    { key: 'usracpt', label: 'Project acceptance', wide: true, check: 'Yes',
+      hint: 'The user agrees the project is complete and ready for implementation.' }
 ];
 
 $(document).ready(function () {
@@ -320,11 +335,28 @@ function field(f) {
             html += '<option value="' + attr(v) + '" selected>' + esc(v) + '</option>';
         }
         html += '</select>';
+    } else if (f.radio) {
+        html += '<div class="pt-radios">';
+        $.each(f.radio, function (i, r) {
+            html += '<label class="pt-radio"><input type="radio" name="fld_' +
+                    esc(f.key) + '" data-key="' + esc(f.key) + '" value="' + attr(r[0]) +
+                    '"' + (r[0] === v ? ' checked' : '') + '> ' + esc(r[1]) + '</label>';
+        });
+        html += '</div>';
+    } else if (f.check) {
+        html += '<label class="pt-radio"><input type="checkbox" id="fld_' + esc(f.key) +
+                '" data-key="' + esc(f.key) + '" value="' + attr(f.check) + '"' +
+                (v === f.check ? ' checked' : '') + '> ' +
+                esc(f.hint || '') + '</label>';
+    } else if (f.date) {
+        html += '<input type="date" id="fld_' + esc(f.key) + '" data-key="' +
+                esc(f.key) + '" value="' + attr(scrData.proj[f.key + 'iso'] || '') + '">';
     } else {
-        html += '<input type="text" id="fld_' + esc(f.key) + '" data-key="' + esc(f.key) +
-                '" value="' + attr(v) + '"' +
-                (f.max ? ' maxlength="' + f.max + '"' : '') +
-                (f.hint ? ' placeholder="' + attr(f.hint) + '"' : '') + '>';
+        html += '<input type="' + (f.num ? 'number' : 'text') + '" id="fld_' + esc(f.key) +
+                '" data-key="' + esc(f.key) + '" value="' + attr(v) + '"' +
+                (f.num ? ' min="0" max="9"' : '') +
+                (f.max && !f.num ? ' maxlength="' + f.max + '"' : '') +
+                (f.hint && !f.num ? ' placeholder="' + attr(f.hint) + '"' : '') + '>';
     }
     return html + '</div>';
 }
@@ -373,11 +405,41 @@ function renderAll() {
 
     // every editable field reports its own changes
     $('#pane-general').off('input change').on('input change', '[data-key]', function () {
-        var k = $(this).data('key');
-        scrEdits[k] = $(this).val();
-        if (String(scrEdits[k]) === String(scrData.proj[k] || '')) { delete scrEdits[k]; }
+        var box = $(this), k = box.data('key');
+        var was = String(scrData.proj[k] || '');
+        if (box.is(':checkbox')) {
+            scrEdits[k] = box.is(':checked') ? box.val() : '';
+        } else if (box.is(':radio')) {
+            if (!box.is(':checked')) { return; }
+            scrEdits[k] = box.val();
+        } else if (box.attr('type') === 'date') {
+            scrEdits[k] = box.val();
+            was = String(scrData.proj[k + 'iso'] || '');
+        } else {
+            scrEdits[k] = box.val();
+        }
+        if (String(scrEdits[k]) === was) { delete scrEdits[k]; }
         markDirty();
+        // the sub-department list follows the department
+        if (k === 'dept') { loadSubDepts(box.val()); }
     });
+}
+
+
+function loadSubDepts(dept) {
+    $.post('ProjectTracking_ajax.php', { action: 'subdepts', dept: dept },
+        function (resp) {
+            if (!resp || !resp.ok) { return; }
+            scrData.lists.subdept = resp.subdept;
+            var sel = $('#fld_subdept');
+            var opts = '<option value=""></option>';
+            $.each(resp.subdept, function (code, label) {
+                opts += '<option value="' + attr(code) + '">' + esc(label) + '</option>';
+            });
+            sel.html(opts).val('');
+            scrEdits.subdept = '';
+            markDirty();
+        }, 'json');
 }
 
 
@@ -398,7 +460,12 @@ function markClean() {
 
 function saveProject() {
     var data = { action: 'projectsave', num: scrNum, 'new': scrNew ? '1' : '0' };
-    $.each(scrEdits, function (k, v) { data[k] = v; });
+    $.each(scrEdits, function (k, v) {
+        if (k !== 'kind') { data[k] = v; return; }
+        // Regular, Fire and annual planning live in PRTYPE and PRANLPLN
+        data.type   = (v === 'fire') ? 'FR' : (scrData.proj.type === 'FR' ? '' : scrData.proj.type);
+        data.anlpln = (v === 'annual') ? 'Y' : '';
+    });
 
     $('#btnSave').prop('disabled', true).text('Saving...');
     $('#scrErr').prop('hidden', true);
