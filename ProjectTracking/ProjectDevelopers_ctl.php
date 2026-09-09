@@ -59,10 +59,30 @@ if ($authorized != "yes") {
 
     require_once __DIR__ . '/ProjectTracking_model.php';
 
+    // shared styles, header and lookup; the page itself follows
     include "ProjectTracking_dsp.php";
-    include "ProjectDevelopers_dsp.php";
-    dspProjectDevelopers();
+    prjStyles();
 ?>
+<!-- stdPage seats the page beside the nav menu -->
+<div id="stdPage">
+<div class="pt-app">
+
+    <?php prjHeader('Projects by Developer',
+                    '<span class="pt-when" id="ptUpdated"></span>' .
+                    '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
+                    'assignments'); ?>
+
+    <div class="pt-card">
+        <div class="pt-toolbar">
+            <select id="selPgmr"><option value="">All developers</option></select>
+            <select id="selStatus"><option value="">All statuses</option></select>
+        </div>
+    </div>
+
+    <div id="groupList"></div>
+
+</div>
+</div>
 
 <script>
 // fetch rows, group per programmer, filter client-side
