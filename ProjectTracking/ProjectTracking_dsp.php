@@ -502,7 +502,8 @@ function prjHeader($title, $subtitle, $active) {
                           'time'        => array('Time_ctl.php', 'Time'),
                       );
                       foreach ($prjNav as $key => $n) {
-                          if ($key === $active) { continue; } ?>
+                          // a screen that was not copied over is not linked
+                          if ($key === $active || !file_exists(__DIR__ . '/' . $n[0])) { continue; } ?>
                     <a class="pt-btn" href="<?php echo $n[0]; ?>"><?php echo $n[1]; ?></a>
                 <?php } ?>
             </div>
