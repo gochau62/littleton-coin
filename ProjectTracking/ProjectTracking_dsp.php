@@ -21,9 +21,8 @@ function prjStyles() {
 ?>
 <!-- PT build 2026-09-09-B - deploy marker, check via view-source -->
 <script>
-// where the legacy project screens answer from
-var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
-function projUrl(num) { return PT_LEGACY + 'PROJ_ctl.php?projnum=' + num; }
+// the project screen sits beside these files
+function projUrl(num) { return 'PROJ_ctl.php?projnum=' + num; }
 // a project opens in its own tab so the dashboard stays put
 function openProj(num) { window.open(projUrl(num), '_blank', 'noopener'); }
 
