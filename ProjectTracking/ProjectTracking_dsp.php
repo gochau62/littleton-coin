@@ -495,11 +495,11 @@ function prjHeader($title, $subtitle, $active) {
                        title="Type to filter. Pick a project from the list, or press Enter on its number, to open it.">
             </span>
             <div class="pt-nav">
-                <?php // every screen reaches every other one
+                <?php // the two list screens reach each other; time entry and a
+                      // single project are opened from the menu or a project link
                       $prjNav = array(
                           'dashboard'   => array('ProjectTracking_ctl.php', 'Overview'),
                           'assignments' => array('ProjectDevelopers_ctl.php', 'By Developer'),
-                          'time'        => array('ProjectTimeEntry_ctl.php', 'Time Entry'),
                       );
                       foreach ($prjNav as $key => $n) {
                           // a screen that was not copied over is not linked
