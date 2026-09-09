@@ -125,7 +125,8 @@ function prjFail($where) {
 function prjSqlTries($sql) {
     $tries = array($sql);
     foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S',
-                   'PTS0013S', 'PTS0015S', 'PTS0019S', 'PTS0027S', 'LCC0001S') as $proc) {
+                   'PTS0002S', 'PTS0013S', 'PTS0015S', 'PTS0019S', 'PTS0027S',
+                   'LCC0001S') as $proc) {
         if (strpos($sql, $proc) === false) { continue; }
         // only the two PRJTRK procedures are ours; the rest are legacy
         $lib = (strpos($proc, 'PRJTRK') === 0) ? PRJ_PROC_LIB : PRJ_LEGACY_LIB;
@@ -327,11 +328,12 @@ function prjProgrammers($conn) {
 
 // ---- time entry: the week's grid and the hours behind it ---------------
 
-// the Monday through Sunday a date falls in, as eight-digit numbers
+// the Sunday through Saturday a date falls in, the week the legacy
+// time screen uses, as eight-digit numbers
 function prjWeekDays($anchor = 0) {
     $d = ($anchor > 0) ? DateTime::createFromFormat('!Ymd', strval(intval($anchor))) : false;
     if (!$d) { $d = new DateTime('today'); }
-    $d->modify('-' . ((intval($d->format('N')) + 6) % 7) . ' days');
+    $d->modify('-' . (intval($d->format('w'))) . ' days');
     $days = array();
     for ($i = 0; $i < 7; $i += 1) {
         $days[] = intval($d->format('Ymd'));
@@ -365,10 +367,17 @@ function prjTimeRows($conn, $proj, $user) {
 }
 
 
+// PTS0002S: every project, the 90000 overhead buckets included - the
+// dashboard's LIST leaves those out, so the timesheet cannot use it
+function prjAllProjects($conn) {
+    return prjFetchAll($conn, "CALL PTS0002S(?, ?)", array('yes', ''));
+}
+
+
 // the week's grid: a row per project, hours per day
 function prjTimeWeek($conn, $user, $anchor = 0) {
     $days = prjWeekDays($anchor);
-    $projects = prjProjects($conn, 'Y');
+    $projects = prjAllProjects($conn);
     if ($projects === false) { return false; }
 
     $withTime = prjTimeProjects($conn, $user, $days[0], $days[6]);
@@ -378,12 +387,13 @@ function prjTimeWeek($conn, $user, $anchor = 0) {
     // the 90000 overhead buckets, and anything already booked this week
     $rows = array();
     foreach ($projects as $p) {
-        $num = intval($p['PJNUM']);
-        $mine = (strtoupper(trim($p['PJPGMR'])) === strtoupper(trim($user)) &&
-                 intval($p['PJSCHDATE']) != 0 && intval($p['PJCOMPDATE']) == 0 &&
-                 strtoupper(trim(strval($p['PJRESCOD'] ?? ''))) !== 'REJ');
+        $num = intval($p['PR#'] ?? 0);
+        if ($num <= 0) { continue; }
+        // the legacy screen's four reasons a project earns a row
+        $mine = (strtoupper(trim(strval($p['PRPGMR'] ?? ''))) === strtoupper(trim($user)) &&
+                 intval($p['PRECOM'] ?? 0) != 0 && intval($p['PRACOM'] ?? 0) == 0 &&
+                 strtoupper(trim(strval($p['PRRESCOD'] ?? ''))) !== 'REJ');
         $bucket = ($num >= 90000 && $num <= 90100);
-        // a project the person added to this week by hand, same as the old screen
         $added = in_array($num, $GLOBALS['prjTimeAdded'] ?? array(), true);
         if (!$mine && !$bucket && !$added && !in_array($num, $withTime, true)) { continue; }
 
@@ -393,12 +403,12 @@ function prjTimeWeek($conn, $user, $anchor = 0) {
             $at = array_search($on, $days, true);
             if ($at !== false) { $hours[$at] += floatval($t['PTTIME'] ?? 0); }
         }
-        $rows[] = array('num' => $num, 'desc' => trim($p['PJDESC']),
+        $rows[] = array('num' => $num, 'desc' => trim(strval($p['PRDESC'] ?? '')),
                         'hours' => $hours, 'bucket' => $bucket ? 1 : 0,
                         'total' => array_sum($hours));
     }
 
-    // the week's own work first, then the overhead buckets
+    // the week's own work first, then the overhead buckets, as the old screen reads
     usort($rows, function ($a, $b) {
         if ($a['bucket'] !== $b['bucket']) { return $a['bucket'] - $b['bucket']; }
         return $b['num'] - $a['num'];

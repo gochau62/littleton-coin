@@ -499,7 +499,7 @@ function prjHeader($title, $subtitle, $active) {
                       $prjNav = array(
                           'dashboard'   => array('ProjectTracking_ctl.php', 'Overview'),
                           'assignments' => array('ProjectDevelopers_ctl.php', 'By Developer'),
-                          'time'        => array('ProjectTimeEntry_ctl.php', 'Time entry'),
+                          'time'        => array('ProjectTimeEntry_ctl.php', 'Time Entry'),
                       );
                       foreach ($prjNav as $key => $n) {
                           // a screen that was not copied over is not linked

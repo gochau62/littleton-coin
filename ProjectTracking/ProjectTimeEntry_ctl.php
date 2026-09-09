@@ -89,8 +89,7 @@ if ($authorized != "yes") {
 
 .pt-time .pt-proj { white-space: nowrap; }
 .pt-time .pt-proj a { font-weight: 600; }
-.pt-time .pt-pdesc { display: block; font-size: .78rem; color: var(--pt-muted);
-        white-space: normal; }
+.pt-time .pt-pdesc { text-align: left; white-space: normal; }
 
 /* one hours box per day, wide enough for 8.25 */
 .pt-hrs { width: 56px; font: inherit; font-size: .84rem; text-align: center;
@@ -105,29 +104,41 @@ if ($authorized != "yes") {
 .pt-time tfoot td { padding: .5rem .3rem; font-weight: 700;
         border-top: 1px solid var(--pt-line); }
 
-.pt-addrow { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
-        padding: .75rem 1rem; border-top: 1px solid var(--pt-line); }
-.pt-addrow input { font: inherit; font-size: .84rem; padding: .4rem .55rem;
-        border: 1px solid var(--pt-field); border-radius: 8px; width: 150px; }
-.pt-addrow .pt-hint { font-size: .78rem; color: var(--pt-muted); }
+/* add a project sits where the week total used to, at the right */
+.pt-wk-lbl { font-size: .82rem; color: var(--pt-muted); }
+.pt-addrow { margin-left: auto; display: inline-flex; gap: .4rem;
+        align-items: center; flex-wrap: wrap; }
+.pt-addrow input { font: inherit; font-size: .84rem; padding: .3rem .5rem;
+        border: 1px solid var(--pt-field); border-radius: 8px; width: 92px; }
+.pt-addrow input:focus { outline: 0; border-color: var(--pt-blue);
+        box-shadow: 0 0 0 3px rgba(42, 120, 214, .12); }
+.pt-addrow .pt-hint { font-size: .8rem; color: var(--pt-muted); }
 </style>
 
 <!-- stdPage seats the page beside the nav menu -->
 <div id="stdPage">
 <div class="pt-app">
 
-    <?php prjHeader('Time entry',
+    <?php prjHeader('Project Time Entry',
                     '<span class="pt-when" id="ptUpdated"></span>' .
                     '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
                     'time'); ?>
 
     <div class="pt-card">
         <div class="pt-wk-bar">
-            <button type="button" class="pt-wk-step" id="wkPrev">&lsaquo; Previous</button>
+            <span class="pt-wk-lbl">For week ending:</span>
+            <button type="button" class="pt-wk-step" id="wkPrev" title="The week before">&laquo;</button>
             <span class="pt-wk-when" id="wkWhen"></span>
-            <button type="button" class="pt-wk-step" id="wkNext">Next &rsaquo;</button>
+            <button type="button" class="pt-wk-step" id="wkNext" title="The week after">&raquo;</button>
             <button type="button" class="pt-wk-step" id="wkThis">This week</button>
-            <span class="pt-wk-tot">Week total <b id="wkTotal">0</b></span>
+
+            <span class="pt-addrow">
+                <span class="pt-hint">Add project</span>
+                <input type="text" id="wkAdd" maxlength="6" placeholder="Project #" inputmode="numeric">
+                <span class="pt-hint">to list.</span>
+                <button type="button" class="pt-wk-step" id="wkAddGo">Add</button>
+                <span class="pt-hint" id="wkAddMsg"></span>
+            </span>
         </div>
 
         <div class="pt-scr-err" id="wkErr" hidden
@@ -142,13 +153,6 @@ if ($authorized != "yes") {
                 <tfoot id="wkFoot"></tfoot>
             </table>
         </div>
-
-        <div class="pt-addrow">
-            <span class="pt-hint">Add a project to this week:</span>
-            <input type="text" id="wkAdd" placeholder="Project #" inputmode="numeric">
-            <button type="button" class="pt-wk-step" id="wkAddGo">Add</button>
-            <span class="pt-hint" id="wkAddMsg"></span>
-        </div>
     </div>
 
 </div>
@@ -158,7 +162,7 @@ if ($authorized != "yes") {
 // the week on screen, and what came back for it
 var wkAnchor = 0;
 var wkData = null;
-var wkNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+var wkNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 $(document).ready(function () {
     loadWeek();
@@ -225,6 +229,17 @@ function loadWeek() {
 }
 
 
+// Saturday September 12, 2026 - the week's last day, spelled out
+function longDate(v) {
+    var d = ymdToDate(v);
+    var day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+               'Friday', 'Saturday'][d.getDay()];
+    var mon = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+               'August', 'September', 'October', 'November', 'December'][d.getMonth()];
+    return day + ' ' + mon + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+
 // mm/dd from yyyymmdd
 function shortDate(v) {
     v = String(v);
@@ -236,24 +251,23 @@ function renderWeek() {
     var days = wkData.days;
     var today = dateToYmd(new Date());
 
-    $('#wkWhen').text(shortDate(days[0]) + ' - ' + shortDate(days[6]) +
-                      ', ' + String(days[6]).substr(0, 4));
+    $('#wkWhen').text(longDate(days[6]));
 
-    var head = '<th>Project</th>';
+    var head = '<th class="pt-num">Proj #</th><th>Description</th>';
     $.each(days, function (i, d) {
         head += '<th class="' + (i > 4 ? 'pt-wknd' : '') +
                 (+d === today ? ' pt-today' : '') + '">' +
                 wkNames[i] + '<br>' + shortDate(d) + '</th>';
     });
-    head += '<th>Total</th>';
+    head += '<th>TOTAL</th>';
     $('#wkHead').html(head);
 
     var body = '', colTot = [0, 0, 0, 0, 0, 0, 0], grand = 0;
     $.each(wkData.rows, function (i, r) {
         body += '<tr data-num="' + r.num + '">' +
                 '<td class="pt-proj"><a href="' + projUrl(r.num) +
-                '" target="_blank" rel="noopener">' + r.num + '</a>' +
-                '<span class="pt-pdesc">' + esc(r.desc) + '</span></td>';
+                '" target="_blank" rel="noopener">' + r.num + '</a></td>' +
+                '<td class="pt-pdesc">' + esc(r.desc) + '</td>';
         $.each(r.hours, function (d, h) {
             colTot[d] += h; grand += h;
             body += '<td class="' + (d > 4 ? 'pt-wknd' : '') + '">' +
@@ -264,15 +278,14 @@ function renderWeek() {
         body += '<td class="pt-rowtot" id="rt_' + r.num + '">' + trimNum(r.total) + '</td></tr>';
     });
     $('#wkBody').html(body ||
-        '<tr><td colspan="9" class="pt-empty">No projects on this week yet. ' +
-        'Add one below.</td></tr>');
+        '<tr><td colspan="10" class="pt-empty">No projects on this week yet. ' +
+        'Add one above.</td></tr>');
 
-    var foot = '<tr><td>Day total</td>';
+    var foot = '<tr><td colspan="2">TOTAL</td>';
     $.each(colTot, function (i, t) {
         foot += '<td class="' + (i > 4 ? 'pt-wknd' : '') + '">' + trimNum(t) + '</td>';
     });
     $('#wkFoot').html(foot + '<td>' + trimNum(grand) + '</td></tr>');
-    $('#wkTotal').text(trimNum(grand));
 
     // a cell saves when it loses focus, and only if it changed
     $('#wkBody').off('change blur', '.pt-hrs').on('blur', '.pt-hrs', saveCell);
@@ -339,7 +352,6 @@ function retotal() {
         if (i === 0) { return; }
         $(this).text(trimNum(i <= 7 ? colTot[i - 1] : grand));
     });
-    $('#wkTotal').text(trimNum(grand));
 }
 
 
