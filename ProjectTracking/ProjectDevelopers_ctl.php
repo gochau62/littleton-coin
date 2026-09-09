@@ -19,9 +19,9 @@
 
 <?php
     // retrieves and sets password and username
-    if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
-    $user     = $_SESSION['username'] ?? '';
-    $password = $_SESSION['password'] ?? '';
+    require_once 'StartBlockScriptA.php';
+    $user     = $_SESSION['username'];
+    $password = $_SESSION['password'];
 ?>
 
 <!-- includes css and javascript libraries -->
@@ -41,17 +41,14 @@
 
 <!--  Begin Content Here -->
 <?php
-if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
+require_once 'StartBlockScriptB.php';
 
 // record where the person was headed so sign-on can send them back
 if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // authority level 20, the developers group
-$authorized = "yes";
-if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
-}
+$authConn   = getDB2PConn($user, $password);
+$authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
 
 if ($authorized != "yes") {
     echo '<script>showNotAuthorized();</script>';
@@ -359,5 +356,5 @@ function renderGroups() {
 // end authority check
 }
 
-if (file_exists('EndBlock.php')) { include "EndBlock.php"; }
+include("EndBlock.php");
 ?>

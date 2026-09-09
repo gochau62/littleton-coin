@@ -1,15 +1,27 @@
 <?php
-	/*************************************************  
-	* Page Name - ProjectDetail_ctl.php              *
-	* Narrative - Project tracking entry and         *
-	*             mainenance                         *
-	* Author    - D Whitehead                        *
-	*             Littleton Coin Company             *
-	*             Littleton NH                       *
-	* Date Written 02/25/2011                        *
-	************************************************ */
+/*    ***************************************************  -->
+<!--  * Program Name - ProjectDetail_ctl.php            *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
+<!--  * Date Written 09/03/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260082                              *  -->
+<!--  ***************************************************   */
+?>
 
-	include("StartBlockHead.php");
+<?php
+	// retrieves and sets password and username
+	require_once 'StartBlockScriptA.php';
+	$user     = $_SESSION['username'];
+	$password = $_SESSION['password'];
 ?>
 <style>
 /* the ProjectTracking look, applied to this screen's own markup */
@@ -151,11 +163,12 @@
 
 </style>
 
-<!--<body onload="projCalcPayback(); setInitialTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">-->
-<body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">
-<?php
-	include("StartBlockBody.php");
-?>
+<script type='text/javascript'>
+	// the framework prints the body tag, so run the onload here
+	window.addEventListener('load', function () {
+		switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general');
+	});
+</script>
 
 <script type='text/javascript' src='ckeditor/ckeditor.js'></script>
 <script type='text/javascript' src='WebNotes/WebNote_JS_functions.js'></script>
@@ -394,6 +407,8 @@ projCalcPayback();
 
 <?php	
 	
+	require_once 'StartBlockScriptB.php';
+	
 // <!--  Begin Content Here -->
 	require_once("WebNotes/webNotesModel.php");
 //	require_once("Utils/common_functions.php");
@@ -406,7 +421,7 @@ projCalcPayback();
 	require_once("LCDEPTP_model.php");
 	
 	
-	// get connection - user and password are defined in StartBlock.php
+	// get connection - user and password come from StartBlockScriptA.php
 //	$conn = geti5PConn($user, $password);
 	$conn2 = getDB2PConn($user, $password);
 	

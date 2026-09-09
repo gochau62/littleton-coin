@@ -1,6 +1,27 @@
 <?php
-	include("StartBlock.php");
+/*    ***************************************************  -->
+<!--  * Program Name - ProjectTimeEntry_ctl.php         *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -  G CHAU                             *  -->
+<!--  *              Littleton Coin Company             *  -->
+<!--  *              Littleton NH                       *  -->
+<!--  * Date Written 09/03/2026                         *  -->
+<!--  ***************************************************  -->
+<!--  * Maintenance History                             *  -->
+<!--  *                                                 *  -->
+<!--  * Author    -                                     *  -->
+<!--  * Date      -                                     *  -->
+<!--  * Purpose   -                                     *  -->
+<!--  *                                                 *  -->
+<!--  * Project   - 260082                              *  -->
+<!--  ***************************************************   */
+?>
 
+<?php
+	// retrieves and sets password and username
+	require_once 'StartBlockScriptA.php';
+	$user     = $_SESSION['username'];
+	$password = $_SESSION['password'];
 ?>
 <style>
 /* the ProjectTracking look, applied to this screen's own markup */
@@ -167,6 +188,8 @@
 
 <!--  Begin Content Here -->
 <?php 
+require_once 'StartBlockScriptB.php';
+
 //***--- Check users authority ---***
 //*** 10 is the minimum to use LCCOnline
 //include("Utils/common_functions.php");
