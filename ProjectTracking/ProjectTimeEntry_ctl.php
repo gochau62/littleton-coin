@@ -337,7 +337,7 @@ if ( $authorized != "yes") {
 	foreach ($projTime as $project) {
 		
 		$screenData['timeTable'] .= "<tr>" 
-		."<td><a href='PROJ_ctl.php?projnum=" . $project['PR#'] . "'>" . $project['PR#'] . "</a></td>" 
+		."<td><a href='ProjectDetail_ctl.php?projnum=" . $project['PR#'] . "'>" . $project['PR#'] . "</a></td>" 
 		."<td>" . trim($project['Desc']) . "</td>" 
 		."<td><input type='text' class='numData' size='1'
 			id='sun" . $project['PR#'] . "'   
