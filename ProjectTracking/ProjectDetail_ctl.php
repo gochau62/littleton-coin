@@ -18,6 +18,10 @@
 ?>
 
 <?php
+	// temporary while we chase the blank screen - fatals only
+	ini_set('display_errors', '1');
+	error_reporting(E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR);
+
 	// retrieves and sets password and username
 	require_once 'StartBlockScriptA.php';
 	$user     = $_SESSION['username'];
@@ -412,9 +416,7 @@ projCalcPayback();
 // <!--  Begin Content Here -->
 	require_once("WebNotes/webNotesModel.php");
 //	require_once("Utils/common_functions.php");
-	// PROJ_dsp.php printed this where it was required; its functions
-	// are at the foot of this file
-	echo "\r\n<!--  Begin Content Here -->\r\n\r\n</div> <!-- stdPage -->\r\n\r\n<!--  End Content Here -->\r\n\r\n";
+	// the screen opens and closes its own stdPage div now
 	require_once("PROJ_model.php");
 	require_once("LCEMPLOYP_model.php");
 	require_once("LNKDOCP_model.php");
@@ -1849,6 +1851,7 @@ function showProjectDetailScreen(&$screenData) {
 
 
 </div> <!-- Tab4  -->
+</div> <!-- stdPage -->
 <?php 
 }
 ?>
