@@ -11,6 +11,8 @@
 
 	include("StartBlockHead.php");
 ?>
+<!-- ProjectTracking look; nothing else on this page changes -->
+<link rel='stylesheet' type='text/css' href='ProjectTracking_legacy.css' />
 <!--<body onload="projCalcPayback(); setInitialTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">-->
 <body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">
 <?php

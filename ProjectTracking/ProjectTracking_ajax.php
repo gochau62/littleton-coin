@@ -62,12 +62,6 @@ function prjFmtDate($dec) {
 }
 
 
-// YYYYMMDD as YYYY-MM-DD, what a date input reads and writes
-function prjIsoDate($dec) {
-    $s = strval(intval($dec));
-    if (strlen($s) !== 8) { return ''; }
-    return substr($s, 0, 4) . '-' . substr($s, 4, 2) . '-' . substr($s, 6, 2);
-}
 
 
 // trim a row to what the screens render
@@ -109,111 +103,10 @@ function prjRowOut($row) {
 }
 
 
-// one project master row shaped for the detail screen
-function prjProjectOut($r) {
-    $s = function ($k) use ($r) { return trim(strval($r[$k] ?? '')); };
-    $d = function ($k) use ($r) { return intval($r[$k] ?? 0); };
-    return array(
-        'num'      => $d('PR#'),
-        'name'     => $s('PRDESC'),
-        'rqst'     => $s('PRRQST'),
-        'sponsor'  => $s('PRSPONSR'),
-        'dept'     => $s('PRDEPT'),
-        'subdept'  => $s('PRSUBDEPT'),
-        'pgmr'     => $s('PRPGMR'),
-        'estmtr'   => $s('PRESTMTR'),
-        'devgrp'   => $s('PRITDEVGRP'),
-        'type'     => $s('PRTYPE'),
-        'plan'     => $s('PRPLAN'),
-        'wrksts'   => $s('PRWRKSTS'),
-        // the wording the dropdown carries, not the stored code
-        'wrklabel' => prjWrkLabel($s('PRWRKSTS')),
-        'rescod'   => $s('PRRESCOD'),
-        'force2sc' => $s('PRFORCE2SC'),
-        'usracpt'  => $s('PRUSRACPT'),
-        'anlpln'   => $s('PRANLPLN'),
-        // the three-way the legacy screen shows as radio buttons
-        'kind'     => ($s('PRTYPE') === 'FR') ? 'fire'
-                      : (($s('PRANLPLN') === 'Y') ? 'annual' : 'regular'),
-        'paybktyp' => $s('PRPAYBKTYP'),
-        'deptpr'   => $d('PRUPTY'),
-        'scpr'     => $d('PRPRTY'),
-        // dates come through as both the raw number and mm/dd/yyyy
-        'sub'      => prjFmtDate($d('PRSUBD')),
-        'need'     => prjFmtDate($d('PRNEED')),
-        'start'    => prjFmtDate($d('PRESTR')),
-        'ecom'     => prjFmtDate($d('PRECOM')),
-        'acom'     => prjFmtDate($d('PRACOM')),
-        'impl'     => prjFmtDate($d('PRIMPDTE')),
-        'spapv'    => prjFmtDate($d('PRSPAPVDTE')),
-        'screv'    => prjFmtDate($d('PRSCREVDTE')),
-        'subraw'   => $d('PRSUBD'),
-        'brand'    => $s('PRBRAND'),
-        'parent'   => $d('PRRELPRJ#'),
-        'auth'     => $d('PRAUTH'),
-        'devrate'  => floatval($r['PRDRAT'] ?? 0),
-        'justtype' => $s('PRPBJSTF'),
-        'pmdt'     => prjFmtDate($d('PRPMDT')),
-        // the payback grid, original beside current
-        'occst1'   => floatval($r['PROCST1'] ?? 0),
-        'occsta'   => floatval($r['PROCSTA'] ?? 0),
-        'osav1'    => floatval($r['PROSAV1'] ?? 0),
-        'osava'    => floatval($r['PROSAVA'] ?? 0),
-        'opybk'    => floatval($r['PROPYBK'] ?? 0),
-        'ccst1'    => floatval($r['PRCCST1'] ?? 0),
-        'ccsta'    => floatval($r['PRCCSTA'] ?? 0),
-        'csav1'    => floatval($r['PRCSAV1'] ?? 0),
-        'csava'    => floatval($r['PRCSAVA'] ?? 0),
-        'cpybk'    => floatval($r['PRCPYBK'] ?? 0),
-        // the same dates again, in the shape a date input wants
-        'spapviso' => prjIsoDate($d('PRSPAPVDTE')),
-        'neediso'  => prjIsoDate($d('PRNEED')),
-        'startiso' => prjIsoDate($d('PRESTR')),
-        'ecomiso'  => prjIsoDate($d('PRECOM')),
-        'acomiso'  => prjIsoDate($d('PRACOM')),
-        'screviso' => prjIsoDate($d('PRSCREVDTE')),
-        'pmdtiso'  => prjIsoDate($d('PRPMDT')),
-        'status'   => prjStatus(prjMasterAsList($r)),
-        'stage'    => prjStage(prjMasterAsList($r)),
-        // what the committee is still waiting on
-        'missing'  => prjChecklistMissing(prjMasterAsList($r)) ?: array(),
-    );
-}
 
 
-// a work status code spelled out, whatever the file calls it
-function prjWrkLabel($code) {
-    $code = strtoupper(trim($code));
-    if ($code === '') { return 'Not set'; }
-    $code = $GLOBALS['prjWrkAlias'][$code] ?? $code;
-    return $GLOBALS['prjWrkLabels'][$code] ?? $code;
-}
 
 
-// the master row under the PJ names the stage and status helpers read
-function prjMasterAsList($r) {
-    $s = function ($k) use ($r) { return trim(strval($r[$k] ?? '')); };
-    return array(
-        'PJRESCOD'   => $s('PRRESCOD'),
-        'PJCOMPDATE' => intval($r['PRACOM'] ?? 0),
-        'PJWRKSTS'   => $s('PRWRKSTS'),
-        'PJFORCE2SC' => $s('PRFORCE2SC'),
-        'PJHASEST'   => (floatval($r['PRECST1'] ?? 0) > 0 ||
-                         floatval($r['PRECSTA'] ?? 0) > 0) ? 'Y' : 'N',
-        'PJSUBDATE'  => intval($r['PRSUBD'] ?? 0),
-        // the columns the seven-item checklist reads
-        'PJNUM'      => intval($r['PR#'] ?? 0),
-        'PJESTMTR'   => $s('PRESTMTR'),
-        'PJSPAPVDTE' => intval($r['PRSPAPVDTE'] ?? 0),
-        'PJPAYBKTYP' => $s('PRPAYBKTYP'),
-        'PJPAYBKFIG' => (floatval($r['PROCST1'] ?? 0) || floatval($r['PROCSTA'] ?? 0) ||
-                         floatval($r['PROSAV1'] ?? 0) || floatval($r['PROSAVA'] ?? 0) ||
-                         floatval($r['PRCCST1'] ?? 0) || floatval($r['PRCCSTA'] ?? 0) ||
-                         floatval($r['PRCSAV1'] ?? 0) || floatval($r['PRCSAVA'] ?? 0)) ? 'Y' : 'N',
-        'PJDEPTPR'   => intval($r['PRUPTY'] ?? 0),
-        'PJTYPE'     => $s('PRTYPE'),
-    );
-}
 
 
 // group rows by programmer, Unassigned last
@@ -422,105 +315,6 @@ switch ($action) {
         // newest number first, the same eight the local lookup shows
         usort($hits, function ($a, $b) { return $b['num'] - $a['num']; });
         prjOut(array("ok" => true, "hits" => array_slice($hits, 0, 8)));
-
-    // the sub-departments under one department, as the dropdown changes
-    case 'subdepts':
-        $dept = trim(strval($_POST['dept'] ?? $_GET['dept'] ?? ''));
-        prjOut(array("ok" => true, "subdept" => prjSubDeptList($conn, $dept)));
-
-    // the week's timesheet for whoever is signed in
-    case 'timeweek':
-        $anchor = intval($_POST['week'] ?? $_GET['week'] ?? 0);
-        $GLOBALS['prjTimeAdded'] = $_SESSION['projTimeList'] ?? array();
-        $week = prjTimeWeek($conn, $user, $anchor);
-        if ($week === false) { prjOutFail(); }
-        prjOut(array("ok" => true,
-                     "days" => $week['days'],
-                     "rows" => $week['rows'],
-                     "user" => $user,
-                     "updated" => date('M j, Y')));
-
-    // keep a project on this person's timesheet for the session
-    case 'timeadd':
-        $num = intval($_POST['num'] ?? 0);
-        if ($num <= 0) { prjOutFail("No project number."); }
-        $rec = prjOneProject($conn, $num);
-        if ($rec === false) { prjOutFail(); }
-        if ($rec === null)  { prjOutFail("Project " . $num . " was not found."); }
-
-        $list = $_SESSION['projTimeList'] ?? array();
-        if (!in_array($num, $list, true)) { $list[] = $num; }
-        $_SESSION['projTimeList'] = $list;
-        prjOut(array("ok" => true, "num" => $num,
-                     "desc" => trim(strval($rec['PRDESC'] ?? ''))));
-
-    // one day's hours on one project; POST only
-    case 'timesave':
-        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-            prjOutFail("A save has to be a POST.");
-        }
-        list($ok, $msg) = prjSaveTime($conn, $user, $_POST['proj'] ?? 0,
-                                      $_POST['date'] ?? 0, $_POST['hours'] ?? 0);
-        if (!$ok) { prjOutFail($msg); }
-        prjOut(array("ok" => true));
-
-    // one project for the detail screen, with its dropdown choices
-    case 'project':
-        $asked = trim(strval($_POST['num'] ?? $_GET['num'] ?? ''));
-        // newproj is the legacy screen's own word for "start a new one"
-        $isNew = (strtolower($asked) === 'newproj');
-        $num = intval($asked);
-
-        if ($isNew) {
-            $rec = prjNewProject($conn, $user);
-            if ($rec === false) { prjOutFail(); }
-            $num = intval($rec['PR#']);
-        } else {
-            if ($num <= 0) { prjOutFail("No project number."); }
-            $rec = prjOneProject($conn, $num);
-            if ($rec === false) { prjOutFail(); }
-            if ($rec === null)  { prjOutFail("Project " . $num . " was not found."); }
-        }
-
-        $out = prjProjectOut($rec);
-        $out['isnew'] = $isNew ? 1 : 0;
-        $out['desc'] = $isNew ? '' : prjProjectDesc($conn, $num);
-
-        $lists = prjProjectLists($conn);
-        $lists['subdept'] = prjSubDeptList($conn, $out['dept']);
-
-        prjOut(array("ok" => true,
-                     "proj" => $out,
-                     "lists" => $lists,
-                     "statuses" => $GLOBALS['prjStatuses'],
-                     "stages" => $GLOBALS['prjStages'],
-                     "updated" => date('M j, Y')));
-
-    // the General tab's fields; POST only
-    case 'projectsave':
-        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
-            prjOutFail("A save has to be a POST.");
-        }
-        $num   = intval($_POST['num'] ?? 0);
-        $isNew = (($_POST['new'] ?? '') === '1');
-        if ($num <= 0) { prjOutFail("No project number."); }
-
-        $posted = array();
-        foreach (array_keys($GLOBALS['prjGeneralFields']) as $key) {
-            if (isset($_POST[$key])) { $posted[$key] = $_POST[$key]; }
-        }
-        list($ok, $result) = prjSaveProject($conn, $num, $posted, $user, $isNew);
-        if (!$ok) { prjOutFail($result); }
-
-        $rec = prjOneProject($conn, $num);
-        $out = is_array($rec) ? prjProjectOut($rec) : null;
-        if ($out !== null) {
-            $out['isnew'] = 0;
-            $out['desc'] = prjProjectDesc($conn, $num);
-        }
-        prjOut(array("ok" => true,
-                     "saved" => $result['saved'],
-                     "proj" => $out));
 
     default:
         prjOutFail("Unknown action.");
