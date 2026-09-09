@@ -158,8 +158,6 @@
 	}
 </script>
 
-<!-- ProjectTracking look; nothing else on this page changes -->
-<link rel='stylesheet' type='text/css' href='ProjectTracking_legacy.css' />
 <script type='text/javascript' src='Utils/common_JS_functions.js'></script>
 <script type='text/javascript' src='Utils/calendar_us.js'></script>
 <script type='text/javascript' src='PROJ_JS_functions.js'></script>

@@ -151,8 +151,6 @@
 
 </style>
 
-<!-- ProjectTracking look; nothing else on this page changes -->
-<link rel='stylesheet' type='text/css' href='ProjectTracking_legacy.css' />
 <!--<body onload="projCalcPayback(); setInitialTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">-->
 <body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">
 <?php
@@ -401,7 +399,6 @@ projCalcPayback();
 //	require_once("Utils/common_functions.php");
 	require_once("ProjectDetail_dsp.php");
 	require_once("PROJ_model.php");
-	require_once("PROJ_pgmrs_dsp.php");
 	require_once("LCEMPLOYP_model.php");
 	require_once("LNKDOCP_model.php");
 	require_once("LCDEPTP_model.php");
@@ -945,15 +942,7 @@ projCalcPayback();
 	else {
 	    $screenData['pgmrTime'] .= "<tr><td class='txtData'>&nbsp;&nbsp;&nbsp;Total </td><td>".$timeTotal." hours</td></tr></table>";
 	}
-
-	// every programmer on the project, shown under the time box
-	if (is_numeric($_GET['projnum'])) {
-		$pgmrCanEdit = ($screenData['PAPRJMNGR'] == 'Y' || $_SESSION['usrclass'] == '*PGMR     '
-		                || $_SESSION['usrclass'] == '*SYSOPR   ');
-		$screenData['pgmrTime'] .= renderProjPgmrPanel($conn2, $projRecord, $pgmrCanEdit,
-		                                                $screenUser, $screenData['PAPRJMNGR'] == 'Y');
-	}
-
+	
 	
 	
 	//***********************************//
