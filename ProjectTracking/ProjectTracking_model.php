@@ -125,7 +125,7 @@ function prjFail($where) {
 function prjSqlTries($sql) {
     $tries = array($sql);
     foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S',
-                   'PTS0002S', 'PTS0013S', 'PTS0015S', 'PTS0019S', 'PTS0027S',
+                   'PT0028S', 'PTS0002S', 'PTS0013S', 'PTS0015S', 'PTS0019S', 'PTS0027S',
                    'LCC0001S') as $proc) {
         if (strpos($sql, $proc) === false) { continue; }
         // only the two PRJTRK procedures are ours; the rest are legacy
@@ -463,6 +463,54 @@ function prjProjectDesc($conn, $num) {
 }
 
 
+// PT0028S: the next project number, straight off the PROJNXT data area.
+// The legacy screen asks for it the moment ?projnum=newproj is opened,
+// so this is called at exactly the same point and no more often.
+function prjNextProjNum($conn) {
+    $sql = "CALL PT0028S(?)";
+    $stmt = false;
+    foreach (prjSqlTries($sql) as $try) {
+        $stmt = @db2_prepare($conn, $try);
+        if ($stmt) { break; }
+    }
+    if (!$stmt) { return prjFail("prepare $sql"); }
+
+    $GLOBALS['prjNextNum'] = '';
+    db2_bind_param($stmt, 1, 'prjNextNum', DB2_PARAM_OUT);
+    if (!db2_execute($stmt)) { return prjFail("execute $sql"); }
+    return intval($GLOBALS['prjNextNum']);
+}
+
+
+// every column the save writes, empty - the shape a new project starts from
+function prjBlankProject() {
+    $rec = array();
+    foreach ($GLOBALS['prjSaveCols'] as $col) { $rec[$col] = ''; }
+    foreach ($GLOBALS['prjSaveInts'] as $col) { $rec[$col] = 0; }
+    foreach ($GLOBALS['prjSaveNums'] as $col) { $rec[$col] = 0; }
+    $rec['PRPBJSTT'] = '';
+    return $rec;
+}
+
+
+// the defaults the legacy screen fills a brand new project with
+function prjNewProject($conn, $user) {
+    $num = prjNextProjNum($conn);
+    if ($num === false) { return false; }
+
+    $rec = prjBlankProject();
+    $rec['PR#']       = $num;
+    $rec['PRRQST']    = strtoupper(trim(strval($user)));
+    $rec['PRDEPT']    = trim(strval($_SESSION['department'] ?? ''));
+    $rec['PRSUBDEPT'] = trim(strval($_SESSION['subdept'] ?? ''));
+    $rec['PRSUBD']    = intval(date('Ymd'));
+    // 9 is "not ranked", the default Philip set in 2011
+    $rec['PRUPTY']    = 9;
+    $rec['PRPRTY']    = 9;
+    return $rec;
+}
+
+
 // PTS0019S: profiles by role - RQSTR, SPNSR, PMNGR or ALL
 function prjAuthList($conn, $filter) {
     $rows = prjFetchAll($conn, "CALL PTS0019S(?)", array($filter));
@@ -501,6 +549,26 @@ function prjProjectLists($conn) {
 }
 
 
+// the 46 columns PTS0027S rewrites, in the order it binds them
+$GLOBALS['prjSaveCols'] = array('PR#', 'PRDESC', 'PRRQST', 'PRDEPT',
+    'PRSUBDEPT', 'PRUPTY', 'PRSPONSR', 'PRSPAPVDTE', 'PRSUBD', 'PRNEED',
+    'PRESTMTR', 'PRPGMR', 'PRITDEVGRP', 'PRWRKSTS', 'PRECOM', 'PRACOM',
+    'PRESTR', 'PRIMPDTE', 'PRTYPE', 'PRANLPLN', 'PRPLAN', 'PRRELPRJ#',
+    'PRRELSHIP', 'PRRESCOD', 'PRPRTY', 'PRSCREVDTE', 'PRFORCE2SC',
+    'PRITREVDTE', 'PRAUTH', 'PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA',
+    'PROPYBK', 'PRCCST1', 'PRCCSTA', 'PRCSAV1', 'PRCSAVA', 'PRCPYBK',
+    'PRDRAT', 'PRPMDT', 'PRPAYBKTYP', 'PRPBJSTF', 'PRUSRACPT', 'PRACPTDTE',
+    'PRBRAND');
+
+// whole numbers and money, so each binds as the procedure expects
+$GLOBALS['prjSaveInts'] = array('PR#', 'PRUPTY', 'PRSPAPVDTE', 'PRSUBD',
+    'PRNEED', 'PRECOM', 'PRACOM', 'PRESTR', 'PRIMPDTE', 'PRRELPRJ#',
+    'PRRELSHIP', 'PRPRTY', 'PRSCREVDTE', 'PRITREVDTE', 'PRAUTH', 'PROPYBK',
+    'PRCPYBK', 'PRDRAT', 'PRPMDT', 'PRACPTDTE');
+$GLOBALS['prjSaveNums'] = array('PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA',
+    'PRCCST1', 'PRCCSTA', 'PRCSAV1', 'PRCSAVA');
+
+
 // the General tab's own fields, screen name => column
 $GLOBALS['prjGeneralFields'] = array(
     'name'    => 'PRDESC',
@@ -512,10 +580,18 @@ $GLOBALS['prjGeneralFields'] = array(
 
 // PTS0027S rewrites the whole row, so every column is passed in the
 // legacy order; only the posted fields differ from what was read
-function prjSaveProject($conn, $num, $posted, $user) {
-    $rec = prjOneProject($conn, $num);
-    if ($rec === false) { return array(false, 'The project could not be read.'); }
-    if ($rec === null)  { return array(false, 'Project ' . intval($num) . ' was not found.'); }
+function prjSaveProject($conn, $num, $posted, $user, $isNew = false) {
+    if ($isNew) {
+        // a brand new project starts from the same defaults the old screen uses
+        $rec = prjNewProject($conn, $user);
+        if ($rec === false) { return array(false, 'The defaults could not be read.'); }
+        // the number the screen was showing is the one that gets written
+        $rec['PR#'] = intval($num);
+    } else {
+        $rec = prjOneProject($conn, $num);
+        if ($rec === false) { return array(false, 'The project could not be read.'); }
+        if ($rec === null)  { return array(false, 'Project ' . intval($num) . ' was not found.'); }
+    }
 
     // only known fields move, and each keeps the column's width
     $changes = array();
@@ -528,23 +604,11 @@ function prjSaveProject($conn, $num, $posted, $user) {
         $rec[$col] = $now;
         $changes[] = array('col' => $col, 'was' => $was, 'now' => $now);
     }
-    if (empty($changes)) { return array(true, array('saved' => 0)); }
+    if (empty($changes) && !$isNew) { return array(true, array('saved' => 0)); }
 
-    $cols = array('PR#', 'PRDESC', 'PRRQST', 'PRDEPT', 'PRSUBDEPT', 'PRUPTY',
-        'PRSPONSR', 'PRSPAPVDTE', 'PRSUBD', 'PRNEED', 'PRESTMTR', 'PRPGMR',
-        'PRITDEVGRP', 'PRWRKSTS', 'PRECOM', 'PRACOM', 'PRESTR', 'PRIMPDTE',
-        'PRTYPE', 'PRANLPLN', 'PRPLAN', 'PRRELPRJ#', 'PRRELSHIP', 'PRRESCOD',
-        'PRPRTY', 'PRSCREVDTE', 'PRFORCE2SC', 'PRITREVDTE', 'PRAUTH',
-        'PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA', 'PROPYBK', 'PRCCST1',
-        'PRCCSTA', 'PRCSAV1', 'PRCSAVA', 'PRCPYBK', 'PRDRAT', 'PRPMDT',
-        'PRPAYBKTYP', 'PRPBJSTF', 'PRUSRACPT', 'PRACPTDTE', 'PRBRAND');
-    // whole numbers, money and the rest are bound as the procedure expects
-    $ints = array('PR#', 'PRUPTY', 'PRSPAPVDTE', 'PRSUBD', 'PRNEED', 'PRECOM',
-        'PRACOM', 'PRESTR', 'PRIMPDTE', 'PRRELPRJ#', 'PRRELSHIP', 'PRPRTY',
-        'PRSCREVDTE', 'PRITREVDTE', 'PRAUTH', 'PROPYBK', 'PRCPYBK', 'PRDRAT',
-        'PRPMDT', 'PRACPTDTE');
-    $nums = array('PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA', 'PRCCST1',
-        'PRCCSTA', 'PRCSAV1', 'PRCSAVA');
+    $cols = $GLOBALS['prjSaveCols'];
+    $ints = $GLOBALS['prjSaveInts'];
+    $nums = $GLOBALS['prjSaveNums'];
 
     $params = array();
     foreach ($cols as $col) {
@@ -561,7 +625,7 @@ function prjSaveProject($conn, $num, $posted, $user) {
         }
         $params[] = $v;
     }
-    $params[] = 'U';                                  // mode
+    $params[] = $isNew ? 'I' : 'U';                   // insert or update
     $params[] = strval($rec['PRPBJSTT'] ?? '');       // payback justification text
 
     $sql = "CALL PTS0027S(" . implode(', ', array_fill(0, count($params), '?')) . ")";
@@ -569,6 +633,7 @@ function prjSaveProject($conn, $num, $posted, $user) {
         return array(false, 'The save failed: ' . $GLOBALS['prjErr']);
     }
 
+    if ($isNew) { prjActLog($user, 'PROJNEW', strval(intval($num))); }
     foreach ($changes as $c) {
         prjActLog($user, 'PROJSAVE',
                   $num . ' ' . $c['col'] . ' "' . $c['was'] . '" -> "' . $c['now'] . '"');

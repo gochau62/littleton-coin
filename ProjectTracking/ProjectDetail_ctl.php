@@ -59,7 +59,10 @@ if ($authorized != "yes") {
 
     require_once __DIR__ . '/ProjectTracking_model.php';
 
-    $projNum = intval($_GET['projnum'] ?? $_GET['num'] ?? 0);
+    // newproj asks for the next number, any digits ask for that project
+    $projAsked = trim(strval($_GET['projnum'] ?? $_GET['num'] ?? ''));
+    $projNew   = (strtolower($projAsked) === 'newproj');
+    $projNum   = intval($projAsked);
 
     // shared styles, header and lookup; the page itself follows
     include "ProjectTracking_dsp.php";
@@ -144,7 +147,8 @@ if ($authorized != "yes") {
         <div class="pt-scr-head">
             <div>
                 <div class="pt-scr-what">Project</div>
-                <div class="pt-scr-num" id="scrNum"><?php echo intval($projNum); ?></div>
+                <div class="pt-scr-num" id="scrNum"><?php
+                    echo $projNew ? '&hellip;' : intval($projNum); ?></div>
             </div>
             <div class="pt-scr-btns">
                 <span class="pt-saved" id="scrSaved" hidden>Saved</span>
@@ -174,6 +178,9 @@ if ($authorized != "yes") {
 <script>
 // the project number this screen is showing
 var scrNum = <?php echo intval($projNum); ?>;
+// a screen opened as ?projnum=newproj is filling in a project that does
+// not exist yet; the number comes back with the defaults
+var scrNew = <?php echo $projNew ? 'true' : 'false'; ?>;
 // the record as it came back, and the edits sitting on top of it
 var scrData = null;
 var scrEdits = {};
@@ -191,8 +198,10 @@ var scrGeneral = [
 ];
 
 $(document).ready(function () {
-    if (scrNum <= 0) {
-        paneError('No project number. Open this screen as ProjectDetail_ctl.php?projnum=260084');
+    if (scrNum <= 0 && !scrNew) {
+        paneError('No project number. Open this screen as ' +
+                  'ProjectDetail_ctl.php?projnum=260084, or ' +
+                  'ProjectDetail_ctl.php?projnum=newproj to start a new one.');
         return;
     }
     loadProject();
@@ -236,7 +245,8 @@ function paneError(msg) {
 
 
 function loadProject() {
-    $.post('ProjectTracking_ajax.php', { action: 'project', num: scrNum },
+    $.post('ProjectTracking_ajax.php',
+        { action: 'project', num: scrNew ? 'newproj' : scrNum },
         function (resp) {
             if (!resp || !resp.ok) {
                 paneError((resp && resp.msg) ? resp.msg : 'Request failed.');
@@ -244,10 +254,14 @@ function loadProject() {
             }
             scrData = resp;
             scrEdits = {};
+            scrNew = (resp.proj.isnew === 1);
+            if (scrNew) { scrNum = resp.proj.num; }
             $('#ptUpdated').text('updated ' + resp.updated);
             renderHead();
             renderAll();
-            markClean();
+            // an unsaved project is worth saving from the moment it opens
+            if (scrNew) { $('#btnSave').prop('disabled', false); }
+            else { markClean(); }
         }, 'json').fail(function () {
             paneError('Server error - see the log.');
         });
@@ -257,9 +271,11 @@ function loadProject() {
 // the number, and the stage it sits at, at the top of the card
 function renderHead() {
     var p = scrData.proj;
-    var stage = (scrData.stages && scrData.stages[p.stage]) || p.stage;
-    $('#scrNum').html(esc(p.num) + ' <span class="pt-chip pt-chip-' +
-                      esc(p.stage) + '">' + esc(stage) + '</span>');
+    var chip = scrNew
+        ? '<span class="pt-chip pt-chip-new">Not saved yet</span>'
+        : '<span class="pt-chip pt-chip-' + esc(p.stage) + '">' +
+          esc((scrData.stages && scrData.stages[p.stage]) || p.stage) + '</span>';
+    $('#scrNum').html(esc(p.num) + ' ' + chip);
 }
 
 
@@ -381,7 +397,7 @@ function markClean() {
 
 
 function saveProject() {
-    var data = { action: 'projectsave', num: scrNum };
+    var data = { action: 'projectsave', num: scrNum, 'new': scrNew ? '1' : '0' };
     $.each(scrEdits, function (k, v) { data[k] = v; });
 
     $('#btnSave').prop('disabled', true).text('Saving...');
@@ -396,6 +412,7 @@ function saveProject() {
         }
         // the screen redraws from what the file now holds
         if (resp.proj) { scrData.proj = resp.proj; }
+        scrNew = false;
         scrEdits = {};
         renderHead();
         renderAll();

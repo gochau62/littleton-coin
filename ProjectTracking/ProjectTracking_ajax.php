@@ -411,14 +411,25 @@ switch ($action) {
 
     // one project for the detail screen, with its dropdown choices
     case 'project':
-        $num = intval($_POST['num'] ?? $_GET['num'] ?? 0);
-        if ($num <= 0) { prjOutFail("No project number."); }
-        $rec = prjOneProject($conn, $num);
-        if ($rec === false) { prjOutFail(); }
-        if ($rec === null)  { prjOutFail("Project " . $num . " was not found."); }
+        $asked = trim(strval($_POST['num'] ?? $_GET['num'] ?? ''));
+        // newproj is the legacy screen's own word for "start a new one"
+        $isNew = (strtolower($asked) === 'newproj');
+        $num = intval($asked);
+
+        if ($isNew) {
+            $rec = prjNewProject($conn, $user);
+            if ($rec === false) { prjOutFail(); }
+            $num = intval($rec['PR#']);
+        } else {
+            if ($num <= 0) { prjOutFail("No project number."); }
+            $rec = prjOneProject($conn, $num);
+            if ($rec === false) { prjOutFail(); }
+            if ($rec === null)  { prjOutFail("Project " . $num . " was not found."); }
+        }
 
         $out = prjProjectOut($rec);
-        $out['desc'] = prjProjectDesc($conn, $num);
+        $out['isnew'] = $isNew ? 1 : 0;
+        $out['desc'] = $isNew ? '' : prjProjectDesc($conn, $num);
 
         prjOut(array("ok" => true,
                      "proj" => $out,
@@ -432,19 +443,23 @@ switch ($action) {
         if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             prjOutFail("A save has to be a POST.");
         }
-        $num = intval($_POST['num'] ?? 0);
+        $num   = intval($_POST['num'] ?? 0);
+        $isNew = (($_POST['new'] ?? '') === '1');
         if ($num <= 0) { prjOutFail("No project number."); }
 
         $posted = array();
         foreach (array_keys($GLOBALS['prjGeneralFields']) as $key) {
             if (isset($_POST[$key])) { $posted[$key] = $_POST[$key]; }
         }
-        list($ok, $result) = prjSaveProject($conn, $num, $posted, $user);
+        list($ok, $result) = prjSaveProject($conn, $num, $posted, $user, $isNew);
         if (!$ok) { prjOutFail($result); }
 
         $rec = prjOneProject($conn, $num);
         $out = is_array($rec) ? prjProjectOut($rec) : null;
-        if ($out !== null) { $out['desc'] = prjProjectDesc($conn, $num); }
+        if ($out !== null) {
+            $out['isnew'] = 0;
+            $out['desc'] = prjProjectDesc($conn, $num);
+        }
         prjOut(array("ok" => true,
                      "saved" => $result['saved'],
                      "proj" => $out));
