@@ -124,9 +124,11 @@ function prjFail($where) {
 // procedure is found whatever the job's library list holds
 function prjSqlTries($sql) {
     $tries = array($sql);
-    foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S') as $proc) {
+    foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S',
+                   'PTS0013S', 'PTS0015S', 'PTS0019S', 'PTS0027S', 'LCC0001S') as $proc) {
         if (strpos($sql, $proc) === false) { continue; }
-        $lib = ($proc === 'PHP0003S') ? PRJ_LEGACY_LIB : PRJ_PROC_LIB;
+        // only the two PRJTRK procedures are ours; the rest are legacy
+        $lib = (strpos($proc, 'PRJTRK') === 0) ? PRJ_PROC_LIB : PRJ_LEGACY_LIB;
         $tries[] = str_replace($proc, $lib . '.' . $proc, $sql);
         $tries[] = str_replace($proc, $lib . '/' . $proc, $sql);
     }
@@ -320,6 +322,149 @@ function prjChgLog($conn, $from, $to) {
 function prjProgrammers($conn) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('PGMR', '', ''));
+}
+
+
+// ---- the project screen: one record, its lists, and the save -----------
+
+// PTS0013S: a project's whole master row, the legacy screen's read
+function prjOneProject($conn, $num) {
+    $num = intval($num);
+    if ($num <= 0) { return null; }
+    $rows = prjFetchAll($conn, "CALL PTS0013S(?)", array(strval($num)));
+    if ($rows === false) { return false; }
+    return isset($rows[0]) ? $rows[0] : null;
+}
+
+
+// the project's newest description comment, the long write-up
+function prjProjectDesc($conn, $num) {
+    $rows = prjFetchAll($conn, "CALL PHP0003S(?, ?)",
+                        array(strval(intval($num)), 'PROJ_'));
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return ''; }
+    $best = null;
+    foreach (prjNoteRows($rows, 0, 99999999) as $n) {
+        if (trim(strval($n['NTTYPE'])) !== 'Descrip') { continue; }
+        if ($best === null ||
+            array($n['NTDATE'], $n['NTTIME']) > array($best['NTDATE'], $best['NTTIME'])) {
+            $best = $n;
+        }
+    }
+    return ($best === null) ? '' : prjNoteText($best);
+}
+
+
+// PTS0019S: profiles by role - RQSTR, SPNSR, PMNGR or ALL
+function prjAuthList($conn, $filter) {
+    $rows = prjFetchAll($conn, "CALL PTS0019S(?)", array($filter));
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return array(); }
+    $out = array();
+    foreach ($rows as $r) {
+        $u = strtoupper(trim(strval($r['PAUSER'] ?? '')));
+        if ($u !== '' && !in_array($u, $out, true)) { $out[] = $u; }
+    }
+    sort($out);
+    return $out;
+}
+
+
+// LCC0001S: the department list, code and wording
+function prjDeptList($conn) {
+    $rows = prjFetchAll($conn, "CALL LCC0001S(?, ?)", array('ALL', '   '));
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return array(); }
+    $out = array();
+    foreach ($rows as $r) {
+        $code = trim(strval($r['LDDEPT'] ?? ''));
+        if ($code === '' || isset($out[$code])) { continue; }
+        $out[$code] = trim(strval($r['LDDESC'] ?? '')) ?: $code;
+    }
+    return $out;
+}
+
+
+// the dropdown choices the project screen fills in
+function prjProjectLists($conn) {
+    return array(
+        'rqst'    => prjAuthList($conn, 'RQSTR'),
+        'sponsor' => prjAuthList($conn, 'SPNSR'),
+        'dept'    => prjDeptList($conn),
+    );
+}
+
+
+// the General tab's own fields, screen name => column
+$GLOBALS['prjGeneralFields'] = array(
+    'name'    => 'PRDESC',
+    'rqst'    => 'PRRQST',
+    'sponsor' => 'PRSPONSR',
+    'dept'    => 'PRDEPT',
+);
+
+
+// PTS0027S rewrites the whole row, so every column is passed in the
+// legacy order; only the posted fields differ from what was read
+function prjSaveProject($conn, $num, $posted, $user) {
+    $rec = prjOneProject($conn, $num);
+    if ($rec === false) { return array(false, 'The project could not be read.'); }
+    if ($rec === null)  { return array(false, 'Project ' . intval($num) . ' was not found.'); }
+
+    // only known fields move, and each keeps the column's width
+    $changes = array();
+    foreach ($GLOBALS['prjGeneralFields'] as $key => $col) {
+        if (!array_key_exists($key, $posted)) { continue; }
+        $was = trim(strval($rec[$col] ?? ''));
+        $now = trim(strval($posted[$key]));
+        if ($key === 'name') { $now = substr($now, 0, 50); }
+        if ($now === $was) { continue; }
+        $rec[$col] = $now;
+        $changes[] = array('col' => $col, 'was' => $was, 'now' => $now);
+    }
+    if (empty($changes)) { return array(true, array('saved' => 0)); }
+
+    $cols = array('PR#', 'PRDESC', 'PRRQST', 'PRDEPT', 'PRSUBDEPT', 'PRUPTY',
+        'PRSPONSR', 'PRSPAPVDTE', 'PRSUBD', 'PRNEED', 'PRESTMTR', 'PRPGMR',
+        'PRITDEVGRP', 'PRWRKSTS', 'PRECOM', 'PRACOM', 'PRESTR', 'PRIMPDTE',
+        'PRTYPE', 'PRANLPLN', 'PRPLAN', 'PRRELPRJ#', 'PRRELSHIP', 'PRRESCOD',
+        'PRPRTY', 'PRSCREVDTE', 'PRFORCE2SC', 'PRITREVDTE', 'PRAUTH',
+        'PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA', 'PROPYBK', 'PRCCST1',
+        'PRCCSTA', 'PRCSAV1', 'PRCSAVA', 'PRCPYBK', 'PRDRAT', 'PRPMDT',
+        'PRPAYBKTYP', 'PRPBJSTF', 'PRUSRACPT', 'PRACPTDTE', 'PRBRAND');
+    // whole numbers, money and the rest are bound as the procedure expects
+    $ints = array('PR#', 'PRUPTY', 'PRSPAPVDTE', 'PRSUBD', 'PRNEED', 'PRECOM',
+        'PRACOM', 'PRESTR', 'PRIMPDTE', 'PRRELPRJ#', 'PRRELSHIP', 'PRPRTY',
+        'PRSCREVDTE', 'PRITREVDTE', 'PRAUTH', 'PROPYBK', 'PRCPYBK', 'PRDRAT',
+        'PRPMDT', 'PRACPTDTE');
+    $nums = array('PROCST1', 'PROCSTA', 'PROSAV1', 'PROSAVA', 'PRCCST1',
+        'PRCCSTA', 'PRCSAV1', 'PRCSAVA');
+
+    $params = array();
+    foreach ($cols as $col) {
+        $v = $rec[$col] ?? '';
+        if ($col === 'PRBRAND') {
+            $v = trim(strval($v));
+            $v = ($v === '' || $v === 'All') ? ' ' : substr($v, 0, 1);
+        } elseif (in_array($col, $ints, true)) {
+            $v = intval($v);
+        } elseif (in_array($col, $nums, true)) {
+            $v = floatval($v);
+        } else {
+            $v = strval($v);
+        }
+        $params[] = $v;
+    }
+    $params[] = 'U';                                  // mode
+    $params[] = strval($rec['PRPBJSTT'] ?? '');       // payback justification text
+
+    $sql = "CALL PTS0027S(" . implode(', ', array_fill(0, count($params), '?')) . ")";
+    if (prjFetchAll($conn, $sql, $params) === false) {
+        return array(false, 'The save failed: ' . $GLOBALS['prjErr']);
+    }
+
+    foreach ($changes as $c) {
+        prjActLog($user, 'PROJSAVE',
+                  $num . ' ' . $c['col'] . ' "' . $c['was'] . '" -> "' . $c['now'] . '"');
+    }
+    return array(true, array('saved' => count($changes)));
 }
 
 

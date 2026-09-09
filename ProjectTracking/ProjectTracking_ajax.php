@@ -101,6 +101,71 @@ function prjRowOut($row) {
 }
 
 
+// one project master row shaped for the detail screen
+function prjProjectOut($r) {
+    $s = function ($k) use ($r) { return trim(strval($r[$k] ?? '')); };
+    $d = function ($k) use ($r) { return intval($r[$k] ?? 0); };
+    return array(
+        'num'      => $d('PR#'),
+        'name'     => $s('PRDESC'),
+        'rqst'     => $s('PRRQST'),
+        'sponsor'  => $s('PRSPONSR'),
+        'dept'     => $s('PRDEPT'),
+        'subdept'  => $s('PRSUBDEPT'),
+        'pgmr'     => $s('PRPGMR'),
+        'estmtr'   => $s('PRESTMTR'),
+        'devgrp'   => $s('PRITDEVGRP'),
+        'type'     => $s('PRTYPE'),
+        'plan'     => $s('PRPLAN'),
+        'wrksts'   => $s('PRWRKSTS'),
+        // the wording the dropdown carries, not the stored code
+        'wrklabel' => prjWrkLabel($s('PRWRKSTS')),
+        'rescod'   => $s('PRRESCOD'),
+        'force2sc' => $s('PRFORCE2SC'),
+        'usracpt'  => $s('PRUSRACPT'),
+        'paybktyp' => $s('PRPAYBKTYP'),
+        'deptpr'   => $d('PRUPTY'),
+        'scpr'     => $d('PRPRTY'),
+        // dates come through as both the raw number and mm/dd/yyyy
+        'sub'      => prjFmtDate($d('PRSUBD')),
+        'need'     => prjFmtDate($d('PRNEED')),
+        'start'    => prjFmtDate($d('PRESTR')),
+        'ecom'     => prjFmtDate($d('PRECOM')),
+        'acom'     => prjFmtDate($d('PRACOM')),
+        'impl'     => prjFmtDate($d('PRIMPDTE')),
+        'spapv'    => prjFmtDate($d('PRSPAPVDTE')),
+        'screv'    => prjFmtDate($d('PRSCREVDTE')),
+        'subraw'   => $d('PRSUBD'),
+        'status'   => prjStatus(prjMasterAsList($r)),
+        'stage'    => prjStage(prjMasterAsList($r)),
+    );
+}
+
+
+// a work status code spelled out, whatever the file calls it
+function prjWrkLabel($code) {
+    $code = strtoupper(trim($code));
+    if ($code === '') { return 'Not set'; }
+    $code = $GLOBALS['prjWrkAlias'][$code] ?? $code;
+    return $GLOBALS['prjWrkLabels'][$code] ?? $code;
+}
+
+
+// the master row under the PJ names the stage and status helpers read
+function prjMasterAsList($r) {
+    $s = function ($k) use ($r) { return trim(strval($r[$k] ?? '')); };
+    return array(
+        'PJRESCOD'   => $s('PRRESCOD'),
+        'PJCOMPDATE' => intval($r['PRACOM'] ?? 0),
+        'PJWRKSTS'   => $s('PRWRKSTS'),
+        'PJFORCE2SC' => $s('PRFORCE2SC'),
+        'PJHASEST'   => (floatval($r['PRECST1'] ?? 0) > 0 ||
+                         floatval($r['PRECSTA'] ?? 0) > 0) ? 'Y' : 'N',
+        'PJSUBDATE'  => intval($r['PRSUBD'] ?? 0),
+    );
+}
+
+
 // group rows by programmer, Unassigned last
 function prjGroupByPgmr($projects) {
     $groups = array();
@@ -288,6 +353,46 @@ switch ($action) {
         $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book, 'Xlsx');
         $writer->save('php://output');
         exit;
+
+    // one project for the detail screen, with its dropdown choices
+    case 'project':
+        $num = intval($_POST['num'] ?? $_GET['num'] ?? 0);
+        if ($num <= 0) { prjOutFail("No project number."); }
+        $rec = prjOneProject($conn, $num);
+        if ($rec === false) { prjOutFail(); }
+        if ($rec === null)  { prjOutFail("Project " . $num . " was not found."); }
+
+        $out = prjProjectOut($rec);
+        $out['desc'] = prjProjectDesc($conn, $num);
+
+        prjOut(array("ok" => true,
+                     "proj" => $out,
+                     "lists" => prjProjectLists($conn),
+                     "statuses" => $GLOBALS['prjStatuses'],
+                     "stages" => $GLOBALS['prjStages'],
+                     "updated" => date('M j, Y')));
+
+    // the General tab's fields; POST only
+    case 'projectsave':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            prjOutFail("A save has to be a POST.");
+        }
+        $num = intval($_POST['num'] ?? 0);
+        if ($num <= 0) { prjOutFail("No project number."); }
+
+        $posted = array();
+        foreach (array_keys($GLOBALS['prjGeneralFields']) as $key) {
+            if (isset($_POST[$key])) { $posted[$key] = $_POST[$key]; }
+        }
+        list($ok, $result) = prjSaveProject($conn, $num, $posted, $user);
+        if (!$ok) { prjOutFail($result); }
+
+        $rec = prjOneProject($conn, $num);
+        $out = is_array($rec) ? prjProjectOut($rec) : null;
+        if ($out !== null) { $out['desc'] = prjProjectDesc($conn, $num); }
+        prjOut(array("ok" => true,
+                     "saved" => $result['saved'],
+                     "proj" => $out));
 
     default:
         prjOutFail("Unknown action.");
