@@ -7,9 +7,9 @@ Three asks from the 09/01 review of the project detail screen
 
 The dropdown is not hard-coded. `getRecsPRSTATUSP()` in `PROJ_model.php`
 calls `PTS0024S`, which reads `LSCPRDLIB/PRSTATUSP` (`PRSCODE`, `PRSDESC`).
-So the status is **one row in that file** — `PRSTATUSP_INQUEUE.SQL` adds
-`INQ` / `In Queue` if it is not already there. No PHP change makes it
-appear; the screen and the green screen both pick it up.
+So the status is **one row in that file**, and that row was inserted on
+09/03/26 (`INQ` / `In Queue`). No PHP change makes it appear; the screen
+and the green screen both pick it up.
 
 The dashboard already understands `INQ` (and `QUE` as an alias) and colors
 it pink. With the recompiled `PRJTRK001S` it also reads the wording from
@@ -106,7 +106,7 @@ the repo it can be placed on its own line.
 
 ## Order of operations on the box
 
-1. `PRSTATUSP_INQUEUE.SQL` — the dropdown row (`LSCPRDLIB`).
+1. ~~The `PRSTATUSP` dropdown row~~ — done, inserted 09/03/26.
 2. `PRJTRK001S` recompile — `STATUS`, `CHGLOG`, `PJSTRDATE` and the
    status/subdate columns the screens already expect.
 3. `PRJTRK_TABLES.SQL` — the two files.
