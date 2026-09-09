@@ -125,7 +125,9 @@ function prjFail($where) {
 function prjSqlTries($sql) {
     $tries = array($sql);
     foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S',
-                   'PT0028S', 'PTS0013S', 'PTS0015S', 'PTS0019S', 'PTS0027S',
+                   'PT0028S', 'PTS0013S', 'PTS0015S', 'PTS0017S', 'PTS0018S',
+                   'PTS0019S', 'PTS0020S', 'PTS0021S', 'PTS0022S', 'PTS0023S',
+                   'PTS0024S', 'PTS0027S', 'PTS0044S',
                    'LCC0001S') as $proc) {
         if (strpos($sql, $proc) === false) { continue; }
         // only the two PRJTRK procedures are ours; the rest are legacy
@@ -453,12 +455,34 @@ function prjSubDeptList($conn, $dept) {
 }
 
 
-// the dropdown choices the project screen fills in
+// one code/description dropdown, from whichever procedure owns it
+function prjCodeList($conn, $proc, $code, $desc) {
+    $rows = prjFetchAll($conn, "CALL " . $proc . "()");
+    if ($rows === false) { $GLOBALS['prjErr'] = ''; return array(); }
+    $out = array();
+    foreach ($rows as $r) {
+        $c = trim(strval($r[$code] ?? ''));
+        if ($c === '' || isset($out[$c])) { continue; }
+        $out[$c] = trim(strval($r[$desc] ?? '')) ?: $c;
+    }
+    return $out;
+}
+
+
+// every dropdown the four tabs carry, each from the legacy's own procedure
 function prjProjectLists($conn) {
     return array(
-        'rqst'    => prjAuthList($conn, 'RQSTR'),
-        'sponsor' => prjAuthList($conn, 'SPNSR'),
-        'dept'    => prjDeptList($conn),
+        'rqst'      => prjAuthList($conn, 'RQSTR'),
+        'sponsor'   => prjAuthList($conn, 'SPNSR'),
+        'dept'      => prjDeptList($conn),
+        'pgmr'      => prjCodeList($conn, 'PTS0017S', 'PGDEVPRF', 'PGDEVPRF'),
+        'devgrp'    => prjCodeList($conn, 'PTS0018S', 'PGGROUP',  'PGGRPDESC'),
+        'paybktyp'  => prjCodeList($conn, 'PTS0020S', 'PBTYPE',   'PBDESC'),
+        'type'      => prjCodeList($conn, 'PTS0021S', 'PYTYPE',   'PYDESC'),
+        'plan'      => prjCodeList($conn, 'PTS0022S', 'PLTYPE',   'PLDESC'),
+        'rescod'    => prjCodeList($conn, 'PTS0023S', 'PRCCODE',  'PRCDESC'),
+        'wrksts'    => prjCodeList($conn, 'PTS0024S', 'PRSCODE',  'PRSDESC'),
+        'justtype'  => prjCodeList($conn, 'PTS0044S', 'PJDESC',   'PJDESC'),
     );
 }
 
@@ -496,10 +520,45 @@ $GLOBALS['prjGeneralFields'] = array(
     'usracpt'  => 'PRUSRACPT',
     'type'     => 'PRTYPE',
     'anlpln'   => 'PRANLPLN',
+    'justtype' => 'PRPBJSTF',
+    // IT Stuff
+    'estmtr'   => 'PRESTMTR',
+    'devgrp'   => 'PRITDEVGRP',
+    'brand'    => 'PRBRAND',
+    'parent'   => 'PRRELPRJ#',
+    'pgmr'     => 'PRPGMR',
+    'wrksts'   => 'PRWRKSTS',
+    'start'    => 'PRESTR',
+    'ecom'     => 'PRECOM',
+    'acom'     => 'PRACOM',
+    // Payback
+    'paybktyp' => 'PRPAYBKTYP',
+    'devrate'  => 'PRDRAT',
+    'occst1'   => 'PROCST1',
+    'occsta'   => 'PROCSTA',
+    'osav1'    => 'PROSAV1',
+    'osava'    => 'PROSAVA',
+    'ccst1'    => 'PRCCST1',
+    'ccsta'    => 'PRCCSTA',
+    'csav1'    => 'PRCSAV1',
+    'csava'    => 'PRCSAVA',
+    // Steering committee
+    'screv'    => 'PRSCREVDTE',
+    'rescod'   => 'PRRESCOD',
+    'auth'     => 'PRAUTH',
+    'plan'     => 'PRPLAN',
+    'scpr'     => 'PRPRTY',
+    'pmdt'     => 'PRPMDT',
+    'force2sc' => 'PRFORCE2SC',
 );
 
 // fields the screen posts as yyyy-mm-dd but the file stores as a number
-$GLOBALS['prjGeneralDates'] = array('spapv', 'need');
+$GLOBALS['prjGeneralDates'] = array('spapv', 'need', 'start', 'ecom', 'acom',
+                                    'screv', 'pmdt');
+// fields the file keeps as a plain number
+$GLOBALS['prjGeneralNums'] = array('deptpr', 'scpr', 'auth', 'parent', 'devrate',
+                                   'occst1', 'occsta', 'osav1', 'osava',
+                                   'ccst1', 'ccsta', 'csav1', 'csava');
 
 
 // PTS0027S rewrites the whole row, so every column is passed in the
@@ -529,7 +588,9 @@ function prjSaveProject($conn, $num, $posted, $user, $isNew = false) {
             $now = strval(intval(str_replace('-', '', $now)));
             $was = strval(intval($was));
         }
-        if ($key === 'deptpr') { $now = strval(intval($now)); $was = strval(intval($was)); }
+        if (in_array($key, $GLOBALS['prjGeneralNums'], true)) {
+            $now = strval(floatval($now)); $was = strval(floatval($was));
+        }
         if ($now === $was) { continue; }
         $rec[$col] = $now;
         $changes[] = array('col' => $col, 'was' => $was, 'now' => $now);

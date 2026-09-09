@@ -135,6 +135,13 @@ if ($authorized != "yes") {
         font-size: .84rem; color: var(--pt-text); cursor: pointer; }
 .pt-radio input { width: auto; margin: 0; }
 
+.pt-money { width: 110px; text-align: right; font: inherit; font-size: .84rem;
+        border: 1px solid var(--pt-field); border-radius: 7px; padding: .3rem .4rem; }
+.pt-check { list-style: none; margin: .2rem 0 0; padding: 0; columns: 2; }
+.pt-check li { font-size: .84rem; padding: .12rem 0; }
+.pt-check-done { color: var(--pt-green); }
+.pt-check-open { color: var(--pt-red); }
+
 .pt-note { font-size: .78rem; color: var(--pt-muted); margin: 0 0 .85rem; }
 .pt-saved { font-size: .8rem; font-weight: 600; color: var(--pt-green);
         align-self: center; }
@@ -210,6 +217,46 @@ var scrGeneral = [
     { key: 'deptpr',  label: 'Department priority', num: true, max: 1 },
     { key: 'usracpt', label: 'Project acceptance', wide: true, check: 'Yes',
       hint: 'The user agrees the project is complete and ready for implementation.' }
+];
+
+// IT Stuff, in the order PROJ_dsp.php lays it out
+var scrIt = [
+    { key: 'estmtr',  label: 'Assigned estimator', list: 'pgmr' },
+    { key: 'devgrp',  label: 'Dev group', list: 'devgrp' },
+    { key: 'brand',   label: 'Brand' },
+    { key: 'parent',  label: 'Parent project', num: true },
+    { key: 'pgmr',    label: 'Programmer assigned', list: 'pgmr' },
+    { key: 'wrksts',  label: 'Programmer work status', list: 'wrksts' },
+    { key: 'start',   label: 'Scheduled start date', date: true },
+    { key: 'ecom',    label: 'Scheduled implementation date', date: true },
+    { key: 'acom',    label: 'Actual implementation date', date: true }
+];
+
+// Payback: the type and rate, then the original/current grid
+var scrPay = [
+    { key: 'paybktyp', label: 'Payback type', list: 'paybktyp' },
+    { key: 'devrate',  label: 'Developer rate', num: true }
+];
+var scrPayRows = [
+    ['Developer cost',    null,     null,    true],
+    ['One-time cost',     'occst1', 'ccst1', false],
+    ['Annual cost',       'occsta', 'ccsta', false],
+    ['One-time savings',  'osav1',  'csav1', false],
+    ['Annual savings',    'osava',  'csava', false],
+    ['Payback',           'opybk',  'cpybk', true]
+];
+
+// Steering committee
+var scrSc = [
+    { key: 'screv',    label: 'Steering committee action date', date: true },
+    { key: 'rescod',   label: 'Resolution', list: 'rescod' },
+    { key: 'auth',     label: 'Authorized hours', num: true },
+    { key: 'type',     label: 'Project type', list: 'type' },
+    { key: 'plan',     label: 'Planned?', list: 'plan' },
+    { key: 'scpr',     label: 'SC priority', num: true },
+    { key: 'pmdt',     label: 'Postmortem date', date: true },
+    { key: 'force2sc', label: 'Force steering committee review', check: 'Y',
+      hint: 'Send this project to the committee whatever its checklist says.' }
 ];
 
 $(document).ready(function () {
@@ -380,31 +427,33 @@ function renderAll() {
     // the wording the file carries, not the stored code
     var status = p.wrklabel || p.wrksts;
 
-    $('#pane-it').html('<p class="pt-note">Read-only for now - edit these on ' +
-        'the legacy screen until this tab is wired up.</p><div class="pt-row">' +
-        ro('Programmer', p.pgmr) + ro('Work status', status) +
-        ro('Estimator', p.estmtr) + ro('Development group', p.devgrp) +
-        ro('Project type', p.type) + ro('Plan type', p.plan) +
-        ro('Scheduled start', p.start) + ro('Est. completion', p.ecom) +
-        ro('Actual completion', p.acom) + ro('Implemented', p.impl) +
-        '</div>');
+    var it = '<div class="pt-row">';
+    $.each(scrIt, function (i, f) { it += field(f); });
+    it += '</div>';
+    // the estimate history and hours the legacy screen prints alongside
+    it += '<div class="pt-row" style="margin-top:.4rem">' +
+          ro('Current estimate', (p.low || p.hi) ? (p.low + ' - ' + p.hi + ' hours') : '') +
+          ro('Hours to date', p.hours) + '</div>';
+    $('#pane-it').html(it);
 
-    $('#pane-payback').html('<p class="pt-note">Read-only for now - edit these on ' +
-        'the legacy screen until this tab is wired up.</p><div class="pt-row">' +
-        ro('Payback type', p.paybktyp) + ro('User accepted', p.usracpt) +
-        '</div>');
+    var pay = '<div class="pt-row">';
+    $.each(scrPay, function (i, f) { pay += field(f); });
+    pay += '</div>' + payTable();
+    $('#pane-payback').html(pay);
 
-    $('#pane-sc').html('<p class="pt-note">Read-only for now - edit these on ' +
-        'the legacy screen until this tab is wired up.</p><div class="pt-row">' +
-        ro('Resolution code', p.rescod) + ro('SC stage',
-            (scrData.stages && scrData.stages[p.stage]) || p.stage) +
-        ro('Dept priority', p.deptpr) + ro('SC priority', p.scpr) +
-        ro('Sponsor approved', p.spapv) + ro('SC reviewed', p.screv) +
-        ro('Forced to SC', p.force2sc) + ro('Need date', p.need) +
-        '</div>');
+    var sc = '<div class="pt-row">';
+    $.each(scrSc, function (i, f) { sc += field(f); });
+    sc += '</div>';
+    // the checklist the committee reads, same items the dashboard counts
+    if (p.missing) {
+        sc += '<div class="pt-fld pt-fld-wide" style="margin-top:.6rem">' +
+              '<label>Steering committee review checklist</label><div>' +
+              checkList(p.missing) + '</div></div>';
+    }
+    $('#pane-sc').html(sc);
 
-    // every editable field reports its own changes
-    $('#pane-general').off('input change').on('input change', '[data-key]', function () {
+    // every editable field on every tab reports its own changes
+    $('.pt-pane').off('input change').on('input change', '[data-key]', function () {
         var box = $(this), k = box.data('key');
         var was = String(scrData.proj[k] || '');
         if (box.is(':checkbox')) {
@@ -422,7 +471,54 @@ function renderAll() {
         markDirty();
         // the sub-department list follows the department
         if (k === 'dept') { loadSubDepts(box.val()); }
+        // the payback numbers keep their own totals honest
+        if (k.length === 5 || k.length === 6) { payTotals(); }
     });
+}
+
+
+// the payback grid: original beside current, the way the old screen reads
+function payTable() {
+    var p = scrData.proj;
+    var html = '<div class="pt-tablewrap" style="max-height:none;border:0;margin-top:.5rem">' +
+               '<table class="pt-grid"><thead><tr><th>Payback data</th>' +
+               '<th class="pt-num">Original</th><th class="pt-num">Current</th>' +
+               '</tr></thead><tbody>';
+    $.each(scrPayRows, function (i, r) {
+        html += '<tr><td>' + esc(r[0]) + '</td>';
+        $.each([r[1], r[2]], function (j, key) {
+            if (key === null) {
+                html += '<td class="pt-num">' + esc(j === 0 ? p.opybk : p.cpybk) + '</td>';
+            } else if (r[3]) {
+                html += '<td class="pt-num">' + esc(p[key]) + '</td>';
+            } else {
+                html += '<td class="pt-num"><input class="pt-money" type="number" step="0.01" ' +
+                        'data-key="' + esc(key) + '" value="' + attr(p[key]) + '"></td>';
+            }
+        });
+        html += '</tr>';
+    });
+    return html + '</tbody></table></div>';
+}
+
+
+// the legacy screen computes payback on the fly; the file keeps the stored one
+function payTotals() {
+    $('#pane-payback .pt-money').each(function () { /* the save recomputes */ });
+}
+
+
+// the seven checklist items, ticked or still outstanding
+function checkList(missing) {
+    var all = ['description', 'estimator', 'sponsor approval', 'estimate',
+               'payback justification', 'department priority', 'project type'];
+    var html = '<ul class="pt-check">';
+    $.each(all, function (i, item) {
+        var open = ($.inArray(item, missing) !== -1);
+        html += '<li class="' + (open ? 'pt-check-open' : 'pt-check-done') + '">' +
+                (open ? '\u25cb ' : '\u2713 ') + esc(item) + '</li>';
+    });
+    return html + '</ul>';
 }
 
 

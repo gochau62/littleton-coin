@@ -148,11 +148,35 @@ function prjProjectOut($r) {
         'spapv'    => prjFmtDate($d('PRSPAPVDTE')),
         'screv'    => prjFmtDate($d('PRSCREVDTE')),
         'subraw'   => $d('PRSUBD'),
+        'brand'    => $s('PRBRAND'),
+        'parent'   => $d('PRRELPRJ#'),
+        'auth'     => $d('PRAUTH'),
+        'devrate'  => floatval($r['PRDRAT'] ?? 0),
+        'justtype' => $s('PRPBJSTF'),
+        'pmdt'     => prjFmtDate($d('PRPMDT')),
+        // the payback grid, original beside current
+        'occst1'   => floatval($r['PROCST1'] ?? 0),
+        'occsta'   => floatval($r['PROCSTA'] ?? 0),
+        'osav1'    => floatval($r['PROSAV1'] ?? 0),
+        'osava'    => floatval($r['PROSAVA'] ?? 0),
+        'opybk'    => floatval($r['PROPYBK'] ?? 0),
+        'ccst1'    => floatval($r['PRCCST1'] ?? 0),
+        'ccsta'    => floatval($r['PRCCSTA'] ?? 0),
+        'csav1'    => floatval($r['PRCSAV1'] ?? 0),
+        'csava'    => floatval($r['PRCSAVA'] ?? 0),
+        'cpybk'    => floatval($r['PRCPYBK'] ?? 0),
         // the same dates again, in the shape a date input wants
         'spapviso' => prjIsoDate($d('PRSPAPVDTE')),
         'neediso'  => prjIsoDate($d('PRNEED')),
+        'startiso' => prjIsoDate($d('PRESTR')),
+        'ecomiso'  => prjIsoDate($d('PRECOM')),
+        'acomiso'  => prjIsoDate($d('PRACOM')),
+        'screviso' => prjIsoDate($d('PRSCREVDTE')),
+        'pmdtiso'  => prjIsoDate($d('PRPMDT')),
         'status'   => prjStatus(prjMasterAsList($r)),
         'stage'    => prjStage(prjMasterAsList($r)),
+        // what the committee is still waiting on
+        'missing'  => prjChecklistMissing(prjMasterAsList($r)) ?: array(),
     );
 }
 
@@ -177,6 +201,17 @@ function prjMasterAsList($r) {
         'PJHASEST'   => (floatval($r['PRECST1'] ?? 0) > 0 ||
                          floatval($r['PRECSTA'] ?? 0) > 0) ? 'Y' : 'N',
         'PJSUBDATE'  => intval($r['PRSUBD'] ?? 0),
+        // the columns the seven-item checklist reads
+        'PJNUM'      => intval($r['PR#'] ?? 0),
+        'PJESTMTR'   => $s('PRESTMTR'),
+        'PJSPAPVDTE' => intval($r['PRSPAPVDTE'] ?? 0),
+        'PJPAYBKTYP' => $s('PRPAYBKTYP'),
+        'PJPAYBKFIG' => (floatval($r['PROCST1'] ?? 0) || floatval($r['PROCSTA'] ?? 0) ||
+                         floatval($r['PROSAV1'] ?? 0) || floatval($r['PROSAVA'] ?? 0) ||
+                         floatval($r['PRCCST1'] ?? 0) || floatval($r['PRCCSTA'] ?? 0) ||
+                         floatval($r['PRCSAV1'] ?? 0) || floatval($r['PRCSAVA'] ?? 0)) ? 'Y' : 'N',
+        'PJDEPTPR'   => intval($r['PRUPTY'] ?? 0),
+        'PJTYPE'     => $s('PRTYPE'),
     );
 }
 
