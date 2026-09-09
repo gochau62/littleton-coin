@@ -296,7 +296,7 @@ switch ($action) {
 
         $book  = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $book->getActiveSheet();
-        $sheet->setTitle('Projects by developer');
+        $sheet->setTitle('Projects by Developer');
 
         // Assigned names the programmer inside the Other group
         $heads = array('Pjt#', 'Assigned', 'SC Stage', 'Status', 'Dept', 'Dept Prty',

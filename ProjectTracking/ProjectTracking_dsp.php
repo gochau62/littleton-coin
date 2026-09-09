@@ -498,7 +498,7 @@ function prjHeader($title, $subtitle, $active) {
                 <?php // every screen reaches every other one
                       $prjNav = array(
                           'dashboard'   => array('ProjectTracking_ctl.php', 'Overview'),
-                          'assignments' => array('ProjectDevelopers_ctl.php', 'By developer'),
+                          'assignments' => array('ProjectDevelopers_ctl.php', 'By Developer'),
                           'time'        => array('ProjectTimeEntry_ctl.php', 'Time entry'),
                       );
                       foreach ($prjNav as $key => $n) {
