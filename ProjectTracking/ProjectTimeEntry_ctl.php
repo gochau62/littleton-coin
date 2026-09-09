@@ -119,11 +119,6 @@ if ($authorized != "yes") {
 <div id="stdPage">
 <div class="pt-app">
 
-    <?php prjHeader('Project Time Entry',
-                    '<span class="pt-when" id="ptUpdated"></span>' .
-                    '<a href="#" id="lnkRefresh" class="pt-refresh">&#8635; Refresh</a>',
-                    'time'); ?>
-
     <div class="pt-card">
         <div class="pt-wk-bar">
             <span class="pt-wk-lbl">For week ending:</span>
@@ -167,7 +162,6 @@ var wkNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 $(document).ready(function () {
     loadWeek();
 
-    $('#lnkRefresh').on('click', function (e) { e.preventDefault(); loadWeek(); });
     $('#wkPrev').on('click', function () { stepWeek(-7); });
     $('#wkNext').on('click', function () { stepWeek(7); });
     $('#wkThis').on('click', function () { wkAnchor = 0; loadWeek(); });
@@ -175,9 +169,6 @@ $(document).ready(function () {
     $('#wkAdd').on('keydown', function (e) {
         if (e.key === 'Enter') { e.preventDefault(); addProject(); }
     });
-
-    // the header lookup opens a project from here too
-    ptLookup({});
 });
 
 
@@ -221,7 +212,6 @@ function loadWeek() {
             }
             wkError('');
             wkData = resp;
-            $('#ptUpdated').text('updated ' + resp.updated);
             renderWeek();
         }, 'json').fail(function () {
             wkError('Server error - see the log.');
