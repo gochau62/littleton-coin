@@ -499,15 +499,11 @@ function prjHeader($title, $subtitle, $active) {
                       $prjNav = array(
                           'dashboard'   => array('ProjectTracking_ctl.php', 'Overview'),
                           'assignments' => array('ProjectDevelopers_ctl.php', 'By Developer'),
-                          // the legacy screen, wearing these styles
-                          'time'        => array(prjLegacyBase() . 'PROJ_timeEntry_ctl.php',
-                                                 'Time Entry'),
+                          'time'        => array('ProjectTimeEntry_ctl.php', 'Time Entry'),
                       );
                       foreach ($prjNav as $key => $n) {
-                          // a screen beside this one that was not copied is not linked
-                          $away = (strpos($n[0], '/') !== false);
-                          if ($key === $active ||
-                              (!$away && !file_exists(__DIR__ . '/' . $n[0]))) { continue; } ?>
+                          // a screen that was not copied over is not linked
+                          if ($key === $active || !file_exists(__DIR__ . '/' . $n[0])) { continue; } ?>
                     <a class="pt-btn" href="<?php echo $n[0]; ?>"><?php echo $n[1]; ?></a>
                 <?php } ?>
             </div>

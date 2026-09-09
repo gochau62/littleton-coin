@@ -125,9 +125,9 @@ function prjFail($where) {
 function prjSqlTries($sql) {
     $tries = array($sql);
     foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S',
-                   'PT0028S', 'PTS0013S', 'PTS0015S', 'PTS0017S', 'PTS0018S',
-                   'PTS0019S', 'PTS0020S', 'PTS0021S', 'PTS0022S', 'PTS0023S',
-                   'PTS0024S', 'PTS0027S', 'PTS0044S',
+                   'PT0028S', 'PTS0002S', 'PTS0013S', 'PTS0015S', 'PTS0017S',
+                   'PTS0018S', 'PTS0019S', 'PTS0020S', 'PTS0021S', 'PTS0022S',
+                   'PTS0023S', 'PTS0024S', 'PTS0027S', 'PTS0044S',
                    'LCC0001S') as $proc) {
         if (strpos($sql, $proc) === false) { continue; }
         // only the two PRJTRK procedures are ours; the rest are legacy
@@ -325,6 +325,114 @@ function prjChgLog($conn, $from, $to) {
 function prjProgrammers($conn) {
     return prjFetchAll($conn, "CALL PRJTRK001S(?, ?, ?)",
                        array('PGMR', '', ''));
+}
+
+
+// ---- time entry: the week's grid and the hours behind it ---------------
+
+// the Sunday through Saturday a date falls in, the week the legacy
+// time screen uses, as eight-digit numbers
+function prjWeekDays($anchor = 0) {
+    $d = ($anchor > 0) ? DateTime::createFromFormat('!Ymd', strval(intval($anchor))) : false;
+    if (!$d) { $d = new DateTime('today'); }
+    $d->modify('-' . (intval($d->format('w'))) . ' days');
+    $days = array();
+    for ($i = 0; $i < 7; $i += 1) {
+        $days[] = intval($d->format('Ymd'));
+        $d->modify('+1 day');
+    }
+    return $days;
+}
+
+
+// PTS0001S: the projects a person put time against in a range
+function prjTimeProjects($conn, $user, $from, $to) {
+    $rows = prjFetchAll($conn, "CALL PTS0001S(?, ?, ?)",
+                        array($user, strval(intval($from)), strval(intval($to))));
+    if ($rows === false) { return false; }
+    $out = array();
+    foreach ($rows as $r) {
+        // the procedure returns the number under whichever name it uses
+        foreach (array('PR#', 'PTPROJ', 'PROJ') as $k) {
+            if (isset($r[$k]) && intval($r[$k]) > 0) { $out[] = intval($r[$k]); break; }
+        }
+    }
+    return array_values(array_unique($out));
+}
+
+
+// PTS0004S: one person's time rows on a project
+function prjTimeRows($conn, $proj, $user) {
+    $rows = prjFetchAll($conn, "CALL PTS0004S(?, ?)",
+                        array(strval(intval($proj)), $user));
+    return ($rows === false) ? array() : $rows;
+}
+
+
+// PTS0002S: every project, the 90000 overhead buckets included - the
+// dashboard's LIST leaves those out, so the timesheet cannot use it
+function prjAllProjects($conn) {
+    return prjFetchAll($conn, "CALL PTS0002S(?, ?)", array('yes', ''));
+}
+
+
+// the week's grid: a row per project, hours per day
+function prjTimeWeek($conn, $user, $anchor = 0) {
+    $days = prjWeekDays($anchor);
+    $projects = prjAllProjects($conn);
+    if ($projects === false) { return false; }
+
+    $withTime = prjTimeProjects($conn, $user, $days[0], $days[6]);
+    if ($withTime === false) { $GLOBALS['prjErr'] = ''; $withTime = array(); }
+
+    // the same rows the legacy screen offers: the person's own open work,
+    // the 90000 overhead buckets, and anything already booked this week
+    $rows = array();
+    foreach ($projects as $p) {
+        $num = intval($p['PR#'] ?? 0);
+        if ($num <= 0) { continue; }
+        // the legacy screen's four reasons a project earns a row
+        $mine = (strtoupper(trim(strval($p['PRPGMR'] ?? ''))) === strtoupper(trim($user)) &&
+                 intval($p['PRECOM'] ?? 0) != 0 && intval($p['PRACOM'] ?? 0) == 0 &&
+                 strtoupper(trim(strval($p['PRRESCOD'] ?? ''))) !== 'REJ');
+        $bucket = ($num >= 90000 && $num <= 90100);
+        $added = in_array($num, $GLOBALS['prjTimeAdded'] ?? array(), true);
+        if (!$mine && !$bucket && !$added && !in_array($num, $withTime, true)) { continue; }
+
+        $hours = array_fill(0, 7, 0);
+        foreach (prjTimeRows($conn, $num, $user) as $t) {
+            $on = intval($t['PTDATE'] ?? 0);
+            $at = array_search($on, $days, true);
+            if ($at !== false) { $hours[$at] += floatval($t['PTTIME'] ?? 0); }
+        }
+        $rows[] = array('num' => $num, 'desc' => trim(strval($p['PRDESC'] ?? '')),
+                        'hours' => $hours, 'bucket' => $bucket ? 1 : 0,
+                        'total' => array_sum($hours));
+    }
+
+    // the week's own work first, then the overhead buckets, as the old screen reads
+    usort($rows, function ($a, $b) {
+        if ($a['bucket'] !== $b['bucket']) { return $a['bucket'] - $b['bucket']; }
+        return $b['num'] - $a['num'];
+    });
+    return array('days' => $days, 'rows' => $rows);
+}
+
+
+// PT0029S: set this person's hours on a project for one day
+function prjSaveTime($conn, $user, $proj, $date, $hours) {
+    $user = trim(strval($user));
+    if ($user === '')          { return array(false, 'Sign in again - the session went stale.'); }
+    if (intval($proj) <= 0)    { return array(false, 'No project number.'); }
+    if (intval($date) <= 0)    { return array(false, 'No date.'); }
+    $hours = floatval($hours);
+    if ($hours < 0 || $hours > 24) { return array(false, 'Hours have to be between 0 and 24.'); }
+
+    $ok = prjFetchAll($conn, "CALL PT0029S(?, ?, ?, ?)",
+                      array($user, strval(intval($proj)), strval(intval($date)), $hours));
+    if ($ok === false) { return array(false, 'The time did not save: ' . $GLOBALS['prjErr']); }
+    prjActLog($user, 'TIME', $proj . ' ' . $date . ' ' . $hours . ' hrs');
+    return array(true, '');
 }
 
 
