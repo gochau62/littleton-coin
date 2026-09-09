@@ -179,7 +179,6 @@ if ( $authorized != "yes") {
 
 	require_once ("PROJ_model.php");
 
-	require_once ("ProjectTimeEntry_dsp.php"); 
 
 	if (isset($_GET['addproj']) && (!in_array($_GET['addproj'], (array)$_SESSION['projTimeList']))) { //add array cast to session variable to prevent fatal error, post PHP8.1 upgrade - kjr - 09-06-22
 		$_SESSION['projTimeList'][] = $_GET['addproj'];
@@ -363,4 +362,36 @@ if ( $authorized != "yes") {
 } //end authority check "if"
 
 	include("EndBlock.php");
+?>
+
+<?php
+// the display half, inlined - PHP reads it before the call above runs
+function showTimeEntry(&$screenData) { // Change funcName to something appropriate
+?>
+	<div id='stdPage'>
+		<h1>Project Time Entry</h1>
+	
+		For week ending: <br/>
+
+		<div style='text-align: left; width: 50%; float: left;'>
+			<?php echo $screenData['lnkBack']?>
+			&nbsp;&nbsp;
+			<?php echo $screenData['longDate']?>
+			&nbsp;&nbsp;
+			<?php echo $screenData['lnkForward']?>
+		</div>
+	
+		<div style='text-align: right; width: 50%; float: left;'>
+			Add project 
+			<input type='text' id='projToAdd' maxlength='6' size='2'/> 
+			to list.
+			&nbsp;&nbsp;
+			<button onclick='addProjToTimeList()'>Add</button>
+		</div>
+	
+		<?php echo $screenData['timeTable']?>
+
+	</div>
+<?php 	
+}
 ?>
