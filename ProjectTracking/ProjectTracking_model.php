@@ -666,7 +666,15 @@ function prjSaveProject($conn, $num, $posted, $user, $isNew = false) {
         // a brand new project starts from the same defaults the old screen uses
         $rec = prjNewProject($conn, $user);
         if ($rec === false) { return array(false, 'The defaults could not be read.'); }
-        // the number the screen was showing is the one that gets written
+        // the number the screen was showing is the one that gets written,
+        // but never over a project that already exists - the counter and the
+        // file can disagree when they come from different libraries
+        $taken = prjOneProject($conn, $num);
+        if (is_array($taken) && intval($taken['PR#'] ?? 0) > 0) {
+            return array(false, 'Project ' . intval($num) . ' already exists. The ' .
+                         'next-number data area and the project file disagree - check ' .
+                         'which PROJNXT this job is reading before creating a project.');
+        }
         $rec['PR#'] = intval($num);
     } else {
         $rec = prjOneProject($conn, $num);
