@@ -150,7 +150,14 @@ if ( $authorized != "yes") {
 		}
 	}
 	
-	$screenData['timeTable'] = "<table><tr><th>Proj #</th><th>Description</th><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>";
+	// the day's date under each name, the way the new screens read
+	$dayNames = array('Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat');
+	$screenData['timeTable'] = "<table><tr><th>Proj #</th><th>Description</th>";
+	for ($d = 0; $d <= 6; $d++) {
+		$screenData['timeTable'] .= "<th>" . $dayNames[$d] . "<br/>"
+			. intval(substr($day[$d], 4, 2)) . "/" . intval(substr($day[$d], 6, 2)) . "</th>";
+	}
+	$screenData['timeTable'] .= "<th>TOTAL</th></tr>";
 	$i = 0;
 	foreach ($projTime as $project) {
 		
@@ -178,6 +185,9 @@ if ( $authorized != "yes") {
 		."<td><input type='text' class='numData' size='1'  
 			id='sat" . $project['PR#'] . "' 
 			name='sat' onchange=\"totalElementsByName('sat', 'satTotal', '".$project['PR#']."', '".$day[6]."')\" value ='" . $project[6] . "'></td>"
+		."<td id='rowTotal" . $project['PR#'] . "'>"
+			. rtrim(rtrim(number_format($project[0] + $project[1] + $project[2] + $project[3]
+			  + $project[4] + $project[5] + $project[6], 2), '0'), '.') . "</td>"
 		."</tr>";
 		$sunTotal += $project[0];
 		$monTotal += $project[1];
@@ -198,6 +208,9 @@ if ( $authorized != "yes") {
 		 . "<td id='thuTotal'>" . $thuTotal . "</td>"
 		 . "<td id='friTotal'>" . $friTotal . "</td>"
 		 . "<td id='satTotal'>" . $satTotal . "</td>"
+		 . "<td id='weekTotal'>"
+		 . rtrim(rtrim(number_format($sunTotal + $monTotal + $tueTotal + $wedTotal
+		   + $thuTotal + $friTotal + $satTotal, 2), '0'), '.') . "</td>"
 		 . "</tr></table>";
 	
 	
