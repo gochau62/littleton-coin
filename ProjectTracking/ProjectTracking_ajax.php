@@ -354,6 +354,61 @@ switch ($action) {
         $writer->save('php://output');
         exit;
 
+    // the header lookup, for screens that hold no project rows
+    case 'find':
+        $q = strtolower(trim(strval($_POST['q'] ?? $_GET['q'] ?? '')));
+        if ($q === '') { prjOut(array("ok" => true, "hits" => array())); }
+        $projects = prjProjects($conn, 'Y');
+        if ($projects === false) { prjOutFail(); }
+
+        $hits = array();
+        foreach ($projects as $p) {
+            $num  = intval($p['PJNUM']);
+            $desc = trim($p['PJDESC']);
+            if (strpos(strval($num), $q) === 0 || strpos(strtolower($desc), $q) !== false) {
+                $hits[] = array('num' => $num, 'desc' => $desc);
+            }
+        }
+        // newest number first, the same eight the local lookup shows
+        usort($hits, function ($a, $b) { return $b['num'] - $a['num']; });
+        prjOut(array("ok" => true, "hits" => array_slice($hits, 0, 8)));
+
+    // the week's timesheet for whoever is signed in
+    case 'timeweek':
+        $anchor = intval($_POST['week'] ?? $_GET['week'] ?? 0);
+        $GLOBALS['prjTimeAdded'] = $_SESSION['projTimeList'] ?? array();
+        $week = prjTimeWeek($conn, $user, $anchor);
+        if ($week === false) { prjOutFail(); }
+        prjOut(array("ok" => true,
+                     "days" => $week['days'],
+                     "rows" => $week['rows'],
+                     "user" => $user,
+                     "updated" => date('M j, Y')));
+
+    // keep a project on this person's timesheet for the session
+    case 'timeadd':
+        $num = intval($_POST['num'] ?? 0);
+        if ($num <= 0) { prjOutFail("No project number."); }
+        $rec = prjOneProject($conn, $num);
+        if ($rec === false) { prjOutFail(); }
+        if ($rec === null)  { prjOutFail("Project " . $num . " was not found."); }
+
+        $list = $_SESSION['projTimeList'] ?? array();
+        if (!in_array($num, $list, true)) { $list[] = $num; }
+        $_SESSION['projTimeList'] = $list;
+        prjOut(array("ok" => true, "num" => $num,
+                     "desc" => trim(strval($rec['PRDESC'] ?? ''))));
+
+    // one day's hours on one project; POST only
+    case 'timesave':
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            prjOutFail("A save has to be a POST.");
+        }
+        list($ok, $msg) = prjSaveTime($conn, $user, $_POST['proj'] ?? 0,
+                                      $_POST['date'] ?? 0, $_POST['hours'] ?? 0);
+        if (!$ok) { prjOutFail($msg); }
+        prjOut(array("ok" => true));
+
     // one project for the detail screen, with its dropdown choices
     case 'project':
         $num = intval($_POST['num'] ?? $_GET['num'] ?? 0);

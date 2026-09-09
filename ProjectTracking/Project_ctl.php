@@ -101,6 +101,9 @@ $(document).ready(function () {
         });
     });
 
+    // the header lookup reaches any project from here
+    ptLookup({});
+
     $('#btnSave').on('click', saveProject);
     $('#btnDiscard').on('click', function () {
         scrEdits = {};

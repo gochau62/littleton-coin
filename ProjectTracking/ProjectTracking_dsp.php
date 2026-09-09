@@ -19,7 +19,7 @@
 // the stylesheet shared by both screens
 function prjStyles() {
 ?>
-<!-- PT build 2026-09-09-A - deploy marker, check via view-source -->
+<!-- PT build 2026-09-09-B - deploy marker, check via view-source -->
 <script>
 // where the legacy project screens answer from
 var PT_LEGACY = '<?php echo function_exists('prjLegacyBase') ? prjLegacyBase() : ''; ?>';
@@ -40,6 +40,8 @@ function ptLookup(o) {
         var q = box.val().trim().toLowerCase();
         hits = []; active = -1;
         if (q === '') { close(); return; }
+        // a screen that holds no project rows asks the server instead
+        if (!o.rows) { remote(q); return; }
         var seen = {};
         jQuery.each(o.rows() || [], function (i, p) {
             if (seen[p.num]) { return; }
@@ -58,10 +60,26 @@ function ptLookup(o) {
         });
         list.html(html || '<div class="pt-sug pt-sug-none">No matching project</div>').show();
     }
+    // the same list, filled from the find action; the last reply wins
+    var findSeq = 0;
+    function remote(q) {
+        var seq = ++findSeq;
+        jQuery.post('ProjectTracking_ajax.php', { action: 'find', q: q },
+            function (resp) {
+                if (seq !== findSeq || box.val().trim().toLowerCase() !== q) { return; }
+                hits = (resp && resp.ok) ? resp.hits : [];
+                var html = '';
+                jQuery.each(hits, function (i, p) {
+                    html += '<div class="pt-sug" data-i="' + i + '"><b>' + p.num + '</b>' +
+                            '<span>' + h(p.desc) + '</span></div>';
+                });
+                list.html(html || '<div class="pt-sug pt-sug-none">No matching project</div>').show();
+            }, 'json');
+    }
     box.on('input', function () {
         show();
         clearTimeout(timer);
-        timer = setTimeout(o.after, 250);
+        if (o.after) { timer = setTimeout(o.after, 250); }
     });
     box.on('keydown', function (e) {
         if (e.key === 'ArrowDown' && hits.length) {
@@ -79,6 +97,7 @@ function ptLookup(o) {
         if (/^\d{6}$/.test(v)) { open(v); return; }
         if (hits.length === 1) { open(hits[0].num); return; }
         close();
+        if (!o.after) { return; }
         o.after();
         var t = document.querySelector(o.scroll);
         if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -476,11 +495,15 @@ function prjHeader($title, $subtitle, $active) {
                        title="Type to filter. Pick a project from the list, or press Enter on its number, to open it.">
             </span>
             <div class="pt-nav">
-                <?php // one button across to the other page
-                      if ($active === 'dashboard') { ?>
-                    <a class="pt-btn" href="ProjectDevelopers_ctl.php">Projects by developer &rsaquo;</a>
-                <?php } else { ?>
-                    <a class="pt-btn" href="ProjectTracking_ctl.php">&lsaquo; Overview</a>
+                <?php // every screen reaches every other one
+                      $prjNav = array(
+                          'dashboard'   => array('ProjectTracking_ctl.php', 'Overview'),
+                          'assignments' => array('ProjectDevelopers_ctl.php', 'By developer'),
+                          'time'        => array('Time_ctl.php', 'Time'),
+                      );
+                      foreach ($prjNav as $key => $n) {
+                          if ($key === $active) { continue; } ?>
+                    <a class="pt-btn" href="<?php echo $n[0]; ?>"><?php echo $n[1]; ?></a>
                 <?php } ?>
             </div>
         </div>

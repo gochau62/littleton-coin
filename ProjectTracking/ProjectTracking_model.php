@@ -325,6 +325,105 @@ function prjProgrammers($conn) {
 }
 
 
+// ---- time entry: the week's grid and the hours behind it ---------------
+
+// the Monday through Sunday a date falls in, as eight-digit numbers
+function prjWeekDays($anchor = 0) {
+    $d = ($anchor > 0) ? DateTime::createFromFormat('!Ymd', strval(intval($anchor))) : false;
+    if (!$d) { $d = new DateTime('today'); }
+    $d->modify('-' . ((intval($d->format('N')) + 6) % 7) . ' days');
+    $days = array();
+    for ($i = 0; $i < 7; $i += 1) {
+        $days[] = intval($d->format('Ymd'));
+        $d->modify('+1 day');
+    }
+    return $days;
+}
+
+
+// PTS0001S: the projects a person put time against in a range
+function prjTimeProjects($conn, $user, $from, $to) {
+    $rows = prjFetchAll($conn, "CALL PTS0001S(?, ?, ?)",
+                        array($user, strval(intval($from)), strval(intval($to))));
+    if ($rows === false) { return false; }
+    $out = array();
+    foreach ($rows as $r) {
+        // the procedure returns the number under whichever name it uses
+        foreach (array('PR#', 'PTPROJ', 'PROJ') as $k) {
+            if (isset($r[$k]) && intval($r[$k]) > 0) { $out[] = intval($r[$k]); break; }
+        }
+    }
+    return array_values(array_unique($out));
+}
+
+
+// PTS0004S: one person's time rows on a project
+function prjTimeRows($conn, $proj, $user) {
+    $rows = prjFetchAll($conn, "CALL PTS0004S(?, ?)",
+                        array(strval(intval($proj)), $user));
+    return ($rows === false) ? array() : $rows;
+}
+
+
+// the week's grid: a row per project, hours per day
+function prjTimeWeek($conn, $user, $anchor = 0) {
+    $days = prjWeekDays($anchor);
+    $projects = prjProjects($conn, 'Y');
+    if ($projects === false) { return false; }
+
+    $withTime = prjTimeProjects($conn, $user, $days[0], $days[6]);
+    if ($withTime === false) { $GLOBALS['prjErr'] = ''; $withTime = array(); }
+
+    // the same rows the legacy screen offers: the person's own open work,
+    // the 90000 overhead buckets, and anything already booked this week
+    $rows = array();
+    foreach ($projects as $p) {
+        $num = intval($p['PJNUM']);
+        $mine = (strtoupper(trim($p['PJPGMR'])) === strtoupper(trim($user)) &&
+                 intval($p['PJSCHDATE']) != 0 && intval($p['PJCOMPDATE']) == 0 &&
+                 strtoupper(trim(strval($p['PJRESCOD'] ?? ''))) !== 'REJ');
+        $bucket = ($num >= 90000 && $num <= 90100);
+        // a project the person added to this week by hand, same as the old screen
+        $added = in_array($num, $GLOBALS['prjTimeAdded'] ?? array(), true);
+        if (!$mine && !$bucket && !$added && !in_array($num, $withTime, true)) { continue; }
+
+        $hours = array_fill(0, 7, 0);
+        foreach (prjTimeRows($conn, $num, $user) as $t) {
+            $on = intval($t['PTDATE'] ?? 0);
+            $at = array_search($on, $days, true);
+            if ($at !== false) { $hours[$at] += floatval($t['PTTIME'] ?? 0); }
+        }
+        $rows[] = array('num' => $num, 'desc' => trim($p['PJDESC']),
+                        'hours' => $hours, 'bucket' => $bucket ? 1 : 0,
+                        'total' => array_sum($hours));
+    }
+
+    // the week's own work first, then the overhead buckets
+    usort($rows, function ($a, $b) {
+        if ($a['bucket'] !== $b['bucket']) { return $a['bucket'] - $b['bucket']; }
+        return $b['num'] - $a['num'];
+    });
+    return array('days' => $days, 'rows' => $rows);
+}
+
+
+// PT0029S: set this person's hours on a project for one day
+function prjSaveTime($conn, $user, $proj, $date, $hours) {
+    $user = trim(strval($user));
+    if ($user === '')          { return array(false, 'Sign in again - the session went stale.'); }
+    if (intval($proj) <= 0)    { return array(false, 'No project number.'); }
+    if (intval($date) <= 0)    { return array(false, 'No date.'); }
+    $hours = floatval($hours);
+    if ($hours < 0 || $hours > 24) { return array(false, 'Hours have to be between 0 and 24.'); }
+
+    $ok = prjFetchAll($conn, "CALL PT0029S(?, ?, ?, ?)",
+                      array($user, strval(intval($proj)), strval(intval($date)), $hours));
+    if ($ok === false) { return array(false, 'The time did not save: ' . $GLOBALS['prjErr']); }
+    prjActLog($user, 'TIME', $proj . ' ' . $date . ' ' . $hours . ' hrs');
+    return array(true, '');
+}
+
+
 // ---- the project screen: one record, its lists, and the save -----------
 
 // PTS0013S: a project's whole master row, the legacy screen's read
