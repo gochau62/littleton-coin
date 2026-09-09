@@ -12,7 +12,7 @@
 	include("StartBlockHead.php");
 ?>
 <!--<body onload="projCalcPayback(); setInitialTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">-->
-<body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general'); wrkStsChanged()">
+<body onload="switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general')">
 <?php
 	include("StartBlockBody.php");
 ?>
@@ -900,8 +900,7 @@ projCalcPayback();
 	$queryArray = getRecsPRSTATUSP($conn2);
 	
 	$selAttribs = array("id" => "projWrkSts",
-						"name" => "projWrkSts",
-						"onchange" => "wrkStsChanged()");
+						"name" => "projWrkSts");
 	if ($screenData['PAPRJMNGR'] != 'Y' && $_SESSION['usrclass'] != '*PGMR     ' || $_SESSION['usrclass'] != '*SYSOPR   ') {
 		$selAttribs['readonly'] =  "true";
 	}
@@ -913,14 +912,7 @@ projCalcPayback();
 	
 //	$screenData['html']['PRWRKSTS'] = loadListboxFromFile($conn, $queryArray, $selAttribs, $optAttribs);
 	$screenData['html']['PRWRKSTS'] = loadListboxFromArray($queryArray, $selAttribs, $optAttribs);
-
-	// In Queue carries its scheduled start date beside the dropdown
-	if ($screenData['PAPRJMNGR'] == 'Y' || $_SESSION['usrclass'] == '*PGMR     ' || $_SESSION['usrclass'] == '*SYSOPR   ') {
-		$screenData['html']['PRWRKSTS'] .= " <span id='inqDateWrap' style='display:none'>queued to start "
-			. "<input type='date' id='projQueueDate' name='projQueueDate' value='"
-			. pgmrIsoDate($screenData['PRESTR']) . "' onchange='queueDateChanged()' /></span>";
-	}
-
+	
 	$screenData['html']['PRFORCE2SC'] = "<input type='checkbox' name='projForce2SC' value='Y' ";
 	if ($screenData['PRFORCE2SC'] == 'Y') {
 		$screenData['html']['PRFORCE2SC'] .= "checked "; 

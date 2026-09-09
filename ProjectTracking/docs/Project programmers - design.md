@@ -19,16 +19,15 @@ dashboard says.
 ## 2. The scheduled start date beside In Queue
 
 A queued project is waiting for a start date, and the project master
-already has one — `PRESTR`, the *Scheduled start date* lower on the tab.
-Rather than add a second date, `PROJ_ctl.php` now appends a date input
-right after the work-status dropdown that appears only while **In Queue**
-is selected (`wrkStsChanged()` in `PROJ_JS_functions.js`). Picking a date
-copies it into the scheduled-start field (`queueDateChanged()`), so the
-existing Save writes it through `PTS0027S` untouched.
+already has one — `PRESTR`, the *Scheduled start date* on the tab. That
+field is the only place the date is entered: whoever queues the project
+fills it in themselves, and if they don't it stays blank. The screen asks
+for nothing extra and `PROJ_ctl.php` is unchanged — an earlier draft added
+a second date input beside the dropdown, which was dropped as a duplicate.
 
-Both screens show it: the by-developer page prints "starts mm/dd/yyyy"
-after an In Queue chip, from the new `PJSTRDATE` column on the `LIST`
-read.
+The dashboard side needs no entry either: the by-developer page prints
+"starts mm/dd/yyyy" after an In Queue chip, from the `PJSTRDATE` column on
+the `LIST` read, and prints nothing when the field is blank.
 
 ## 3. Several programmers on a project, each with a status and comments
 
@@ -123,9 +122,9 @@ programmers. Nothing else on the screen changes.
 
 ## Still open
 
-- **The display file.** `PROJ_dsp.php` is not in the repo; the panel and
-  the queue date are injected through fields the display already echoes.
-  With the file, both can be laid out properly.
+- **The display file.** `PROJ_dsp.php` is not in the repo, so the panel is
+  injected through a field the display already echoes. With the file it
+  can be laid out properly.
 - **Promotion.** The new files and both procedures reference
   `LSCDEVLIBP`; change to `LSCPRDLIB` in the three source members and in
   `PRJ_PROC_LIB` when they move.

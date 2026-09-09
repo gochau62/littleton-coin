@@ -85,24 +85,6 @@ function flipShowHide(action, editorDiv, aDiv, parms) {
 	}
 }
 
-// In Queue shows its scheduled start date beside the status
-function wrkStsChanged() {
-	var sel = document.getElementById('projWrkSts');
-	var wrap = document.getElementById('inqDateWrap');
-	if (!sel || !wrap) { return; }
-	wrap.style.display = (sel.value == 'INQ') ? 'inline' : 'none';
-}
-
-// the queue date is the project's scheduled start date
-function queueDateChanged() {
-	var q = document.getElementById('projQueueDate');
-	var s = document.forms.projForm ? document.forms.projForm.projSchdStart : null;
-	if (!q || !s || q.value == '') { return; }
-	var p = q.value.split('-');
-	if (p.length == 3) { s.value = p[1] + '/' + p[2] + '/' + p[0]; }
-	if (typeof activateSave == 'function') { activateSave(); }
-}
-
 // programmers panel: post a change, swap in the panel that comes back
 function pgmrPost(data) {
 	data.projNum = document.getElementById('projectNumber').value.trim();
