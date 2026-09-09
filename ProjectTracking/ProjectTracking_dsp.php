@@ -130,6 +130,12 @@ function ptLookup(o) {
    the app sits beside the floated menu and fills what is left */
 #stdPage { min-width: 0; max-width: 100%; box-sizing: border-box;
            background: var(--pt-bg); }
+/* ?view=list and ?view=goto: the header and the project list only */
+.pt-view-list > .pt-card:not(.pt-head):not(.pt-card-projects),
+.pt-view-goto > .pt-card:not(.pt-head):not(.pt-card-projects),
+.pt-view-list > .pt-stats, .pt-view-goto > .pt-stats,
+.pt-view-list > .pt-charts, .pt-view-goto > .pt-charts { display: none; }
+
 .pt-app { min-width: 0; max-width: 100%; box-sizing: border-box;
           container-type: inline-size;
           font-family: "Segoe UI", -apple-system, system-ui, Roboto,
@@ -512,12 +518,14 @@ function prjHeader($title, $subtitle, $active) {
 }
 
 
-function dspProjectTracking() {
+function dspProjectTracking($view = '') {
     prjStyles();
+    // ?view=list shows the projects card alone, ?view=goto focuses the lookup
+    $view = in_array($view, array('list', 'goto'), true) ? $view : '';
 ?>
 <!-- stdPage seats the page beside the nav menu -->
 <div id="stdPage">
-<div class="pt-app">
+<div class="pt-app<?php echo $view !== '' ? ' pt-view-' . $view : ''; ?>">
 
     <?php prjHeader('Project Tracking',
                     '<span class="pt-when" id="ptUpdated"></span>' .
@@ -525,7 +533,7 @@ function dspProjectTracking() {
                     'dashboard'); ?>
 
     <!-- the project list sits first, right under the lookup -->
-    <div class="pt-card">
+    <div class="pt-card pt-card-projects">
         <h2>Projects (Assignee &amp; Stage)</h2>
         <div class="pt-toolbar">
             <select id="selPgmr"><option value="">All assignees</option></select>

@@ -60,7 +60,10 @@ if ($authorized != "yes") {
     require_once __DIR__ . '/ProjectTracking_model.php';
 
     include "ProjectTracking_dsp.php";
-    dspProjectTracking();
+    // ?view=list is the project list alone, ?view=goto puts the cursor
+    // in the lookup - both are this same screen, trimmed
+    $prjView = strtolower(trim(strval($_GET['view'] ?? '')));
+    dspProjectTracking($prjView);
 ?>
 
 <script>
@@ -72,6 +75,9 @@ var sortDir = -1;
 
 $(document).ready(function () {
     loadDashboard();
+
+    // the go-to view opens ready to type
+    if (/[?&]view=goto/.test(window.location.search)) { $('#txtSearch').focus(); }
 
     $('#lnkRefresh').on('click', function (e) {
         e.preventDefault();
