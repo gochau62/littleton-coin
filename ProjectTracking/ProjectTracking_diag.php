@@ -157,6 +157,52 @@ foreach ($check as $lib) {
 echo "</table>";
 diagFlush();
 
+// every lookup table behind a dropdown, and where each one is being found
+$lookups = array(
+    'PRIDTRANSP' => 'Assigned estimator, programmer',
+    'PRGROUPP'   => 'Dev group',
+    'PRPAYBCKP'  => 'Payback type',
+    'PRTYPEP'    => 'Project type',
+    'PRPLNDEFP'  => 'Planned',
+    'PRRESCODEP' => 'Resolution',
+    'PRSTATUSP'  => 'Programmer work status',
+    'PRSPNSRP'   => 'Sponsor',
+    'PRAUTHP'    => 'Authority',
+    'PRTOOLTIPP' => 'Tooltips',
+    'LCDEPTP'    => 'Department, sub dept',
+);
+echo "<h2>Lookup tables behind the dropdowns</h2>";
+echo "<div class='note'>Row counts per library, in library list order. The first "
+   . "library on the list that holds a table is the one the dropdown reads, and "
+   . "that cell is marked. Compare it against LSCPRDLIB.</div>";
+$order = array();
+foreach ($libs as $l) { $o = trim($l['SCHEMA_NAME']); if ($o !== '') { $order[] = $o; } }
+$cols = $order;
+if (!in_array('LSCPRDLIB', $cols)) { $cols[] = 'LSCPRDLIB'; }
+
+echo "<table><tr><th>Table</th><th>Feeds</th>";
+foreach ($cols as $c) { echo "<th>" . htmlspecialchars($c) . "</th>"; }
+echo "</tr>";
+diagFlush();
+foreach ($lookups as $tbl => $what) {
+    echo "<tr><td>" . htmlspecialchars($tbl) . "</td><td>" . htmlspecialchars($what) . "</td>";
+    $winner = '';
+    foreach ($cols as $c) {
+        if (!preg_match('/^[A-Z0-9_#$@]{1,10}$/i', $c)) { echo "<td></td>"; continue; }
+        $n = diagValue($conn, "SELECT COUNT(*) FROM " . $c . "." . $tbl);
+        if ($n === null) { echo "<td>-</td>"; continue; }
+        // the first library on the list holding it is the one that wins
+        $isWinner = ($winner === '' && in_array($c, $order));
+        if ($isWinner) { $winner = $c; }
+        echo "<td class='" . ($isWinner ? 'good' : '') . "'>"
+           . htmlspecialchars(strval($n)) . ($isWinner ? " &lt;-- used" : "") . "</td>";
+    }
+    echo "</tr>";
+    diagFlush();
+}
+echo "</table>";
+diagFlush();
+
 // what the screens themselves get back through the library list
 echo "<h2>What PTS0002S returns to this job</h2>";
 echo "<div class='note'>Unqualified, exactly as the time entry screen calls it.</div>";
