@@ -16,6 +16,15 @@
 <!--  * Project   - 260082                              *  -->
 <!--  ***************************************************   */
 ?>
+<?php
+	// the go to project box has its own address, as the old screen did
+	if (!isset($_GET['projnum']) || trim(strval($_GET['projnum'])) === '') {
+		if (!headers_sent()) {
+			header('Location: ProjectDetail_ctl.php?projnum=prompt', true, 302);
+			exit;
+		}
+	}
+?>
 
 <?php
 	// temporary while we chase the blank screen - fatals only
