@@ -551,9 +551,9 @@ if ($authorized != "yes") {
 	}
 	
 	
-	// no number asked for opens a new project
+	// no number asked for shows the go to project box
 	if (!isset($_GET['projnum']) || trim(strval($_GET['projnum'])) === '') {
-		$_GET['projnum'] = 'newproj';
+		$_GET['projnum'] = 'prompt';
 	}
 	
 	// the start block above already checked authority
@@ -1472,7 +1472,7 @@ function showProjPrompt() {
 			<div class='pt-scr-num'>
 				<input onchange='goToProject()' id='projectNumber' type='text' size='5' maxlength='6'/>
 			</div>
-			<div class='pt-scr-desc'>Type a project number, or open this screen with no number to start a new project.</div>
+			<div class='pt-scr-desc'>Type a project number, or <a href='ProjectDetail_ctl.php?projnum=newproj'>start a new project</a>.</div>
 		</div>
 	</div>
 	</div>
@@ -1494,7 +1494,7 @@ function showProjNotFound() {
 			<div class='pt-scr-num'>
 				<input onchange='goToProject()' id='projectNumber' type='text' size='5' maxlength='6'/>
 			</div>
-			<div class='pt-scr-desc'>Try another number, or open this screen with no number to start a new project.</div>
+			<div class='pt-scr-desc'>Try another number, or <a href='ProjectDetail_ctl.php?projnum=newproj'>start a new project</a>.</div>
 		</div>
 	</div>
 	</div>
