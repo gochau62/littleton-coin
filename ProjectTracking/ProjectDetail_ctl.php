@@ -239,6 +239,8 @@
 
 /* the payback grid keeps its table, inside a scrolling frame */
 #stdPage .pt-tablewrap { overflow-x: auto; margin: .2rem 0 .8rem; }
+#stdPage .pt-scr-bad { color: var(--pt-red); }
+
 </style>
 
 <script type='text/javascript'>
@@ -528,6 +530,11 @@ projCalcPayback();
 		exit;
 	}
 	
+	
+	// no project asked for means a new one, not a search box
+	if (!isset($_GET['projnum']) || trim(strval($_GET['projnum'])) === '') {
+		$_GET['projnum'] = 'newproj';
+	}
 	
 	// get connection - user and password come from StartBlockScriptA.php
 //	$conn = geti5PConn($user, $password);
@@ -1443,8 +1450,19 @@ projCalcPayback();
 function showProjPrompt() {
 ?>
 	<div id='stdPage'>
-	<h1><i>Know which project you want?</i></h1>
-	<h2><u>Go to project:</u> <input onchange='goToProject()' id='projectNumber' style='text-align:right' type='text' size='5' maxlength='6'/></h2>
+	<div class='pt-app'>
+	<div class='pt-card pt-scr'>
+	<div class='pt-scr-head'>
+		<div class='pt-scr-id'>
+			<div class='pt-scr-what'>Go to project</div>
+			<div class='pt-scr-num'>
+				<input onchange='goToProject()' id='projectNumber' type='text' size='5' maxlength='6'/>
+			</div>
+			<div class='pt-scr-desc'>Type a project number, or open this screen with no number to start a new project.</div>
+		</div>
+	</div>
+	</div>
+	</div>
 	</div>
 	<script type="text/javascript">
 	document.getElementById("projectNumber").focus();
@@ -1454,8 +1472,19 @@ function showProjPrompt() {
 function showProjNotFound() {
 ?>
 	<div id='stdPage'>
-	<h1 style='color:red'><i>Project not found</i></h1>
-	<h2><u>Project:</u> <input onchange='goToProject()' id='projectNumber' style='text-align:right' type='text' size='5' maxlength='6'/></h2>
+	<div class='pt-app'>
+	<div class='pt-card pt-scr'>
+	<div class='pt-scr-head'>
+		<div class='pt-scr-id'>
+			<div class='pt-scr-what pt-scr-bad'>Project not found</div>
+			<div class='pt-scr-num'>
+				<input onchange='goToProject()' id='projectNumber' type='text' size='5' maxlength='6'/>
+			</div>
+			<div class='pt-scr-desc'>Try another number, or open this screen with no number to start a new project.</div>
+		</div>
+	</div>
+	</div>
+	</div>
 	</div>
 	<script type="text/javascript">
 	document.getElementById("projectNumber").focus();
