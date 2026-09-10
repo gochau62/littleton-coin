@@ -1,6 +1,6 @@
 <?php
 /*    ***************************************************  -->
-<!--  * Program Name - PROJ_pgmrs_dsp.php                *  -->
+<!--  * Program Name - ProjectDetail_pgmrs.php                *  -->
 <!--  *                                                 *  -->
 <!--  * Narrative - The programmers on a project, each  *  -->
 <!--  *             with a work status, a scheduled     *  -->
@@ -115,24 +115,8 @@ function renderProjPgmrPanel($conn, $projRecord, $canEdit, $user, $isPM = false)
 		                    'start'   => intval($r['PGSTRDATE']));
 	}
 
-	$html  = "<style>"
-	       . ".pgmrPanel{margin:.6rem 0 .4rem;padding:.5rem .7rem;border:1px solid #cfd6de;"
-	       . "border-radius:6px;background:#fbfcfd;max-width:100%;font-size:.85rem}"
-	       . ".pgmrPanel .pgmrHead{font-weight:bold;margin-bottom:.35rem}"
-	       . ".pgmrPanel table.pgmrTable{border-collapse:collapse}"
-	       . ".pgmrPanel table.pgmrTable th,.pgmrPanel table.pgmrTable td{padding:.15rem .5rem;"
-	       . "text-align:left;vertical-align:middle;border-bottom:1px solid #e6eaef}"
-	       . ".pgmrPanel table.pgmrTable th{font-size:.78rem;color:#555}"
-	       . ".pgmrPanel .pgmrTag{font-size:.72rem;color:#666;margin-left:.25rem}"
-	       . ".pgmrPanel .pgmrCmtGroup{margin-top:.55rem;padding-top:.35rem;border-top:1px dashed #d8dde3}"
-	       . ".pgmrPanel .pgmrCmtName{font-weight:bold}"
-	       . ".pgmrPanel .pgmrCmt{margin:.25rem 0 .25rem .6rem}"
-	       . ".pgmrPanel .pgmrCmtWho{font-size:.75rem;color:#555;margin-right:.35rem}"
-	       . ".pgmrPanel textarea{width:95%;max-width:100%;vertical-align:top}"
-	       . ".pgmrPanel a{cursor:pointer}"
-	       . "</style>";
+	$html  = "";
 	$html .= "<div id='pgmrPanel' class='pgmrPanel'>";
-	$html .= "<div class='pgmrHead'>Programmers on this project</div>";
 	$html .= "<table class='pgmrTable'><tr><th>Programmer</th><th>Status</th>"
 	       . "<th>Scheduled start</th><th>Hours</th><th></th></tr>";
 
@@ -145,7 +129,7 @@ function renderProjPgmrPanel($conn, $projRecord, $canEdit, $user, $isPM = false)
 		$html .= "<tr data-pgmr='" . pgmrEsc($p) . "'><td>" . pgmrEsc($p);
 		if ($info['primary']) {
 			// the primary's status and start are the project's own fields above
-			$html .= "<span class='pgmrTag'>(primary)</span></td>"
+			$html .= " <span class='pgmrTag'>(primary)</span></td>"
 			       . "<td>" . pgmrEsc($desc !== '' ? $desc : 'Not set') . "</td>"
 			       . "<td>" . pgmrEsc(pgmrSlashDate($info['start'])) . "</td>";
 		} elseif ($canEdit) {

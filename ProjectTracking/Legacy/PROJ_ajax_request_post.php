@@ -12,7 +12,7 @@ if (isset($_SESSION['username']) and isset($_SESSION['password'])) {
 require_once "Utils/common_functions.php";
 require_once "PROJ_model.php";
 require_once "LCDEPTP_model.php";
-require_once "PROJ_pgmrs_dsp.php";
+require_once "ProjectDetail_pgmrs.php";
 
 if (isset($_POST['action'])) {
     switch ($_POST['action']) {

@@ -122,9 +122,14 @@ programmers. Nothing else on the screen changes.
 
 ## Still open
 
-- **The display file.** `PROJ_dsp.php` is not in the repo, so the panel is
-  injected through a field the display already echoes. With the file it
-  can be laid out properly.
+- ~~**The display file.**~~ Done 09/10/26. The screen is now
+  `ProjectDetail_ctl.php` + `ProjectDetail_dsp.php`, so the panel is a
+  row of its own in the IT Stuff tab rather than injected into the time
+  box, and `PROJ_pgmrs_dsp.php` moved out of `Legacy/` to
+  `ProjectDetail_pgmrs.php`. Its inline stylesheet moved into the
+  display file, which is where it has to be: the panel comes back
+  through ajax and replaces itself, so styles inside it would be
+  re-sent on every change.
 - **Promotion.** The new files and both procedures reference
   `LSCDEVLIBP`; change to `LSCPRDLIB` in the three source members and in
   `PRJ_PROC_LIB` when they move.

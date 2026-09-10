@@ -347,6 +347,9 @@ if ($authorized != "yes") {
 		$_GET['projnum'] = 'prompt';
 	}
 	
+	// the several programmers panel, when its procedure is installed
+	if (file_exists("ProjectDetail_pgmrs.php")) { require_once("ProjectDetail_pgmrs.php"); }
+	
 	// the start block above already checked authority
 	$conn2 = $authConn;
 	
@@ -878,6 +881,17 @@ if ($authorized != "yes") {
 	}
 	else {
 	    $screenData['pgmrTime'] .= "<tr><td class='txtData'>&nbsp;&nbsp;&nbsp;Total </td><td>".$timeTotal." hours</td></tr></table>";
+	
+	// every programmer on the project, drawn under the time box
+	$screenData['pgmrPanel'] = '';
+	if (is_numeric($_GET['projnum']) && function_exists('renderProjPgmrPanel')) {
+		$pgmrCanEdit = ($screenData['PAPRJMNGR'] == 'Y'
+		                || $_SESSION['usrclass'] == '*PGMR     '
+		                || $_SESSION['usrclass'] == '*SYSOPR   ');
+		$screenData['pgmrPanel'] = renderProjPgmrPanel($conn2, $projRecord, $pgmrCanEdit,
+		                                               $screenUser,
+		                                               $screenData['PAPRJMNGR'] == 'Y');
+	}
 	}
 	
 	

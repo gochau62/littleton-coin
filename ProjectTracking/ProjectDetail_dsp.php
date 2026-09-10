@@ -244,6 +244,23 @@
     font-weight: 700; text-align: center !important; letter-spacing: .02em; }
 #stdPage .pt-ask-note { font-size: .84rem; color: var(--pt-muted); margin-top: 1rem; }
 
+/* the several programmers panel, redrawn in place by its own ajax */
+#stdPage .pgmrPanel { border: 1px solid var(--pt-line); border-radius: 8px;
+    background: var(--pt-card); padding: .5rem .65rem; }
+#stdPage .pgmrPanel table.pgmrTable { width: 100%; margin: 0 0 .3rem; }
+#stdPage .pgmrPanel .pgmrTag { font-size: .72rem; color: var(--pt-muted);
+    margin-left: .3rem; cursor: pointer; }
+#stdPage .pgmrPanel a { cursor: pointer; }
+#stdPage .pgmrPanel select.pgmrSts { width: auto; min-width: 130px; }
+#stdPage .pgmrPanel input.pgmrDate { width: 130px; }
+#stdPage .pgmrPanel .pgmrCmtGroup { margin-top: .5rem; padding-top: .35rem;
+    border-top: 1px dashed var(--pt-line); }
+#stdPage .pgmrPanel .pgmrCmtName { font-weight: 700; font-size: .82rem; }
+#stdPage .pgmrPanel .pgmrCmt { margin: .25rem 0 .25rem .6rem; font-size: .84rem; }
+#stdPage .pgmrPanel .pgmrCmtWho { display: block; font-size: .72rem;
+    font-weight: 600; color: var(--pt-muted); }
+#stdPage .pgmrPanel textarea { width: 100%; max-width: 520px; }
+
 </style>
 
 <?php
@@ -506,6 +523,15 @@ function showProjectDetailScreen(&$screenData) {
 			<?php echo $screenData['pgmrTime']?>
 		</div>
 	</div>
+
+	<?php if (trim(strval($screenData['pgmrPanel'] ?? '')) !== '') { ?>
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Programmers on this project</label>
+			<?php echo $screenData['pgmrPanel']?>
+		</div>
+	</div>
+	<?php } ?>
 
 	<div class='pt-row'>
 		<div class='pt-fld'>
