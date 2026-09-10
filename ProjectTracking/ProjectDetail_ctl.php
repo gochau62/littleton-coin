@@ -417,10 +417,29 @@ projCalcPayback();
 	require_once("WebNotes/webNotesModel.php");
 //	require_once("Utils/common_functions.php");
 	// the screen opens and closes its own stdPage div now
-	require_once("PROJ_model.php");
-	require_once("LCEMPLOYP_model.php");
-	require_once("LNKDOCP_model.php");
-	require_once("LCDEPTP_model.php");
+	// load the legacy models, remembering any this server lacks
+	$prjMissing = array();
+	foreach (array('PROJ_model.php', 'LCEMPLOYP_model.php',
+	               'LNKDOCP_model.php', 'LCDEPTP_model.php') as $prjFile) {
+		if (file_exists($prjFile)) { require_once($prjFile); }
+		else { $prjMissing[] = $prjFile; }
+	}
+	
+	// the documents list is all LNKDOCP_model.php feeds this screen
+	if (!function_exists('buldDocList')) {
+		function buldDocList($conn, $prefix, $id) {
+			return "<i>Attached documents need LNKDOCP_model.php on this server.</i>";
+		}
+	}
+	
+	// without PROJ_model.php there is no screen to draw
+	if (in_array('PROJ_model.php', $prjMissing)) {
+		echo "<div id='stdPage'><h1>Project Detail</h1>"
+		   . "<p>This server is missing <b>" . implode("</b>, <b>", $prjMissing)
+		   . "</b>. Copy them into this folder from production.</p></div>";
+		include("EndBlock.php");
+		exit;
+	}
 	
 	
 	// get connection - user and password come from StartBlockScriptA.php

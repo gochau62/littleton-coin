@@ -204,6 +204,14 @@ if ( $authorized != "yes") {
 		showNotAuthorized();
 } else {
 
+	// without PROJ_model.php there is no timesheet to draw
+	if (!file_exists('PROJ_model.php')) {
+		echo "<div id='stdPage'><h1>Project Time Entry</h1>"
+		   . "<p>This server is missing <b>PROJ_model.php</b>. "
+		   . "Copy it into this folder from production.</p></div>";
+		include("EndBlock.php");
+		exit;
+	}
 	require_once ("PROJ_model.php");
 
 
