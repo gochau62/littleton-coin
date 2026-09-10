@@ -27,6 +27,22 @@
 	$user     = $_SESSION['username'];
 	$password = $_SESSION['password'];
 ?>
+
+<!-- includes css and javascript libraries -->
+<script type='text/javascript' src='jQuery/jquery.js'></script>
+<script type="text/javascript">
+
+    document.title = "Project Detail";
+
+    // show the red error box with a message
+    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+
+
+    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+</script>
+
+<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+
 <style>
 /* the ProjectTracking look, applied to this screen's own markup */
 /* the same palette the ProjectTracking screens use */
@@ -243,13 +259,6 @@
 
 </style>
 
-<script type='text/javascript'>
-	// the framework prints the body tag, so run the onload here
-	window.addEventListener('load', function () {
-		switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general');
-	});
-</script>
-
 <script type='text/javascript' src='ckeditor/ckeditor.js'></script>
 <script type='text/javascript' src='WebNotes/WebNote_JS_functions.js'></script>
 <script type='text/javascript' src='Utils/calendar_us.js'></script>
@@ -269,7 +278,7 @@
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
 
 <script type='text/javascript'>
-// the shared JS sends these to PROJ_ctl.php; stay on this screen
+// keep these navigations on this screen
 function goToProject() {
 	var proj = document.getElementById('projectNumber').value;
 	if (isNaN(proj)) { alert('Please enter a numeric value.'); }
@@ -500,13 +509,24 @@ projCalcPayback();
 
 <?php	
 	
-	require_once 'StartBlockScriptB.php';
+require_once 'StartBlockScriptB.php';
+
+// record where the person was headed so sign-on can send them back
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
+// authority level 20, the developers group
+$authConn   = getDB2PConn($user, $password);
+$authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
+
+if ($authorized != "yes") {
+    echo '<script>showNotAuthorized();</script>';
+} else {
 	
 // <!--  Begin Content Here -->
 	require_once("WebNotes/webNotesModel.php");
 //	require_once("Utils/common_functions.php");
 	// the screen opens and closes its own stdPage div now
-	// load the legacy models, remembering any this server lacks
+	// load the models, noting any that are absent
 	$prjMissing = array();
 	foreach (array('PROJ_model.php', 'LCEMPLOYP_model.php',
 	               'LNKDOCP_model.php', 'LCDEPTP_model.php') as $prjFile) {
@@ -514,7 +534,7 @@ projCalcPayback();
 		else { $prjMissing[] = $prjFile; }
 	}
 	
-	// the documents list is all LNKDOCP_model.php feeds this screen
+	// LNKDOCP_model.php only feeds the documents list
 	if (!function_exists('buldDocList')) {
 		function buldDocList($conn, $prefix, $id) {
 			return "<i>Attached documents need LNKDOCP_model.php on this server.</i>";
@@ -531,19 +551,13 @@ projCalcPayback();
 	}
 	
 	
-	// no project asked for means a new one, not a search box
+	// no number asked for opens a new project
 	if (!isset($_GET['projnum']) || trim(strval($_GET['projnum'])) === '') {
 		$_GET['projnum'] = 'newproj';
 	}
 	
-	// get connection - user and password come from StartBlockScriptA.php
-//	$conn = geti5PConn($user, $password);
-	$conn2 = getDB2PConn($user, $password);
-	
-	// check user athourity
-	if (chkAutUsr($conn2, $user, "LCCONLINE", 20) != "yes") {
-		showNotAuthorized();
-	} else {
+	// the start block above already checked authority
+	$conn2 = $authConn;
 	
 	// Get PRAUTHP record
 	if (isset($_SESSION['altUserNm'])) {
@@ -1438,7 +1452,7 @@ projCalcPayback();
 		showProjNotFound();
 	}
 	
-	} // Authentication "else"
+} // end authority check
 // <!--  End Content Here -->
 
 	include("EndBlock.php");
@@ -1513,7 +1527,7 @@ function showProjectDetailScreen(&$screenData) {
 		</div>
 	</div>
 
-	<div class='tabArea pt-tabs' id='PROJ_mainTabs'>
+	<div class='pt-tabs' id='PROJ_mainTabs'>
 		<a id='tabGeneral' class='pt-tab pt-on' href="javascript:ptTab('general')">General</a>
 		<a id='tabIt' class='pt-tab' href="javascript:ptTab('itStuff')">IT Stuff</a>
 		<a id='tabPayBack' class='pt-tab' href="javascript:ptTab('payBack')">Payback</a>
@@ -1891,7 +1905,7 @@ function showProjectDetailScreen(&$screenData) {
 </form>
 
 <script>
-// the tabs are our own now; the framework switchTab is not on every server
+// the tabs are handled here, not by the framework
 function ptTab(pane) {
 	var tabs = { general: 'tabGeneral', itStuff: 'tabIt',
 	             payBack: 'tabPayBack', strComm: 'tabStrComm' };
@@ -1906,9 +1920,7 @@ function ptTab(pane) {
 
 <script>
 
-  // The following arrays will be used to check for changes. If changes have been made to a project
-  // and the PTS user hasn't saved their changes before trying to venture out of the project
-  // request, a warning message will pop up.
+  // these arrays spot unsaved changes before leaving
 
   var ids = new Array('projEstimator','projSponsor','projBrand','projProgrammer','projDevGrp','projRequester','projRqstDept','projRqstSubDept','PRUSRACPT','projPBType','projtype','projPlan','projResCode','projWrkSts','projDesc','projComntGen','projComntIT','projComntPB','projComntSC','projName','projSponsAprvDate','tstType','projSponsAprvDate','projSchdStart','projSchdComp','projActComp','PRIMPDTE','projAuthHrs','postMortDate','scRevDate','projDevRate','projNeedBy','projPriority','projForce2SC','projUsrPrty','orig1TimeCost','cur1TimeCost','origAnnualCost','curAnnualCost','orig1TimeSav','cur1TimeSav','origAnnualSav','curAnnualSav','origPayback','curPayback','parentProj');
   var values = new Array('','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','');
@@ -1933,8 +1945,7 @@ function ptTab(pane) {
     }
   }
 
-  // If the user is trying to unload the current project request, check to make sure there aren't any
-  // unsaved changes to the project request.  Pop up warning message if there are unsaved changes.
+  // warn before leaving a project with unsaved edits
   
   window.onbeforeunload = confirmExit;
   
@@ -1942,7 +1953,7 @@ function ptTab(pane) {
   {
     if (needToConfirm)
     {
-      // check to see if any changes to the data entry fields have been made
+      // look for edits in the entry fields
       for (var i = 0; i < values.length; i++)
       {
         var elem = document.getElementById(ids[i]);

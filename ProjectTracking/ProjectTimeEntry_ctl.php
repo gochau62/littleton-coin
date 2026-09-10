@@ -27,6 +27,22 @@
 	$user     = $_SESSION['username'];
 	$password = $_SESSION['password'];
 ?>
+
+<!-- includes css and javascript libraries -->
+<script type='text/javascript' src='jQuery/jquery.js'></script>
+<script type="text/javascript">
+
+    document.title = "Programmer time entry";
+
+    // show the red error box with a message
+    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+
+
+    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+</script>
+
+<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
+
 <style>
 /* the ProjectTracking look, applied to this screen's own markup */
 /* the same palette the ProjectTracking screens use */
@@ -186,22 +202,19 @@
 <script type='text/javascript' src='Utils/common_JS_functions.js'></script>
 <script type='text/javascript' src='Utils/calendar_us.js'></script>
 <script type='text/javascript' src='PROJ_JS_functions.js'></script>
-<script type="text/javascript">
-	document.title = "Programmer time entry";
-</script>
-
 <!--  Begin Content Here -->
 <?php 
 require_once 'StartBlockScriptB.php';
 
-//***--- Check users authority ---***
-//*** 10 is the minimum to use LCCOnline
-//include("Utils/common_functions.php");
-$authConn = getDB2PConn($user, $password);
+// record where the person was headed so sign-on can send them back
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
+// authority level 20, the developers group
+$authConn   = getDB2PConn($user, $password);
 $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
 
-if ( $authorized != "yes") {
-		showNotAuthorized();
+if ($authorized != "yes") {
+    echo '<script>showNotAuthorized();</script>';
 } else {
 
 	// without PROJ_model.php there is no timesheet to draw
@@ -394,13 +407,13 @@ if ( $authorized != "yes") {
 	showTimeEntry($screenData); // change funcName to match _dsp.php
 //<!--  End Content Here -->
 
-} //end authority check "if"
+} // end authority check
 
 	include("EndBlock.php");
 ?>
 
 <?php
-// the display half, inlined - PHP reads it before the call above runs
+// the display half, inlined
 function showTimeEntry(&$screenData) { // Change funcName to something appropriate
 ?>
 	<div id='stdPage'>
