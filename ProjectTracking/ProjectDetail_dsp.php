@@ -95,7 +95,7 @@
 #stdPage select, #stdPage textarea {
     font: inherit; font-size: .82rem; color: var(--pt-text);
     background: var(--pt-card); border: 1px solid var(--pt-field);
-    border-radius: 6px; padding: .34rem .5rem; }
+    border-radius: 6px; padding: .3rem .46rem; }
 #stdPage input[type=text]:focus, #stdPage input[type=date]:focus,
 #stdPage select:focus, #stdPage textarea:focus {
     outline: 0; border-color: var(--pt-blue);
@@ -114,7 +114,7 @@
 #stdPage img[src*="Info_icon"]:hover { opacity: 1; }
 
 /* the breathing room the markup asks for with <br/> pairs */
-#stdPage hr { border: 0; border-top: 1px solid var(--pt-line); margin: .9rem 0; }
+#stdPage hr { border: 0; border-top: 1px solid var(--pt-line); margin: .7rem 0; }
 #stdPage small { color: var(--pt-muted); font-size: .78rem; }
 #stdPage .data { display: inline-block; font-weight: 600;
     padding: .1rem .45rem; border-radius: 6px;
@@ -152,7 +152,7 @@
 /* comments and the editor blocks the WebNotes code drops in */
 #stdPage .comment, #stdPage .webNote { background: var(--pt-bg);
     border: 1px solid var(--pt-line); border-radius: 6px;
-    padding: .48rem .6rem; margin: .3rem 0; font-size: .84rem; }
+    padding: .42rem .55rem; margin: .24rem 0; font-size: .84rem; }
 
 
 /* ---- the card layout, carried over from the design ---- */
@@ -195,15 +195,15 @@
 
 /* a pane sits inside the card, so it carries no card of its own */
 #stdPage .pt-pane { background: none; border: 0; border-radius: 0;
-    box-shadow: none; padding: 1rem 1rem 1.1rem; margin: 0; }
+    box-shadow: none; padding: .85rem .9rem .9rem; margin: 0; }
 
 /* two fields to a row, one when the field wants the width */
-#stdPage .pt-row { display: flex; flex-wrap: wrap; gap: .75rem 1rem;
-    margin-bottom: .45rem; }
-#stdPage .pt-fld { flex: 1 1 calc(33.333% - .7rem); min-width: 165px; }
+#stdPage .pt-row { display: flex; flex-wrap: wrap; gap: .58rem .9rem;
+    margin-bottom: .28rem; }
+#stdPage .pt-fld { flex: 1 1 calc(33.333% - .62rem); min-width: 165px; }
 #stdPage .pt-fld-wide { flex-basis: 100%; }
 #stdPage .pt-fld > label { display: block; font-size: .74rem; font-weight: 600;
-    color: var(--pt-muted); margin-bottom: .2rem; }
+    color: var(--pt-muted); margin-bottom: .15rem; }
 #stdPage .pt-fld label.pt-inline { display: block; font-size: .84rem;
     font-weight: 400; color: var(--pt-text); margin: .1rem 0 .3rem; }
 
@@ -220,8 +220,8 @@
     width: auto; }
 
 /* a value nobody can change here reads as plain text on the page */
-#stdPage .pt-fld .pt-ro { font-size: .84rem; padding: .4rem .1rem;
-    min-height: 1.1rem; border-bottom: 1px solid var(--pt-line-soft); }
+#stdPage .pt-fld .pt-ro { font-size: .84rem; padding: .32rem .1rem;
+    min-height: 1.05rem; border-bottom: 1px solid var(--pt-line-soft); }
 #stdPage .pt-fld .pt-ro:empty::after { content: '\2014'; color: var(--pt-faint); }
 #stdPage .pt-fld small { display: block; margin-top: .1rem; font-size: .72rem; }
 
