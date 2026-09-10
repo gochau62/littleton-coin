@@ -94,10 +94,6 @@ projCalcPayback();
 </script>
 
 <script type="text/javascript">
-	document.title = "Project Detail";
-</script>
-
-<script type="text/javascript">
 	var needToConfirm = true;
 	var whichEditor = new Array;
 	var whichParms = new Array;
