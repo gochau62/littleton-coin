@@ -165,6 +165,80 @@
     border: 1px solid var(--pt-line); border-radius: 8px;
     padding: .5rem .65rem; margin: .35rem 0; font-size: .85rem; }
 
+
+/* ---- the card layout, carried over from the design ---- */
+
+#stdPage .pt-app { max-width: 1000px; }
+
+/* the screen is one card: title row, tabs, then the fields */
+#stdPage .pt-card { background: var(--pt-card); border: 1px solid var(--pt-line);
+    border-radius: 12px; box-shadow: var(--pt-shadow); overflow: hidden; }
+
+#stdPage .pt-scr-head { display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 1rem;
+    padding: .95rem 1.15rem .8rem; border-bottom: 1px solid var(--pt-line); }
+#stdPage .pt-scr-what { font-size: .68rem; font-weight: 600; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--pt-muted); }
+#stdPage .pt-scr-num { font-size: 1.32rem; font-weight: 700; margin-top: .1rem; }
+#stdPage .pt-scr-num #projectNumber { font-size: 1.15rem; font-weight: 700;
+    width: 104px; text-align: center !important; letter-spacing: .02em; }
+#stdPage .pt-scr-desc { font-size: .9rem; color: var(--pt-muted); margin-top: .3rem; }
+#stdPage .pt-scr-btns { display: flex; align-items: center; gap: .5rem;
+    flex-shrink: 0; }
+
+/* the Print and comment links read as quiet buttons beside Save */
+#stdPage .pt-slink { font-size: .82rem; font-weight: 600; white-space: nowrap; }
+#stdPage .pt-sbtn-quiet { background: var(--pt-chip-gray) !important;
+    border: 1px solid var(--pt-line) !important; color: var(--pt-text) !important; }
+
+/* tab strip: the live tab reads as a raised card edge */
+#stdPage .pt-tabs { display: flex; gap: .25rem; padding: .55rem 1.15rem 0;
+    border-bottom: 1px solid var(--pt-line); background: var(--pt-bg); }
+#stdPage .pt-tabs br { display: none; }
+#stdPage .pt-tab { font-size: .84rem; font-weight: 600; color: var(--pt-muted);
+    padding: .45rem .75rem; border: 1px solid transparent; border-bottom: 0;
+    border-radius: 8px 8px 0 0; margin-bottom: -1px; text-decoration: none;
+    display: inline-block; }
+#stdPage .pt-tab:hover { color: var(--pt-text); background: var(--pt-line-soft);
+    text-decoration: none; }
+#stdPage .pt-tab.pt-on { color: var(--pt-text); background: var(--pt-card);
+    border-color: var(--pt-line); }
+
+/* a pane sits inside the card, so it carries no card of its own */
+#stdPage .pt-pane { background: none; border: 0; border-radius: 0;
+    box-shadow: none; padding: 1.05rem 1.15rem 1.25rem; margin: 0; }
+
+/* two fields to a row, one when the field wants the width */
+#stdPage .pt-row { display: flex; flex-wrap: wrap; gap: .9rem 1.1rem;
+    margin-bottom: .35rem; }
+#stdPage .pt-fld { flex: 1 1 calc(50% - .55rem); min-width: 210px; }
+#stdPage .pt-fld-wide { flex-basis: 100%; }
+#stdPage .pt-fld > label { display: block; font-size: .76rem; font-weight: 600;
+    color: var(--pt-muted); margin-bottom: .28rem; }
+#stdPage .pt-fld label.pt-inline { display: block; font-size: .84rem;
+    font-weight: 400; color: var(--pt-text); margin: .1rem 0 .3rem; }
+
+/* the legacy fragments fill the field, except the ones sized to a few chars */
+#stdPage .pt-fld input[type=text], #stdPage .pt-fld input[type=date],
+#stdPage .pt-fld select, #stdPage .pt-fld textarea { width: 100%; }
+#stdPage .pt-fld input[size="1"], #stdPage .pt-fld input[size="2"],
+#stdPage .pt-fld input[size="3"], #stdPage .pt-fld input[size="5"],
+#stdPage .pt-fld input[size="6"] { width: auto; }
+#stdPage .pt-fld input[type=checkbox], #stdPage .pt-fld input[type=radio] {
+    width: auto; }
+
+/* a value nobody can change here reads as plain text on the page */
+#stdPage .pt-fld .pt-ro { font-size: .86rem; padding: .5rem .1rem;
+    min-height: 1.2rem; border-bottom: 1px solid var(--pt-line-soft); }
+#stdPage .pt-fld .pt-ro:empty::after { content: '\2014'; color: var(--pt-faint); }
+#stdPage .pt-fld small { display: block; margin-top: .25rem; }
+
+/* the two current estimate figures sit side by side */
+#stdPage .pt-estpair { display: flex; gap: .5rem; align-items: center; }
+#stdPage .pt-estpair .data { margin: 0; }
+
+/* the payback grid keeps its table, inside a scrolling frame */
+#stdPage .pt-tablewrap { overflow-x: auto; margin: .2rem 0 .8rem; }
 </style>
 
 <script type='text/javascript'>
@@ -191,6 +265,19 @@
 <script type='text/javascript' src='swal/sweetalert-dev.js'></script>
 <script type='text/javascript' src='swal/sweetalert.min.js'></script>
 <link href="swal/sweetalert.css" rel="stylesheet" type="text/css" />
+
+<script type='text/javascript'>
+// the shared JS sends these to PROJ_ctl.php; stay on this screen
+function goToProject() {
+	var proj = document.getElementById('projectNumber').value;
+	if (isNaN(proj)) { alert('Please enter a numeric value.'); }
+	else { window.location = 'ProjectDetail_ctl.php?projnum=' + proj; }
+}
+function cancelProjChanges(proj) {
+	alert('Changes discarded');
+	window.location = 'ProjectDetail_ctl.php?projnum=' + proj;
+}
+</script>
 
 <script type='text/javascript'>
 function updCurEst(lowEst,hiEst) {
@@ -1378,317 +1465,276 @@ function showProjNotFound() {
 function showProjectDetailScreen(&$screenData) {
 ?>
 	<div id='stdPage'>
-	
-	<div style='text-align: left; width: 65%; float: left; vertical-align:bottom;'>
-	<h2 style='float: left'><u>Project:</u> <input onchange='goToProject()' id='projectNumber' style='text-align:right' type='text' size='5' maxlength='6' value='<?php echo $screenData['PR#']?>'/></h2>
-	<div style='padding-top: 8px'>&nbsp;&nbsp;<?php echo $screenData['PRDESC']?></div>
-	<br/>
-	<br/>
-	</div>
-	<div style='text-align: right; width: 30%; float: left;'>
-	<a href="PROJ_print_ctl.php?projnum=<?php echo $screenData['PR#']?>" target="_blank">Print  </a>
-	<?php echo $screenData['saveButton']?>
-	<?php echo " " . $screenData['cancelButton']?>
-<!--	<input type='button' value='Save Changes' onclick='saveProjChanges()'/>-->
-	</div>
-	
-	<br/>
-	<br/>
-	<br/>
-	
-	<div style='text-align: left;' class='tabArea' id='PROJ_mainTabs'>
-	<br/>
-	<?php
-			echo "<a id='tabGeneral' href=\"javascript:switchTab('PROJ_mainTabs', 'tabGeneral', 'pageSection', 'general');\">General</a>";
-			echo " <a id='tabIt' href=\"javascript:switchTab('PROJ_mainTabs', 'tabIt', 'pageSection', 'itStuff');\">IT Stuff</a>";
-			echo " <a id='tabPayBack' href=\"javascript:switchTab('PROJ_mainTabs', 'tabPayBack', 'pageSection', 'payBack')\">Payback</a>";
-			echo " <a id='tabStrComm' href=\"javascript:switchTab('PROJ_mainTabs', 'tabStrComm', 'pageSection', 'strComm')\">Steering Committee</a>";
-	?>
+	<div class='pt-app'>
+
+	<div class='pt-card pt-scr'>
+
+	<div class='pt-scr-head'>
+		<div class='pt-scr-id'>
+			<div class='pt-scr-what'>Project</div>
+			<div class='pt-scr-num'>
+				<input onchange='goToProject()' id='projectNumber' type='text' size='5' maxlength='6' value='<?php echo $screenData['PR#']?>'/>
+			</div>
+			<div class='pt-scr-desc'><?php echo $screenData['PRDESC']?></div>
+		</div>
+		<div class='pt-scr-btns'>
+			<a class='pt-slink' href="PROJ_print_ctl.php?projnum=<?php echo $screenData['PR#']?>" target="_blank">Print</a>
+			<?php echo $screenData['saveButton']?>
+			<?php echo $screenData['cancelButton']?>
+		</div>
 	</div>
 
-<div id='general' class='pageSection' style="display:block">
+	<div class='tabArea pt-tabs' id='PROJ_mainTabs'>
+		<a id='tabGeneral' class='pt-tab pt-on' href="javascript:ptTab('general')">General</a>
+		<a id='tabIt' class='pt-tab' href="javascript:ptTab('itStuff')">IT Stuff</a>
+		<a id='tabPayBack' class='pt-tab' href="javascript:ptTab('payBack')">Payback</a>
+		<a id='tabStrComm' class='pt-tab' href="javascript:ptTab('strComm')">Steering Committee</a>
+	</div>
+
+<div id='general' class='pageSection pt-pane' style="display:block">
 <form id='projForm' name='projForm' action='PROJ_save.php' method="post">
 	<input type='hidden' name='projnum' value='<?php echo $screenData['PR#']?>' />
-	<input type='hidden' id='hiddenUser' value='<?php echo strtoupper($_SESSION['username'])?>' /> 
+	<input type='hidden' id='hiddenUser' value='<?php echo strtoupper($_SESSION['username'])?>' />
 	<input type='hidden' id='hiddenUserType' value='<?php echo strtoupper($_SESSION['username'])?>' />
 	<input type='hidden' id='hiddenUserClass' value='<?php echo strtoupper(trim($_SESSION['usrclass']))?>' />
-	 
-	<br/>
 
-	<span onmouseover="tooltip.show('Descriptive, accurate, clear and short. 50 Characters max.');" onmouseout="tooltip.hide();">
-		<img src='images/Info_icon_20px.png' height='15' width='15' />
-	</span>	
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Project Name
+			<span onmouseover="tooltip.show('Descriptive, accurate, clear and short. 50 Characters max.');" onmouseout="tooltip.hide();"><img src='images/Info_icon_20px.png' height='15' width='15' /></span>
+			</label>
+			<input type="text" id="projName" name="projName" size="60" maxlength="50" value="<?php echo $screenData['PRDESC']?>"/>
+		</div>
 
-	<label>Project Name:</label> 
+		<div class='pt-fld pt-fld-wide'>
+			<label>Description <?php echo $screenData['toolTip']['PRDescrip']?></label>
+			<?php echo $screenData['projDesc'];?>
+		</div>
+	</div>
 
-	<input type="text" id="projName" name="projName" size="60" maxlength="50"
-		value="<?php echo $screenData['PRDESC']?>"/>
+	<?php If ($screenData['PRRELPRJ#'] != 0 and $screenData['PRRELPRJ#'] != null) { ?>
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Parent Project</label>
+			<div class='pt-ro'><?php echo $screenData['PRRELPRJ#'] . ' ' . $screenData['parentProjDesc']?></div>
+		</div>
+	</div>
+	<?php } ?>
 
-	<br/>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['PRDescrip']?>
-	<label>Description:</label> <?php echo $screenData['projDesc'];?>
-	
-	
-	<?php 
-	If ($screenData['PRRELPRJ#'] != 0 and $screenData['PRRELPRJ#'] != null) {
-	   echo '<br/>';
-	   echo '<font size="+1">';
-	   echo 'Parent Project:';
-	}
-	?>
-	&nbsp;
-	<?php
-	If ($screenData['PRRELPRJ#'] != 0 and $screenData['PRRELPRJ#'] != null) { 
-	   echo $screenData['PRRELPRJ#'];
-	}
-	?>
-	&nbsp;
-    <?php 
-    If ($screenData['PRRELPRJ#'] != 0 and $screenData['PRRELPRJ#'] != null) {
-       echo $screenData['parentProjDesc']; 
-       echo '<br/>';
-    }
-    ?>
-    </font>
-    
-	<font size="+1">
-	<?php
-    If ($screenData['childrenProjects'] != ' ' and $screenData['childrenProjects'] != null) {
-        
-        echo "<br/>";
-        echo 'Children Projects:';
-        
-    }
-    ?>
-    </font>
-    <?php 
-    If ($screenData['childrenProjects'] != ' ' and $screenData['childrenProjects'] != null) {
-        echo '<font size="+1">';
-        echo $screenData['childrenProjects'];
-        echo '</font>';
-    }
-    ?>
-	<br/>
-	<?php echo $screenData['toolTip']['LNKDOC']?>
-	<label>Attached Documents:</label><br/>
-	<div id="linkedDocs"><?php echo $screenData['linkedDocs'];?></div>
-	
-	<br/>
-	<input type='button' onclick="javascript:popupWindow('LNKDOC_upload_ctl.php?prefix=PROJ_&idval=<?php echo $screenData['PR#']?>', 
-		'Upload Doc', 400)" value="Attach a Document" />
-	
+	<?php If ($screenData['childrenProjects'] != ' ' and $screenData['childrenProjects'] != null) { ?>
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Children Projects</label>
+			<div class='pt-ro'><?php echo $screenData['childrenProjects']?></div>
+		</div>
+	</div>
+	<?php } ?>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Attached Documents <?php echo $screenData['toolTip']['LNKDOC']?></label>
+			<div id="linkedDocs"><?php echo $screenData['linkedDocs'];?></div>
+			<input class='pt-sbtn pt-sbtn-quiet' type='button' onclick="javascript:popupWindow('LNKDOC_upload_ctl.php?prefix=PROJ_&idval=<?php echo $screenData['PR#']?>', 'Upload Doc', 400)" value="Attach a Document" />
+		</div>
+	</div>
+
 	<hr/>
-	
-	<br/>
-	<br/>
-		
-	<?php echo $screenData['tstType']?>
-	
-	<br/>	
-	<br/>	
-	
-	<?php echo $screenData['toolTip']['PRRQST']?>
-	<label>Requestor: </label> 
-		<?php echo " " . $screenData['PRRQST']?>
-	
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-		
-	<label>Created Date:</label>
-	<?php echo $screenData['html']['PRSUBD']?>
-	<br/>
-	<br/>
-		
-	<?php echo $screenData['toolTip']['PRSPONSR']?>
-	<label>Sponsor:</label> 
-	<?php echo $screenData['PRSPONSR'] ?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<?php echo $screenData['toolTip']['PRSPAPVDTE']?>
-	<label>Sponsor Approval Date:</label>
-	<?php echo $screenData['html']['PRSPAPVDTE']?>
-	<br/>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['PRNEED']?>
-	<label>Need By Date:</label> 
-	<?php echo $screenData['html']['PRNEED']?>
-	<!-- kjr -->
-	&nbsp;&nbsp;&nbsp;
-	
-	<label>Justification Type:</label>
-	<?php echo $screenData['html']['PJDESC'] ?>
-	<br/>
-	<br/>
-	<!-- kjr -->	
-		
-	<label>Requesting Department:</label> 
-	<?php echo $screenData['html']['PRDEPT']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<label>Sub Dept:</label> 
-	<?php echo $screenData['html']['PRSUBDEPT']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<?php echo $screenData['toolTip']['PRUPTY']?>
-	<span onmouseover="tooltip.show(&apos; 1 - Needs to be completed in 1 to 3 months <br> 2 - Needs to be completed in 3 to 6 months <br> 3 - Needs to be completed in 6 months to a year <br> 4 - On Hold <br> 5 -> 8 - Not Used <br> 9 - Default (has not been changed since project creation) &apos;)" onmouseout="tooltip.hide();">
-		<img src="images/Info_icon_20px.png" width="15" height="15">
-		</span>
-	<label>Department Priority:</label> 
-	<input size='2' maxlength='1' type='text' name='projUsrPrty' onchange='activateSave()' value='<?php echo $screenData['PRUPTY']?>' />
-	<br/>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['PRUSRACPT']?>
-	<label>Project Acceptance:</label> 
-	<?php echo $screenData['html']['PRUSRACPT']?> By checking this box the user agrees the project is complete and is ready for implementation.
-	<br/>
-	<div id='acceptDiv'><?php echo $screenData['acceptText']?></div>
-<!--	<br/>-->
-	<br/>
-	
-	<a href="PROJ_allComntView_ctl.php?projnum=<?php echo $screenData['PR#']?>" target="_blank">View All Comments</a>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['GenCommnts']?>
-	<label>Comments:</label> 
-	<?php 
-	foreach ($screenData['projComntGen'] as $comment) {
-		echo $comment;
-		//echo "<hr/>";
-	}
-	?>
-	
-<!--</form> -->
-</div><!-- general -->	
 
-<div class='pageSection' id='itStuff' style="display:none">
-<!--<form id='itStuffForm'>-->
-	<br/>
-	<?php echo $screenData['estLink']?>
-	<br/>
-	<label>Assigned Estimator:</label> 
-	<?php echo $screenData['html']['PRESTMTR']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<label>Dev Group</label>
-	&nbsp;&nbsp;&nbsp;
-	<?php echo $screenData['html']['PRITDEVGRP']?>
-	<br/>
-	<br/>
-	<label>Original estimate:</label> 
-	&nbsp;&nbsp;&nbsp;
-	<?php echo "<span><div class='data' id='origHiEst'>" . $screenData['origHiEst'] . "</div>"?>
-				<small>Originaly estimated on <?php echo " " . $screenData['origEstDate'] . 
-				" by " . $screenData['origEstimator'] .
-				"</small></span>"?>
-	<br/>
-	<br/>
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<?php echo $screenData['tstType']?>
+		</div>
+	</div>
 
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Requestor <?php echo $screenData['toolTip']['PRRQST']?></label>
+			<div class='pt-ro'><?php echo $screenData['PRRQST']?></div>
+		</div>
+		<div class='pt-fld'>
+			<label>Created Date</label>
+			<?php echo $screenData['html']['PRSUBD']?>
+		</div>
+	</div>
 
-	<label>Current low estimate:</label> 
-	<?php echo "<div class='data' id='CurLowEst'>" . $screenData['curLowEst'] . "</div>"?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<?php echo $screenData['toolTip']['CurHiEst']?>
-	<label>Current hi estimate:</label> 
-	<?php echo "<div class='data' id='curHiEst'>" . $screenData['curHiEst'] . "</div>"?>
-	<br/>
-<!--	<br/>-->
-	<small>
-	current estimate was done on <?php echo " " . $screenData['curEstDate'] . " by " . $screenData['curEstimator']?>
-	</small>
-	<br/>
-	<br/>
-	
-	<label>Brand:</label> 
-	&nbsp;&nbsp;&nbsp;
-	<?php echo $screenData['PRBRAND']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<label>Parent Project:</label> 
-	&nbsp;
-	<input size='6' maxlength='6' type='text' name='parentProj' value='<?php echo $screenData['PRRELPRJ#']?>' />
-	&nbsp;
-	<font size="+1">
-	<?php echo $screenData['parentProjDesc'] //wrap key in quotes to prevent undefined constant warning - 06-28-22 - kjr ?>
-	</font>
-	
-	<br/>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['PRPGMR']?>
-	<label>Programmer assigned:</label> 
-	&nbsp;&nbsp;&nbsp;
-	<?php echo $screenData['PRPGMR']?>
-	<br/>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['PRWRKSTS']?>
-	<label>Programmer work status: </label>
-	<?php echo $screenData['html']['PRWRKSTS']?>
-	<br/>
-	
-	<br/>
-	<label>Programmer time to date:</label>
-	<?php echo " " . $screenData['pgmrTime']?>
-	<br/>
-	<br/>
-			
-	<label>Scheduled start date:</label> 
-	<?php echo $screenData['html']['PRESTR']?>
-<!--	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-->
-	<br/>
-	<br/>
-	
-	<label>Scheduled implementation date:</label> 
-	<?php echo $screenData['html']['PRECOM']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<label>Actual implementation date:</label> 
-	<?php echo $screenData['html']['PRACOM']?>
-	<br/>
-	<br/>
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Sponsor <?php echo $screenData['toolTip']['PRSPONSR']?></label>
+			<div class='pt-ro'><?php echo $screenData['PRSPONSR'] ?></div>
+		</div>
+		<div class='pt-fld'>
+			<label>Sponsor Approval Date <?php echo $screenData['toolTip']['PRSPAPVDTE']?></label>
+			<?php echo $screenData['html']['PRSPAPVDTE']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Need By Date <?php echo $screenData['toolTip']['PRNEED']?></label>
+			<?php echo $screenData['html']['PRNEED']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Justification Type</label>
+			<?php echo $screenData['html']['PJDESC'] ?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Requesting Department</label>
+			<?php echo $screenData['html']['PRDEPT']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Sub Dept</label>
+			<?php echo $screenData['html']['PRSUBDEPT']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Department Priority <?php echo $screenData['toolTip']['PRUPTY']?>
+			<span onmouseover="tooltip.show(&apos; 1 - Needs to be completed in 1 to 3 months <br> 2 - Needs to be completed in 3 to 6 months <br> 3 - Needs to be completed in 6 months to a year <br> 4 - On Hold <br> 5 -> 8 - Not Used <br> 9 - Default (has not been changed since project creation) &apos;)" onmouseout="tooltip.hide();"><img src="images/Info_icon_20px.png" width="15" height="15"></span>
+			</label>
+			<input size='2' maxlength='1' type='text' name='projUsrPrty' onchange='activateSave()' value='<?php echo $screenData['PRUPTY']?>' />
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Project Acceptance <?php echo $screenData['toolTip']['PRUSRACPT']?></label>
+			<label class='pt-inline'><?php echo $screenData['html']['PRUSRACPT']?> By checking this box the user agrees the project is complete and is ready for implementation.</label>
+			<div id='acceptDiv'><?php echo $screenData['acceptText']?></div>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Comments <?php echo $screenData['toolTip']['GenCommnts']?>
+			<a class='pt-slink' href="PROJ_allComntView_ctl.php?projnum=<?php echo $screenData['PR#']?>" target="_blank">View All Comments</a>
+			</label>
+			<?php
+			foreach ($screenData['projComntGen'] as $comment) {
+				echo $comment;
+			}
+			?>
+		</div>
+	</div>
+
+</div><!-- general -->
+
+<div class='pageSection pt-pane' id='itStuff' style="display:none">
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'><?php echo $screenData['estLink']?></div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Assigned Estimator</label>
+			<?php echo $screenData['html']['PRESTMTR']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Dev Group</label>
+			<?php echo $screenData['html']['PRITDEVGRP']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Original estimate</label>
+			<div class='data' id='origHiEst'><?php echo $screenData['origHiEst']?></div>
+			<small>Originaly estimated on <?php echo $screenData['origEstDate'] . " by " . $screenData['origEstimator']?></small>
+		</div>
+		<div class='pt-fld'>
+			<label>Current estimate <?php echo $screenData['toolTip']['CurHiEst']?></label>
+			<div class='pt-estpair'>
+				<div class='data' id='CurLowEst'><?php echo $screenData['curLowEst']?></div>
+				<div class='data' id='curHiEst'><?php echo $screenData['curHiEst']?></div>
+			</div>
+			<small>current estimate was done on <?php echo $screenData['curEstDate'] . " by " . $screenData['curEstimator']?></small>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Brand</label>
+			<div class='pt-ro'><?php echo $screenData['PRBRAND']?></div>
+		</div>
+		<div class='pt-fld'>
+			<label>Parent Project</label>
+			<input size='6' maxlength='6' type='text' name='parentProj' value='<?php echo $screenData['PRRELPRJ#']?>' />
+			<small><?php echo $screenData['parentProjDesc'] //wrap key in quotes to prevent undefined constant warning - 06-28-22 - kjr ?></small>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Programmer assigned <?php echo $screenData['toolTip']['PRPGMR']?></label>
+			<div class='pt-ro'><?php echo $screenData['PRPGMR']?></div>
+		</div>
+		<div class='pt-fld'>
+			<label>Programmer work status <?php echo $screenData['toolTip']['PRWRKSTS']?></label>
+			<?php echo $screenData['html']['PRWRKSTS']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Programmer time to date</label>
+			<?php echo $screenData['pgmrTime']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Scheduled start date</label>
+			<?php echo $screenData['html']['PRESTR']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Scheduled implementation date</label>
+			<?php echo $screenData['html']['PRECOM']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Actual implementation date</label>
+			<?php echo $screenData['html']['PRACOM']?>
+		</div>
+	</div>
+
 	<fieldset id = 'lgndFldSet'>
 	<legend id="lgndRetailRange">Action Items:</legend>
 	<div id='divRetailRange'>
-	<input id="addActInfo" type="button" value="Add Action"> 
-	<div id='actDtl' style="width: 700px; padding: 25px; ">
+	<input class='pt-sbtn pt-sbtn-quiet' id="addActInfo" type="button" value="Add Action">
+	<div id='actDtl'>
     <ul></ul>
 	</div>
 	<?php //echo $screenData['instOrd']['RETRANGE']; ?>
-	<br />
 	</div>
 	</fieldset>
-	<br/>
 
-<!--	<label>Implemented date:</label> -->
-<!--	<php echo $screenData['html']['PRIMPDTE']?>-->
-<!--	<br/>-->
-<!--	<br/>-->
-	
-	<?php echo $screenData['toolTip']['ITCommnts']?>
-	<label>Comments:</label> 
-	<?php 
-	foreach ($screenData['projComntIT'] as $comment) {
-		echo $comment;
-		//echo "<hr/>";
-	}
-	?>
-<!--</form> -->
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Comments <?php echo $screenData['toolTip']['ITCommnts']?></label>
+			<?php
+			foreach ($screenData['projComntIT'] as $comment) {
+				echo $comment;
+			}
+			?>
+		</div>
+	</div>
+
 </div> <!-- itStuff  -->
 
-<div class='pageSection' id='payBack' style="display:none">
-<!--<form id='payBackForm'>-->
-	<br/>
-	<?php echo $screenData['toolTip']['PRPAYBKTYP']?>
-	<label>Payback type: </label>
-	<?php echo $screenData['html']['PRPAYBKTYP']?>
+<div class='pageSection pt-pane' id='payBack' style="display:none">
 
-	<br/>
-	<br/><label>Developer rate: </label>
-	<?php echo $screenData['html']['PRDRAT']?>
-	
-	<br/><br/>
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Payback type <?php echo $screenData['toolTip']['PRPAYBKTYP']?></label>
+			<?php echo $screenData['html']['PRPAYBKTYP']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Developer rate</label>
+			<?php echo $screenData['html']['PRDRAT']?>
+		</div>
+	</div>
+
+	<div class='pt-tablewrap'>
 	<table>
 		<CAPTION>
   			Payback data
@@ -1702,7 +1748,7 @@ function showProjectDetailScreen(&$screenData) {
 			<td>Developer cost</td>
 			<td class='numData'><input type='text' maxlength='12' style="text-align:right" size='5' id='origDevCost' name='origDevCost' disabled value='<?php echo $screenData['origDevCost']?>'></td>
 			<td class='numData'><input type='text' maxlength='12' style="text-align:right" size='5' id='developerCost' name='developerCost' disabled value='<?php echo $screenData['developerCost']?>'></td>
-			
+
 		</tr>
 		<tr>
 			<td>One-time cost <?php echo $screenData['toolTip']['1TimeCost']?></td>
@@ -1730,76 +1776,85 @@ function showProjectDetailScreen(&$screenData) {
 			<td class='numData'><input type='text' maxlength='12' style="text-align:right" size='5' id='curPayback' name='curPayback'readonly value='<?php echo $screenData['PRCPYBK']?>' /></td>
 		</tr>
 	</table>
-		
-	<br/>
-	<br/>
-	<?php echo $screenData['toolTip']['PBComnts']?>
-	<label>Comments:</label> 
-	<?php 
-	foreach ($screenData['projComntPB'] as $comment) {
-		echo $comment;
-		//echo "<hr/>";
-	}
-	?>
-	<br/>
-	
-<!--</form> -->
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Comments <?php echo $screenData['toolTip']['PBComnts']?></label>
+			<?php
+			foreach ($screenData['projComntPB'] as $comment) {
+				echo $comment;
+			}
+			?>
+		</div>
+	</div>
+
 </div> <!-- Payback  -->
 
-<div class='pageSection' id='strComm' style="display:none">
-<!--<form id='strCommForm'>-->
-	<br/>
-	<?php echo $screenData['toolTip']['PRSCREVDTE']?>
-	<label>Steering committee action date: </label>
-	<?php echo $screenData['html']['PRSCREVDTE']?>
-	<br/>
-	<br/>
-	
-	<?php echo $screenData['toolTip']['PRRESCOD']?>
-	<label>Resolution: </label>
-	<?php echo $screenData['html']['PRRESCOD']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<?php echo $screenData['toolTip']['PRAUTH']?>
-	<label>Authorized hours: </label>
-	<?php echo $screenData['html']['PRAUTH']?>
-	<br/>
-	<br/>
-	
-	<label>Project Type: </label>
-	<?php echo $screenData['html']['PRTYPE']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	
-	<?php echo $screenData['toolTip']['PRPLAN']?>
-	<label>Planned?: </label>
-	<?php echo $screenData['html']['PRPLAN']?>
-	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<?php echo $screenData['toolTip']['PRPRTY']?>
-	<label>SC Priority: </label>
-	<?php echo $screenData['html']['PRPRTY']?>
-	<br/>
-	<br/>
-	
-	<label>Postmortem Date: </label>
-	<?php echo $screenData['html']['PRPMDT']?>
-	
-	<br/>
-	<br/>
-	<label>Force Steering Committee Review: </label>
-	<?php echo $screenData['html']['PRFORCE2SC']?>
-	<br/>
-	
-	<br/><label>Steering Committee Review Checklist: </label>
-	<br/>
-	<?php echo $screenData['scCheckList']?>
-	
-	<label> Steering Committee Comments:</label> 
-	<?php 
-	foreach ($screenData['projComntSC'] as $comment) {
-		echo $comment;
-		//echo "<hr/>";
-	}
-	?>
+<div class='pageSection pt-pane' id='strComm' style="display:none">
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Steering committee action date <?php echo $screenData['toolTip']['PRSCREVDTE']?></label>
+			<?php echo $screenData['html']['PRSCREVDTE']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Resolution <?php echo $screenData['toolTip']['PRRESCOD']?></label>
+			<?php echo $screenData['html']['PRRESCOD']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Authorized hours <?php echo $screenData['toolTip']['PRAUTH']?></label>
+			<?php echo $screenData['html']['PRAUTH']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Project Type</label>
+			<?php echo $screenData['html']['PRTYPE']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld'>
+			<label>Planned? <?php echo $screenData['toolTip']['PRPLAN']?></label>
+			<?php echo $screenData['html']['PRPLAN']?>
+		</div>
+		<div class='pt-fld'>
+			<label>SC Priority <?php echo $screenData['toolTip']['PRPRTY']?></label>
+			<?php echo $screenData['html']['PRPRTY']?>
+		</div>
+		<div class='pt-fld'>
+			<label>Postmortem Date</label>
+			<?php echo $screenData['html']['PRPMDT']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Force Steering Committee Review</label>
+			<?php echo $screenData['html']['PRFORCE2SC']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Steering Committee Review Checklist</label>
+			<?php echo $screenData['scCheckList']?>
+		</div>
+	</div>
+
+	<div class='pt-row'>
+		<div class='pt-fld pt-fld-wide'>
+			<label>Steering Committee Comments</label>
+			<?php
+			foreach ($screenData['projComntSC'] as $comment) {
+				echo $comment;
+			}
+			?>
+		</div>
+	</div>
+
 	<script type="text/javascript">
 	document.getElementById("projName").focus();
 	</script>
@@ -1807,11 +1862,25 @@ function showProjectDetailScreen(&$screenData) {
 </form>
 
 <script>
-	
+// the tabs are our own now; the framework switchTab is not on every server
+function ptTab(pane) {
+	var tabs = { general: 'tabGeneral', itStuff: 'tabIt',
+	             payBack: 'tabPayBack', strComm: 'tabStrComm' };
+	for (var p in tabs) {
+		var sec = document.getElementById(p);
+		var tab = document.getElementById(tabs[p]);
+		if (sec) { sec.style.display = (p === pane) ? 'block' : 'none'; }
+		if (tab) { tab.className = 'pt-tab' + ((p === pane) ? ' pt-on' : ''); }
+	}
+}
+</script>
+
+<script>
+
   // The following arrays will be used to check for changes. If changes have been made to a project
   // and the PTS user hasn't saved their changes before trying to venture out of the project
-  // request, a warning message will pop up.  
-  
+  // request, a warning message will pop up.
+
   var ids = new Array('projEstimator','projSponsor','projBrand','projProgrammer','projDevGrp','projRequester','projRqstDept','projRqstSubDept','PRUSRACPT','projPBType','projtype','projPlan','projResCode','projWrkSts','projDesc','projComntGen','projComntIT','projComntPB','projComntSC','projName','projSponsAprvDate','tstType','projSponsAprvDate','projSchdStart','projSchdComp','projActComp','PRIMPDTE','projAuthHrs','postMortDate','scRevDate','projDevRate','projNeedBy','projPriority','projForce2SC','projUsrPrty','orig1TimeCost','cur1TimeCost','origAnnualCost','curAnnualCost','orig1TimeSav','cur1TimeSav','origAnnualSav','curAnnualSav','origPayback','curPayback','parentProj');
   var values = new Array('','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','');
   
@@ -1869,7 +1938,9 @@ function showProjectDetailScreen(&$screenData) {
 </script>	
 
 
-</div> <!-- Tab4  -->
+</div> <!-- strComm  -->
+</div> <!-- pt-scr -->
+</div> <!-- pt-app -->
 </div> <!-- stdPage -->
 <?php 
 }
