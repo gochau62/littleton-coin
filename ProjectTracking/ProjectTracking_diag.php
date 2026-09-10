@@ -109,38 +109,33 @@ echo "<h1>Project Tracking diagnostics</h1>";
 echo "<div class='note'>Signed in as " . htmlspecialchars($user)
    . ". This page only reads. Delete it when the testing is done.</div>";
 
+// print as we go, so a query that stops the page still leaves the rest readable
+@ini_set('implicit_flush', '1');
+@ob_implicit_flush(true);
+function diagFlush() { @ob_flush(); @flush(); }
+
 // the library list this web job is actually running with
 $libs = diagShow($conn,
     "Library list for this job",
     "SELECT ORDINAL_POSITION, SCHEMA_NAME, TYPE FROM QSYS2.LIBRARY_LIST_INFO "
   . "ORDER BY ORDINAL_POSITION",
     "The first library holding an object wins, so order matters here.");
-
-// every PROJNXT on the box and what it holds, without calling PT0028S
-diagShow($conn,
-    "PROJNXT data areas",
-    "SELECT DATA_AREA_LIBRARY, DATA_AREA_NAME, DATA_AREA_VALUE "
-  . "FROM QSYS2.DATA_AREA_INFO WHERE DATA_AREA_NAME = 'PROJNXT'",
-    "Whichever one reads near 013016 is the one the screens are finding.");
-
-// which libraries hold a copy of the project file
-diagShow($conn,
-    "Libraries holding PRPROJP",
-    "SELECT TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE FROM QSYS2.SYSTABLES "
-  . "WHERE TABLE_NAME = 'PRPROJP' ORDER BY TABLE_SCHEMA");
+diagFlush();
 
 // counts per library, which is what says where the real data is
-$check = array('LCCTSTLIB', 'LSCDEVLIB', 'LSCPRDLIB');
+$check = array('LSCPRDLIB', 'LCCTSTLIB', 'LSCDEVLIB', 'LSCDEVLIBP', 'LSCPGMLIB');
 foreach ($libs as $l) {
     $s = trim($l['SCHEMA_NAME']);
     if ($s !== '' && !in_array($s, $check)) { $check[] = $s; }
 }
 
 echo "<h2>Rows in PRPROJP, by library</h2>";
-echo "<div class='note'>The 90000 to 90100 count is the one that matters: "
-   . "those buckets show on the time entry screen for everyone.</div>";
+echo "<div class='note'>A library missing from this table has no PRPROJP, or no "
+   . "authority to it. The 90000 to 90100 count is the one that matters: those "
+   . "buckets show on the time entry screen for everyone.</div>";
 echo "<table><tr><th>Library</th><th>Projects</th><th>90000-90100</th>"
    . "<th>Highest number</th><th>Assigned to " . htmlspecialchars($user) . "</th></tr>";
+diagFlush();
 foreach ($check as $lib) {
     if (!preg_match('/^[A-Z0-9_#$@]{1,10}$/i', $lib)) { continue; }
     $total = diagValue($conn, "SELECT COUNT(*) FROM " . $lib . ".PRPROJP");
@@ -157,8 +152,10 @@ foreach ($check as $lib) {
        . "<td class='" . $cls . "'>" . htmlspecialchars(strval($buckets)) . "</td>"
        . "<td>" . htmlspecialchars(strval($high)) . "</td>"
        . "<td>" . htmlspecialchars(strval($mine)) . "</td></tr>";
+    diagFlush();
 }
 echo "</table>";
+diagFlush();
 
 // what the screens themselves get back through the library list
 echo "<h2>What PTS0002S returns to this job</h2>";
