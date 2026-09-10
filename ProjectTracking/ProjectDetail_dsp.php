@@ -29,8 +29,8 @@
 
     font-family: "Segoe UI", -apple-system, system-ui, Roboto,
                  "Helvetica Neue", Arial, sans-serif;
-    font-size: 14px; line-height: 1.45; color: var(--pt-text);
-    background: var(--pt-bg); padding: 1rem; box-sizing: border-box;
+    font-size: 13px; line-height: 1.3; color: var(--pt-text);
+    background: var(--pt-bg); padding: .5rem; box-sizing: border-box;
 }
 #stdPage * { box-sizing: border-box; }
 
@@ -93,9 +93,9 @@
     margin-right: .35rem; }
 #stdPage input[type=text], #stdPage input[type=date], #stdPage input[type=number],
 #stdPage select, #stdPage textarea {
-    font: inherit; font-size: .86rem; color: var(--pt-text);
+    font: inherit; font-size: .82rem; color: var(--pt-text);
     background: var(--pt-card); border: 1px solid var(--pt-field);
-    border-radius: 8px; padding: .38rem .55rem; }
+    border-radius: 6px; padding: .22rem .4rem; }
 #stdPage input[type=text]:focus, #stdPage input[type=date]:focus,
 #stdPage select:focus, #stdPage textarea:focus {
     outline: 0; border-color: var(--pt-blue);
@@ -104,8 +104,8 @@
     background: var(--pt-bg); color: var(--pt-muted); }
 #stdPage input[type=checkbox], #stdPage input[type=radio] {
     vertical-align: middle; margin: 0 .3rem 0 0; }
-#stdPage input.date { width: 130px; }
-#stdPage input.userID { width: 130px; }
+#stdPage input.date { width: 108px; }
+#stdPage input.userID { width: 108px; }
 #stdPage input.numData, #stdPage .numData input { text-align: right; }
 
 /* the tooltip icons the screen sprinkles before labels */
@@ -114,7 +114,7 @@
 #stdPage img[src*="Info_icon"]:hover { opacity: 1; }
 
 /* the breathing room the markup asks for with <br/> pairs */
-#stdPage hr { border: 0; border-top: 1px solid var(--pt-line); margin: 1rem 0; }
+#stdPage hr { border: 0; border-top: 1px solid var(--pt-line); margin: .5rem 0; }
 #stdPage small { color: var(--pt-muted); font-size: .78rem; }
 #stdPage .data { display: inline-block; font-weight: 600;
     padding: .1rem .45rem; border-radius: 6px;
@@ -151,13 +151,13 @@
 
 /* comments and the editor blocks the WebNotes code drops in */
 #stdPage .comment, #stdPage .webNote { background: var(--pt-bg);
-    border: 1px solid var(--pt-line); border-radius: 8px;
-    padding: .5rem .65rem; margin: .35rem 0; font-size: .85rem; }
+    border: 1px solid var(--pt-line); border-radius: 6px;
+    padding: .35rem .5rem; margin: .2rem 0; font-size: .82rem; }
 
 
 /* ---- the card layout, carried over from the design ---- */
 
-#stdPage .pt-app { max-width: 1000px; }
+#stdPage .pt-app { max-width: 880px; }
 
 /* the screen is one card: title row, tabs, then the fields */
 #stdPage .pt-card { background: var(--pt-card); border: 1px solid var(--pt-line);
@@ -165,12 +165,12 @@
 
 #stdPage .pt-scr-head { display: flex; align-items: flex-start;
     justify-content: space-between; gap: 1rem;
-    padding: .95rem 1.15rem .8rem; border-bottom: 1px solid var(--pt-line); }
+    padding: .55rem .75rem .5rem; border-bottom: 1px solid var(--pt-line); }
 #stdPage .pt-scr-what { font-size: .68rem; font-weight: 600; letter-spacing: .07em;
     text-transform: uppercase; color: var(--pt-muted); }
-#stdPage .pt-scr-num { font-size: 1.32rem; font-weight: 700; margin-top: .1rem; }
-#stdPage .pt-scr-num #projectNumber { font-size: 1.15rem; font-weight: 700;
-    width: 104px; text-align: center !important; letter-spacing: .02em; }
+#stdPage .pt-scr-num { font-size: 1.1rem; font-weight: 700; margin-top: .05rem; }
+#stdPage .pt-scr-num #projectNumber { font-size: 1rem; font-weight: 700;
+    width: 86px; text-align: center !important; letter-spacing: .02em; }
 #stdPage .pt-scr-desc { font-size: .9rem; color: var(--pt-muted); margin-top: .3rem; }
 #stdPage .pt-scr-btns { display: flex; align-items: center; gap: .5rem;
     flex-shrink: 0; }
@@ -181,11 +181,11 @@
     border: 1px solid var(--pt-line) !important; color: var(--pt-text) !important; }
 
 /* tab strip: the live tab reads as a raised card edge */
-#stdPage .pt-tabs { display: flex; gap: .25rem; padding: .55rem 1.15rem 0;
+#stdPage .pt-tabs { display: flex; gap: .2rem; padding: .35rem .75rem 0;
     border-bottom: 1px solid var(--pt-line); background: var(--pt-bg); }
 #stdPage .pt-tabs br { display: none; }
-#stdPage .pt-tab { font-size: .84rem; font-weight: 600; color: var(--pt-muted);
-    padding: .45rem .75rem; border: 1px solid transparent; border-bottom: 0;
+#stdPage .pt-tab { font-size: .8rem; font-weight: 600; color: var(--pt-muted);
+    padding: .3rem .6rem; border: 1px solid transparent; border-bottom: 0;
     border-radius: 8px 8px 0 0; margin-bottom: -1px; text-decoration: none;
     display: inline-block; }
 #stdPage .pt-tab:hover { color: var(--pt-text); background: var(--pt-line-soft);
@@ -195,21 +195,24 @@
 
 /* a pane sits inside the card, so it carries no card of its own */
 #stdPage .pt-pane { background: none; border: 0; border-radius: 0;
-    box-shadow: none; padding: 1.05rem 1.15rem 1.25rem; margin: 0; }
+    box-shadow: none; padding: .65rem .75rem .8rem; margin: 0; }
 
 /* two fields to a row, one when the field wants the width */
-#stdPage .pt-row { display: flex; flex-wrap: wrap; gap: .9rem 1.1rem;
-    margin-bottom: .35rem; }
-#stdPage .pt-fld { flex: 1 1 calc(50% - .55rem); min-width: 210px; }
+#stdPage .pt-row { display: flex; flex-wrap: wrap; gap: .4rem .8rem;
+    margin-bottom: .1rem; }
+#stdPage .pt-fld { flex: 1 1 calc(33.333% - .55rem); min-width: 165px; }
 #stdPage .pt-fld-wide { flex-basis: 100%; }
-#stdPage .pt-fld > label { display: block; font-size: .76rem; font-weight: 600;
-    color: var(--pt-muted); margin-bottom: .28rem; }
+#stdPage .pt-fld > label { display: block; font-size: .72rem; font-weight: 600;
+    color: var(--pt-muted); margin-bottom: .1rem; }
 #stdPage .pt-fld label.pt-inline { display: block; font-size: .84rem;
     font-weight: 400; color: var(--pt-text); margin: .1rem 0 .3rem; }
 
 /* the legacy fragments fill the field, except the ones sized to a few chars */
 #stdPage .pt-fld input[type=text], #stdPage .pt-fld input[type=date],
-#stdPage .pt-fld select, #stdPage .pt-fld textarea { width: 100%; }
+#stdPage .pt-fld select, #stdPage .pt-fld textarea {
+    width: 100%; max-width: 250px; }
+#stdPage .pt-fld-wide input[type=text], #stdPage .pt-fld-wide textarea {
+    max-width: 560px; }
 #stdPage .pt-fld input[size="1"], #stdPage .pt-fld input[size="2"],
 #stdPage .pt-fld input[size="3"], #stdPage .pt-fld input[size="5"],
 #stdPage .pt-fld input[size="6"] { width: auto; }
@@ -217,10 +220,10 @@
     width: auto; }
 
 /* a value nobody can change here reads as plain text on the page */
-#stdPage .pt-fld .pt-ro { font-size: .86rem; padding: .5rem .1rem;
-    min-height: 1.2rem; border-bottom: 1px solid var(--pt-line-soft); }
+#stdPage .pt-fld .pt-ro { font-size: .82rem; padding: .28rem .1rem;
+    min-height: 1rem; border-bottom: 1px solid var(--pt-line-soft); }
 #stdPage .pt-fld .pt-ro:empty::after { content: '\2014'; color: var(--pt-faint); }
-#stdPage .pt-fld small { display: block; margin-top: .25rem; }
+#stdPage .pt-fld small { display: block; margin-top: .1rem; font-size: .72rem; }
 
 /* the two current estimate figures sit side by side */
 #stdPage .pt-estpair { display: flex; gap: .5rem; align-items: center; }
