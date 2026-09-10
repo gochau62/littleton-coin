@@ -79,19 +79,19 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    CASE WHEN E.PRPROJ# IS NULL THEN 'N' ELSE 'Y' END
                        AS PJHASEST,
                    COALESCE(T.PJHOURS, 0) AS PJHOURS
-              FROM LSCPRDLIB/PRPROJP P
+              FROM PRPROJP P
               LEFT JOIN (
                    SELECT PRPROJ#, PRESTLOW, PRESTHI, PRESTDATE,
                           ROW_NUMBER() OVER (
                               PARTITION BY PRPROJ#
                               ORDER BY PRESTDATE DESC, PRESTTIME DESC) AS RN
-                     FROM LSCPRDLIB/PRESTMTP
+                     FROM PRESTMTP
                    ) E
                 ON E.PRPROJ# = P.PR#
                AND E.RN = 1
               LEFT JOIN (
                    SELECT PT#, SUM(PTTIME) AS PJHOURS
-                     FROM LSCPRDLIB/PRTIMEP
+                     FROM PRTIMEP
                     GROUP BY PT#
                    ) T
                 ON T.PT# = P.PR#
@@ -106,7 +106,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    RTRIM(T.PTPGMR) AS TMUSER,
                    T.PTDATE AS TMDATE,
                    T.PTTIME AS TMHOURS
-              FROM LSCPRDLIB/PRTIMEP T
+              FROM PRTIMEP T
              WHERE T.PTDATE BETWEEN WKFROM AND WKTO
                AND T.PT# NOT BETWEEN 90000 AND 90999
              ORDER BY T.PTPGMR, T.PT#;
@@ -117,7 +117,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    RTRIM(P.PRDESC) AS PJDESC,
                    RTRIM(P.PRPGMR) AS PJPGMR,
                    P.PRACOM AS PJCOMPDATE
-              FROM LSCPRDLIB/PRPROJP P
+              FROM PRPROJP P
              WHERE P.PRACOM BETWEEN WKFROM AND WKTO
                AND P.PR# NOT BETWEEN 90000 AND 90999
              ORDER BY P.PRPGMR, P.PR#;
@@ -125,7 +125,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         -- PGMR: the programmer/estimator dropdown list
         DECLARE C5 CURSOR WITH RETURN FOR
             SELECT RTRIM(G.PGDEVPRF) AS PGPROFILE
-              FROM LSCPRDLIB/PRIDTRANSP G
+              FROM PRIDTRANSP G
              ORDER BY G.PGDEVPRF;
 
         -- CHGLOG: project change history rows in a date range
@@ -134,7 +134,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
                    RTRIM(L.PCHUSER) AS CLUSER,
                    L.PCHDATE AS CLDATE,
                    RTRIM(L.PCHTEXT) AS CLTEXT
-              FROM LSCPRDLIB/PRCHGLOGP L
+              FROM PRCHGLOGP L
              WHERE L.PCHDATE BETWEEN WKFROM AND WKTO
                AND L.PCH# NOT BETWEEN 90000 AND 90999
              ORDER BY L.PCHUSER, L.PCH#, L.PCHDATE, L.PCHTIME;
@@ -143,7 +143,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK001S (
         DECLARE C7 CURSOR WITH RETURN FOR
             SELECT RTRIM(S.PRSCODE) AS STCODE,
                    RTRIM(S.PRSDESC) AS STDESC
-              FROM LSCPRDLIB/PRSTATUSP S
+              FROM PRSTATUSP S
              ORDER BY S.PRSDESC;
 
         IF INTYPE = 'LIST' THEN

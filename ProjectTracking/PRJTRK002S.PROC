@@ -70,11 +70,11 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
                    RTRIM(A.PGAADDUSR) AS PGADDUSR,
                    A.PGAADDDTE AS PGADDDATE
               FROM LSCDEVLIBP/PRPGMASGP A
-              LEFT JOIN LSCPRDLIB/PRSTATUSP S
+              LEFT JOIN PRSTATUSP S
                 ON RTRIM(S.PRSCODE) = RTRIM(A.PGAWRKSTS)
               LEFT JOIN (
                    SELECT PT#, PTPGMR, SUM(PTTIME) AS PGHOURS
-                     FROM LSCPRDLIB/PRTIMEP
+                     FROM PRTIMEP
                     GROUP BY PT#, PTPGMR
                    ) T
                 ON T.PT# = A.PGAPROJ
@@ -102,7 +102,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
                    RTRIM(A.PGAWRKSTS) AS AGWRKSTS,
                    A.PGASTRDTE AS AGSTRDATE
               FROM LSCDEVLIBP/PRPGMASGP A
-              JOIN LSCPRDLIB/PRPROJP P
+              JOIN PRPROJP P
                 ON P.PR# = A.PGAPROJ
              WHERE P.PRACOM = 0
                AND RTRIM(P.PRRESCOD) <> 'REJ'
