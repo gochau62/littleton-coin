@@ -323,18 +323,23 @@ switch ($action) {
     case 'pgmrcommentremove':
         if (file_exists('PROJ_model.php')) { require_once 'PROJ_model.php'; }
 
+        // these four change data, so they are posted, never fetched
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { prjOutFail('POST only.'); }
+
         $proj = intval($_POST['projNum'] ?? 0);
         if ($proj <= 0) { prjOutFail('No project number.'); }
+
+        // a row against a project not yet on file would be left orphaned
+        $rec = function_exists('getRecordPRPROJP') ? getRecordPRPROJP($conn, $proj) : false;
+        if (!is_array($rec) || !isset($rec['PR#'])) {
+            prjOutFail('Save the project before adding programmers or comments.');
+        }
 
         // authority is decided here, never taken from the page
         $auth = function_exists('getRecPRAUTHP') ? getRecPRAUTHP($conn, $user) : array();
         $scr  = array('PR#' => $proj,
                       'PAPRJMNGR' => $auth['PAPRJMNGR'] ?? 'N',
-                      'PRPGMR' => '');
-        if (function_exists('getRecordPRPROJP')) {
-            $rec = getRecordPRPROJP($conn, $proj);
-            $scr['PRPGMR'] = $rec['PRPGMR'] ?? '';
-        }
+                      'PRPGMR' => $rec['PRPGMR'] ?? '');
         if (!prjPgmrMayEdit($scr)) { prjOutFail('Not authorized to change this.'); }
 
         $who = strtoupper(trim(strval($_POST['pgmr'] ?? '')));
