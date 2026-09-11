@@ -1044,7 +1044,9 @@ function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
 ?>
 
 
-// ---- several programmers on a project, off the detail screen ----
+// ---- several programmers on a project ----
+// the detail screen draws these and ProjectTracking_ajax.php redraws them,
+// so they live here where both already load, not in the display file
 
 // the reads, through the caller already above
 function prjPgmrRows($conn, $proj)    { return prjCall002($conn, 'PGLIST', 0, 0, $proj); }
