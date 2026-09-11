@@ -49,6 +49,29 @@
 			window.location = 'ProjectTimeEntry_ctl.php?addproj=' + toAdd;
 		}
 	}
+
+	// 5 rather than 5.00, and 2.5 rather than 2.50, as the day boxes hold them
+	function ptTimeFmt(n) { return String(Math.round(n * 100) / 100); }
+
+	// the Total column and the corner total, off the boxes themselves
+	// the day columns stay with the shared totalElementsByName, which also saves
+	function ptSumTotals() {
+		var grand = 0;
+		$('#stdPage table tr').each(function () {
+			var boxes = $(this).find('input.numData');
+			if (boxes.length === 0) { return; }
+			var row = 0;
+			boxes.each(function () { row += parseFloat(this.value) || 0; });
+			grand += row;
+			$(this).find('td.rowTot').text(ptTimeFmt(row));
+		});
+		$('#grandTotal').text(ptTimeFmt(grand));
+	}
+
+	$(document).ready(function () {
+		ptSumTotals();
+		$('#stdPage table').on('change keyup', 'input.numData', ptSumTotals);
+	});
 </script>
 
 <script type='text/javascript' src='Utils/common_JS_functions.js'></script>
@@ -209,11 +232,20 @@ if ($authorized != "yes") {
 		}
 	}
 	
-	$screenData['timeTable'] = "<table><tr><th>Proj #</th><th>Description</th><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>";
+	// hours print as 5 and 2.5, never 5.00, the way the day boxes hold them
+	function prjTimeFmt($n) { return rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.'); }
+
+	$screenData['timeTable'] = "<table><tr><th>Proj #</th><th>Description</th><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Total</th></tr>";
 	$i = 0;
+	$weekTotal = 0;
 	foreach ($projTime as $project) {
-		
-		$screenData['timeTable'] .= "<tr>" 
+
+		// the week's hours for this one project, the last cell on the row
+		$projRow = 0;
+		for ($d = 0; $d <= 6; $d++) { $projRow += floatval($project[$d]); }
+		$weekTotal += $projRow;
+
+		$screenData['timeTable'] .= "<tr>"
 		."<td><a href='ProjectDetail_ctl.php?projnum=" . $project['PR#'] . "'>" . $project['PR#'] . "</a></td>" 
 		."<td>" . trim($project['Desc']) . "</td>" 
 		."<td><input type='text' class='numData' size='1'
@@ -237,6 +269,7 @@ if ($authorized != "yes") {
 		."<td><input type='text' class='numData' size='1'  
 			id='sat" . $project['PR#'] . "' 
 			name='sat' onchange=\"totalElementsByName('sat', 'satTotal', '".$project['PR#']."', '".$day[6]."')\" value ='" . $project[6] . "'></td>"
+		."<td class='rowTot' id='tot" . $project['PR#'] . "'>" . prjTimeFmt($projRow) . "</td>"
 		."</tr>";
 		$sunTotal += $project[0];
 		$monTotal += $project[1];
@@ -257,6 +290,7 @@ if ($authorized != "yes") {
 		 . "<td id='thuTotal'>" . $thuTotal . "</td>"
 		 . "<td id='friTotal'>" . $friTotal . "</td>"
 		 . "<td id='satTotal'>" . $satTotal . "</td>"
+		 . "<td id='grandTotal'>" . prjTimeFmt($weekTotal) . "</td>"
 		 . "</tr></table>";
 	
 	

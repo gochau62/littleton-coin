@@ -165,10 +165,15 @@
 #stdPage th { font-size: .84rem; }
 /* a description on one line is what kept the legacy rows a single line tall */
 #stdPage table td:nth-child(2) { white-space: nowrap; }
-/* the day boxes hold one entry, so they stay near the legacy's size='1' */
-#stdPage table input.numData { width: 32px; text-align: center;
+/* the day boxes carry the legacy's column width so the grid reads the same */
+#stdPage table input.numData { width: 40px; text-align: center;
     font-size: .82rem; line-height: 1.15; padding: .1rem .12rem;
     border-radius: 5px; }
+/* the Total column: the week per project, and the whole sheet in the corner */
+#stdPage table th:last-child, #stdPage table td:last-child {
+    border-left: 1px solid var(--pt-line); }
+#stdPage td.rowTot, #stdPage tr.total td { text-align: center; }
+#stdPage td.rowTot { font-weight: 600; }
 #stdPage table td:first-child, #stdPage table td:nth-child(2) { text-align: left; }
 #stdPage table th:first-child, #stdPage table th:nth-child(2) { text-align: left; }
 #stdPage #projToAdd { width: 92px; }
