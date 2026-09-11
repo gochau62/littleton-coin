@@ -885,10 +885,11 @@ if ($authorized != "yes") {
 	// the other programmers on this project, and their stamped comments
 	$screenData['pgmrList'] = '';
 	$screenData['pgmrCmts'] = '';
-	if (is_numeric($_GET['projnum']) && function_exists('prjPgmrList')) {
+	if (function_exists('prjPgmrList')) {
+		$pgmrNew     = !is_numeric($_GET['projnum']);
 		$pgmrCanEdit = prjPgmrMayEdit($screenData);
-		$screenData['pgmrList'] = prjPgmrList($conn2, $screenData, $pgmrCanEdit);
-		$screenData['pgmrCmts'] = prjPgmrCmtList($conn2, $screenData, $pgmrCanEdit);
+		$screenData['pgmrList'] = prjPgmrList($conn2, $screenData, $pgmrCanEdit, $pgmrNew);
+		$screenData['pgmrCmts'] = prjPgmrCmtList($conn2, $screenData, $pgmrCanEdit, $pgmrNew);
 	}
 	}
 	

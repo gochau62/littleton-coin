@@ -1137,9 +1137,14 @@ function prjPgmrMayEdit($screenData) {
 }
 
 // the programmers on a project, drawn under the assigned field
-function prjPgmrList($conn, $screenData, $canEdit) {
+function prjPgmrList($conn, $screenData, $canEdit, $isNew = false) {
     $proj = intval($screenData['PR#'] ?? 0);
     if ($proj <= 0) { return ''; }
+    // nothing can be filed against a number that is not on the project file yet
+    if ($isNew) {
+        return "<div class='pt-pgmr-none'>Save this project before other "
+             . "programmers can be added.</div>";
+    }
     $rows = prjPgmrRows($conn, $proj);
     if ($rows === false) {
         return "<div class='pt-pgmr-none'>Additional programmers need PRJTRK002S "
@@ -1214,9 +1219,9 @@ function prjPgmrList($conn, $screenData, $canEdit) {
 }
 
 // the comments, each stamped with who wrote it and when
-function prjPgmrCmtList($conn, $screenData, $canEdit) {
+function prjPgmrCmtList($conn, $screenData, $canEdit, $isNew = false) {
     $proj = intval($screenData['PR#'] ?? 0);
-    if ($proj <= 0) { return ''; }
+    if ($proj <= 0 || $isNew) { return ''; }
     $rows = prjPgmrCmtRows($conn, $proj);
     if ($rows === false) { return ''; }
     $me   = strtoupper(trim(strval($_SESSION['username'] ?? '')));
