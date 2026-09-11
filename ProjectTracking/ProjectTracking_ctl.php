@@ -57,8 +57,7 @@ if ($authorized != "yes") {
     require_once __DIR__ . '/ProjectTracking_model.php';
 
     include "ProjectTracking_dsp.php";
-    // ?view=list is the project list alone, ?view=goto puts the cursor
-    // in the lookup - both are this same screen, trimmed
+    // list and goto are this same screen, trimmed
     $prjView = strtolower(trim(strval($_GET['view'] ?? '')));
     dspProjectTracking($prjView);
 ?>
@@ -373,8 +372,7 @@ function renderLoad(load) {
                   : (name === 'Other') ? '#64748b' : '#2a78d6';
         var label = name;
 
-        // the row band sits behind everything: it takes the hover highlight
-        // and catches the click across the whole row
+        // the row band takes the hover and the click
         svg += '<g class="pt-bar" data-name="' + attr(label) + '" data-count="' + count +
                '"><rect class="pt-barbg" x="0" y="' + (y - 5) + '" width="' + w +
                '" height="' + (rowH - 2) + '" rx="6"></rect>' +
@@ -398,8 +396,7 @@ function renderLoad(load) {
 
 // status donut with the total in the center
 function renderDonut(status, labels) {
-    // color by the status wording: active blue, waiting amber, hold
-    // purple, done green, unstatused grey
+    // color by the status wording, grey when unstatused
     var palette = ['#0ba5ec', '#d03b3b', '#1c5cab', '#b07b0e'];
     var pi = 0;
     var colors = {};

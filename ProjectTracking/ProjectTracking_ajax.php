@@ -340,17 +340,17 @@ switch ($action) {
         $who = strtoupper(trim(strval($_POST['pgmr'] ?? '')));
         $ok  = false;
         if ($action === 'pgmrsave') {
-            $ok = prjPgmrSave($conn, $proj, $who,
+            $ok = instupdtRecPRPGMASGP($conn, $proj, $who,
                               strval($_POST['sts'] ?? ''),
                               prjPgmrDec($_POST['date'] ?? ''), $user);
         } elseif ($action === 'pgmrremove') {
-            $ok = prjPgmrRemove($conn, $proj, $who);
+            $ok = deleteRecPRPGMASGP($conn, $proj, $who);
         } elseif ($action === 'pgmrcommentadd') {
             $txt = trim(strval($_POST['text'] ?? ''));
             // the profile and the clock are stamped on, the page sends neither
-            $ok  = ($txt !== '') && prjPgmrCmtAdd($conn, $proj, $user, $txt);
+            $ok  = ($txt !== '') && insertRecPRPGMCMTP($conn, $proj, $user, $txt);
         } else {
-            $ok = prjPgmrCmtRemove($conn, $proj, intval($_POST['seq'] ?? 0));
+            $ok = updRecPRPGMCMTP($conn, $proj, intval($_POST['seq'] ?? 0));
         }
         if (!$ok) { prjOutFail('The change did not save - PRJTRK002S may not be installed.'); }
 

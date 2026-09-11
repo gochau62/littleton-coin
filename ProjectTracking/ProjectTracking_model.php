@@ -110,8 +110,7 @@ function prjFail($where) {
 }
 
 
-// the same call qualified every way the connection might want it, so the
-// procedure is found whatever the job's library list holds
+// the call qualified every way the library list might need
 function prjSqlTries($sql) {
     $tries = array($sql);
     foreach (array('PRJTRK001S', 'PRJTRK002S', 'PHP0003S') as $proc) {
@@ -463,8 +462,7 @@ function prjMarkPipeline(&$projects, $pipe) {
 }
 
 
-// the resolution code is the committee's word; the checklist decides
-// between ready and not for what it has not ruled on yet
+// the committee's code wins, the checklist rules the rest
 function prjStage($row, $miss = null) {
     $code = strtoupper(trim(strval($row['PJRESCOD'] ?? '')));
     if ($code === 'REJ')                 { return 'rejected'; }
@@ -482,8 +480,7 @@ function prjStage($row, $miss = null) {
 }
 
 
-// new = submitted since the meeting N cycles back and not yet ruled on;
-// it is a flag beside the stage, never a stage of its own
+// new is a flag beside the stage, never a stage
 function prjFresh($row) {
     $from = intval($GLOBALS['prjWindowFrom'] ?? 0);
     if ($from <= 0 || intval($row['PJSUBDATE'] ?? 0) < $from) { return false; }
@@ -504,8 +501,7 @@ function prjFreshFrom($cycles = 3) {
 }
 
 
-// the stored Work Status wins; a blank one on a fire project reads
-// Est. not needed, otherwise Not set
+// the stored Work Status wins over anything derived here
 function prjStatus($row) {
     if (trim($row['PJRESCOD']) === 'REJ') { return ''; }
     if (intval($row['PJCOMPDATE']) > 0)   { return ''; }
@@ -594,8 +590,7 @@ function prjNoteText($n) {
     while (strlen($time) < 6) { $time = '0' . $time; }
     $stem = 'PROJ_' . trim(strval($n['NTPROJ'])) . strval(intval($n['NTDATE']));
 
-    // the saver strips the leading WebNotes/ and writes from that folder,
-    // so the file sits under this screen's own WebNotes directory
+    // the saver strips WebNotes/ and writes from that folder
     $inner = $path;
     if (stripos($inner, 'WebNotes/') === 0) { $inner = substr($inner, 9); }
     $inner = trim($inner, '/');
@@ -615,8 +610,7 @@ function prjNoteText($n) {
         $tries[] = $file;
         $txt = @file_get_contents($file, false, null, 0, 8000);
         if ($txt !== false) { break; }
-        // the time digits are the only loose part of the name, so fall
-        // back to the day's file for this project
+        // the time digits are loose, fall back to the day
         $hit = @glob($dir . '/' . $stem . '*');
         if (is_array($hit) && count($hit) > 0) {
             $txt = @file_get_contents($hit[0], false, null, 0, 8000);
@@ -696,8 +690,7 @@ function prjWeeklyDigest($conn, $from, $to) {
     foreach ($notes as $n) {
         $user = trim($n['NTUSER']);
         if ($user === '') { continue; }
-        // only IT comments describe the work; the other types are project
-        // admin and belong in the changes section
+        // only IT comments describe the work, the rest are admin
         $type = trim($n['NTTYPE']);
         if ($type !== 'ComntIT') { continue; }
         if (!isset($dev[$user])) { $dev[$user] = $blank; }
@@ -706,8 +699,7 @@ function prjWeeklyDigest($conn, $from, $to) {
         }
         $dev[$user]['comments'][$type] += 1;
 
-        // attach the comment's words within budget; with no readable text
-        // the comment still rides along so the summary can name it
+        // attach the comment's words within the budget
         $text = ($txtBudget > 0) ? prjNoteText($n) : '';
         if ($text !== '' && strlen($text) > $txtBudget) {
             $txtDropped += 1;
@@ -741,8 +733,7 @@ function prjWeeklyDigest($conn, $from, $to) {
             'text' => $text);
     }
 
-    // project changes stand on their own - anyone can make them, and they
-    // are project admin rather than a developer's work
+    // project changes are admin, not a developer's own work
     $changes = array();
     $chgCap = 300;
     foreach ($chglog as $c) {
@@ -1044,12 +1035,11 @@ function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
 
 
 // ---- several programmers on a project ----
-// the detail screen draws these and ProjectTracking_ajax.php redraws them,
-// so they live here where both already load, not in the display file
+// the screen draws these and the endpoint redraws them
 
 // the reads, through the caller already above
-function prjPgmrRows($conn, $proj)    { return prjCall002($conn, 'PGLIST', 0, 0, $proj); }
-function prjPgmrCmtRows($conn, $proj) { return prjCall002($conn, 'CMLIST', 0, 0, $proj); }
+function getRecsPRPGMASGP($conn, $proj)    { return prjCall002($conn, 'PGLIST', 0, 0, $proj); }
+function getRecsPRPGMCMTP($conn, $proj) { return prjCall002($conn, 'CMLIST', 0, 0, $proj); }
 
 // a write says whether it landed, which the reads do not need to
 function prjWrite002($conn, $type, $proj, $pgmr = '', $sts = '', $date = 0,
@@ -1061,19 +1051,19 @@ function prjWrite002($conn, $type, $proj, $pgmr = '', $sts = '', $date = 0,
                              strval(intval($seq)))) !== false;
 }
 
-function prjPgmrSave($conn, $proj, $p, $sts, $date, $user) {
+function instupdtRecPRPGMASGP($conn, $proj, $p, $sts, $date, $user) {
     return prjWrite002($conn, 'PGSAVE', $proj, $p, $sts, $date, $user);
 }
-function prjPgmrRemove($conn, $proj, $p) {
+function deleteRecPRPGMASGP($conn, $proj, $p) {
     return prjWrite002($conn, 'PGDEL', $proj, $p);
 }
 
 // the writer's own profile is stamped on, never taken from the form
-function prjPgmrCmtAdd($conn, $proj, $user, $text) {
+function insertRecPRPGMCMTP($conn, $proj, $user, $text) {
     $user = strtoupper(trim($user));
     return prjWrite002($conn, 'CMADD', $proj, $user, '', 0, $user, $text);
 }
-function prjPgmrCmtRemove($conn, $proj, $seq) {
+function updRecPRPGMCMTP($conn, $proj, $seq) {
     return prjWrite002($conn, 'CMDEL', $proj, '', '', 0, '', '', $seq);
 }
 
@@ -1146,7 +1136,7 @@ function prjPgmrList($conn, $screenData, $canEdit, $isNew = false) {
         return "<div class='pt-pgmr-none'>Save this project before other "
              . "programmers can be added.</div>";
     }
-    $rows = prjPgmrRows($conn, $proj);
+    $rows = getRecsPRPGMASGP($conn, $proj);
     if ($rows === false) {
         return "<div class='pt-pgmr-none'>Additional programmers need PRJTRK002S "
              . "on this server.</div>";
@@ -1223,7 +1213,7 @@ function prjPgmrList($conn, $screenData, $canEdit, $isNew = false) {
 function prjPgmrCmtList($conn, $screenData, $canEdit, $isNew = false) {
     $proj = intval($screenData['PR#'] ?? 0);
     if ($proj <= 0 || $isNew) { return ''; }
-    $rows = prjPgmrCmtRows($conn, $proj);
+    $rows = getRecsPRPGMCMTP($conn, $proj);
     if ($rows === false) { return ''; }
     $me   = strtoupper(trim(strval($_SESSION['username'] ?? '')));
     $isPM = ($screenData['PAPRJMNGR'] == 'Y');
