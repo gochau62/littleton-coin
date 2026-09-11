@@ -28,8 +28,17 @@
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
 /* |                                                                |*/
-/* | Programmer -                Date -                             |*/
-/* |  Purpose -                                                     |*/
+/* | Programmer - G Chau         Date - 09/11/2026                  |*/
+/* |  Purpose - One file for the programmers, PRPGMRASGT. The       |*/
+/* |            comment types went with PRPGMCMTP, so this drops    |*/
+/* |            from nine parameters to six.                        |*/
+/* |            CREATE OR REPLACE does not replace across a         |*/
+/* |            different parameter count, so the nine parameter    |*/
+/* |            version has to be dropped or it stays behind and    |*/
+/* |            keeps getting called:                               |*/
+/* |            DROP PROCEDURE PRJTRK002S                           |*/
+/* |              (VARCHAR, DECIMAL, VARCHAR, VARCHAR, DECIMAL,     |*/
+/* |               DECIMAL, VARCHAR, VARCHAR, INTEGER)              |*/
 /* |  Project - 260082                                              |*/
 /* |                                                                |*/
 /* ------------------------------------------------------------------*/
