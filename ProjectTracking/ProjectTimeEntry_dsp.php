@@ -156,7 +156,17 @@
 
 /* the week bar the time screen prints above its table */
 #stdPage > div[style*="width: 50%"] { padding: .2rem 0; }
-#stdPage table input.numData { width: 56px; text-align: center; }
+
+/* the timesheet keeps the legacy's compact shape, only a little roomier */
+/* the table is only as wide as its rows, so it never stretches to the page */
+#stdPage table { width: auto; }
+#stdPage th, #stdPage td { padding: .25rem; }
+/* a description on one line is what kept the legacy rows a single line tall */
+#stdPage table td:nth-child(2) { white-space: nowrap; }
+/* the day boxes hold one entry, so they stay near the legacy's size='1' */
+#stdPage table input.numData { width: 32px; text-align: center;
+    font-size: .82rem; line-height: 1.15; padding: .1rem .12rem;
+    border-radius: 5px; }
 #stdPage table td:first-child, #stdPage table td:nth-child(2) { text-align: left; }
 #stdPage table th:first-child, #stdPage table th:nth-child(2) { text-align: left; }
 #stdPage #projToAdd { width: 92px; }
