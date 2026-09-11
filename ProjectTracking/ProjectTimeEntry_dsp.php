@@ -158,9 +158,11 @@
 #stdPage > div[style*="width: 50%"] { padding: .2rem 0; }
 
 /* the timesheet keeps the legacy's compact shape, only a little roomier */
-/* the table is only as wide as its rows, so it never stretches to the page */
-#stdPage table { width: auto; }
+/* only as wide as its rows, and centred under the week bar as the legacy sits */
+#stdPage table { width: auto; margin: .3rem auto .6rem; clear: both; }
 #stdPage th, #stdPage td { padding: .25rem; }
+/* the headings read at the same size as the rows below them */
+#stdPage th { font-size: .84rem; }
 /* a description on one line is what kept the legacy rows a single line tall */
 #stdPage table td:nth-child(2) { white-space: nowrap; }
 /* the day boxes hold one entry, so they stay near the legacy's size='1' */
