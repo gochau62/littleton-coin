@@ -52,6 +52,30 @@ for the planned team/sub-department tagging.
    procedures beside it.
 4. The Excel download uses the vendored PhpSpreadsheet at
    `/www/seidenphp/htdocs/vendor/autoload.php`, same as the other loaders.
+5. Nothing extra is needed for bookmarks. Each screen leaves the address it
+   was asked for in `$_SESSION['return_after_logon']` when nobody is signed
+   in, and the instance's own `LogOnProcess.php` reads it back — the same
+   pair of pieces Requisitions, Story Card, Sellbrite and Time Payment use.
+   If a bookmark still lands on the home page after signing in, it is the
+   framework side that is behind: `LogOnProcess.php` must be the version
+   with `rtUsable()` in it, and `header_menu.php` the version that carries
+   `return_to` on the sign-in form.
+
+## Bookmarks and the sign on
+
+A bookmark straight to a screen works because of two lines that have to
+agree with each other:
+
+```php
+$user = $_SESSION['username'] ?? '';                                  // near the top
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+```
+
+The `?? ''` is not decoration. A signed out visit has no `username` key at
+all, so reading it plainly gives `null`, and `null === ''` is false — the
+stash line then never runs and the sign on falls back to the group's home
+page. That was the whole reason these screens could not be bookmarked while
+the other tools could. Any new screen added here copies both lines together.
 
 ## Libraries — how names are resolved, and what to watch
 

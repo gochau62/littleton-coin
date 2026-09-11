@@ -20,8 +20,9 @@
 <?php
     // retrieves and sets password and username
     require_once 'StartBlockScriptA.php';
-    $user     = $_SESSION['username'];
-    $password = $_SESSION['password'];
+    // a signed out visit has no keys at all, so these read as empty rather than unset
+    $user     = $_SESSION['username'] ?? '';
+    $password = $_SESSION['password'] ?? '';
 ?>
 
 <!-- includes css and javascript libraries -->
@@ -56,7 +57,9 @@
 <?php
 require_once 'StartBlockScriptB.php';
 
-// record where the person was headed so sign-on can send them back
+// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
+// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
+// to this page work even when the sign on itself happens over on index
 if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // authority level 20, the developers group
