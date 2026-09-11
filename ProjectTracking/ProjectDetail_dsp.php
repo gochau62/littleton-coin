@@ -244,24 +244,85 @@
     font-weight: 700; text-align: center !important; letter-spacing: .02em; }
 #stdPage .pt-ask-note { font-size: .84rem; color: var(--pt-muted); margin-top: 1rem; }
 
-/* the several programmers panel, redrawn in place by its own ajax */
-#stdPage .pgmrPanel { border: 1px solid var(--pt-line); border-radius: 8px;
-    background: var(--pt-card); padding: .5rem .65rem; }
-#stdPage .pgmrPanel table.pgmrTable { width: 100%; margin: 0 0 .3rem; }
-#stdPage .pgmrPanel .pgmrTag { font-size: .72rem; color: var(--pt-muted);
-    margin-left: .3rem; cursor: pointer; }
-#stdPage .pgmrPanel a { cursor: pointer; }
-#stdPage .pgmrPanel select.pgmrSts { width: auto; min-width: 130px; }
-#stdPage .pgmrPanel input.pgmrDate { width: 130px; }
-#stdPage .pgmrPanel .pgmrCmtGroup { margin-top: .5rem; padding-top: .35rem;
-    border-top: 1px dashed var(--pt-line); }
-#stdPage .pgmrPanel .pgmrCmtName { font-weight: 700; font-size: .82rem; }
-#stdPage .pgmrPanel .pgmrCmt { margin: .25rem 0 .25rem .6rem; font-size: .84rem; }
-#stdPage .pgmrPanel .pgmrCmtWho { display: block; font-size: .72rem;
-    font-weight: 600; color: var(--pt-muted); }
-#stdPage .pgmrPanel textarea { width: 100%; max-width: 520px; }
+/* the other programmers, listed under the assigned field */
+#stdPage .pt-pgmr { margin-top: .35rem; }
+#stdPage .pt-pgmr-row { display: flex; align-items: center; gap: .4rem;
+    padding: .18rem 0; border-bottom: 1px solid var(--pt-line-soft); }
+#stdPage .pt-pgmr-who { font-size: .82rem; font-weight: 600; min-width: 86px; }
+#stdPage .pt-pgmr-val { font-size: .8rem; color: var(--pt-muted); }
+#stdPage .pt-pgmr-hrs { font-size: .76rem; color: var(--pt-faint);
+    margin-left: auto; white-space: nowrap; }
+#stdPage .pt-pgmr select.pt-pgmr-sts { width: auto; min-width: 118px;
+    font-size: .78rem; padding: .12rem .3rem; }
+#stdPage .pt-pgmr input.pt-pgmr-date { width: 118px; font-size: .78rem;
+    padding: .12rem .3rem; }
+#stdPage .pt-pgmr-x { color: var(--pt-red); font-weight: 700; cursor: pointer;
+    text-decoration: none; padding: 0 .2rem; }
+#stdPage .pt-pgmr-add { margin-top: .3rem; }
+#stdPage .pt-pgmr-add select { width: auto; min-width: 150px; font-size: .78rem; }
+#stdPage .pt-pgmr-add a, #stdPage .pt-pgmrcmt a { cursor: pointer; }
+#stdPage .pt-pgmr-none { font-size: .78rem; color: var(--pt-muted);
+    margin-top: .3rem; font-style: italic; }
+
+/* comments, each stamped with the profile that wrote it */
+#stdPage .pt-pgmrcmt { margin-top: .4rem; }
+#stdPage .pt-pgmrcmt-one { background: var(--pt-bg); border: 1px solid var(--pt-line);
+    border-radius: 6px; padding: .35rem .5rem; margin: .25rem 0; }
+#stdPage .pt-pgmrcmt-by { font-size: .72rem; font-weight: 600;
+    color: var(--pt-muted); }
+#stdPage .pt-pgmrcmt-txt { font-size: .84rem; }
+#stdPage .pt-pgmrcmt-x { font-weight: 400; color: var(--pt-red); }
+#stdPage .pt-pgmrcmt-new { margin-top: .35rem; }
+#stdPage .pt-pgmrcmt-new textarea { width: 100%; max-width: 520px; }
 
 </style>
+
+<script type='text/javascript'>
+// the programmers and their comments, posted to our own endpoint
+function ptPgmrPost(data) {
+	data.projNum = jQuery.trim(jQuery('#projectNumber').val());
+	jQuery.post('ProjectTracking_ajax.php', data, function (r) {
+		if (!r || !r.ok) {
+			alert((r && r.msg) ? r.msg : 'The change did not save.');
+			return;
+		}
+		if (typeof r.list === 'string') { jQuery('#ptPgmrList').replaceWith(r.list); }
+		if (typeof r.cmts === 'string') { jQuery('#ptPgmrCmts').replaceWith(r.cmts); }
+	}, 'json').fail(function () {
+		alert('Server error, refresh the page and try again.');
+	});
+}
+
+function ptPgmrAdd() {
+	var p = jQuery('#ptPgmrAdd').val();
+	if (!p) { return; }
+	ptPgmrPost({ action: 'pgmrsave', pgmr: p, sts: '', date: '' });
+}
+
+function ptPgmrSave(p) {
+	var row = jQuery('#ptPgmrList .pt-pgmr-row[data-pgmr="' + p + '"]');
+	ptPgmrPost({ action: 'pgmrsave', pgmr: p,
+	             sts: row.find('.pt-pgmr-sts').val() || '',
+	             date: row.find('.pt-pgmr-date').val() || '' });
+}
+
+function ptPgmrRemove(p) {
+	if (!confirm('Remove ' + p + ' from this project? Their comments stay on file.')) { return; }
+	ptPgmrPost({ action: 'pgmrremove', pgmr: p });
+}
+
+// the page sends only the text, the profile and the clock are stamped on the server
+function ptPgmrCmtAdd() {
+	var txt = jQuery.trim(jQuery('#ptPgmrCmtTxt').val());
+	if (txt === '') { return; }
+	ptPgmrPost({ action: 'pgmrcommentadd', text: txt });
+}
+
+function ptPgmrCmtRemove(seq) {
+	if (!confirm('Remove this comment?')) { return; }
+	ptPgmrPost({ action: 'pgmrcommentremove', seq: seq });
+}
+</script>
 
 <?php
 // the display half, inlined
@@ -510,6 +571,7 @@ function showProjectDetailScreen(&$screenData) {
 		<div class='pt-fld'>
 			<label>Programmer assigned <?php echo $screenData['toolTip']['PRPGMR']?></label>
 			<div class='pt-ro'><?php echo $screenData['PRPGMR']?></div>
+			<?php echo $screenData['pgmrList'] ?? ''; ?>
 		</div>
 		<div class='pt-fld'>
 			<label>Programmer work status <?php echo $screenData['toolTip']['PRWRKSTS']?></label>
@@ -524,14 +586,6 @@ function showProjectDetailScreen(&$screenData) {
 		</div>
 	</div>
 
-	<?php if (trim(strval($screenData['pgmrPanel'] ?? '')) !== '') { ?>
-	<div class='pt-row'>
-		<div class='pt-fld pt-fld-wide'>
-			<label>Programmers on this project</label>
-			<?php echo $screenData['pgmrPanel']?>
-		</div>
-	</div>
-	<?php } ?>
 
 	<div class='pt-row'>
 		<div class='pt-fld'>
@@ -567,6 +621,7 @@ function showProjectDetailScreen(&$screenData) {
 				echo $comment;
 			}
 			?>
+			<?php echo $screenData['pgmrCmts'] ?? ''; ?>
 		</div>
 	</div>
 

@@ -259,7 +259,6 @@ projCalcPayback();
 //	require_once("Utils/common_functions.php");
 	require_once("PROJ_dsp.php");
 	require_once("PROJ_model.php");
-	require_once("PROJ_pgmrs_dsp.php");
 	require_once("LCEMPLOYP_model.php");
 	require_once("LNKDOCP_model.php");
 	require_once("LCDEPTP_model.php");
@@ -803,15 +802,7 @@ projCalcPayback();
 	else {
 	    $screenData['pgmrTime'] .= "<tr><td class='txtData'>&nbsp;&nbsp;&nbsp;Total </td><td>".$timeTotal." hours</td></tr></table>";
 	}
-
-	// every programmer on the project, shown under the time box
-	if (is_numeric($_GET['projnum'])) {
-		$pgmrCanEdit = ($screenData['PAPRJMNGR'] == 'Y' || $_SESSION['usrclass'] == '*PGMR     '
-		                || $_SESSION['usrclass'] == '*SYSOPR   ');
-		$screenData['pgmrTime'] .= renderProjPgmrPanel($conn2, $projRecord, $pgmrCanEdit,
-		                                                $screenUser, $screenData['PAPRJMNGR'] == 'Y');
-	}
-
+	
 	
 	
 	//***********************************//

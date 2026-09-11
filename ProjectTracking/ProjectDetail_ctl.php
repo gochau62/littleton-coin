@@ -882,15 +882,13 @@ if ($authorized != "yes") {
 	else {
 	    $screenData['pgmrTime'] .= "<tr><td class='txtData'>&nbsp;&nbsp;&nbsp;Total </td><td>".$timeTotal." hours</td></tr></table>";
 	
-	// every programmer on the project, drawn under the time box
-	$screenData['pgmrPanel'] = '';
-	if (is_numeric($_GET['projnum']) && function_exists('renderProjPgmrPanel')) {
-		$pgmrCanEdit = ($screenData['PAPRJMNGR'] == 'Y'
-		                || $_SESSION['usrclass'] == '*PGMR     '
-		                || $_SESSION['usrclass'] == '*SYSOPR   ');
-		$screenData['pgmrPanel'] = renderProjPgmrPanel($conn2, $projRecord, $pgmrCanEdit,
-		                                               $screenUser,
-		                                               $screenData['PAPRJMNGR'] == 'Y');
+	// the other programmers on this project, and their stamped comments
+	$screenData['pgmrList'] = '';
+	$screenData['pgmrCmts'] = '';
+	if (is_numeric($_GET['projnum']) && function_exists('prjPgmrList')) {
+		$pgmrCanEdit = prjPgmrMayEdit($screenData);
+		$screenData['pgmrList'] = prjPgmrList($conn2, $screenData, $pgmrCanEdit);
+		$screenData['pgmrCmts'] = prjPgmrComments($conn2, $screenData, $pgmrCanEdit);
 	}
 	}
 	

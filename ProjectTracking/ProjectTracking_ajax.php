@@ -316,6 +316,50 @@ switch ($action) {
         usort($hits, function ($a, $b) { return $b['num'] - $a['num']; });
         prjOut(array("ok" => true, "hits" => array_slice($hits, 0, 8)));
 
+    // the programmers on a project, and their comments, off the detail screen
+    case 'pgmrsave':
+    case 'pgmrremove':
+    case 'pgmrcommentadd':
+    case 'pgmrcommentremove':
+        require_once __DIR__ . '/ProjectDetail_pgmrs.php';
+        if (file_exists('PROJ_model.php')) { require_once 'PROJ_model.php'; }
+
+        $proj = intval($_POST['projNum'] ?? 0);
+        if ($proj <= 0) { prjOutFail('No project number.'); }
+
+        // authority is decided here, never taken from the page
+        $auth = function_exists('getRecPRAUTHP') ? getRecPRAUTHP($conn, $user) : array();
+        $scr  = array('PR#' => $proj,
+                      'PAPRJMNGR' => $auth['PAPRJMNGR'] ?? 'N',
+                      'PRPGMR' => '');
+        if (function_exists('getRecordPRPROJP')) {
+            $rec = getRecordPRPROJP($conn, $proj);
+            $scr['PRPGMR'] = $rec['PRPGMR'] ?? '';
+        }
+        if (!prjPgmrMayEdit($scr)) { prjOutFail('Not authorized to change this.'); }
+
+        $who = strtoupper(trim(strval($_POST['pgmr'] ?? '')));
+        $ok  = false;
+        if ($action === 'pgmrsave') {
+            $ok = prjPgmrSave($conn, $proj, $who,
+                              strval($_POST['sts'] ?? ''),
+                              prjPgmrDec($_POST['date'] ?? ''), $user);
+        } elseif ($action === 'pgmrremove') {
+            $ok = prjPgmrRemove($conn, $proj, $who);
+        } elseif ($action === 'pgmrcommentadd') {
+            $txt = trim(strval($_POST['text'] ?? ''));
+            // the profile and the clock are stamped on, the page sends neither
+            $ok  = ($txt !== '') && prjPgmrCmtAdd($conn, $proj, $user, $txt);
+        } else {
+            $ok = prjPgmrCmtRemove($conn, $proj, intval($_POST['seq'] ?? 0));
+        }
+        if (!$ok) { prjOutFail('The change did not save - PRJTRK002S may not be installed.'); }
+
+        $canEdit = prjPgmrMayEdit($scr);
+        prjOut(array('ok' => true,
+                     'list' => prjPgmrList($conn, $scr, $canEdit),
+                     'cmts' => prjPgmrComments($conn, $scr, $canEdit)));
+
     default:
         prjOutFail("Unknown action.");
 }
