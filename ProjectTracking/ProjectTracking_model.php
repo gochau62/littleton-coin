@@ -1041,7 +1041,6 @@ function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
               ($note !== '' ? ' (' . $note . ')' : ''));
     return array(true, $summary);
 }
-?>
 
 
 // ---- several programmers on a project ----
