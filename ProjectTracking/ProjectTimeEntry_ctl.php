@@ -35,13 +35,12 @@
     document.title = "Project Time Entry";
 
     // show the red error box with a message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); if (!d) { return; }
+        d.innerHTML = m; d.style.display = "block"; }
 
 
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
-
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php require_once("ProjectTimeEntry_dsp.php"); ?>
 
@@ -72,6 +71,8 @@ $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
 if ($authorized != "yes") {
     echo '<script>showNotAuthorized();</script>';
 } else {
+
+    echo '<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>';
 
 	// without PROJ_model.php there is no timesheet to draw
 	if (!file_exists('PROJ_model.php')) {

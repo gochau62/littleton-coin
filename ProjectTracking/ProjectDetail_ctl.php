@@ -44,13 +44,12 @@
     document.title = "Project Detail";
 
     // show the red error box with a message
-    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); d.innerHTML = m; d.style.display = "block"; }
+    function showErrorMessage(m){ var d = document.getElementById("errorMsg"); if (!d) { return; }
+        d.innerHTML = m; d.style.display = "block"; }
 
 
     function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
-
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php require_once("ProjectDetail_dsp.php"); ?>
 
@@ -312,6 +311,8 @@ $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
 if ($authorized != "yes") {
     echo '<script>showNotAuthorized();</script>';
 } else {
+
+    echo '<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>';
 	
 // <!--  Begin Content Here -->
 	require_once("WebNotes/webNotesModel.php");
