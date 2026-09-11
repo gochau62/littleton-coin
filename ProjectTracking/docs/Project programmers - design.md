@@ -36,7 +36,7 @@ The master has one programmer (`PRPGMR`) and one work status
 depend on them. So the primary programmer **stays exactly where it is**,
 and additional programmers live in two new files.
 
-### Files (`PRJTRK_TABLES.SQL`, created in `LSCDEVLIBP` until promotion)
+### File (`PRPGMRASGT.TABLE`, unqualified so the library list decides)
 
 | File | One row per | Columns |
 |---|---|---|

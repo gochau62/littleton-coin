@@ -24,7 +24,7 @@
 /*                     SRCMBR(PRJTRK002S)                            */
 /*                     Unqualified, so the library list decides.     */
 /*********************************************************************/
-/* PRPGMRASGT is created by PRJTRK_TABLES; run that first.           */
+/* PRPGMRASGT is created by PRPGMRASGT.TABLE; run that first.        */
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
 /* |                                                                |*/
