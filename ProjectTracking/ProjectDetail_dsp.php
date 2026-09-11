@@ -263,19 +263,10 @@
     text-decoration: none; }
 #stdPage .pt-pgmr-add { margin-top: .3rem; }
 #stdPage .pt-pgmr-add select { width: auto; min-width: 150px; font-size: .78rem; }
-#stdPage .pt-pgmr-add a, #stdPage .pt-pgmrcmt a { cursor: pointer; }
+#stdPage .pt-pgmr-add a { cursor: pointer; }
 #stdPage .pt-pgmr-none { font-size: .78rem; color: var(--pt-muted);
     margin-top: .3rem; font-style: italic; }
 
-/* comments, each stamped with the profile that wrote it */
-#stdPage .pt-pgmrcmt { margin-top: .4rem; }
-#stdPage .pt-pgmrcmt-one { background: var(--pt-bg); border: 1px solid var(--pt-line);
-    border-radius: 6px; padding: .35rem .5rem; margin: .25rem 0; }
-#stdPage .pt-pgmrcmt-by { font-size: .72rem; font-weight: 600;
-    color: var(--pt-muted); }
-#stdPage .pt-pgmrcmt-txt { font-size: .84rem; }
-#stdPage .pt-pgmrcmt-new { margin-top: .35rem; }
-#stdPage .pt-pgmrcmt-new textarea { width: 100%; max-width: 520px; }
 
 </style>
 
@@ -289,7 +280,6 @@ function ptPgmrPost(data) {
 			return;
 		}
 		if (typeof r.list === 'string') { jQuery('#ptPgmrList').replaceWith(r.list); }
-		if (typeof r.cmts === 'string') { jQuery('#ptPgmrCmts').replaceWith(r.cmts); }
 	}, 'json').fail(function () {
 		alert('Server error, refresh the page and try again.');
 	});
@@ -313,17 +303,7 @@ function ptPgmrRemove(p) {
 	ptPgmrPost({ action: 'pgmrremove', pgmr: p });
 }
 
-// the page sends only the text, the profile and the clock are stamped on the server
-function ptPgmrCmtAdd() {
-	var txt = jQuery.trim(jQuery('#ptPgmrCmtTxt').val());
-	if (txt === '') { return; }
-	ptPgmrPost({ action: 'pgmrcommentadd', text: txt });
-}
 
-function ptPgmrCmtRemove(seq) {
-	if (!confirm('Remove this comment?')) { return; }
-	ptPgmrPost({ action: 'pgmrcommentremove', seq: seq });
-}
 </script>
 
 <?php
@@ -623,7 +603,6 @@ function showProjectDetailScreen(&$screenData) {
 				echo $comment;
 			}
 			?>
-			<?php echo $screenData['pgmrCmts'] ?? ''; ?>
 		</div>
 	</div>
 

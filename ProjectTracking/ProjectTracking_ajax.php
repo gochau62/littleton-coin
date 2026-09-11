@@ -319,8 +319,6 @@ switch ($action) {
     // the programmers on a project, and their comments, off the detail screen
     case 'pgmrsave':
     case 'pgmrremove':
-    case 'pgmrcommentadd':
-    case 'pgmrcommentremove':
         if (file_exists('PROJ_model.php')) { require_once 'PROJ_model.php'; }
 
         // these four change data, so they are posted, never fetched
@@ -345,24 +343,17 @@ switch ($action) {
         $who = strtoupper(trim(strval($_POST['pgmr'] ?? '')));
         $ok  = false;
         if ($action === 'pgmrsave') {
-            $ok = instupdtRecPRPGMASGP($conn, $proj, $who,
+            $ok = instupdtRecPRPGMRASGT($conn, $proj, $who,
                               strval($_POST['sts'] ?? ''),
                               prjPgmrDec($_POST['date'] ?? ''), $user);
-        } elseif ($action === 'pgmrremove') {
-            $ok = deleteRecPRPGMASGP($conn, $proj, $who);
-        } elseif ($action === 'pgmrcommentadd') {
-            $txt = trim(strval($_POST['text'] ?? ''));
-            // the profile and the clock are stamped on, the page sends neither
-            $ok  = ($txt !== '') && insertRecPRPGMCMTP($conn, $proj, $user, $txt);
         } else {
-            $ok = updRecPRPGMCMTP($conn, $proj, intval($_POST['seq'] ?? 0));
+            $ok = deleteRecPRPGMRASGT($conn, $proj, $who);
         }
         if (!$ok) { prjOutFail('The change did not save - PRJTRK002S may not be installed.'); }
 
         $canEdit = prjPgmrMayEdit($scr);
         prjOut(array('ok' => true,
-                     'list' => prjPgmrList($conn, $scr, $canEdit),
-                     'cmts' => prjPgmrCmtList($conn, $scr, $canEdit)));
+                     'list' => prjPgmrList($conn, $scr, $canEdit)));
 
     default:
         prjOutFail("Unknown action.");

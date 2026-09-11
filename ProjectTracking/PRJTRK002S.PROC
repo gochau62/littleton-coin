@@ -2,31 +2,29 @@
 /*                                                                   */
 /* Program Name      - PRJTRK002S                                    */
 /*                                                                   */
-/* Program Narrative - The programmers on a project and the          */
-/*                     comments filed under each one, for the        */
+/* Program Narrative - The programmers on a project, for the         */
 /*                     project screen and the dashboard. One type    */
 /*                     per call:                                     */
 /*                       PGLIST  programmers on a project            */
 /*                       PGSAVE  add a programmer or change status   */
 /*                       PGDEL   take a programmer off               */
-/*                       CMLIST  comments on a project               */
-/*                       CMADD   file a comment under a programmer   */
-/*                       CMDEL   flag a comment removed              */
 /*                       ASGN    every programmer on open projects   */
 /*                               (the dashboard's read)              */
-/*                       CMRANGE comments dated INDATE to INDATE2    */
-/*                               (the weekly report's read)          */
+/*                                                                   */
+/*                     Comments are not here. The screen keeps       */
+/*                     using WebNotes, and PRCHGLOGP records who     */
+/*                     changed what and when.                        */
 /*                                                                   */
 /* Author            - G Chau                                        */
 /*                     Littleton Coin Company                        */
 /*                     Littleton NH                                  */
 /*                                                                   */
-/* Date Written      - 09/01/2026                                    */
-/* Run Instructions  - RUNSQLSTM SRCFILE(LSCDEVLIBP/QSQLSRC)         */
+/* Date Written      - 09/11/2026                                    */
+/* Run Instructions  - RUNSQLSTM SRCFILE(QSQLSRC)                    */
 /*                     SRCMBR(PRJTRK002S)                            */
-/*                     Files are in LSCDEVLIBP until promotion.      */
+/*                     Unqualified, so the library list decides.     */
 /*********************************************************************/
-/* Tables are created by PRJTRK_TABLES; run that first.              */
+/* PRPGMRASGT is created by PRJTRK_TABLES; run that first.           */
 /* __________________________________________________________________*/
 /* |                  Maintenance History                           |*/
 /* |                                                                |*/
@@ -38,16 +36,13 @@
 /*                                                                   */
 /*-------------------------------------------------------------------*/
 
-CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
+CREATE OR REPLACE PROCEDURE PRJTRK002S (
         IN INTYPE VARCHAR(10),
         IN INPROJ DECIMAL(6, 0),
         IN INPGMR VARCHAR(10),
         IN INSTS  VARCHAR(3),
         IN INDATE DECIMAL(8, 0),
-        IN INDATE2 DECIMAL(8, 0),
-        IN INUSER VARCHAR(10),
-        IN INTEXT VARCHAR(4000),
-        IN INSEQ  INTEGER
+        IN INUSER VARCHAR(10)
         )
 
         LANGUAGE SQL
@@ -69,7 +64,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
                    COALESCE(T.PGHOURS, 0) AS PGHOURS,
                    RTRIM(A.PGAADDUSR) AS PGADDUSR,
                    A.PGAADDDTE AS PGADDDATE
-              FROM LSCDEVLIBP/PRPGMASGP A
+              FROM PRPGMRASGT A
               LEFT JOIN PRSTATUSP S
                 ON RTRIM(S.PRSCODE) = RTRIM(A.PGAWRKSTS)
               LEFT JOIN (
@@ -82,45 +77,18 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
              WHERE A.PGAPROJ = INPROJ
              ORDER BY A.PGAADDDTE, A.PGAADDTME, A.PGAPGMR;
 
-        -- CMLIST: live comments, newest first under each programmer
-        DECLARE C2 CURSOR WITH RETURN FOR
-            SELECT C.PGCSEQ AS CMSEQ,
-                   RTRIM(C.PGCPGMR) AS CMPGMR,
-                   RTRIM(C.PGCUSER) AS CMUSER,
-                   C.PGCDATE AS CMDATE,
-                   C.PGCTIME AS CMTIME,
-                   C.PGCTEXT AS CMTEXT
-              FROM LSCDEVLIBP/PRPGMCMTP C
-             WHERE C.PGCPROJ = INPROJ
-               AND C.PGCDELETE <> 'Y'
-             ORDER BY C.PGCPGMR, C.PGCDATE DESC, C.PGCTIME DESC;
-
         -- ASGN: additional programmers on open projects, own status
-        DECLARE C3 CURSOR WITH RETURN FOR
+        DECLARE C2 CURSOR WITH RETURN FOR
             SELECT A.PGAPROJ AS AGPROJ,
                    RTRIM(A.PGAPGMR) AS AGPGMR,
                    RTRIM(A.PGAWRKSTS) AS AGWRKSTS,
                    A.PGASTRDTE AS AGSTRDATE
-              FROM LSCDEVLIBP/PRPGMASGP A
+              FROM PRPGMRASGT A
               JOIN PRPROJP P
                 ON P.PR# = A.PGAPROJ
              WHERE P.PRACOM = 0
                AND RTRIM(P.PRRESCOD) <> 'REJ'
              ORDER BY A.PGAPGMR, A.PGAPROJ;
-
-        -- CMRANGE: comments in a date range across projects
-        DECLARE C4 CURSOR WITH RETURN FOR
-            SELECT C.PGCPROJ AS CMPROJ,
-                   C.PGCSEQ AS CMSEQ,
-                   RTRIM(C.PGCPGMR) AS CMPGMR,
-                   RTRIM(C.PGCUSER) AS CMUSER,
-                   C.PGCDATE AS CMDATE,
-                   C.PGCTIME AS CMTIME,
-                   C.PGCTEXT AS CMTEXT
-              FROM LSCDEVLIBP/PRPGMCMTP C
-             WHERE C.PGCDATE BETWEEN INDATE AND INDATE2
-               AND C.PGCDELETE <> 'Y'
-             ORDER BY C.PGCPGMR, C.PGCPROJ, C.PGCDATE, C.PGCTIME;
 
         SET WKDATE = YEAR(CURRENT DATE) * 10000
                    + MONTH(CURRENT DATE) * 100
@@ -132,8 +100,9 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
         IF INTYPE = 'PGLIST' THEN
             OPEN C1;
 
+        -- PGSAVE: change the row when it is there, add it when it is not
         ELSEIF INTYPE = 'PGSAVE' THEN
-            UPDATE LSCDEVLIBP/PRPGMASGP
+            UPDATE PRPGMRASGT
                SET PGAWRKSTS = COALESCE(INSTS, ' '),
                    PGASTRDTE = COALESCE(INDATE, 0),
                    PGACHGUSR = COALESCE(INUSER, ' '),
@@ -143,7 +112,7 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
                AND RTRIM(PGAPGMR) = RTRIM(INPGMR);
             GET DIAGNOSTICS WKROWS = ROW_COUNT;
             IF WKROWS = 0 THEN
-                INSERT INTO LSCDEVLIBP/PRPGMASGP
+                INSERT INTO PRPGMRASGT
                        (PGAPROJ, PGAPGMR, PGAWRKSTS, PGASTRDTE,
                         PGAADDUSR, PGAADDDTE, PGAADDTME)
                 VALUES (INPROJ, INPGMR, COALESCE(INSTS, ' '),
@@ -152,34 +121,15 @@ CREATE OR REPLACE PROCEDURE LSCDEVLIBP/PRJTRK002S (
             END IF;
 
         ELSEIF INTYPE = 'PGDEL' THEN
-            DELETE FROM LSCDEVLIBP/PRPGMASGP
+            DELETE FROM PRPGMRASGT
              WHERE PGAPROJ = INPROJ
                AND RTRIM(PGAPGMR) = RTRIM(INPGMR);
 
-        ELSEIF INTYPE = 'CMLIST' THEN
-            OPEN C2;
-
-        ELSEIF INTYPE = 'CMADD' THEN
-            INSERT INTO LSCDEVLIBP/PRPGMCMTP
-                   (PGCPROJ, PGCPGMR, PGCUSER, PGCDATE, PGCTIME, PGCTEXT)
-            VALUES (INPROJ, INPGMR, COALESCE(INUSER, ' '),
-                    WKDATE, WKTIME, COALESCE(INTEXT, ''));
-
-        ELSEIF INTYPE = 'CMDEL' THEN
-            UPDATE LSCDEVLIBP/PRPGMCMTP
-               SET PGCDELETE = 'Y'
-             WHERE PGCSEQ = INSEQ
-               AND PGCPROJ = INPROJ;
-
         ELSEIF INTYPE = 'ASGN' THEN
-            OPEN C3;
-
-        ELSEIF INTYPE = 'CMRANGE' THEN
-            OPEN C4;
+            OPEN C2;
 
         ELSE
             SIGNAL SQLSTATE '75011'
-                SET MESSAGE_TEXT =
-                    'Type: PGLIST PGSAVE PGDEL CMLIST CMADD CMDEL ASGN CMRANGE';
+                SET MESSAGE_TEXT = 'Type: PGLIST PGSAVE PGDEL ASGN';
         END IF;
     END;

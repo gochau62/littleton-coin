@@ -314,12 +314,12 @@ function prjProgrammers($conn) {
 
 
 // PRJTRK002S reads; empty until the procedure is on the box
-function prjCall002($conn, $type, $from = 0, $to = 0, $proj = 0, $pgmr = '',
-                    $sts = '') {
-    $rows = prjFetchAll($conn, "CALL PRJTRK002S(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+function prjCall002($conn, $type, $proj = 0, $pgmr = '', $sts = '', $date = 0,
+                    $user = '') {
+    $rows = prjFetchAll($conn, "CALL PRJTRK002S(?, ?, ?, ?, ?, ?)",
                         array($type, strval(intval($proj)), strtoupper(trim($pgmr)),
-                              trim($sts), strval(intval($from)),
-                              strval(intval($to)), '', '', '0'));
+                              trim($sts), strval(intval($date)),
+                              strtoupper(trim($user))));
     if ($rows === false) { $GLOBALS['prjErr'] = ''; return array(); }
     return $rows;
 }
@@ -331,10 +331,6 @@ function prjAssignments($conn) {
 }
 
 
-// CMRANGE: comments filed under programmers in a date range
-function prjPgmrComments($conn, $from, $to) {
-    return prjCall002($conn, 'CMRANGE', $from, $to);
-}
 
 
 // one more row per additional programmer, carrying that person's status
@@ -713,25 +709,6 @@ function prjWeeklyDigest($conn, $from, $to) {
             'text' => $text);
     }
 
-    // comments filed under a programmer's name count as that person's work
-    foreach (prjPgmrComments($conn, $from, $to) as $c) {
-        $user = strtoupper(trim(strval($c['CMPGMR'] ?? '')));
-        if ($user === '') { continue; }
-        $text = trim(strval($c['CMTEXT'] ?? ''));
-        if ($text === '') { continue; }
-        if (!isset($dev[$user])) { $dev[$user] = $blank; }
-        $dev[$user]['comments']['PgmrCmt'] = ($dev[$user]['comments']['PgmrCmt'] ?? 0) + 1;
-        if (strlen($text) > 1200) { $text = substr($text, 0, 1200) . '...'; }
-        if ($txtBudget < strlen($text)) { $txtDropped += 1; $text = ''; }
-        else { $txtBudget -= strlen($text); }
-        $who = strtoupper(trim(strval($c['CMUSER'] ?? '')));
-        $dev[$user]['notes'][] = array(
-            'num'  => intval($c['CMPROJ'] ?? 0),
-            'date' => intval($c['CMDATE'] ?? 0),
-            'type' => 'PgmrCmt',
-            'by'   => $who,
-            'text' => $text);
-    }
 
     // project changes are admin, not a developer's own work
     $changes = array();
@@ -1038,34 +1015,24 @@ function prjGenerateWeekly($conn, $user, $from = 0, $to = 0) {
 // the screen draws these and the endpoint redraws them
 
 // the reads, through the caller already above
-function getRecsPRPGMASGP($conn, $proj)    { return prjCall002($conn, 'PGLIST', 0, 0, $proj); }
-function getRecsPRPGMCMTP($conn, $proj) { return prjCall002($conn, 'CMLIST', 0, 0, $proj); }
+function getRecsPRPGMRASGT($conn, $proj) { return prjCall002($conn, 'PGLIST', $proj); }
 
 // a write says whether it landed, which the reads do not need to
 function prjWrite002($conn, $type, $proj, $pgmr = '', $sts = '', $date = 0,
-                     $user = '', $text = '', $seq = 0) {
-    return prjFetchAll($conn, "CALL PRJTRK002S(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                     $user = '') {
+    return prjFetchAll($conn, "CALL PRJTRK002S(?, ?, ?, ?, ?, ?)",
                        array($type, strval(intval($proj)), strtoupper(trim($pgmr)),
-                             trim($sts), strval(intval($date)), '0',
-                             strtoupper(trim($user)), strval($text),
-                             strval(intval($seq)))) !== false;
+                             trim($sts), strval(intval($date)),
+                             strtoupper(trim($user)))) !== false;
 }
 
-function instupdtRecPRPGMASGP($conn, $proj, $p, $sts, $date, $user) {
+function instupdtRecPRPGMRASGT($conn, $proj, $p, $sts, $date, $user) {
     return prjWrite002($conn, 'PGSAVE', $proj, $p, $sts, $date, $user);
 }
-function deleteRecPRPGMASGP($conn, $proj, $p) {
+function deleteRecPRPGMRASGT($conn, $proj, $p) {
     return prjWrite002($conn, 'PGDEL', $proj, $p);
 }
 
-// the writer's own profile is stamped on, never taken from the form
-function insertRecPRPGMCMTP($conn, $proj, $user, $text) {
-    $user = strtoupper(trim($user));
-    return prjWrite002($conn, 'CMADD', $proj, $user, '', 0, $user, $text);
-}
-function updRecPRPGMCMTP($conn, $proj, $seq) {
-    return prjWrite002($conn, 'CMDEL', $proj, '', '', 0, '', '', $seq);
-}
 
 
 
@@ -1097,14 +1064,6 @@ function prjPgmrDec($txt) {
     return 0;
 }
 
-// hhmmss into a readable clock time
-function prjPgmrClock($dec) {
-    $t = intval($dec);
-    $h = intdiv($t, 10000); $m = intdiv($t, 100) % 100;
-    $ap = ($h >= 12) ? 'pm' : 'am';
-    $h12 = $h % 12; if ($h12 === 0) { $h12 = 12; }
-    return sprintf('%d:%02d %s', $h12, $m, $ap);
-}
 
 // the little trash can both remove buttons use
 function prjPgmrTrash() {
@@ -1136,7 +1095,7 @@ function prjPgmrList($conn, $screenData, $canEdit, $isNew = false) {
         return "<div class='pt-pgmr-none'>Save this project before other "
              . "programmers can be added.</div>";
     }
-    $rows = getRecsPRPGMASGP($conn, $proj);
+    $rows = getRecsPRPGMRASGT($conn, $proj);
     if ($rows === false) {
         return "<div class='pt-pgmr-none'>Additional programmers need PRJTRK002S "
              . "on this server.</div>";
@@ -1209,33 +1168,3 @@ function prjPgmrList($conn, $screenData, $canEdit, $isNew = false) {
     return $h . "</div>";
 }
 
-// the comments, each stamped with who wrote it and when
-function prjPgmrCmtList($conn, $screenData, $canEdit, $isNew = false) {
-    $proj = intval($screenData['PR#'] ?? 0);
-    if ($proj <= 0 || $isNew) { return ''; }
-    $rows = getRecsPRPGMCMTP($conn, $proj);
-    if ($rows === false) { return ''; }
-    $me   = strtoupper(trim(strval($_SESSION['username'] ?? '')));
-    $isPM = ($screenData['PAPRJMNGR'] == 'Y');
-
-    $h = "<div id='ptPgmrCmts' class='pt-pgmrcmt'>";
-    foreach ($rows as $c) {
-        $who = strtoupper(trim($c['CMUSER']));
-        $h .= "<div class='pt-pgmrcmt-one'><div class='pt-pgmrcmt-by'>"
-            . prjPgmrEsc($who) . " &middot; " . prjPgmrEsc(prjPgmrSlash($c['CMDATE']))
-            . " " . prjPgmrEsc(prjPgmrClock($c['CMTIME'] ?? 0));
-        if ($canEdit && ($isPM || $who === $me)) {
-            $h .= " <a class='pt-trash' onclick=\"ptPgmrCmtRemove("
-                . intval($c['CMSEQ']) . ")\" title='Remove this comment'>"
-                . prjPgmrTrash() . "</a>";
-        }
-        $h .= "</div><div class='pt-pgmrcmt-txt'>"
-            . nl2br(prjPgmrEsc($c['CMTEXT'])) . "</div></div>";
-    }
-    if ($canEdit) {
-        $h .= "<div class='pt-pgmrcmt-new'><textarea id='ptPgmrCmtTxt' rows='2' maxlength='4000' "
-            . "placeholder='Add a comment as " . prjPgmrEsc($me) . "'></textarea>"
-            . "<div><a onclick='ptPgmrCmtAdd()'>Add comment</a></div></div>";
-    }
-    return $h . "</div>";
-}
