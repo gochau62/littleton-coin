@@ -27,10 +27,6 @@
 ?>
 
 <?php
-	// temporary while we chase the blank screen - fatals only
-	ini_set('display_errors', '1');
-	error_reporting(E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR);
-
 	// retrieves and sets password and username
 	require_once 'StartBlockScriptA.php';
 	$user     = $_SESSION['username'];
