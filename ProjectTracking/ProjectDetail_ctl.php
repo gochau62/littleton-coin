@@ -347,8 +347,8 @@ if ($authorized != "yes") {
 		$_GET['projnum'] = 'prompt';
 	}
 	
-	// the several programmers panel, when its procedure is installed
-	if (file_exists("ProjectDetail_pgmrs.php")) { require_once("ProjectDetail_pgmrs.php"); }
+	// our own model, for the several programmers fields
+	require_once __DIR__ . '/ProjectTracking_model.php';
 	
 	// the start block above already checked authority
 	$conn2 = $authConn;
@@ -888,7 +888,7 @@ if ($authorized != "yes") {
 	if (is_numeric($_GET['projnum']) && function_exists('prjPgmrList')) {
 		$pgmrCanEdit = prjPgmrMayEdit($screenData);
 		$screenData['pgmrList'] = prjPgmrList($conn2, $screenData, $pgmrCanEdit);
-		$screenData['pgmrCmts'] = prjPgmrComments($conn2, $screenData, $pgmrCanEdit);
+		$screenData['pgmrCmts'] = prjPgmrCmtList($conn2, $screenData, $pgmrCanEdit);
 	}
 	}
 	

@@ -256,8 +256,11 @@
     font-size: .78rem; padding: .12rem .3rem; }
 #stdPage .pt-pgmr input.pt-pgmr-date { width: 118px; font-size: .78rem;
     padding: .12rem .3rem; }
-#stdPage .pt-pgmr-x { color: var(--pt-red); font-weight: 700; cursor: pointer;
-    text-decoration: none; padding: 0 .2rem; }
+#stdPage .pt-trash { display: inline-flex; align-items: center; cursor: pointer;
+    color: var(--pt-faint); padding: .16rem; border-radius: 5px;
+    text-decoration: none; vertical-align: middle; }
+#stdPage .pt-trash:hover { color: var(--pt-red); background: var(--pt-chip-gray);
+    text-decoration: none; }
 #stdPage .pt-pgmr-add { margin-top: .3rem; }
 #stdPage .pt-pgmr-add select { width: auto; min-width: 150px; font-size: .78rem; }
 #stdPage .pt-pgmr-add a, #stdPage .pt-pgmrcmt a { cursor: pointer; }
@@ -271,7 +274,6 @@
 #stdPage .pt-pgmrcmt-by { font-size: .72rem; font-weight: 600;
     color: var(--pt-muted); }
 #stdPage .pt-pgmrcmt-txt { font-size: .84rem; }
-#stdPage .pt-pgmrcmt-x { font-weight: 400; color: var(--pt-red); }
 #stdPage .pt-pgmrcmt-new { margin-top: .35rem; }
 #stdPage .pt-pgmrcmt-new textarea { width: 100%; max-width: 520px; }
 

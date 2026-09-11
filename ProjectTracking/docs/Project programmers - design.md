@@ -66,9 +66,12 @@ Parameters: `(INTYPE, INPROJ, INPGMR, INSTS, INDATE, INDATE2, INUSER,
 INTEXT, INSEQ)`. `PRJTRK001S` does **not** reference the new files, so it
 compiles and runs before they exist.
 
-### Screen (`PROJ_pgmrs_dsp.php`, new)
+### Screen (no new file; it lives in the detail screen's own)
 
-`renderProjPgmrPanel()` draws a panel under *Programmer time to date*:
+There is no panel. `prjPgmrList()` draws the other programmers under the
+*Programmer assigned* field and `prjPgmrCmtList()` puts the comments in
+the *Comments* field already on the tab. Both live in
+`ProjectTracking_model.php`, which the screen and the endpoint both load:
 
 - a table with the primary first (status and start read from the project
   fields above, no controls), then each additional programmer with a
@@ -79,8 +82,8 @@ compiles and runs before they exist.
 - under the table, one block per programmer: their comments newest first,
   and a box to file a new one under that name.
 
-Every change posts to `PROJ_ajax_request_post.php` (`pgmrSave`,
-`pgmrRemove`, `pgmrCommentAdd`, `pgmrCommentRemove`), which writes through
+Every change posts to `ProjectTracking_ajax.php` (`pgmrsave`,
+`pgmrremove`, `pgmrcommentadd`, `pgmrcommentremove`), which writes through
 `PRJTRK002S`, stamps a `PRCHGLOGP` row (source `Pgmrs`) so the change
 notices and the weekly PROJECT UPDATES see it, and returns the redrawn
 panel — the page never reloads. Who may change things: project managers,

@@ -321,7 +321,6 @@ switch ($action) {
     case 'pgmrremove':
     case 'pgmrcommentadd':
     case 'pgmrcommentremove':
-        require_once __DIR__ . '/ProjectDetail_pgmrs.php';
         if (file_exists('PROJ_model.php')) { require_once 'PROJ_model.php'; }
 
         $proj = intval($_POST['projNum'] ?? 0);
@@ -358,7 +357,7 @@ switch ($action) {
         $canEdit = prjPgmrMayEdit($scr);
         prjOut(array('ok' => true,
                      'list' => prjPgmrList($conn, $scr, $canEdit),
-                     'cmts' => prjPgmrComments($conn, $scr, $canEdit)));
+                     'cmts' => prjPgmrCmtList($conn, $scr, $canEdit)));
 
     default:
         prjOutFail("Unknown action.");
