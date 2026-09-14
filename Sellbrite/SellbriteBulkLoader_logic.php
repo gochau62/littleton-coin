@@ -341,22 +341,28 @@ final class Computer
             }
         }
 
-        // Mint location follows the mint mark; an overmintmark (D/S) struck at the first mint
-        $mm = $g('mint_mark');
-        if ($g('mint_location') === '' && $mm !== '' && strpos($mm, ',') === false) {
+        // Mint location follows the mint mark, so a mark typed or changed by hand
+        // re-derives it. GreySheet's own value arrives with the import; anything
+        // typed that we could not have produced is left alone.
+        $mm   = $g('mint_mark');
+        $ctry = $g('country_of_manufacture');
+        // the mark-to-city map is a US one - a world coin keeps whatever it has
+        $usCoin = ($ctry === '' || stripos($ctry, 'United States') !== false);
+        if ($mm !== '' && strpos($mm, ',') === false && $usCoin) {
+            // an overmintmark (D/S) was struck at the first mint named
             $mb = trim(explode('/', $mm)[0]);
             $yr = (int) preg_replace('/\D/', '', $g('year'));
             $ml = $lookups['mint_location'] ?? [];
+            $loc = '';
             // Dahlonega and Charlotte closed in 1861 - after that D is Denver
-            if ($yr > 0 && $yr <= 1861 && isset($ml[$mb . '_pre1862'])) {
-                $row['mint_location'] = $ml[$mb . '_pre1862'];
+            if ($yr > 0 && $yr <= 1861 && isset($ml[strtoupper($mb) . '_pre1862'])) {
+                $loc = $ml[strtoupper($mb) . '_pre1862'];
             } elseif (isset($ml[$mb])) {
-                $ctry = $g('country_of_manufacture');
-                // a blank mark only means Philadelphia on a US coin
-                if ($mb !== 'No Mint Mark' || $ctry === '' || stripos($ctry, 'United States') !== false) {
-                    $row['mint_location'] = $ml[$mb];
-                }
+                $loc = $ml[$mb];
+            } elseif (isset($ml[strtoupper($mb)])) {
+                $loc = $ml[strtoupper($mb)];
             }
+            if ($loc !== '') { self::setDerived($row, 'mint_location', $loc, array_values($ml)); }
         }
 
         // GreySheet provides denomination/composition/fineness by the time the coin is picked; 
