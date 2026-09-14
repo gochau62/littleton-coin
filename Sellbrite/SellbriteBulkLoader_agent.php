@@ -725,16 +725,25 @@ function sbl_norm_category(string $gs): string
     return $clean !== "" ? $clean : trim($gs);
 }
 
-// Mint mark letter to city ("D" -> "Denver, Colorado").
-function sbl_mint_location(string $mm): string
+// Mint mark letter to city ("D" -> "Denver"), only used when GreySheet does
+// not name the mint itself. Dahlonega and Charlotte closed in 1861, so the
+// same D and C mean Denver and Carson City on anything struck later.
+function sbl_mint_location(string $mm, string $year = ''): string
 {
     $mm = trim($mm);
     // No mint mark = no location claim - leave it for the operator).
     if ($mm === '' || strcasecmp($mm, 'No Mint Mark') === 0) { return ''; }
+    // an overmintmark (D/S) was struck at the first mint named
+    $mm = strtoupper(trim(explode('/', $mm)[0]));
+    $yr = (int) preg_replace('/\D/', '', $year);
+    if ($yr > 0 && $yr <= 1861) {
+        $old = ['C' => 'Charlotte', 'D' => 'Dahlonega'];
+        if (isset($old[$mm])) { return $old[$mm]; }
+    }
     $map = ['C' => 'Charlotte', 'CC' => 'Carson City', 'D' => 'Denver', 'O' => 'New Orleans',
             'P' => 'Philadelphia', 'S' => 'San Francisco', 'W' => 'West Point',
             'M' => 'Manila', 'MO' => 'Mexico City'];
-    return $map[strtoupper($mm)] ?? '';
+    return $map[$mm] ?? '';
 }
 
 // Snaps an almost-right value onto the exact valid option.
@@ -765,7 +774,7 @@ function sbl_field_guide(): array
         'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that matches the series/path - names may differ slightly (path "Australia > \$2 Kookaburra" -> option "Australian Kookaburra"); copy the option EXACTLY; leave EMPTY if none fits'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
-        'mint_location'  => ['src' => 'from mint_mark', 'desc' => 'CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia'],
+        'mint_location'  => ['src' => 'MintLocation, else from mint_mark', 'desc' => 'use GreySheet MintLocation when it is given; otherwise CC=Carson City, D=Denver, O=New Orleans, S=San Francisco, W=West Point, P/none=Philadelphia, and before 1862 D=Dahlonega, C=Charlotte'],
         'denomination'   => ['src' => 'DenominationShort (US) / DenominationLong (world)', 'desc' => 'face value, e.g. 1C, 50C, $1 for US; "5 Euros" spoken form for world coins'],
         'coin_variety_1' => ['src' => 'Variety', 'desc' => 'REWRITE so it keeps ONLY what category_name does not already say, judged by MEANING not spelling - "Kookaburra" inside "\$1 Kookaburra, 1 Ounce Silver" adds nothing, return ""; never add words that were not in the original'],
         'coin_variety_2' => ['src' => 'Variety2', 'desc' => 'same rule: keep only the new part - "1oz Silver, 35th Anniversary" next to "\$1 Kookaburra, 1 Ounce Silver" -> "35th Anniversary" ("1oz Silver" = "1 Ounce Silver")'],
@@ -836,7 +845,16 @@ function gsMapToProduct(array $c): array
     if (!$isPaper) {
         $mm = $g('MintMark');
         $row['mint_mark']     = $mm !== '' ? $mm : 'No Mint Mark';
-        $row['mint_location'] = sbl_mint_location($mm);
+        // GreySheet names the mint on most records - that beats reading the letter
+        $gsLoc = trim((string) $g('MintLocation'));
+        if ($gsLoc !== '') {
+            // "Denver, Colorado" is the house list's "Denver"; anything we do
+            // not recognise is kept the way GreySheet wrote it
+            $short = trim(explode(',', $gsLoc)[0]);
+            $row['mint_location'] = in_array($short, sbl_field_options('mint_location'), true) ? $short : $gsLoc;
+        } else {
+            $row['mint_location'] = sbl_mint_location($mm, (string) ($row['year'] ?? ''));
+        }
     }
     if ($isPaper) {
         // the letter after the year is the Series Designation ("1934A" -> "A")
