@@ -35,28 +35,31 @@
 
     // message helpers
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
+    function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
+    function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
 </script>
-
-<!--  Begin Content Here -->
-<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>
 
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// user authority (10 = signed on; skip the check when nobody is signed in)
+// an unsigned visit keeps the address asked for, so the sign on lands the person back here
+if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
+
 $authorized = "yes";
-if ($user === '') {
-    $authorized = "signin";
-} elseif (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
-    $authConn   = getDB2PConn($user, $password);
-    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
+    if ($user === '') {
+        // nobody signed in: checking an empty profile just prints the framework's
+        // auth-recs error across the page - refuse quietly instead
+        $authorized = "no";
+    } else {
+        $authConn   = getDB2PConn($user, $password);
+        $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 10);
+    }
 }
 
-if ($authorized === "signin") {
-    echo '<script>showErrorMessage("Please sign in (top right) to use this tool.");</script>';
-} elseif ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+if ($authorized != "yes") {
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     include "SellbriteBulkLoaderAdmin_dsp.php";
