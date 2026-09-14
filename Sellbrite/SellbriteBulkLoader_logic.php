@@ -124,7 +124,7 @@ final class Schema
             }
         }
         if ($col['dropdown'] === 'store_category') {
-            // Store Category is the parent-product picker for offers NOT on GreySheet
+            // Non-Coin Type is the parent-product picker for offers NOT on GreySheet
             // (watches, calendars, stamps, nativity, albums...); the granular coin
             // names live in coin_type so this menu keeps its section-opening job
             return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
@@ -235,7 +235,8 @@ final class Schema
     // required boxes (the red stars). Add a name here to require a field everywhere.
     public static function requiredNames(): array
     {
-        return ['sku', 'category_name', 'price', 'condition', 'certification', 'name', 'description', 'extended_description',
+        // category_name (Non-Coin Type) is not required - a regular coin leaves it blank
+        return ['sku', 'price', 'condition', 'certification', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'package_weight', 'package_length', 'package_width', 'package_height',
                 'exact_image', 'product_image_1', 'quantity', 'cost'];
@@ -330,7 +331,7 @@ final class Computer
             // Deterministic fallback so search terms always fill (even if the AI didn't).
             if (trim((string) $row['search_terms']) === '') {
                 $words = [];
-                foreach ([$g('coin_type'), $g('category_name'), $g('composition'),
+                foreach ([$g('coin_type'), $g('composition'),
                           $g('denomination'), 'coin', 'numismatics', 'collectible'] as $src) {
                     foreach (preg_split('/[^a-z0-9]+/', strtolower(trim((string) $src))) as $w) {
                         if ($w !== '' && !in_array($w, $words, true)) { $words[] = $w; }

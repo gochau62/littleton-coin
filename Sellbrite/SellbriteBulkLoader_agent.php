@@ -762,7 +762,6 @@ function sbl_field_guide(): array
     $comp   = ['Bronze','Copper','Copper Alloy','Copper-Nickel','Copper-Nickel Clad','Copper-Plated Zinc','Gold','Manganese-Brass','Palladium','Platinum','Silver','Silver Alloy','Silver Clad','Zinc-Coated Steel','Aluminum-Bronze','Bi-Metallic','Billon','Brass','Nickel-Plated Steel','Nickel-Silver','Paper','Pewter','Sterling Silver','Titanium'];
     $cert   = ['Uncertified','ANACS','CAC','ICG','NGC','NGC & CAC','PCGS','PCGS & CAC','U.S. Mint','PCGS Banknote Grading','PCGS Currency','PMG','Legacy Currency Grading'];
     return $g = [
-        'category_name'  => ['src' => 'CatalogPath (last node)', 'desc' => 'the PCC STORE CATEGORY, singular, e.g. "Lincoln Wheat Small Cent","Morgan Dollar","Silver Bullion Coin","Small Size Federal Reserve Note" - the system normalizes this; keep whatever it provides'],
         'coin_type'      => ['desc' => 'pick the ONE option from the COIN TYPE OPTIONS list (sent with the facts) that matches the series/path - names may differ slightly (path "Australia > \$2 Kookaburra" -> option "Australian Kookaburra"); copy the option EXACTLY; leave EMPTY if none fits'],
         'year'           => ['src' => 'CoinDate', 'desc' => '4-digit issue year only'],
         'mint_mark'      => ['src' => 'MintMark', 'desc' => 'mint letter (S,D,CC,O,P,W...) or exactly "No Mint Mark" if none'],
@@ -890,10 +889,9 @@ function gsMapToProduct(array $c): array
     }
 
    if ($gsSeriesName !== '' || $gsPathNodes) {
-        if ($gsSeriesName !== '') {
-            // SKU of Parent Product = the series name, date range stripped.
-            $row['category_name'] = sbl_norm_category($gsSeriesName);
-        }
+        // the series name still guides the coin type guess below, but Non-Coin Type
+        // is an operator-only picker now and nothing fills it
+        $gsSeries = $gsSeriesName !== '' ? sbl_norm_category($gsSeriesName) : '';
 
         // Country: only the full CatalogPath (when present) can name it directly.
         foreach ($gsPathNodes as $node) {
@@ -908,7 +906,7 @@ function gsMapToProduct(array $c): array
         // TRY to autofill coin type by using ("Morgan Dollars" -> "Morgan", "Lincoln Cents - Wheat Reverse" -> "Lincoln Wheat"). 
         if (($row['coin_type'] ?? '') === '') {
             $poolKey = ($isWorld ? 'world' : 'us') . '_' . ($isPaper ? 'currency' : 'coins');
-            $hay = strtolower(($row['category_name'] ?? '') . ' ' . $gsPathText);
+            $hay = strtolower($gsSeries . ' ' . $gsPathText);
             $best = '';
             // GreySheet says "Silver Eagles"; the valid value is "American Eagle".
             if (preg_match('/(silver|gold|platinum|palladium) eagle/', $hay)) { $best = 'American Eagle'; }
@@ -1126,6 +1124,8 @@ function gsAiMap(array $coin): array
     // empty until the Generate-with-AI button writes them in its own words.
     $row['extended_description'] = '';
     $row['feature_4'] = '';
+    // Non-Coin Type is picked by the operator, never by the mapping
+    $row['category_name'] = '';
     return sbl_snap_row($row);
 }
 

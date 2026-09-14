@@ -162,6 +162,7 @@
     function sblClearForm(){
         $('#sku-form')[0].reset();
         $('#f_id').val('');
+        $('#f_title_suffix').val(''); sblTsLoad();
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
         // reset the GreySheet drill-down
@@ -252,6 +253,7 @@
             });
             $('#f_id').val(res.row.id);
             $('#f_marketplace').val(res.row.marketplace || '');
+            sblTsLoad();   // the saved suffix splits back into one box per note
             // the finder bars come back the way they were saved
             if (res.row.lcc_sku){ $('#lcc-sku').val(res.row.lcc_sku); sblLccSku = res.row.lcc_sku; }
             if (res.row.gs_path){
@@ -357,7 +359,7 @@
     var SBL_GS_OVERRIDES = ['coin_variety_1', 'coin_variety_2'];
     // only these carry real GreySheet DATA - the rest of an import (packaging
     // math, house feature texts, Exact Image) is formula work and gets no tag
-    var SBL_GS_DATA = ['category_name','coin_type','year','mint_mark','mint_location','denomination',
+    var SBL_GS_DATA = ['coin_type','year','mint_mark','mint_location','denomination',
         'coin_variety_1','coin_variety_2','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
@@ -448,7 +450,7 @@
     }
 
     // fields that get the blue AUTO badge on autofill (operator-owned picks carry no badge)
-    var SBL_GS_FIELDS = ['category_name','year','mint_mark','mint_location','denomination',
+    var SBL_GS_FIELDS = ['year','mint_mark','mint_location','denomination',
         'coin_variety_1','coin_variety_2','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','composition','fineness','diameter','weight',
         'precious_metal_content','total_precious_metal_content','single_coin_or_set','set_count',
@@ -610,7 +612,6 @@
                 if (country) $('#f_country_of_manufacture').val(country);
                 sblResetBelowSeries();
                 sblLoadYears();
-                sblTagGrey('category_name');
                 sblTagGrey('country_of_manufacture');
                 $('#gs-year, #gs-coin').prop('disabled', false);
                 setTimeout(function(){ $('#gs-coin').focus(); }, 0);
@@ -826,6 +827,46 @@
         sblSkuMatch();
     }
 
+    /* ---- Title Suffix: one box per note, joined into the single export column ---- */
+
+    // number the boxes; the first one keeps no remove button
+    function sblTsRenumber(){
+        $('#ts-rows .ts-line').each(function(i){
+            $(this).find('.ts-row').attr('placeholder', 'Title Suffix ' + (i + 1));
+            $(this).find('.ts-del').toggle(i > 0);
+        });
+    }
+
+    // the export column is the filled boxes, comma separated
+    function sblTsSync(){
+        var vals = [];
+        $('#ts-rows .ts-row').each(function(){
+            var v = $.trim(this.value || '');
+            if (v !== '') vals.push(v);
+        });
+        $('#f_title_suffix').val(vals.join(', '));
+    }
+
+    // add a box, focused when the operator asked for it
+    function sblTsAdd(val, focus){
+        var row = $('<div class="ts-line">')
+            .append($('<input type="text" class="has-menu ts-row" list="dl_title_suffix">').val(val || ''))
+            .append($('<button type="button" class="ts-del" title="Remove">&times;</button>'));
+        $('#ts-rows').append(row);
+        sblTsRenumber();
+        if (focus) row.find('.ts-row').focus();
+        return row;
+    }
+
+    // split a saved value back into one box per note
+    function sblTsLoad(){
+        var cur = String($('#f_title_suffix').val() || '');
+        $('#ts-rows').empty();
+        var parts = cur === '' ? [''] : cur.split(',');
+        for (var i = 0; i < parts.length; i++) sblTsAdd($.trim(parts[i]), false);
+        sblTsRenumber();
+    }
+
     // the two SKU boxes should agree; say so on the field when they do not
     function sblSkuMatch(){
         var bar = String($('#lcc-sku').val() || '').trim().toUpperCase();
@@ -871,26 +912,6 @@
         $('#lcc-sku').on('input', function(){ $(this).data('sblPicked', 0); sblSkuMatch(); });
         $('#f_sku').on('input', sblSkuMatch);
 
-        // Title Suffix takes more than one note: picking from the list adds to
-        // what is already there instead of replacing it (typing still works)
-        var ts = document.getElementById('f_title_suffix');
-        if (ts){
-            $(ts).on('focus', function(){ $(this).data('sblPrev', this.value); });
-            $(ts).on('input', function(){
-                var prev = String($(this).data('sblPrev') || ''), cur = String(this.value || '');
-                var picked = false, dl = document.getElementById('dl_title_suffix');
-                if (dl){
-                    var opts = dl.getElementsByTagName('option');
-                    for (var i = 0; i < opts.length; i++){ if (opts[i].value === cur){ picked = true; break; } }
-                }
-                // typing always leaves the old text as a prefix; a pick does not
-                if (picked && prev !== '' && cur.indexOf(prev) !== 0){
-                    var sep = /[,;]\s*$/.test(prev) ? ' ' : ', ';
-                    this.value = prev.replace(/\s+$/, '') + sep + cur;
-                }
-                $(this).data('sblPrev', this.value);
-            });
-        }
         // clicking or tabbing into the box opens the list, empty or not.
         // click, not mousedown - the widget closes the menu on a document
         // mousedown, which would shut a menu opened in the same event.
@@ -944,7 +965,6 @@
         // the LCC coin date is the year the pricing call should use
         var y = (sblLccData && sblLccData.year) || '';
         if (y){ sblCurYear = y; $('#gs-year').data('sblPicked', 1).val(y); }
-        sblTagGrey('category_name');
         sblTagGrey('country_of_manufacture');
         sblFieldVisibility();
         sblMarketApply();
@@ -1229,6 +1249,15 @@
             var lbl = $(this).closest('.field').find('label').text().replace('*','').trim();
             SBL_LABELS[this.name] = lbl;
         });
+        // Title Suffix boxes feed the hidden column before anything recomputes
+        $('#sku-form').on('input change', '.ts-row', sblTsSync);
+        $('#sku-form').on('click', '.ts-del', function(){
+            $(this).closest('.ts-line').remove();
+            if (!$('#ts-rows .ts-line').length) sblTsAdd('', false);
+            sblTsRenumber(); sblTsSync(); sblRecompute();
+        });
+        sblTsLoad();
+
         $('#sku-form').on('input', function(){ clearTimeout(sblTimer); sblTimer = setTimeout(sblRecompute, 250); });
         $('#sku-form').on('change', sblRecompute);
 
