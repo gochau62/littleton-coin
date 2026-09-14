@@ -41,6 +41,7 @@ if (!function_exists('sbl_e')) {
 final class Schema
 {
     private static $data = null;
+    private static $tables = null;
     private static $schema = null;
     private static $values = null;
     private static $lookups = null;
@@ -51,6 +52,39 @@ final class Schema
     {
         if (self::$data === null) { self::$data = require __DIR__ . '/SellbriteBulkLoader_data.php'; }
         return is_array(self::$data) ? self::$data : [];
+    }
+
+    // Des's VLOOKUP sheet, one array per table (generated from the .ods)
+    public static function tables(): array
+    {
+        if (self::$tables === null) {
+            $f = __DIR__ . '/SellbriteBulkLoader_tables.php';
+            $t = file_exists($f) ? require $f : [];
+            self::$tables = is_array($t) ? $t : [];
+        }
+        return self::$tables;
+    }
+
+    // one table by name
+    public static function table(string $name): array
+    {
+        return self::tables()[$name] ?? [];
+    }
+
+    // VLOOKUP: a key's nth answer out of a table, '' when it is not there
+    public static function lookup(string $table, string $key, int $col = 0): string
+    {
+        $key = trim($key);
+        if ($key === '') { return ''; }
+        $t = self::table($table);
+        $row = $t[$key] ?? null;
+        // a case-insensitive second pass - the sheet is not consistent about case
+        if ($row === null) {
+            foreach ($t as $k => $v) { if (strcasecmp((string) $k, $key) === 0) { $row = $v; break; } }
+        }
+        if ($row === null) { return ''; }
+        if (is_array($row)) { return trim((string) ($row[$col] ?? '')); }
+        return $col === 0 ? trim((string) $row) : '';
     }
 
     // Hands out the list of every form box / spreadsheet column.
@@ -89,10 +123,19 @@ final class Schema
         return $out;
     }
 
-    // every category in Des's copy file (the Descriptions tab lists these)
+    // every category the sheet carries copy for (the Descriptions tab lists these)
     public static function categoryCopyAll(): array
     {
-        return self::data()['category_copy'] ?? [];
+        $out = [];
+        foreach (self::table('category') as $cat => $row) {
+            if (!is_array($row)) { continue; }
+            $copy = trim((string) ($row[8] ?? ''));
+            if ($copy === '' && trim((string) ($row[9] ?? '')) === '') { continue; }
+            $out[$cat] = ['copy' => $copy,
+                          'alt1' => trim((string) ($row[9] ?? '')),
+                          'alt2' => trim((string) ($row[10] ?? ''))];
+        }
+        return $out;
     }
 
     public static function categoryCopy(string $cat): array
@@ -107,8 +150,7 @@ final class Schema
                 if (is_array($d)) { return $d; }
             }
         }
-        $base = self::data()['category_copy'] ?? [];
-        return $base[$cat] ?? [];
+        return self::categoryCopyAll()[$cat] ?? [];
     }
 
     public static function optionsFor(array $col): array
@@ -134,13 +176,6 @@ final class Schema
         static $small = [
             // Sellbrite condition; collectible coins list as "used" (default).
             'condition' => ['new', 'used'],
-            // Des's catch-all: details grades, errors, slab labels, packaging, hoards
-            'title_suffix' => ['Details', 'Cleaned Details', 'Harshly Cleaned', 'Damaged Details',
-                'Holed Details', 'Scratched', 'Corroded', 'Bent', 'Environmental Damage',
-                'Mint Error', 'Off-Center', 'Clipped Planchet', 'Doubled Die',
-                'First Strike', 'Early Releases', 'First Releases',
-                'GSA Hoard', 'Redfield Collection', 'Binion Collection', 'Hoard Coin',
-                'w/ Box & COA', 'Original Government Packaging', 'Sealed Mint Packaging'],
             'composition' => ['Silver', 'Gold', 'Platinum', 'Palladium', 'Copper', 'Copper-Nickel',
                               'Copper-Nickel Clad', 'Copper-Plated Zinc', 'Silver Clad', 'Sterling Silver',
                               'Bronze', 'Brass', 'Manganese-Brass', 'Aluminum-Bronze', 'Zinc-Coated Steel',
@@ -166,6 +201,12 @@ final class Schema
                                 'Japan', 'Mexico', 'Russia', 'South Africa', 'Sweden', 'United Kingdom'],
         ];
         if (isset($small[$col['dropdown']])) { return $small[$col['dropdown']]; }
+        // Des's sheet is the list for these - its own keys, in its own order
+        $fromSheet = ['title_suffix' => 'title_suffix'];
+        if (isset($fromSheet[$col['dropdown']])) {
+            $keys = array_keys(self::table($fromSheet[$col['dropdown']]));
+            if ($keys) { return $keys; }
+        }
         return self::values()[$col['dropdown']] ?? [];
     }
     // Hands out the packaging weight tables (slab add-ons, GSA holders).
@@ -304,6 +345,14 @@ final class Computer
         // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
+        // Product photos are named after the SKU on the CDN, the way the sheet builds them
+        if ($sku !== '') {
+            foreach (['product_image_1' => '-obv.jpg',  'product_image_2' => '-rev.jpg',
+                      'product_image_3' => '-det1.jpg', 'product_image_4' => '-det2.jpg'] as $f => $tail) {
+                if ($g($f) === '') { $row[$f] = SBL_CDN_PREFIX . $sku . $tail; }
+            }
+        }
+
         // money boxes: strip thousands commas ("6,250.00" -> "6250.00")
         foreach (['price', 'cost', 'original_retail'] as $pf) {
             if (strpos($g($pf), ',') !== false) { $row[$pf] = str_replace(',', '', $g($pf)); }
@@ -353,14 +402,14 @@ final class Computer
             $mb = trim(explode('/', $mm)[0]);
             $yr = (int) preg_replace('/\D/', '', $g('year'));
             $ml = $lookups['mint_location'] ?? [];
-            $loc = '';
+            // the sheet names the mint for every mark it lists
+            $loc = Schema::lookup('mint_location', $mb);
+            if (strncmp($loc, '***', 3) === 0) { $loc = ''; }
             // Dahlonega and Charlotte closed in 1861 - after that D is Denver
             if ($yr > 0 && $yr <= 1861 && isset($ml[strtoupper($mb) . '_pre1862'])) {
-                $loc = $ml[strtoupper($mb) . '_pre1862'];
-            } elseif (isset($ml[$mb])) {
-                $loc = $ml[$mb];
-            } elseif (isset($ml[strtoupper($mb)])) {
-                $loc = $ml[strtoupper($mb)];
+                $loc = $ml[strtoupper($mb) . '_pre1862'];   // Dahlonega and Charlotte
+            } elseif ($loc === '') {
+                $loc = $ml[$mb] ?? ($ml[strtoupper($mb)] ?? '');
             }
             if ($loc !== '') { self::setDerived($row, 'mint_location', $loc, array_values($ml)); }
         }
@@ -511,11 +560,14 @@ final class Computer
     // grade letter codes, two-letter ones first so MS is matched before M
     private const GRADE_LETTERS = ['MS', 'PR', 'PF', 'SP', 'AU', 'XF', 'EF', 'VF', 'VG', 'AG', 'FR', 'PO', 'F', 'G'];
 
-    // Uncirculated when the grade says mint state or proof, or the number is 60 and up
+    // Des's sheet answers this for every grade it lists; the reading below is
+    // the fallback for anything it does not carry
     public static function gradeCirculation(string $grade): string
     {
         $u = strtoupper(trim($grade));
         if ($u === '') { return ''; }
+        $t = Schema::lookup('grade_circ', $grade);
+        if ($t !== '' && strncmp($t, '***', 3) !== 0) { return $t; }
         if (preg_match('/^(MS|PR|PF|SP|BU)\b|UNCIRC/', $u)) { return 'Uncirculated'; }
         if (preg_match('/(\d{1,2})/', $u, $m) && (int) $m[1] >= 60) { return 'Uncirculated'; }
         return 'Circulated';
