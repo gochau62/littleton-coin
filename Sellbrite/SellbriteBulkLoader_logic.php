@@ -366,9 +366,12 @@ final class Computer
         }
 
         // GreySheet provides denomination/composition/fineness by the time the coin is picked; 
+        // Circulated/Uncirculated follows the grade, so correcting a grade by hand
+        // moves it too; only our own two answers are replaced
         $grade = $g('grade');
-        if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
-            $row['circulated_or_uncirculated'] = self::gradeCirculation($grade);
+        if ($grade !== '') {
+            self::setDerived($row, 'circulated_or_uncirculated',
+                self::gradeCirculation($grade), ['Circulated', 'Uncirculated']);
         }
         // Condition follows certification: a certified coin lists as new, an
         // uncertified one as used - off the screen but still in the spreadsheet
