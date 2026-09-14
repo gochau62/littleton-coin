@@ -253,7 +253,7 @@
             });
             $('#f_id').val(res.row.id);
             $('#f_marketplace').val(res.row.marketplace || '');
-            sblTsLoad();   // the saved suffix splits back into one box per note
+            sblTsLoad();   // the saved suffix comes back as its tags
             // the finder bars come back the way they were saved
             if (res.row.lcc_sku){ $('#lcc-sku').val(res.row.lcc_sku); sblLccSku = res.row.lcc_sku; }
             if (res.row.gs_path){
@@ -827,44 +827,63 @@
         sblSkuMatch();
     }
 
-    /* ---- Title Suffix: one box per note, joined into the single export column ---- */
+    /* ---- Title Suffix: picks drop below as tags, joined into the one export column ---- */
 
-    // number the boxes; the first one keeps no remove button
-    function sblTsRenumber(){
-        $('#ts-rows .ts-line').each(function(i){
-            $(this).find('.ts-row').attr('placeholder', 'Title Suffix ' + (i + 1));
-            $(this).find('.ts-del').toggle(i > 0);
+    var sblTsVals = [];
+
+    // the export column is the tags, comma separated
+    function sblTsSync(){ $('#f_title_suffix').val(sblTsVals.join(', ')); }
+
+    // draw the grey tags under the box
+    function sblTsRender(){
+        var box = $('#ts-chips').empty();
+        $.each(sblTsVals, function(i, v){
+            $('<span class="ts-chip">').text(v)
+                .append($('<button type="button" class="ts-x" title="Remove">&times;</button>')
+                    .on('click', function(){ sblTsDrop(i); }))
+                .appendTo(box);
         });
     }
 
-    // the export column is the filled boxes, comma separated
-    function sblTsSync(){
-        var vals = [];
-        $('#ts-rows .ts-row').each(function(){
-            var v = $.trim(this.value || '');
-            if (v !== '') vals.push(v);
-        });
-        $('#f_title_suffix').val(vals.join(', '));
+    // add a note; the same one twice is ignored
+    function sblTsAdd(v){
+        v = $.trim(String(v || '')).replace(/^[,;\s]+|[,;\s]+$/g, '');
+        if (v === '') return false;
+        for (var i = 0; i < sblTsVals.length; i++){
+            if (sblTsVals[i].toLowerCase() === v.toLowerCase()) return false;
+        }
+        sblTsVals.push(v);
+        sblTsRender(); sblTsSync();
+        return true;
     }
 
-    // add a box, focused when the operator asked for it
-    function sblTsAdd(val, focus){
-        var row = $('<div class="ts-line">')
-            .append($('<input type="text" class="has-menu ts-row" list="dl_title_suffix">').val(val || ''))
-            .append($('<button type="button" class="ts-del" title="Remove">&times;</button>'));
-        $('#ts-rows').append(row);
-        sblTsRenumber();
-        if (focus) row.find('.ts-row').focus();
-        return row;
+    function sblTsDrop(i){
+        sblTsVals.splice(i, 1);
+        sblTsRender(); sblTsSync(); sblRecompute();
     }
 
-    // split a saved value back into one box per note
+    // take whatever is typed in the box, commas included, and tag it
+    function sblTsCommit(){
+        var raw = String($('#ts-input').val() || '');
+        if ($.trim(raw) === '') return;
+        var added = false;
+        $.each(raw.split(','), function(i, part){ if (sblTsAdd(part)) added = true; });
+        $('#ts-input').val('');
+        if (added) sblRecompute();
+    }
+
+    // split a saved value back into its tags
     function sblTsLoad(){
         var cur = String($('#f_title_suffix').val() || '');
-        $('#ts-rows').empty();
-        var parts = cur === '' ? [''] : cur.split(',');
-        for (var i = 0; i < parts.length; i++) sblTsAdd($.trim(parts[i]), false);
-        sblTsRenumber();
+        sblTsVals = [];
+        if (cur !== ''){
+            $.each(cur.split(','), function(i, part){
+                var v = $.trim(part);
+                if (v !== '') sblTsVals.push(v);
+            });
+        }
+        $('#ts-input').val('');
+        sblTsRender();
     }
 
     // the two SKU boxes should agree; say so on the field when they do not
@@ -1249,12 +1268,10 @@
             var lbl = $(this).closest('.field').find('label').text().replace('*','').trim();
             SBL_LABELS[this.name] = lbl;
         });
-        // Title Suffix boxes feed the hidden column before anything recomputes
-        $('#sku-form').on('input change', '.ts-row', sblTsSync);
-        $('#sku-form').on('click', '.ts-del', function(){
-            $(this).closest('.ts-line').remove();
-            if (!$('#ts-rows .ts-line').length) sblTsAdd('', false);
-            sblTsRenumber(); sblTsSync(); sblRecompute();
+        // Title Suffix: a pick from the list or a blur fires change; Enter commits typing
+        $('#ts-input').on('change', sblTsCommit);
+        $('#ts-input').on('keydown', function(e){
+            if (e.which === 13 || e.which === 188){ e.preventDefault(); sblTsCommit(); }
         });
         sblTsLoad();
 

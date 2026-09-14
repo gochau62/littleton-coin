@@ -56,10 +56,11 @@ function dspBulkLoader(&$screenData)
             return $h;
         }
         if ($name === 'title_suffix') {
-            // a coin can carry several notes; the boxes join into the one export column
+            // pick or type a note and it drops below as a tag; the tags join into the one export column
             $h .= '<input type="hidden" id="f_title_suffix" name="title_suffix" value=""' . $da . '>';
-            $h .= '<div id="ts-rows"></div>';
-            $h .= '<button type="button" class="ts-add" onclick="sblTsAdd(\'\', true)">+ Add another</button>';
+            $h .= '<input type="text" id="ts-input" class="has-menu" list="dl_title_suffix" value="" '
+                . 'autocomplete="off" placeholder="Pick or type, then Enter">';
+            $h .= '<div id="ts-chips"></div>';
             $h .= '<datalist id="dl_title_suffix">';
             foreach ($opts as $o) {
                 if (preg_match('/^-{2,}/', $o)) { continue; }
@@ -240,14 +241,11 @@ details.group summary::-webkit-details-marker { display:none; }
 /* source tags: blue for formulas and GreySheet, LCC green for the item master */
 .badge.auto,.badge.gsauto,.badge.lcc { font-size:9.5px; text-transform:uppercase; font-weight:700; padding:2px 7px; border-radius:50px; background:#d6e9ff; color:#0056b3; }
 .badge.lcc { background:#e8f2ec; color:#1e6e43; }
-.ts-line { display:flex; gap:6px; align-items:center; margin-bottom:6px; }
-.ts-line .ts-row { flex:1; }
-.ts-del { width:22px; height:22px; flex:0 0 22px; border:none; background:transparent; color:#98a2b3;
-          font-size:15px; line-height:20px; padding:0; border-radius:50%; cursor:pointer; }
-.ts-del:hover { background:#fee4e2; color:#b42318; }
-.ts-add { border:none; background:transparent; color:#0056b3; font-size:12px; font-weight:600;
-          padding:2px 0; cursor:pointer; }
-.ts-add:hover { text-decoration:underline; }
+.ts-chip { display:inline-flex; align-items:center; gap:4px; background:#f2f4f7; border:1px solid #e4e7ec;
+            border-radius:50px; padding:2px 4px 2px 10px; font-size:12px; color:#475467; margin:5px 5px 0 0; }
+.ts-x { width:18px; height:18px; border:none; background:transparent; color:#98a2b3; font-size:14px;
+        line-height:16px; padding:0; border-radius:50%; cursor:pointer; }
+.ts-x:hover { background:#fee4e2; color:#b42318; }
 .field-msg { font-size:11px; min-height:13px; color:#667085; }
 .genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
 #genai-btn { font-size:13.5px; padding:9px 22px; }
