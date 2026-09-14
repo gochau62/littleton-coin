@@ -169,6 +169,21 @@
 #stdPage table input.numData { width: 40px; text-align: center;
     font-size: .82rem; line-height: 1.15; padding: .1rem .12rem;
     border-radius: 5px; }
+/* rows alternate green and white, on the requisition screen's own green */
+/* its grids stripe with #f7faf8, which is too faint to follow a row across 10 columns */
+#stdPage table tr:nth-child(even) { background: #eaf6ee; }
+
+/* the row being typed in, then the cell, then the box itself, each a shade stronger */
+/* the requisition lines mark the live cell the same way, with the cell drawing the box */
+#stdPage table tbody tr:focus-within { background: #f0f6ff; }
+#stdPage table td:focus-within { background: #e3efff; }
+#stdPage table input.numData:focus { outline: 2px solid var(--pt-blue);
+    outline-offset: -1px; border-color: var(--pt-blue); background: #fff;
+    box-shadow: 0 0 0 3px rgba(42, 120, 214, .18); }
+/* hover still shows through the stripe, and gives way to whatever is focused */
+#stdPage table tbody tr:hover { background: var(--pt-line-soft); }
+#stdPage table tbody tr:focus-within:hover { background: #f0f6ff; }
+
 /* the Total column: the week per project, and the whole sheet in the corner */
 #stdPage table th:last-child, #stdPage table td:last-child {
     border-left: 1px solid var(--pt-line); }
