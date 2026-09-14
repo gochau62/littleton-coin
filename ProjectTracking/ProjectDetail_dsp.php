@@ -202,10 +202,13 @@
     margin-bottom: .28rem; }
 #stdPage .pt-fld { flex: 1 1 calc(33.333% - .62rem); min-width: 165px; }
 #stdPage .pt-fld-wide { flex-basis: 100%; }
-#stdPage .pt-fld > label { display: block; font-size: .74rem; font-weight: 600;
-    color: var(--pt-muted); margin-bottom: .15rem; }
-#stdPage .pt-fld label.pt-inline { display: block; font-size: .84rem;
-    font-weight: 400; color: var(--pt-text); margin: .1rem 0 .3rem; }
+/* a label is a block so its field starts on the next line, but it only spans its own */
+/* text - the framework underlines labels dotted, and a full width block drew that */
+/* line right across the field */
+#stdPage .pt-fld > label { display: block; width: fit-content; font-size: .74rem;
+    font-weight: 600; color: var(--pt-muted); margin-bottom: .15rem; }
+#stdPage .pt-fld label.pt-inline { display: block; width: fit-content;
+    font-size: .84rem; font-weight: 400; color: var(--pt-text); margin: .1rem 0 .3rem; }
 
 /* the legacy fragments fill the field, except the ones sized to a few chars */
 #stdPage .pt-fld input[type=text], #stdPage .pt-fld input[type=date],
