@@ -352,6 +352,27 @@ return [
     ],
 
     'lookups' => [
+        // mint mark to mint location; the pre-1862 keys cover the southern branch mints
+        'mint_location' => [
+            'P' => 'Philadelphia', 'No Mint Mark' => 'Philadelphia',
+            'D' => 'Denver', 'D_pre1862' => 'Dahlonega',
+            'S' => 'San Francisco', 'CC' => 'Carson City', 'O' => 'New Orleans',
+            'W' => 'West Point', 'C_pre1862' => 'Charlotte', 'Mo' => 'Mexico City',
+        ],
+        // eBay's required wording for the Graded Coin Professional Grader field
+        'ebay_grader' => [
+            'ANACS' => 'ANACS',
+            'CAC' => 'Certified Acceptance Corporation (CAC)',
+            'ICG' => 'Independent Coin Graders (ICG)',
+            'NGC' => 'Numismatic Guaranty Corporation (NGC)',
+            'NGC & CAC' => 'Numismatic Guaranty Corporation (NGC)',
+            'PCGS' => 'Professional Coin Grading Service (PCGS)',
+            'PCGS & CAC' => 'Professional Coin Grading Service (PCGS)',
+            'PCGS Banknote Grading' => 'PCGS Banknote',
+            'PCGS Currency' => 'PCGS Currency',
+            'PMG' => 'Paper Money Guaranty (PMG)',
+            'Legacy Currency Grading' => 'Legacy Currency Grading (LCG)',
+        ],
         // packaging weight tables (pounds): certification wrap/slab add-on + GSA holders
         'package_weights' => [
             'certification' => [

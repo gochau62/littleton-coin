@@ -796,7 +796,8 @@
        Autofill clears the form and GreySheet may leave these blank. */
     function sblLccApply(){
         if (!sblLccData) return;
-        var fill = { name:               sblLccData.description,        // IIDESC
+        var fill = { sku:                sblLccData.sku,                // ITEM_SKU
+                     name:               sblLccData.description,        // IIDESC
                      year:               sblLccData.year,               // IICDAT
                      condition_note:     sblLccData.comment,            // IIICMT
                      original_retail:    sblLccData.retail,             // IIPRCE - the item's own retail
@@ -822,6 +823,24 @@
                 lbl.appendChild(document.createTextNode(' ')); lbl.appendChild(b);
             }
         });
+        sblSkuMatch();
+    }
+
+    // the two SKU boxes should agree; say so on the field when they do not
+    function sblSkuMatch(){
+        var bar = String($('#lcc-sku').val() || '').trim().toUpperCase();
+        var box = String($('#f_sku').val() || '').trim().toUpperCase();
+        var el = document.querySelector('#sku-form [data-name="sku"]');
+        var fld = el ? el.closest('.field') : null;
+        var m = fld ? fld.querySelector('.field-msg') : null;
+        if (!m) return;
+        if (bar !== '' && box !== '' && bar !== box){
+            m.textContent = 'Does not match Item by SKU (' + $('#lcc-sku').val() + ')';
+            fld.classList.add('is-action');
+        } else if (m.textContent.indexOf('Does not match Item by SKU') === 0){
+            m.textContent = '';
+            fld.classList.remove('is-action');
+        }
     }
 
     // SKU box type-ahead: item numbers straight from the LCC item master
@@ -849,7 +868,29 @@
                      + '</div>').appendTo(ul);
         };
         $('#lcc-sku').autocomplete('widget').addClass('sbl-combo');
-        $('#lcc-sku').on('input', function(){ $(this).data('sblPicked', 0); });
+        $('#lcc-sku').on('input', function(){ $(this).data('sblPicked', 0); sblSkuMatch(); });
+        $('#f_sku').on('input', sblSkuMatch);
+
+        // Title Suffix takes more than one note: picking from the list adds to
+        // what is already there instead of replacing it (typing still works)
+        var ts = document.getElementById('f_title_suffix');
+        if (ts){
+            $(ts).on('focus', function(){ $(this).data('sblPrev', this.value); });
+            $(ts).on('input', function(){
+                var prev = String($(this).data('sblPrev') || ''), cur = String(this.value || '');
+                var picked = false, dl = document.getElementById('dl_title_suffix');
+                if (dl){
+                    var opts = dl.getElementsByTagName('option');
+                    for (var i = 0; i < opts.length; i++){ if (opts[i].value === cur){ picked = true; break; } }
+                }
+                // typing always leaves the old text as a prefix; a pick does not
+                if (picked && prev !== '' && cur.indexOf(prev) !== 0){
+                    var sep = /[,;]\s*$/.test(prev) ? ' ' : ', ';
+                    this.value = prev.replace(/\s+$/, '') + sep + cur;
+                }
+                $(this).data('sblPrev', this.value);
+            });
+        }
         // clicking or tabbing into the box opens the list, empty or not.
         // click, not mousedown - the widget closes the menu on a document
         // mousedown, which would shut a menu opened in the same event.

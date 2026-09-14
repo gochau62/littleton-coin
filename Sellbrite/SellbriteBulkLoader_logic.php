@@ -340,10 +340,28 @@ final class Computer
             }
         }
 
+        // Mint location follows the mint mark; an overmintmark (D/S) struck at the first mint
+        $mm = $g('mint_mark');
+        if ($g('mint_location') === '' && $mm !== '' && strpos($mm, ',') === false) {
+            $mb = trim(explode('/', $mm)[0]);
+            $yr = (int) preg_replace('/\D/', '', $g('year'));
+            $ml = $lookups['mint_location'] ?? [];
+            // Dahlonega and Charlotte closed in 1861 - after that D is Denver
+            if ($yr > 0 && $yr <= 1861 && isset($ml[$mb . '_pre1862'])) {
+                $row['mint_location'] = $ml[$mb . '_pre1862'];
+            } elseif (isset($ml[$mb])) {
+                $ctry = $g('country_of_manufacture');
+                // a blank mark only means Philadelphia on a US coin
+                if ($mb !== 'No Mint Mark' || $ctry === '' || stripos($ctry, 'United States') !== false) {
+                    $row['mint_location'] = $ml[$mb];
+                }
+            }
+        }
+
         // GreySheet provides denomination/composition/fineness by the time the coin is picked; 
         $grade = $g('grade');
         if ($g('circulated_or_uncirculated') === '' && $grade !== '') {
-            $row['circulated_or_uncirculated'] = self::lookupValue($lookups['grade_circ'][$grade] ?? '', '');
+            $row['circulated_or_uncirculated'] = self::gradeCirculation($grade);
         }
         // Condition follows certification: a certified coin lists as new, an
         // uncertified one as used - off the screen but still in the spreadsheet
@@ -437,18 +455,28 @@ final class Computer
         $cert   = $g('certification');
         $grade  = $g('grade');
         $graded = $cert !== '' && strcasecmp($cert, 'Uncertified') !== 0 && strcasecmp($cert, 'U.S. Mint') !== 0;
-        if ($g('ebay_coin_condition_type') === '') { $row['ebay_coin_condition_type'] = $graded ? 'Graded' : 'Ungraded'; }
+        // these are pure functions of certification and grade, so they are rewritten
+        // whenever those change - a typed value we could never produce is left alone
+        $graders = $lookups['ebay_grader'] ?? [];
+        $gVals   = array_merge(array_values($graders), array_keys($graders));
+        self::setDerived($row, 'ebay_coin_condition_type', $graded ? 'Graded' : 'Ungraded', ['Graded', 'Ungraded']);
         if ($graded) {
-            if ($g('ebay_graded_coin_professional_grader') === '') { $row['ebay_graded_coin_professional_grader'] = $cert; }
-            if ($g('ebay_graded_coin_letter_grade') === '' && $grade !== '') { $row['ebay_graded_coin_letter_grade'] = $grade; }
-            if ($g('ebay_graded_coin_numerical_grade') === '' && preg_match('/\d{1,2}/', $grade, $gm)) {
-                $row['ebay_graded_coin_numerical_grade'] = $gm[0];
+            self::setDerived($row, 'ebay_graded_coin_professional_grader', $graders[$cert] ?? $cert, $gVals);
+            $letter = preg_match('/^\s*([A-Za-z]{1,2})/', $grade, $lm) ? strtoupper($lm[1]) : '';
+            self::setDerived($row, 'ebay_graded_coin_letter_grade', $letter, self::GRADE_LETTERS);
+            self::setDerived($row, 'ebay_graded_coin_numerical_grade',
+                preg_match('/\d{1,2}/', $grade, $gm) ? $gm[0] : '', null);
+        } else {
+            // a raw coin carries no grader or slab grade
+            self::setDerived($row, 'ebay_graded_coin_professional_grader', '', $gVals);
+            self::setDerived($row, 'ebay_graded_coin_letter_grade', '', self::GRADE_LETTERS);
+            self::setDerived($row, 'ebay_graded_coin_numerical_grade', '', null);
+            if ($g('z_ebay_ungraded_coin_condition') === '') {
+                // eBay refuses numerical grades on raw coins - MS/PR numbers list as Uncirculated
+                $zc = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0 ? $grade : $g('circulated_or_uncirculated');
+                if (preg_match('/^(MS|PR|PF|SP)\s*-?\s*\d/i', $zc)) { $zc = 'Uncirculated'; }
+                $row['z_ebay_ungraded_coin_condition'] = $zc;
             }
-        } elseif ($g('z_ebay_ungraded_coin_condition') === '') {
-            // eBay refuses numerical grades on raw coins - MS/PR numbers list as Uncirculated
-            $zc = $grade !== '' && strcasecmp($grade, 'Ungraded') !== 0 ? $grade : $g('circulated_or_uncirculated');
-            if (preg_match('/^(MS|PR|PF|SP)\s*-?\s*\d/i', $zc)) { $zc = 'Uncirculated'; }
-            $row['z_ebay_ungraded_coin_condition'] = $zc;
         }
 
         $exact = trim((string) ($row['exact_image'] ?? ''));
@@ -470,10 +498,36 @@ final class Computer
     }
 
     // builts product title; year, mint mark, series, varieties, denomination, grade, certification + "Coin Collectible".
+    // grade letter codes, two-letter ones first so MS is matched before M
+    private const GRADE_LETTERS = ['MS', 'PR', 'PF', 'SP', 'AU', 'XF', 'EF', 'VF', 'VG', 'AG', 'FR', 'PO', 'F', 'G'];
+
+    // Uncirculated when the grade says mint state or proof, or the number is 60 and up
+    public static function gradeCirculation(string $grade): string
+    {
+        $u = strtoupper(trim($grade));
+        if ($u === '') { return ''; }
+        if (preg_match('/^(MS|PR|PF|SP|BU)\b|UNCIRC/', $u)) { return 'Uncirculated'; }
+        if (preg_match('/(\d{1,2})/', $u, $m) && (int) $m[1] >= 60) { return 'Uncirculated'; }
+        return 'Circulated';
+    }
+
+    // write a derived value, keeping anything typed that we could not have produced
+    private static function setDerived(array &$row, string $field, string $value, ?array $ours): void
+    {
+        $cur = trim((string) ($row[$field] ?? ''));
+        if ($cur !== '') {
+            // a null list means any one or two digits are ours (the numerical grade)
+            $mine = $ours === null ? (bool) preg_match('/^\d{1,2}$/', $cur) : in_array($cur, $ours, true);
+            if (!$mine) { return; }
+        }
+        $row[$field] = $value;
+    }
+
     private static function buildTitle(array $row): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
-        if ($g('category_name') === '') { return ''; }
+        // the coin is named by its Coin Type; Store Category only covers the non-coin products
+        if ($g('coin_type') === '' && $g('category_name') === '') { return ''; }
         // the coin is named by its Coin Type; the store category stands in without one
         $catName = $g('coin_type') !== '' ? $g('coin_type') : $g('category_name');
         $parts = [
@@ -495,7 +549,8 @@ final class Computer
     private static function buildDescription(array $row, array $copy): string
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
-        if ($g('category_name') === '') { return ''; }
+        // the coin is named by its Coin Type; Store Category only covers the non-coin products
+        if ($g('coin_type') === '' && $g('category_name') === '') { return ''; }
         $specs = trim(preg_replace('/\s+/', ' ', implode(' ', array_filter([
             $g('year'),
             $g('mint_mark') !== '' && $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
