@@ -101,6 +101,15 @@ function tpyCleanPlan($plan) {
 }
 
 
+// an item number Excel treated as a number comes back short a trailing zero, so the sku 1638.60 arrives as 1638.6
+// this is K Rainville's rule from the order file import (WO#64700): one digit after the point means one was dropped
+// it returns '' when there is nothing to put back, and never pads past the width of the item master key
+function tpyPadItem($item) {
+    if (!preg_match('/^.+\.\d$/', $item) || strlen($item) >= TPY_ITEM_LEN) { return ''; }
+    return $item . '0';
+}
+
+
 // the cell as the YYYYMMDD number TPITEMSP carries, 0 if not a real date; Excel serials, slashes and hyphens land here
 function tpyNormDate($v) {
     if ($v === null) { return 0; }
@@ -149,6 +158,16 @@ function tpyGetItem($conn, $item) {
                         array('ITEM', tpyCleanItem($item), ''));
     if ($rows === false) { return false; }
     return $rows ? $rows[0] : null;
+}
+
+
+// the item master row for the sku as it was typed, falling back to the padded spelling when that is not on file
+// as typed always wins, so a real item is never passed over, and the master decides whether the padded one exists
+function tpyFindItem($conn, $item) {
+    $found = tpyGetItem($conn, $item);
+    if ($found !== null) { return $found; }
+    $pad = tpyPadItem($item);
+    return $pad === '' ? null : tpyGetItem($conn, $pad);
 }
 
 

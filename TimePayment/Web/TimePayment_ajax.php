@@ -130,6 +130,9 @@ switch ($action) {
         foreach (array('A' => 14, 'B' => 14, 'C' => 16, 'D' => 18) as $col => $w) {
             $sheet->getColumnDimension($col)->setWidth($w);
         }
+        // item, source and plan are formatted as text so Excel cannot read a sku like 1638.60 as the number 1638.6
+        $sheet->getStyle('A2:C2000')->getNumberFormat()
+              ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="TimePaymentUpload.xlsx"');
         $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book, 'Xlsx');
@@ -184,7 +187,8 @@ switch ($action) {
             if ($item === '' && $src === '' && $plan === '' && $expTxt === '') { continue; }
 
             // item # against the item master; a Db2 error on any call skips the row as an exception, not the whole run
-            $found = tpyGetItem($conn, $item);
+            $itemTyped = $item;
+            $found = tpyFindItem($conn, $item);
             if ($found === false) {
                 $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
                                   'exp' => $expShow, 'status' => 'error',
@@ -198,6 +202,12 @@ switch ($action) {
                                   'msg' => 'Item is not on the Item Master.');
                 $errors++;
                 continue;
+            }
+
+            // the item master's own spelling from here on, so a sku Excel shortened is written the way it is on file
+            $item = tpyCleanItem($found['TPITEM']);
+            if ($item !== $itemTyped) {
+                tpyActLog($user, 'ITEMFIX', $origName . ' row ' . $row . ': ' . $itemTyped . ' matched ' . $item);
             }
 
             // source code against OEPSRCE
@@ -298,11 +308,14 @@ switch ($action) {
                 continue;
             }
 
+            // a sku Excel shortened is named on its own row, so the spelling on file can be checked against the sheet
+            $fixNote = $item === $itemTyped ? '' : ' The spreadsheet had ' . $itemTyped . '.';
+
             if ($existing === null) { $added++; } else { $updated++; }
             $report[] = array('row' => $row, 'item' => $item, 'src' => $src, 'plan' => $plan,
                               'exp' => $expShow,
                               'status' => $existing === null ? 'added' : 'updated',
-                              'msg' => $existing === null ? 'Added.' : 'Updated the existing record.');
+                              'msg' => ($existing === null ? 'Added.' : 'Updated the existing record.') . $fixNote);
         }
 
         $emailed = false;
