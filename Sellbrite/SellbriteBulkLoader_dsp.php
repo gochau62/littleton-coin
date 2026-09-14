@@ -247,6 +247,9 @@ details.group summary::-webkit-details-marker { display:none; }
         line-height:16px; padding:0; border-radius:50%; cursor:pointer; }
 .ts-x:hover { background:#fee4e2; color:#b42318; }
 .field-msg { font-size:11px; min-height:13px; color:#667085; }
+.genai-row { display:flex; align-items:center; gap:10px; margin:8px 0 2px; }
+#genai-btn { font-size:13.5px; padding:9px 22px; }
+#genai-msg { font-size:11px; color:#667085; }
 .field.is-error input,.field.is-error select,.field.is-error textarea { border-color:#f04438; background-color:#fef7f6; } .field.is-error .field-msg { color:#b42318; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#f0a71b; background-color:#fffaf0; } .field.is-action .field-msg { color:#93540b; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
@@ -438,7 +441,7 @@ details.group summary::-webkit-details-marker { display:none; }
                         'stamp_color','stamp_quality','stamp_type','nativity_item_type']],
                     'Packaging' => ['open' => false, 'fields' => [
                         'package_weight','package_height','package_length','package_width','condition_note']],
-                    'Listing content' => ['open' => false, 'fields' => [
+                    'Listing content' => ['open' => false, 'ai' => true, 'fields' => [
                         'name','description','extended_description',
                         'feature_1','feature_2','feature_3','feature_4','feature_5']],
                     'Product images' => ['open' => false, 'images' => true, 'fields' => [
@@ -457,8 +460,14 @@ details.group summary::-webkit-details-marker { display:none; }
                     echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '')
                        . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
                     echo '<summary>' . sbl_e($title) . '</summary>';
-                    // no AI copy button - written listing text is a copyright risk,
-                    // so the wording is Des's sheet and the operator's
+                    if (!empty($sec['ai'])) {
+                        // Gemini fills ONLY the empty listing boxes - never typed text
+                        echo '<div class="genai-row"><button type="button" class="mini" id="genai-btn" '
+                           . 'onclick="sblListingGenerate()" title="Fills only the empty Description, '
+                           . 'Extended Description and Feature 4 - never overwrites typed text">'
+                           . 'Generate Product details with AI</button>'
+                           . '<span id="genai-msg"></span></div>';
+                    }
                     echo '<div class="field-grid">';
                     $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
                     // computed fields keep updating live even though required
