@@ -131,8 +131,9 @@ if (!$conn) {
     prjOutFail("No database connection - sign in to LCC Online first.");
 }
 
-// level 20 is the developers group
-if (function_exists('chkAutUsr') && chkAutUsr($conn, $user, "LCCONLINE", 20) != "yes") {
+// level 20 is the developers group; no profile, or no way to check, is a refusal
+if ($user === '' || !function_exists('chkAutUsr') ||
+    chkAutUsr($conn, $user, "LCCONLINE", 20) != "yes") {
     prjOutFail("Current user profile is not authorized to use this tool.");
 }
 

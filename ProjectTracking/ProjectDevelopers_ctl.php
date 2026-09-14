@@ -19,7 +19,7 @@
 
 <?php
     // retrieves and sets password and username
-    require_once 'StartBlockScriptA.php';
+    if (file_exists('StartBlockScriptA.php')) { require_once 'StartBlockScriptA.php'; }
     // a signed out visit has no keys at all, so these read as empty rather than unset
     $user     = $_SESSION['username'] ?? '';
     $password = $_SESSION['password'] ?? '';
@@ -34,14 +34,11 @@
     // show the red error box with a message
     function showErrorMessage(m){ var d = document.getElementById("errorMsg"); if (!d) { return; }
         d.innerHTML = m; d.style.display = "block"; }
-
-
-    function showNotAuthorized(){ showErrorMessage("Current user profile is not authorized to use this tool."); }
 </script>
 
 <!--  Begin Content Here -->
 <?php
-require_once 'StartBlockScriptB.php';
+if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
 // an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
 // the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
@@ -49,11 +46,18 @@ require_once 'StartBlockScriptB.php';
 if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 // authority level 20, the developers group
-$authConn   = getDB2PConn($user, $password);
-$authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
+// no framework means no way to check, so the screen refuses rather than opens
+$authorized = "no";
+if (function_exists('getDB2PConn') && function_exists('chkAutUsr') && $user !== '') {
+    // an empty profile is never checked: it only prints the framework's auth-recs
+    // error across the page, so a signed out visit is refused quietly instead
+    $authConn   = getDB2PConn($user, $password);
+    $authorized = chkAutUsr($authConn, $user, "LCCONLINE", 20);
+}
 
 if ($authorized != "yes") {
-    echo '<script>showNotAuthorized();</script>';
+    // the framework's standard refusal page, the same call the older LCC tools make
+    showNotAuthorized();
 } else {
 
     echo '<div id="errorMsg" style="display:none; padding:1rem; color:#c0392b; font-weight:bold;"></div>';
@@ -360,5 +364,5 @@ function renderGroups() {
 // end authority check
 }
 
-include("EndBlock.php");
+if (file_exists("EndBlock.php")) { include("EndBlock.php"); }
 ?>
