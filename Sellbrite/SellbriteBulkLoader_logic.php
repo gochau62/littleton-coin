@@ -304,9 +304,12 @@ final class Computer
         // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        // money boxes: strip thousands commas ("6,250.00" -> "6250.00")
+        // money boxes: strip thousands commas ("6,250.00" -> "6250.00"), then round
+        // to cents the ordinary way - a third decimal of 5 or more rounds up
         foreach (['price', 'cost', 'original_retail'] as $pf) {
-            if (strpos($g($pf), ',') !== false) { $row[$pf] = str_replace(',', '', $g($pf)); }
+            $mv = str_replace(',', '', $g($pf));
+            if ($mv !== '' && is_numeric($mv)) { $mv = number_format(round((float) $mv, 2), 2, '.', ''); }
+            if ($mv !== $g($pf)) { $row[$pf] = $mv; }
         }
 
         // Des's per-category copy fills the Extended Description when empty;
@@ -419,7 +422,10 @@ final class Computer
             $row['package_width']  = $w < 0.5 ? '8' : ($w < 1 ? '9' : '10');
             $row['package_height'] = $w < 0.17 ? '1' : ($w < 1 ? '2' : '4');
         }
-        if (stripos($sku, '.WS') !== false && $g('price') !== '' && $g('original_retail') === '') { $row['original_retail'] = $g('price'); }
+        // .WS items carry the retail across; read the rounded price, not the typed one
+        if (stripos($sku, '.WS') !== false && $g('original_retail') === '' && trim((string) ($row['price'] ?? '')) !== '') {
+            $row['original_retail'] = trim((string) $row['price']);
+        }
 
         // keep whatever is in the box when there is not enough yet to compose a title,
         // so the LCC inventory description stands in until the parts arrive
