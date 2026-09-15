@@ -354,7 +354,7 @@ return [
     'lookups' => [
         // mint mark to mint location; the pre-1862 keys cover the southern branch mints
         'mint_location' => [
-            'P' => 'Philadelphia', 'No Mint Mark' => 'Philadelphia',
+            'P' => 'Philadelphia',
             'D' => 'Denver', 'D_pre1862' => 'Dahlonega',
             'S' => 'San Francisco', 'CC' => 'Carson City', 'O' => 'New Orleans',
             'W' => 'West Point', 'C_pre1862' => 'Charlotte', 'Mo' => 'Mexico City',

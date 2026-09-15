@@ -365,7 +365,8 @@ final class Computer
             } elseif (isset($ml[strtoupper($mb)])) {
                 $loc = $ml[strtoupper($mb)];
             }
-            if ($loc !== '') { self::setDerived($row, 'mint_location', $loc, array_values($ml)); }
+            // no mint mark means no mint location - and a city we derived earlier goes too
+            if ($loc !== '' || $mb === 'No Mint Mark') { self::setDerived($row, 'mint_location', $loc, array_values($ml)); }
         }
 
         // GreySheet provides denomination/composition/fineness by the time the coin is picked; 
