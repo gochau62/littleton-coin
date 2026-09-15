@@ -208,7 +208,7 @@ switch ($action) {
                           'row' => $r['row'], 'message' => $r['error']]);
         break;
 
-    /* ---- the Sellbrite Data screen (staff-managed overrides in SBLCONFIGT) ---- */
+    // ---- the Sellbrite Data screen (staff-managed overrides in SBLCONFIGT) ----
 
     case 'cfgLoad':
         // everything the data screen shows, with the overrides already applied

@@ -48,8 +48,7 @@ if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ??
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     if ($user === '') {
-        // nobody signed in: checking an empty profile just prints the framework's
-        // auth-recs error across the page - refuse quietly instead
+        // nobody signed in: checking an empty profile prints the raw auth error - refuse quietly
         $authorized = "no";
     } else {
         $authConn   = getDB2PConn($user, $password);

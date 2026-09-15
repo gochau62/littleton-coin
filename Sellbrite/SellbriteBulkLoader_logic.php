@@ -29,15 +29,12 @@ if (!defined('SBL_ABOUT_SELLER')) { define('SBL_ABOUT_SELLER',
 if (!defined('SBL_EXACT_IMAGE_DEFAULT')) { define('SBL_EXACT_IMAGE_DEFAULT',
     'The images you see are for the exact item you will receive.'); }
 
-/** HTML-escape helper (guarded so it never clashes with framework helpers). */
+// HTML-escape helper (guarded so it never clashes with framework helpers).
 if (!function_exists('sbl_e')) {
     function sbl_e($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); }
 }
 
-/* =========================================================================
- * SCHEMA - reference data reader (fields, valid values, lookups, pools)
- * Source of truth: the array in SellbriteBulkLoader_data.php.
- * ========================================================================= */
+// ==== SCHEMA: reference data reader (fields, values, lookups) ====
 final class Schema
 {
     private static $data = null;
@@ -45,8 +42,7 @@ final class Schema
     private static $values = null;
     private static $lookups = null;
 
-    // Opens the reference binder (_data.php) once and keeps it handy.
-    /** Load the consolidated reference data (schema/values/lookups) once. */
+    // loads the reference data file (schema, values, lookups) once
     private static function data(): array
     {
         if (self::$data === null) { self::$data = require __DIR__ . '/SellbriteBulkLoader_data.php'; }
@@ -72,10 +68,7 @@ final class Schema
         if (self::$values === null) { self::$values = self::data()['values'] ?? []; }
         return self::$values;
     }
-    // "what should THIS box's dropdown menu show?"
-    // Des's per-category listing copy: an admin override wins, his generated
-    // file is the base; [] when the category has neither
-    // staff-added dropdown fields (data screen): a box on the form + a column in the export
+    // staff-added dropdown fields (data screen): a box on the form and a column in the export
     public static function customFields(): array
     {
         $out = [];
@@ -124,9 +117,7 @@ final class Schema
             }
         }
         if ($col['dropdown'] === 'store_category') {
-            // Non-Coin Type is the parent-product picker for offers NOT on GreySheet
-            // (watches, calendars, stamps, nativity, albums...); the granular coin
-            // names live in coin_type so this menu keeps its section-opening job
+            // Non-Coin Type only opens the non-coin sections; coin names live in coin_type
             return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
                     'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'];
         }
@@ -159,8 +150,7 @@ final class Schema
                             'S', 'S, W', 'S/S', 'W', 'Various Mint Marks'],
             'mint_location' => ['Philadelphia', 'Denver', 'San Francisco', 'West Point', 'Carson City',
                                 'New Orleans', 'Charlotte', 'Dahlonega', 'Manila', 'Mexico City'],
-            // Country autofills from the drill-down / GreySheet path; this
-            // list is just the combo menu for manual entries.
+            // Country autofills from the GreySheet path; this list is the combo menu for manual entries
             'country_of_manufacture' => ['United States', 'Australia', 'Austria', 'Canada', 'China',
                                 'France', 'Germany', 'India', 'Indonesia', 'Isle of Man', 'Italy',
                                 'Japan', 'Mexico', 'Russia', 'South Africa', 'Sweden', 'United Kingdom'],
@@ -222,8 +212,7 @@ final class Schema
             if (strpos($v, '---') === 0) { $cur = explode(' ', $map[$v] ?? ''); continue; }
             foreach ($cur as $p) {
                 if ($p === 'bullion_split') {
-                    // "America The Beautiful/American Eagle/Buffalo" are U.S.
-                    // Mint bullion; Maple Leafs, Libertads etc. are world coins.
+                    // America The Beautiful / American Eagle / Buffalo are U.S. Mint bullion; the rest are world coins
                     $pools[strpos($v, 'America') === 0 ? 'us_coins' : 'world_coins'][] = $v;
                 } elseif ($p !== '') {
                     $pools[$p][] = $v;
@@ -286,13 +275,10 @@ final class Schema
     }
 }
 
-/* =========================================================================
- * COMPUTER - the spreadsheet formulas (title/copy/packaging/eBay fields)
- * Fills only boxes it owns: empties, or values it computed itself.
- * ========================================================================= */
+// ==== COMPUTER: the spreadsheet formulas ====
 final class Computer
 {
-    /** Return a copy of $row with all auto/derived columns (re)computed. */
+    // Return a copy of $row with all auto/derived columns (re)computed.
     public static function apply(array $row): array
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
@@ -304,16 +290,14 @@ final class Computer
         // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        // money boxes: strip thousands commas ("6,250.00" -> "6250.00"), then round
-        // to cents the ordinary way - a third decimal of 5 or more rounds up
+        // money boxes: strip thousands commas, then round to cents - a third decimal of 5 or more rounds up
         foreach (['price', 'cost', 'original_retail'] as $pf) {
             $mv = str_replace(',', '', $g($pf));
             if ($mv !== '' && is_numeric($mv)) { $mv = number_format(round((float) $mv, 2), 2, '.', ''); }
             if ($mv !== $g($pf)) { $row[$pf] = $mv; }
         }
 
-        // Des's per-category copy fills the Extended Description when empty;
-        // his sheet keys by granular names, so coins match on coin_type (+ denomination)
+        // Des's per-category copy fills the Extended Description when empty; coins match on coin type
         if ($g('extended_description') === '') {
             $dc = [];
             foreach ([$category, $g('coin_type'),
@@ -327,9 +311,7 @@ final class Computer
             if ($txt !== '') { $row['extended_description'] = $txt; }
         }
 
-        // Search Terms are Amazon-specific, and a formula column: rebuilt every
-        // pass from what is on the form now, so a changed coin type or year
-        // changes the terms instead of leaving the first answer standing
+        // Search Terms are Amazon-specific and a formula column, rebuilt every pass from the form
         $mkt = strtolower($g('marketplace'));
         if ($mkt === '' || $mkt === 'all' || $mkt === 'amazon') {
             $words = [];
@@ -347,9 +329,7 @@ final class Computer
             $row['search_terms'] = '';
         }
 
-        // Mint location follows the mint mark, so a mark typed or changed by hand
-        // re-derives it. GreySheet's own value arrives with the import; anything
-        // typed that we could not have produced is left alone.
+        // mint location follows the mint mark, so a mark typed or changed by hand re-derives it
         $mm   = $g('mint_mark');
         $ctry = $g('country_of_manufacture');
         // the mark-to-city map is a US one - a world coin keeps whatever it has
@@ -372,23 +352,19 @@ final class Computer
             if ($loc !== '' || $mb === 'No Mint Mark') { self::setDerived($row, 'mint_location', $loc, array_values($ml)); }
         }
 
-        // GreySheet provides denomination/composition/fineness by the time the coin is picked; 
-        // Circulated/Uncirculated follows the grade, so correcting a grade by hand
-        // moves it too; only our own two answers are replaced
+        // Circulated/Uncirculated follows the grade; only our own two answers are replaced
         $grade = $g('grade');
         if ($grade !== '') {
             self::setDerived($row, 'circulated_or_uncirculated',
                 self::gradeCirculation($grade), ['Circulated', 'Uncirculated']);
         }
-        // Condition follows certification: a certified coin lists as new, an
-        // uncertified one as used - off the screen but still in the spreadsheet
+        // Condition follows certification: certified lists as new, uncertified as used
         $condCert = $g('certification');
         $row['condition'] = ($condCert !== '' && strcasecmp($condCert, 'Uncertified') !== 0) ? 'new' : 'used';
         // "1 Dollar" reads as just "Dollar"; multiples ("10 Kreuzer") keep their number
         if (preg_match('/^1\s+(\S.*)$/', $g('denomination'), $dm)) { $row['denomination'] = $dm[1]; }
 
-        // Package weight = the coin's own weight FROM GREYSHEET
-        // auto adjusted for certification wrap and slabs from GSA
+        // package weight = the coin's own weight from GreySheet, adjusted for wraps and slabs
         $weight = $g('package_weight');
         $pw = $lookups['package_weights'] ?? [];
         if ($g('single_coin_or_set') !== 'Set') {
@@ -431,10 +407,7 @@ final class Computer
             $row['original_retail'] = trim((string) $row['price']);
         }
 
-        // keep whatever is in the box when there is not enough yet to compose a title,
-        // so the LCC inventory description stands in until the parts arrive
-        // the title is a formula column: it follows its inputs both ways, so
-        // clearing what built it clears the title instead of leaving it stale
+        // the title is a formula column: clearing what built it clears the title too
         $row['name'] = self::buildTitle($row);
         // The description REBUILDS while it still has the standard house shape
 
@@ -474,15 +447,11 @@ final class Computer
         } elseif (strncmp(trim((string) ($row['feature_2'] ?? '')), 'CONDITION:', 10) === 0) {
             $row['feature_2'] = '';
         }
-        // Sellbrite Condition (new/used/reconditioned): collectible coins list
-        // eBay condition fields, derived from certification + grade:
-        //   certified/slabbed -> Graded (grader + letter/numerical grade)
-        //   raw               -> Ungraded (circulated/uncirculated condition)
+        // eBay condition fields derive from certification + grade: slabbed = Graded, raw = Ungraded
         $cert   = $g('certification');
         $grade  = $g('grade');
         $graded = $cert !== '' && strcasecmp($cert, 'Uncertified') !== 0 && strcasecmp($cert, 'U.S. Mint') !== 0;
-        // these are pure functions of certification and grade, so they are rewritten
-        // whenever those change - a typed value we could never produce is left alone
+        // pure functions of certification and grade, rewritten on change; a typed value we could not produce stays
         $graders = $lookups['ebay_grader'] ?? [];
         $gVals   = array_merge(array_values($graders), array_keys($graders));
         self::setDerived($row, 'ebay_coin_condition_type', $graded ? 'Graded' : 'Ungraded', ['Graded', 'Ungraded']);
@@ -523,7 +492,6 @@ final class Computer
         return $value;
     }
 
-    // builts product title; year, mint mark, series, varieties, denomination, grade, certification + "Coin Collectible".
     // grade letter codes, two-letter ones first so MS is matched before M
     private const GRADE_LETTERS = ['MS', 'PR', 'PF', 'SP', 'AU', 'XF', 'EF', 'VF', 'VG', 'AG', 'FR', 'PO', 'F', 'G'];
 
@@ -598,9 +566,7 @@ final class Computer
     }
 }
 
-/* =========================================================================
- * VALIDATOR - per-field statuses + messages (required/format/nudges)
- * ========================================================================= */
+// ==== VALIDATOR: per-field statuses and messages ====
 final class Validator
 {
     // The proofreader: every box gets a color - red must fix, yellow look at this, green fine.
@@ -662,9 +628,7 @@ final class Validator
     }
 }
 
-/* =========================================================================
- * EXPORTER - Sellbrite spreadsheet layout, per-market columns, xlsx/csv
- * ========================================================================= */
+// ==== EXPORTER: Sellbrite spreadsheet layout, per-market columns, xlsx/csv ====
 final class Exporter
 {
 
@@ -875,8 +839,7 @@ final class Exporter
                        ->getStartColor()->setARGB($fills[$c['orig']]);
                 }
             }
-            // Column widths follow the content (header + widest cell), capped so
-            // the copy-heavy columns (description, features) stay readable.
+            // column widths follow the content, capped so the copy-heavy columns stay readable
             $widths[$i] = strlen($c['label']);
         }
         $r = 4;

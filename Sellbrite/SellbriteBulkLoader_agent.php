@@ -16,20 +16,7 @@
 <!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 
-/*
- *   - Coin dropdown: searches the PATH MEMORY (DB2 table SBLMEMORYT) of every
- *     coin this screen has ever seen on GreySheet - name, GsId, node path.
- *   - Populate it with the seed crawl (SellbriteBulkLoader_seed.php)
- * 
- *   - Picking a coin calls the API (GetCollectibleRequest + GetPricingRequest)
- *     and auto-fills the form; Gemini maps the data into the right fields.
- *
- * ENDPOINTS (CDN Public API v2):
- *   GetNodeChildrenRequest?NodeId=                child folders
- *   GetCollectibleByNodeRequest?NodeId=&ApiLevel= coins in a leaf
- *   GetCollectibleRequest?GsId=&ApiLevel=         one coin, full detail
- *   GetPricingRequest?Gsid=&Grade=&ApiLevel=      prices by grade
- */
+// coin dropdown reads the path memory (SBLMEMORYT); GreySheet is called only on a miss
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';
 require_once __DIR__ . '/SellbriteBulkLoader_model.php';
 
@@ -47,16 +34,11 @@ if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); 
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
-/* =========================================================================
- * HTTP layer for Greysheet and Gemini
- * gsApiGet is the GreySheet caller (headers, timeout, logging);
- * geminiJson is the Gemini caller (JSON-mode, model fallback).
- * ========================================================================= */
+// ==== HTTP layer for GreySheet and Gemini ====
 
 // helpful for when trying to find greysheet error messages in debug log
 if (!defined('SBL_LOG_FILE')) {
-    // the loader's own log, beside the other *_activity logs in the house
-    // LCCOnline_logs folder; falls back to the code folder, then /tmp
+    // the loader's own log in LCCOnline_logs; falls back to the code folder, then /tmp
     $sblLogDir = is_dir(__DIR__ . '/LCCOnline_logs') && is_writable(__DIR__ . '/LCCOnline_logs')
                ? __DIR__ . '/LCCOnline_logs'
                : (is_writable(__DIR__) ? __DIR__ : '/tmp');
@@ -138,8 +120,7 @@ function gsApiGet($path, array $params = [], &$meta = [])
     return $data;
 }
 
-// gsApiGet knows exactly why a call came back empty - say so in the API log
-// instead of the bare "nothing returned" that covers every failure alike
+// say why a GreySheet call came back empty instead of a bare nothing-returned
 function gs_why(array $meta): string
 {
     $bits = [];
@@ -159,10 +140,7 @@ function gsData($resp): array
 // if no gemini key configured skip
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 
-// asks for a JSON answer, retries on the backup model when busy.
-// $think caps Gemini's internal reasoning tokens.  2.5 Flash deliberates by
-// default and that deliberation IS most of the latency - pick-from-a-list calls
-// run with 0, the listing-writing calls keep a small budget for quality.
+// JSON answer, backup model when busy; $think caps Gemini's reasoning tokens (the latency)
 function geminiJson($system, $user, &$meta = [], int $think = 0)
 {
     // if not key set return error 
@@ -224,10 +202,7 @@ function geminiJson($system, $user, &$meta = [], int $think = 0)
 if (!defined('SBL_GSMEM_TABLE')) { define('SBL_GSMEM_TABLE', 'LSCDEVLIBP.SBLMEMORYT'); }
 
 
-/* =========================================================================
- * Used to fill the SBLMEMORYT with node and coin ids
- * Everything saved in memory from GreySheet is upserted so lookups cost 0 API calls
- * ========================================================================= */
+// ==== memory table seeding (SBLMEMORYT) ====
 
 // format strings to standardized form
 function gsNorm($s): string
@@ -236,9 +211,7 @@ function gsNorm($s): string
     return trim(preg_replace('/\s+/', ' ', strtolower(preg_replace('/[^a-z0-9 ]/i', ' ', (string) $s))));
 }
 
-// rerun db2 connection to ensure valid user to be able to read and write
-// "Austrian" finds Austria and "Thalers" finds Thaler: search on the word's
-// stem so a grammatical ending never breaks the match.  Short words stay whole.
+// stem the search words so Austrian finds Austria and Thalers finds Thaler
 function gsStem(string $w): string
 {
     $n = strlen($w);
@@ -324,10 +297,7 @@ function gsMemNodeChildren(int $parentId): array
                    . " WHERE kind = 'N' AND parent_id = ?", [$parentId]);
 }
 
-/* =========================================================================
- * dropdown menus read memory path 
- * gsMemRoots -> gsMemSeries -> gsMemYears/gsMemCoins
- * ========================================================================= */
+// ==== dropdown menus read the memory path ====
 function gsMemSearch(string $q, int $limit = 40): array
 {
     // Split the search into words - EVERY word must appear somewhere in the coin's name or path.
@@ -352,13 +322,7 @@ function gsMemSearch(string $q, int $limit = 40): array
 }
 
 
-// replace %, _, \, inside of search name strings
-// Closest coins rather than only exact ones.  gsMemSearch demands EVERY word, so
-// "Austria Silver 20 Corona" finds nothing when the catalog calls it "Corona,
-// Gold" under a path that never says Austria.  Here each word that appears scores
-// a point - a word matching the coin's own name counts double, since the path is
-// mostly country and series - and the best scoring coins come back first.
-// Rows scoring one lone word are dropped: one shared word is a coincidence.
+// escape LIKE wildcards; closest coins too, since every-word matching misses catalog wording
 function gsMemBest(string $q, int $limit = 40): array
 {
     $words = array_slice(array_unique(array_filter(explode(' ', gsNorm($q)),
@@ -388,8 +352,7 @@ function gsMemBest(string $q, int $limit = 40): array
     return $out;
 }
 
-// The closest series NODE whose coins memory has not learned yet (done = 'N').
-// Same scoring as gsMemBest; used to decide which series a miss should fetch live.
+// the closest series node memory has not learned yet (done = N), scored like gsMemBest
 function gsMemBestNode(string $q): array
 {
     $words = array_slice(array_unique(array_filter(explode(' ', gsNorm($q)),
@@ -410,9 +373,7 @@ function gsMemBestNode(string $q): array
     return ((int) ($r['hits'] ?? 0) >= 2) ? $r : [];
 }
 
-// A miss teaches the table: fetch the closest unlearned series live and store its
-// coins, exactly as the seeder would have.  One API call per miss, and the node is
-// marked done either way, so the same gap is never fetched twice.
+// a miss learns: fetch the closest unlearned series live, store its coins, mark the node done
 function lccLearnSeries(string $q): int
 {
     $node = gsMemBestNode($q);
@@ -421,10 +382,7 @@ function lccLearnSeries(string $q): int
                            (string) ($node['path'] ?? ''));
 }
 
-// The crude word scores only gather candidates - the agent makes the call.  It
-// knows Thaler and Taler are one coin, Slv means Silver and Austria is not
-// Hungary, so spelling never decides a match.  Returns the 1-based pick, 0 for
-// "none of these is the coin", null when the AI could not answer.
+// word scores only gather candidates - the agent decides the match, spelling never does
 function lccJudge(string $desc, array $facts, array $cands): ?array
 {
     if (!geminiConfigured() || !$cands) { return null; }
@@ -463,17 +421,11 @@ function lcc_fetch_coins(int $nodeId, string $name, string $path): int
     return count($coins);
 }
 
-// The agent walks the catalog tree the way a person would: at each level it sees
-// the branches and the item's own facts, picks where the item belongs, and
-// descends.  Children come from memory when known and from the live API when not,
-// and everything fetched is remembered - each walk makes the next one cheaper.
-// Returns the path of the series it lands on, '' when nothing in the tree fits.
+// the agent walks the catalog tree level by level from the item's own facts
 function lccAiWalk(string $desc, array $facts = []): string
 {
     if ($desc === '' || !geminiConfigured()) { return ''; }
-    // remember only where a walk LANDED.  A failure is never cached: the tree
-    // keeps getting learned and the walker keeps improving, so a description
-    // that found nothing an hour ago deserves a fresh walk now.
+    // cache only where a walk landed - a failure is never cached, so it gets a fresh walk later
     $wk = md5($desc);
     if (!empty($_SESSION['sbl_lcc_walk'][$wk])) { return $_SESSION['sbl_lcc_walk'][$wk]; }
 
@@ -673,8 +625,7 @@ function gsPricing(int $gsId, $grade = null, &$meta = []): array
     $meta = [];
     if ($gsId <= 0) { return []; }
     $params = ['Gsid' => $gsId];
-    // GreySheet takes only the number, so "VG 8" / "XF-40" / "MS65RD" send their
-    // digits - without this the grade was dropped and pricing fell to the lowest row
+    // GreySheet takes only the number: VG 8 / XF-40 / MS65RD send their digits
     if ($grade !== null && preg_match('/(\d{1,2})/', (string) $grade, $gm)) { $params['Grade'] = (int) $gm[1]; }
     $resp  = gsApiGet('GetPricingRequest', $params, $meta);
     // the actual price row is nested one level down, inside PricingData
@@ -691,10 +642,7 @@ function gsPriceNum($v): string
 }
 
 
-/* =========================================================================
- * field normalizers (composition, category date-strip,"90% silver; 10% copper" 
- * becomes the one metal word ("Silver"), mint location, dropdown snapping)
- * ========================================================================= */
+// ==== field normalizers (composition, category, grade) ====
 function sbl_norm_composition(string $c): string
 {
     // Normalize a free-text GreySheet composition (e.g. "99.99% gold" -> "Gold", "Copper-Nickel Clad" stays).
@@ -725,9 +673,7 @@ function sbl_norm_category(string $gs): string
     return $clean !== "" ? $clean : trim($gs);
 }
 
-// Mint mark letter to city ("D" -> "Denver"), only used when GreySheet does
-// not name the mint itself. Dahlonega and Charlotte closed in 1861, so the
-// same D and C mean Denver and Carson City on anything struck later.
+// mint mark letter to city, used only when GreySheet does not name the mint; pre-1862 D and C differ
 function sbl_mint_location(string $mm, string $year = ''): string
 {
     $mm = trim($mm);
@@ -757,11 +703,8 @@ function sbl_snap(string $v, array $opts): string
 }
 
 
-/* =========================================================================
- * the AI writing brief - per-field guides, option lists, prompt spec, response cleanup
- * ========================================================================= */
-// per-field guide: source, allowed options, house examples - drives both the
-// deterministic map and the Gemini prompt; edit this wording to change how the AI writes
+// ==== the AI writing brief: per-field guide, options, prompt ====
+// per-field guide: source, options, examples - drives the map and the Gemini prompt
 function sbl_field_guide(): array
 {
     static $g = null;
@@ -818,13 +761,8 @@ function sbl_field_guide(): array
 }
 
 
-/* =========================================================================
- * GreySheet facts -> product row
- * gsMapToProduct = deterministic mapping, gsAiMap = mapping + Gemini copy,
- * gsListingFill = Gemini gap-fill for the Listing Content boxes only
- * ========================================================================= */
-// deterministic mapping, no AI - the place that decides which fact lands in
-// which box; Gemini only fills the gaps it leaves
+// ==== GreySheet facts to product row: gsMapToProduct, gsAiMap ====
+// deterministic mapping, no AI - decides which fact lands in which box; Gemini fills the gaps
 function gsMapToProduct(array $c): array
 {
     $g = static fn(string $k): string => (isset($c[$k]) && is_scalar($c[$k])) ? trim((string) $c[$k]) : '';
@@ -848,8 +786,7 @@ function gsMapToProduct(array $c): array
         // GreySheet names the mint on most records - that beats reading the letter
         $gsLoc = trim((string) $g('MintLocation'));
         if ($gsLoc !== '') {
-            // "Denver, Colorado" is the house list's "Denver"; anything we do
-            // not recognise is kept the way GreySheet wrote it
+            // Denver, Colorado is the house list's Denver; unknown wording is kept as GreySheet wrote it
             $short = trim(explode(',', $gsLoc)[0]);
             $row['mint_location'] = in_array($short, sbl_field_options('mint_location'), true) ? $short : $gsLoc;
         } else {
@@ -862,17 +799,13 @@ function gsMapToProduct(array $c): array
         if (preg_match('/^\s*\d{4}\s*-?\s*([A-Za-z])\b/', $g('CoinDate'), $m)) { $row['paper_money_series_designation'] = strtoupper($m[1]); }
     }
 
-    // World coins list the spoken face value ("5 Euros") - the short form's
-    // leading S/G/P is a metal prefix ("S€5" = silver €5), not the value.
-    // U.S. coins keep the house short form ("1C", "50C", "$1").
+    // world coins keep the spoken face value (5 Euros); US coins keep the house short form (1C, $1)
     if ($isWorld && $g('DenominationLong') !== '') { $row['denomination'] = $g('DenominationLong'); }
     elseif ($g('DenominationShort') !== '')        { $row['denomination'] = $g('DenominationShort'); }
     if ($g('Variety')  !== '')          { $row['coin_variety_1'] = $g('Variety'); }
     if ($g('Variety2') !== '')          { $row['coin_variety_2'] = $g('Variety2'); }
 
-    // Designation abbreviation; color RD/RB/BN, cameo CAM/DCAM/UCAM, proof-like PL/DMPL, full-detail FB/FBL/FS/5FS/FT/FH.
-    // GreySheet stores THIS in "Other" (e.g. "DCAM","FB","RD","RD DCAM"). 
-    // GreySheet "Desg" is the grade TYPE (MS/PR/SP)
+    // designation abbreviation (RD/RB/BN, CAM/DCAM, PL/DMPL, FB/FS...) - GreySheet keeps it in Other
     if ($g('Other') !== '')             { $row['designation_abbrivation'] = $g('Other'); }
     if ($g('Composition') !== '')       { $row['composition'] = sbl_norm_composition($g('Composition')); }
     if ($g('Fineness')    !== '')       { $row['fineness']    = $g('Fineness'); }
@@ -893,8 +826,7 @@ function gsMapToProduct(array $c): array
               || in_array($gradeType, ['PR', 'PF'], true);
     if ($strike !== '') { $row['strike_type'] = $strike; }
     
-    // Mint State / Proof / Specimen are all uncirculated; circulated coins have
-    // a circulated Desg or none, so leave those for the grade/operator.
+    // Mint State / Proof / Specimen are uncirculated; circulated coins are left to the grade
     if ($isProof || in_array($gradeType, ['MS', 'PR', 'PF', 'SP', 'SMS'], true)) {
         $row['circulated_or_uncirculated'] = 'Uncirculated';
     }
@@ -907,8 +839,7 @@ function gsMapToProduct(array $c): array
     }
 
    if ($gsSeriesName !== '' || $gsPathNodes) {
-        // the series name still guides the coin type guess below, but Non-Coin Type
-        // is an operator-only picker now and nothing fills it
+        // the series name still guides the coin type guess; Non-Coin Type is never filled
         $gsSeries = $gsSeriesName !== '' ? sbl_norm_category($gsSeriesName) : '';
 
         // Country: only the full CatalogPath (when present) can name it directly.
@@ -944,9 +875,7 @@ function gsMapToProduct(array $c): array
     }
 
 
-    // GreySheet provides denomination, composition, fineness and weight with the coin; nothing per-category is stored;
-    // the parent SKU is the series name itself (dates stripped).
-    // Precious-metal content = metal weight x fineness (troy oz), precious metals only.
+    // GreySheet supplies denomination, composition, fineness and weight; nothing per-category is stored
     $fin = (float) preg_replace('/[^0-9.]/', '', $g('Fineness'));
     if (!empty($c['WeightOunces']) && is_numeric($c['WeightOunces']) && $fin > 0 && $fin <= 1) {
         $comp = strtolower($g('Composition'));
@@ -955,12 +884,9 @@ function gsMapToProduct(array $c): array
         }
     }
 
-    // Features 1/2/3/5 are derived by Computer
-    // title_suffix is left blank for the operator's grade/error/packaging notes.)
+    // features 1/2/3/5 come from Computer; title_suffix stays blank for the operator
     $row['exact_image']   = SBL_EXACT_IMAGE_DEFAULT;
-    // Brand from GreySheet's image attribution when it carries one;
-    // Brand stays blank for the operator - the GreySheet image attribution was wrong for it
-    // United States ONLY when the path root is explicitly a U.S. tree; any other/unknown root leaves the country alone 
+    // brand stays blank for the operator; United States only when the path root says so
     if (($row['country_of_manufacture'] ?? '') === '' && preg_match('/^u\.?s\.?\b|united states/', $gsRootName)) {
         $row['country_of_manufacture'] = 'United States';
     }
@@ -1021,8 +947,7 @@ function sbl_field_spec(): string
         if (!empty($gd['const'])) { $line .= '  [default "' . $gd['const'] . '"]'; }
         $opts = sbl_field_options($name);
         if ($opts) {
-            // Big lists (grade, country, designation) would swamp the prompt;
-            // still enforced by snapping, so just point at the list there.
+            // big lists would swamp the prompt - snapping enforces them, so just point at the list
             $line .= count($opts) <= 80
                 ? '  MUST be one of: ' . implode(' | ', $opts)
                 : '  MUST be a valid Sellbrite "' . $label . '" value (snapped to the house list)';
@@ -1137,9 +1062,7 @@ function gsAiMap(array $coin): array
         $want = preg_split('/[^a-z0-9]+/', strtolower($aiV), -1, PREG_SPLIT_NO_EMPTY);
         if (!array_diff($want, $have)) { $row[$vf] = $aiV; }
     }
-    // GreySheet's notes and design text are copyrighted - they never land in
-    // the listing boxes. Expanded Description and the COLLECTOR'S NOTE stay
-    // empty until the Generate-with-AI button writes them in its own words.
+    // GreySheet notes and design text are copyrighted - they never land in the listing boxes
     $row['extended_description'] = '';
     $row['feature_4'] = '';
     // Non-Coin Type is picked by the operator, never by the mapping
@@ -1199,10 +1122,7 @@ function gsListingFill(array $post): array
 }
 
 
-/* =========================================================================
- * ajax entry points (called from _ajax.php)
- * gsSearch / gsImport / gsGenerate / gs_finalize
- * ========================================================================= */
+// ==== ajax entry points (called from _ajax) ====
 
 // free-text coin search for the page
 function gsSearch(string $q): array
@@ -1230,8 +1150,7 @@ function lccLookup(string $sku): array
 
     $desc = trim((string) ($row['item_desc'] ?? ''));
     [$year, $dateMint] = lccDate((string) ($row['item_date'] ?? ''));
-    // LCC's own grade codes are 2 characters and do not match the Sellbrite grade list,
-    // so they ride along as a hint for the operator rather than filling the Grade box
+    // LCC grade codes are 2 characters and do not match the Sellbrite list - a hint, not a fill
     $hint = trim(trim((string) ($row['item_grade'] ?? '')) . ' ' . trim((string) ($row['item_grade2'] ?? '')));
     $note = trim((string) ($row['item_comment'] ?? ''));
     // money and counts come back raw from DB2; blank a zero so it never fills a box
@@ -1240,22 +1159,17 @@ function lccLookup(string $sku): array
     $retail = $money($row['item_retail'] ?? 0);
     $cost   = $money($row['item_cost'] ?? 0);
     $qoh    = $count($row['item_qoh'] ?? 0);
-    // Read the description first: gsMemSearch needs EVERY word to appear, and the
-    // catalog writes "Silver" where the master writes "Slv", so the AI's spelt-out
-    // phrase is the one worth searching. The raw line is only the fallback.
+    // read the description first: the AI's spelt-out phrase is what the catalog can match
     $read   = lccParse($desc, trim((string) ($row['item_grade'] ?? '')));
     $parsed = $read['fields'];
     if ($year !== '')     { $parsed['year'] = $year; }
     if ($dateMint !== '') { $parsed['mint_mark'] = $dateMint; }
-    // the judge and the walk see the raw coin date too - a range like 1922-1925
-    // rules candidates in or out even when no single year exists
+    // the judge and the walk see the raw coin date too - a range rules candidates in or out
     $facts = $parsed;
     $rawItemDate = trim((string) ($row['item_date'] ?? ''));
     if ($rawItemDate !== '') { $facts['lcc_coin_date'] = $rawItemDate; }
 
-    // Cast a wide net: the exact and closest passes only GATHER candidates.  The
-    // words never decide the match - the agent judges the pool, because spelling
-    // and abbreviations differ between the master and the catalog on every coin.
+    // exact and closest passes only gather candidates - the agent judges the pool
     $pool = [];
     $add  = static function (array $rows) use (&$pool) {
         foreach ($rows as $r) { $pool[(int) $r['gs_id']] = $r; }
@@ -1277,30 +1191,24 @@ function lccLookup(string $sku): array
             gsLog('lccJudge picked "' . $one[0]['label'] . '" of ' . count($matches)
                 . ($j['sure'] ? ' (sure)' : ' (closest only)'));
         } elseif ($j !== null && $j['pick'] === 0) {
-            // the agent says none of these IS the coin: try learning and the walk,
-            // but keep the pool - closest suggestions beat an empty screen, they
-            // just never auto-import
+            // the agent says none is the coin: try learning and the walk, but keep the pool as suggestions
             gsLog('lccJudge: none of ' . count($matches) . ' candidates is this coin');
             $rejected = $matches;
             $matches  = [];
         }
     }
-    // Still nothing: memory does not know the series yet.  First the cheap learn -
-    // an unlearned node whose name overlaps the search - then retry the scoring.
+    // still nothing: the cheap learn first - an unlearned node overlapping the search - then rescore
     if (!$matches && lccLearnSeries($read['search'] !== '' ? $read['search'] : $desc) > 0) {
         $matches = $read['search'] !== '' ? gsMemBest($read['search']) : [];
         if (!$matches && $desc !== '') { $matches = gsMemBest($desc); }
     }
-    // Last resort: the agent walks the catalog tree from the SKU's own facts, and
-    // wherever it lands, that series' coins ARE the candidates - narrowed by the
-    // coin date when there is one, no matter how differently LCC words the coin.
+    // last resort: walk the tree from the SKU's facts; the landing series' coins are the candidates
     $via = '';
     if (!$matches) {
         $wpath = lccAiWalk($desc, $facts);
         if ($wpath !== '') {
             $rows = gsMemCoins($wpath, '', $year);
-            // a ranged coin date (1892-1907, 1966-72) is still a filter: keep the
-            // shelf's coins whose own year falls inside it
+            // a ranged coin date (1892-1907) still filters: keep coins whose year falls inside it
             $rawDate = strtoupper(trim((string) ($row['item_date'] ?? '')));
             if (!$rows && $year === '' && preg_match('/^(\d{4})\s*-\s*(\d{2,4})$/', $rawDate, $rm)) {
                 $y1 = (int) $rm[1];
@@ -1312,9 +1220,7 @@ function lccLookup(string $sku): array
                 }
             }
             if (!$rows && $year !== '') {
-                // the shelf is right but no coin there carries this year: the
-                // catalog likely does not hold the coin, so what IS there shows
-                // as suggestions only - no drill, nothing automatic
+                // right shelf, no coin of this year: show what is there as suggestions only, nothing automatic
                 $rows = gsMemCoins($wpath);
                 $via  = 'suggest';
                 gsLog('lccLookup ' . $sku . ': no ' . $year . ' coin under "' . $wpath . '"');
@@ -1323,8 +1229,7 @@ function lccLookup(string $sku): array
                 $matches[] = ['gs_id' => $r['gs_id'], 'label' => $r['label'], 'path' => $wpath,
                               'coin_date' => (string) ($r['coin_date'] ?? '')];
             }
-            // the shelf is right but the exact coin still needs choosing - the
-            // judge puts it first, so the right denomination leads the list
+            // right shelf, coin still to choose: the judge puts the right denomination first
             if ($via === '' && count($matches) > 1) {
                 $j = lccJudge($desc, $facts, $matches);
                 if ($j !== null && $j['pick'] > 0) {
@@ -1338,8 +1243,7 @@ function lccLookup(string $sku): array
             }
         }
     }
-    // nothing certain anywhere: offer the closest candidates as SUGGESTIONS - the
-    // operator picks, nothing fills or imports on its own
+    // nothing certain: offer the closest candidates as suggestions - the operator picks
     if (!$matches && !empty($rejected)) { $matches = $rejected; $via = 'suggest'; }
     gsLog('lccLookup ' . $sku . ' -> ' . count($matches) . ' matches'
         . ($matches ? ' (top: ' . $matches[0]['label'] . ' | ' . $matches[0]['path'] . ')' : ''));
@@ -1358,17 +1262,13 @@ function lccLookup(string $sku): array
 }
 
 
-// the fields an inventory description can honestly support - the rest of the
-// listing still comes from GreySheet, so the AI is never asked to invent them
+// the fields a description can honestly support - the rest still comes from GreySheet
 const LCC_PARSE_FIELDS = ['year', 'coin_type', 'denomination', 'country_of_manufacture',
                           'composition', 'fineness', 'grade', 'mint_mark', 'mint_location',
                           'coin_variety_1', 'coin_variety_2', 'circulated_or_uncirculated',
                           'strike_type', 'single_coin_or_set', 'paper_money_type'];
 
-// IICDAT is free text and holds several shapes: "1868", "1940-S" (year and mint
-// mark), "1863B", "ND(1919)", and ranges like "1892-1907" or "247-145BC".  Only
-// a single issue year may fill the Year box - a range is not a year, so it is
-// left for the operator.  Returns [year, mint mark].
+// IICDAT is free text: 1868, 1940-S, 1863B, ND(1919), ranges - only a single year fills Year
 function lccDate(string $raw): array
 {
     $d = strtoupper(trim($raw));
@@ -1379,22 +1279,17 @@ function lccDate(string $raw): array
     // "1940-S" is a year and a mint mark; "1892-1907" is a range and is not
     if (preg_match('/^(\d{4})-([A-Z]{1,2})$/', $d, $m))  { return [$m[1], $m[2]]; }
     if (preg_match('/^(\d{4})([A-Z])$/', $d, $m))        { return [$m[1], $m[2]]; }
-    // a year followed by variety text ("1878 7TF", "1878 7/8TF") is still a year -
-    // never a range, which the patterns above have already claimed
+    // a year followed by variety text (1878 7TF) is still a year, never a range
     if (preg_match('/^(\d{4})\s+\S/', $d, $m)) { return [$m[1], '']; }
     return ['', ''];
 }
 
-// Grade and Coin Type carry hundreds of options - too many for a prompt, and
-// sending none leaves the AI guessing.  Score them against the words in the
-// description (and the Sheldon code for grade) and show only what could fit.
+// Grade and Coin Type have hundreds of options - score them against the description, send a few
 function lcc_shortlist(string $field, string $desc, string $gradeCode = '', int $cap = 40): array
 {
     $opts = sbl_field_options($field);
     if (count($opts) <= $cap) { return $opts; }
-    // The grade abbreviation sits after a run of spaces at the end. Only Grade
-    // should score against it - otherwise "UNC" drags in every "Uncirculated
-    // Coin Set" and buries the series the description actually names.
+    // the grade code sits after trailing spaces; only Grade scores against it
     $text  = $field === 'grade' ? $desc : preg_split('/\s{2,}/', trim($desc))[0];
     $words = array_filter(preg_split('/[^a-z0-9]+/i', strtolower($text)),
                           static fn($w) => strlen($w) > 2 && !ctype_digit($w));
@@ -1412,10 +1307,7 @@ function lcc_shortlist(string $field, string $desc, string $gradeCode = '', int 
     return array_slice(array_keys($hits), 0, $cap);
 }
 
-// Read an LCC inventory description into form fields.  "1868 Austria Silver 10
-// Kreuzer VG" carries the year, country, metal, denomination and grade; a person
-// reads that at a glance, so the AI does the same rather than a lookup table.
-// The grade code rides along because it is the Sheldon number ("08" = VG-8).
+// read an LCC inventory description into form fields the way a person reads it at a glance
 function lccParse(string $desc, string $gradeCode = ''): array
 {
     $desc = trim($desc);
@@ -1425,8 +1317,7 @@ function lccParse(string $desc, string $gradeCode = ''): array
         return ['fields' => [], 'search' => ''];
     }
 
-    // one AI call per description per session; the master does not change under us.
-    // an entry without 'fields' is from an older session format - re-read it
+    // one AI call per description per session; an entry without fields is an old format - re-read
     $key = md5($desc . '|' . $gradeCode);
     $hit = $_SESSION['sbl_lcc_parse'][$key] ?? null;
     if (is_array($hit) && isset($hit['fields'])) {
@@ -1434,9 +1325,7 @@ function lccParse(string $desc, string $gradeCode = ''): array
         return $hit;
     }
 
-    // Build the field list for THIS description.  The house field guide is written
-    // for the GreySheet import ("from GreySheet CoinDate"), which means nothing when
-    // the source is a line of dealer shorthand, so the guidance is written here.
+    // build the field list for this description - the house guide is worded for GreySheet imports
     $notes = [
         'year'                       => '4-digit issue year',
         'country_of_manufacture'     => 'the country named in the description',
@@ -1468,8 +1357,7 @@ function lccParse(string $desc, string $gradeCode = ''): array
          . 'options. Return ONLY a JSON object keyed by field machine-name.';
     $user = "TARGET FIELDS:\n" . implode("\n", $spec) . "\n\nINVENTORY DESCRIPTION:\n" . $desc;
     if ($gradeCode !== '' && ltrim($gradeCode, '0') !== '') {
-        // 04-70 are Sheldon numbers; anything higher, or with a letter, is an LCC
-        // house condition code, and only the description says what it means
+        // 04-70 are Sheldon numbers; anything higher or lettered is an LCC house code
         $n = ctype_digit($gradeCode) ? (int) $gradeCode : 0;
         $user .= "\n\nGRADE CODE: " . $gradeCode . ($n >= 1 && $n <= 70
                ? ' - the numeric Sheldon grade (08 is VG-8, 40 is XF-40, 65 is MS-65). Use it with '
@@ -1492,8 +1380,7 @@ function lccParse(string $desc, string $gradeCode = ''): array
     }
     // search_phrase is not a form field, so it is read before the schema clean drops it
     $res = ['fields' => $out, 'search' => trim((string) (is_array($ai) ? ($ai['search_phrase'] ?? '') : ''))];
-    // only a real answer is worth keeping - caching an empty one would make a
-    // single failed call permanent for the rest of the session
+    // keep only a real answer - caching an empty one makes one failed call permanent
     if ($out || $res['search'] !== '') { $_SESSION['sbl_lcc_parse'][$key] = $res; }
     gsLog('lccParse "' . $desc . '" -> ' . ($out ? implode(', ', array_keys($out)) : 'no fields')
         . ($res['search'] !== '' ? ' | search "' . $res['search'] . '"' : ''));

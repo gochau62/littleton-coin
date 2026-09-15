@@ -38,7 +38,7 @@
     
     document.title = "Sellbrite Bulk Loader";
 
-    /* ---- message helpers (jQuery-UI state boxes, LCC convention) ---- */
+    // ---- message helpers (jQuery-UI state boxes, LCC convention) ----
     function showErrorMessage(m){ $("#errorMsg").text(m).show(); }
     function hideErrorMessage(){ $("#errorMsg").text('').hide(); }
     function showSuccessMessage(m){ $("#successMsg").text(m).show(); }
@@ -47,16 +47,13 @@
 <?php
 if (file_exists('StartBlockScriptB.php')) { require_once 'StartBlockScriptB.php'; }
 
-// an unsigned visit is about to be refused or bounced to the sign on, so the address asked for is kept in the session first
-// the sign on reads it back and lands the person here instead of on the home page, which is what makes a bookmark straight
-// to this page work even when the sign on itself happens over on index
+// an unsigned visit keeps its address so the sign on lands the person back here, not on home
 if ($user === '') { $_SESSION['return_after_logon'] = $_SERVER['REQUEST_URI'] ?? ''; }
 
 $authorized = "yes";
 if (function_exists('getDB2PConn') && function_exists('chkAutUsr')) {
     if ($user === '') {
-        // nobody signed in: checking an empty profile just prints the framework's
-        // auth-recs error across the page - refuse quietly instead
+        // nobody signed in: checking an empty profile prints the raw auth error - refuse quietly
         $authorized = "no";
     } else {
         $authConn   = getDB2PConn($user, $password);
@@ -110,8 +107,7 @@ if ($authorized != "yes") {
         });
     }
 
-    // any collapsed section that just received a value opens itself - filled
-    // boxes hidden behind a folded section read as "nothing happened"
+    // a collapsed section that just got a value opens itself - hidden fills read as nothing happened
     function sblRevealFilled(){
         $('details.group:not([open])').each(function(){
             var d = this;
@@ -121,12 +117,8 @@ if ($authorized != "yes") {
         });
     }
 
-    /* ---- view switching ---- */
-    // The SKU form needs the whole screen, and the shell's sidebar squeezes it.
-    // Focus mode hides everything that sits BESIDE the loader at each level up
-    // to <body> - whatever the shell calls its menu, it is one of those - and
-    // puts it all back on the way out.  Only elements visible at the moment of
-    // hiding are touched, so popups and menus created later are never caught.
+    // ---- view switching ----
+    // focus mode hides everything beside the loader up to body, and puts it back on the way out
     var sblShellHidden = [];
     function sblShellFocus(on){
         if (on){
@@ -134,9 +126,7 @@ if ($authorized != "yes") {
             var el = document.getElementById('stdPage');
             while (el && el.parentElement && el !== document.body){
                 $(el).siblings(':visible').not('script,style,link').each(function(){
-                    // only in-flow elements squeeze the form; fixed/absolute ones
-                    // are overlays and spinners - transient, and re-showing one on
-                    // the way back would resurrect it stuck
+                    // only in-flow elements squeeze the form; fixed/absolute ones are overlays and stay untouched
                     var pos = window.getComputedStyle(this).position;
                     if (pos === 'fixed' || pos === 'absolute') return;
                     sblShellHidden.push(this);
@@ -166,7 +156,7 @@ if ($authorized != "yes") {
 
     function sblSearch(){ window.location = '?q=' + encodeURIComponent($('#sbl-search').val()); }
 
-    /* ---- new / edit ---- */
+    // ---- new / edit ----
     function sblClearForm(){
         $('#sku-form')[0].reset();
         $('#f_id').val('');
@@ -279,7 +269,7 @@ if ($authorized != "yes") {
         }, 'json');
     }
 
-    /* ---- save / delete (AJAX, no page reload) ---- */
+    // ---- save / delete (AJAX, no page reload) ----
     // form fields + the toolbar marketplace picker
     function sblFormSerialize(){
         return $('#sku-form').serialize() + '&marketplace=' + encodeURIComponent($('#f_marketplace').val() || '');
@@ -342,7 +332,7 @@ if ($authorized != "yes") {
         var tb = document.getElementById('sku-tbody'); if (tb) tb.insertBefore(tr, tb.firstChild);
     }
 
-    /* ---- coin finder: memory dropdown -> API auto-fill ---- */
+    // ---- coin finder: memory dropdown -> API auto-fill ----
     function sblEsc(s){ return $('<div>').text(s == null ? '' : s).html().replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
     // grid text cuts at a hard length so one long title can never stretch a row
@@ -365,8 +355,7 @@ if ($authorized != "yes") {
     var SBL_CUSTOM_FIELDS = <?php echo json_encode(array_column(Schema::customFields(), 'name')); ?>;
     // GreySheet's standardized wording beats the AS400 text for these two
     var SBL_GS_OVERRIDES = ['coin_variety_1', 'coin_variety_2'];
-    // only these carry real GreySheet DATA - the rest of an import (packaging
-    // math, house feature texts, Exact Image) is formula work and gets no tag
+    // only these carry real GreySheet data - formula work (packaging, feature texts) gets no tag
     var SBL_GS_DATA = ['coin_type','year','mint_mark','mint_location','denomination',
         'coin_variety_1','coin_variety_2','designation_abbrivation','strike_type',
         'circulated_or_uncirculated','composition','fineness','diameter','weight',
@@ -378,8 +367,7 @@ if ($authorized != "yes") {
         $.each(row || {}, function(k,v){
             var el = document.getElementById('f_' + k);
 
-            // anything already filled is left alone - typed, LCC or a previous
-            // import - except the varieties, where GreySheet's wording wins
+            // anything already filled is left alone, except the varieties where GreySheet wording wins
             if (el && String(el.value || '').trim() !== ''
                 && (SBL_GS_OVERRIDES.indexOf(k) < 0 || v === null || v === '')) return;
             if (el && v !== null && v !== '') {
@@ -394,8 +382,7 @@ if ($authorized != "yes") {
                 if (SBL_GS_OVERRIDES.indexOf(k) >= 0 && xl){
                     var xb = xl.querySelector('.badge.lcc'); if (xb) xb.remove();
                 }
-                // the blue GREY tag lands as the box is filled - but only on real
-                // GreySheet data, never on the formula-computed boxes
+                // the blue GREY tag lands as the box fills - real GreySheet data only, never formula boxes
                 if (xl && SBL_GS_DATA.indexOf(k) >= 0
                     && !xl.querySelector('.badge.auto') && !xl.querySelector('.badge.lcc') && !xl.querySelector('.badge.gsauto')){
                     var gb = document.createElement('span'); gb.className = 'badge gsauto'; gb.textContent = 'GREY';
@@ -415,7 +402,7 @@ if ($authorized != "yes") {
         sblRecompute();
     }
 
-    /* ---- dynamic Year dropdown: only the years the series exists for ---- */
+    // ---- dynamic Year dropdown: only the years the series exists for ----
     function sblYearApply(years, keep){
         var cur = (keep !== undefined && keep !== null && keep !== '') ? keep : $('#f_year').val();
         if (!years || !years.length){
@@ -446,7 +433,7 @@ if ($authorized != "yes") {
         sblFieldVisibility();
     });
 
-    /* ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ---- */
+    // ---- drill-down: Tree -> Series -> Year -> Coin -> Autofill ----
     var sblRootPath = '', sblCurPath = '', sblCurYear = '', sblPendingGsId = 0;
 
     // store categories never carry dates - strip "(2022-2025)" style ranges
@@ -511,8 +498,7 @@ if ($authorized != "yes") {
                 var el = document.querySelector('#sku-form [data-name="' + n + '"]');
                 if (!el) return;
                 var f = el.closest('.field');
-                // a box holding a value stays visible no matter the category rules -
-                // hiding filled data reads as "autofill did nothing"
+                // a box holding a value stays visible whatever the category rules say
                 if (f) f.style.display = (show[group] || String(el.value || '').trim() !== '') ? '' : 'none';
             });
         });
@@ -525,8 +511,7 @@ if ($authorized != "yes") {
         }
     }
 
-    // path-derived fills (country, category) carry the GREY tag too - the
-    // value comes off GreySheet's catalog path, not a formula
+    // path-derived fills carry the GREY tag too - the value comes off the catalog path
     function sblTagGrey(name){
         var el = document.querySelector('#sku-form [data-name="' + name + '"]');
         if (!el || String(el.value || '').trim() === '') return;
@@ -538,8 +523,7 @@ if ($authorized != "yes") {
         if (f) f.classList.add('is-gsauto');
     }
 
-    // tags are never painted in advance - the GREY badge lands on a box the
-    // moment GreySheet actually fills it (sblFillFromRow); this only clears
+    // tags are never painted in advance - the GREY badge lands as GreySheet fills; this only clears
     function sblMarkGsFields(on){
         if (on) return;
         $('#sku-form .badge.gsauto').remove();
@@ -604,8 +588,7 @@ if ($authorized != "yes") {
                 sblCurPath = ui.item.path || '';
                 $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
                 
-                // Non-Coin Type is never filled from a pick - the series only drives
-                // the year list and the section rules below
+                // Non-Coin Type is never filled from a pick - the series only drives the year list and sections
                 sblFieldVisibility();
                 
                  // country from the memory path: world = 2nd node, U.S. = United States
@@ -648,8 +631,7 @@ if ($authorized != "yes") {
         sblBarsRecord('');   // no coin picked any more
     }
 
-    // the finder-bar state rides along in hidden form fields, so Save keeps it
-    // and Edit puts both bars back the way they were
+    // the finder-bar state rides in hidden fields, so Save keeps it and Edit restores both bars
     function sblBarsRecord(label){
         $('#f_gs_gsid').val(sblPendingGsId || '');
         $('#f_gs_coin').val(sblPendingGsId ? (label || '') : '');
@@ -681,8 +663,7 @@ if ($authorized != "yes") {
         });
     }
 
-    /* Level 4 - coins under the series (optionally one year). Labels are trimmed
-       to just the distinguishing part. Opens on focus. 0 API calls. */
+    // level 4: coins under the series, labels trimmed to what differs, opens on focus
     function sblCoinAutocomplete(){
         $('#gs-coin').autocomplete({
             minLength: 0, delay: 200,
@@ -698,8 +679,7 @@ if ($authorized != "yes") {
                 if (!sblCurPath){ resp([]); return; }
                 $.post('SellbriteBulkLoader_ajax.php',
                     { action:'gsCoins', path:sblCurPath, year:sblCurYear, q:req.term }, function(res){
-                    // Late answer after the user already picked - swallow it
-                    // so the menu doesn't pop back open.
+                    // a late answer after the pick is swallowed so the menu does not pop back open
                     if ($('#gs-coin').data('sblPicked')){ resp([]); return; }
                     var items = $.map(res.matches || [], function(c){
                         return { label: c.label, value: c.label, gs_id: c.gs_id };
@@ -724,10 +704,7 @@ if ($authorized != "yes") {
         $('#gs-coin').on('input mousedown', function(){ $(this).data('sblPicked', 0); });
     }
 
-    /* The valid-value form fields (Grade, Brand, Designation...) use the same
-       compact jQuery UI menu as Series/Coin instead of the browser's native
-       datalist popup (which can't be styled and renders huge). The operator
-       can still type any value manually - the list is only suggestions. */
+    // valid-value boxes use the same compact jQuery UI menu as Series/Coin; typing stays free
     function sblFieldCombos(){
         $('#sku-form input[list]').each(function(){
             var inp = $(this), dl = document.getElementById(inp.attr('list'));
@@ -739,25 +716,20 @@ if ($authorized != "yes") {
                 source: function(req, resp){
                     var t = (req.term || '').toLowerCase();
                     var pool = opts;
-                    // Coin Type pools by the drill-down tree: U.S. Coins vs
-                    // U.S. Currency vs World Coins vs World Currency. No tree
-                    // picked (manual SKU) = the full list.
+                    // Coin Type pools by tree (US/World x Coins/Currency); no tree picked = the full list
                     if (inp.attr('name') === 'coin_type' && typeof SBL_COINTYPE_POOLS !== 'undefined' && sblRootPath){
                         var world = /world/i.test(sblRootPath);
                         var curr  = /currency/i.test(sblRootPath);
                         var tp = SBL_COINTYPE_POOLS[(world ? 'world' : 'us') + '_' + (curr ? 'currency' : 'coins')];
                         if (tp && tp.length) pool = tp;
                     }
-                    // Country pools by the tree: U.S. trees are United States;
-                    // World trees offer the world countries (the DB2 path
-                    // usually fills it before the menu is even needed).
+                    // Country pools by tree: US trees are United States, World trees offer the world countries
                     if (inp.attr('name') === 'country_of_manufacture' && sblRootPath){
                         pool = /world/i.test(sblRootPath)
                             ? $.grep(opts, function(v){ return v !== 'United States'; })
                             : ['United States'];
                     }
-                    // Grade offers only what fits: paper grades for paper money,
-                    // coin grades for everything else (certified + raw merged).
+                    // Grade offers only what fits: paper grades for paper money, coin grades for the rest
                     if (inp.attr('name') === 'grade' && typeof SBL_GRADE_POOLS !== 'undefined'){
                         var cat = (($('#f_category_name').val() || '') + ' ' + ($('#f_paper_money_type').val() || '')
                                    + ' ' + sblCurPath + ' ' + sblRootPath).toLowerCase();
@@ -792,13 +764,10 @@ if ($authorized != "yes") {
         sblBarsRecord('');
     }
 
-    /* ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ---- */
+    // ---- LCC SKU lookup: find the coin in our own inventory, then hand it to the coin box ----
     var sblLccMatches = [], sblLccData = null, sblLccFields = {}, sblLccSku = '', sblLccRoot = '';
 
-    /* The item master fills EMPTY boxes only - it never edits the LCC SKU box,
-       never touches the PCC SKU, and never overwrites anything already typed or
-       filled by GreySheet. Runs once at lookup and again after Autofill, since
-       Autofill clears the form and GreySheet may leave these blank. */
+    // the item master fills empty boxes only and never overwrites typed or GreySheet values
     function sblLccApply(){
         if (!sblLccData) return;
         var fill = { sku:                sblLccData.sku,                // ITEM_SKU
@@ -831,7 +800,7 @@ if ($authorized != "yes") {
         sblSkuMatch();
     }
 
-    /* ---- Title Suffix: picks drop below as tags, joined into the one export column ---- */
+    // ---- Title Suffix: picks drop below as tags, joined into the one export column ----
 
     var sblTsVals = [];
 
@@ -935,9 +904,7 @@ if ($authorized != "yes") {
         $('#lcc-sku').on('input', function(){ $(this).data('sblPicked', 0); sblSkuMatch(); });
         $('#f_sku').on('input', sblSkuMatch);
 
-        // clicking or tabbing into the box opens the list, empty or not.
-        // click, not mousedown - the widget closes the menu on a document
-        // mousedown, which would shut a menu opened in the same event.
+        // click or tab into the box opens the list; click not mousedown, which the widget closes on
         $('#lcc-sku').on('click focus', function(){
             var $i = $(this);
             if ($i.autocomplete('widget').is(':visible')) return;
@@ -946,10 +913,7 @@ if ($authorized != "yes") {
         });
     }
 
-    // Walk the GreySheet drill-down to where the matched coin lives, so the
-    // operator is not left to find the tree, series and year by hand.  Skipped
-    // when a series is already picked, and the form boxes (category, country)
-    // fill only when empty - nothing the LCC item set is overwritten.
+    // walk the drill-down to the matched coin; skipped when a series is already picked
     function sblLccDrill(m){
         var path = m.path || '';
         if (!path || String($('#gs-series').val() || '').trim() !== '') return;
@@ -985,8 +949,7 @@ if ($authorized != "yes") {
         sblMarketApply();
     }
 
-    // the LCC Item card on the right: every value the SKU lookup returned,
-    // labeled, always on screen - the retail is reference only, never a fill
+    // the LCC Item card: every value the lookup returned, always on screen, reference only
     function sblLccCard(it){
         var box = $('#lcc-card-body').empty();
         function row(lbl, v){
@@ -1027,8 +990,7 @@ if ($authorized != "yes") {
         }
     }
 
-    // the item master's record, word for word, beside the SKU box - what the coin
-    // originally was, for review against whatever GreySheet fills in
+    // the item master's record word for word beside the SKU box, for review against GreySheet
     function sblLccShowItem(it){
         var el = $('#lcc-item-info').empty();
         if (!it || !it.description) return;
@@ -1046,17 +1008,14 @@ if ($authorized != "yes") {
         sblLccMatches = []; sblLccData = null; sblLccFields = {};
         $('#lcc-item-info').empty();
         if (!sku) return;
-        // a DIFFERENT SKU is a new entry: the form clears first, so the lookup
-        // and the Autofill after it land on clean boxes and nothing from the
-        // last coin bleeds in.  The same SKU again keeps the work so far.
+        // a different SKU is a new entry: the form clears first; the same SKU keeps the work so far
         if (sku !== sblLccSku){
             var id = $('#f_id').val();
             sblClearForm();
             if (id) { $('#f_id').val(id); }
             $('#lcc-sku').val(sku);   // the reset empties the box; the lookup keeps its SKU
         }
-        // the agent can spend 20-60s thinking (parse, judge, tree walk) - say so,
-        // and say when the server itself failed, instead of looking frozen
+        // the agent can think 20-60s - say so, and say when the server failed, not look frozen
         $('#lcc-item-info').text('Looking up ' + sku + '\u2026');
         $('#f_lcc_sku').val(sku);   // the Item-by-SKU bar saves with the row
         $.post('SellbriteBulkLoader_ajax.php', { action:'lccLookup', sku:sku }, function(res){
@@ -1069,13 +1028,11 @@ if ($authorized != "yes") {
             sblRevealFilled();
             sblRecompute();
             if (!sblLccMatches.length) return;
-            // suggestions fill the drill-down too - the operator sees the shelf
-            // the candidates came from; only the auto-import stays off for them
+            // suggestions fill the drill-down too so the operator sees the shelf; auto-import stays off
             sblLccDrill(sblLccMatches[0]);
             $('#gs-coin').prop('disabled', false).data('sblPicked', 0).val('');
             if ((sblLccMatches.length === 1 || res.picked) && res.via !== 'suggest'){
-                // one coin fits, or the judge named one: pick it and light up
-                // Autofill - the operator always presses it, nothing runs itself
+                // one coin fits or the judge named one: pick it and light up Autofill - the operator presses it
                 var m0 = sblLccMatches[0];
                 sblPendingGsId = m0.gs_id;
                 $('#gs-coin').data('sblPicked', 1).val(m0.label);
@@ -1096,8 +1053,7 @@ if ($authorized != "yes") {
     // Autofill: pull collectible + pricing from GreySheet and fill the form
     function sblGsAutofill(){
         if (!sblPendingGsId) return;
-        // Autofill ADDS, it never removes: anything already in a box stays put,
-        // so an LCC lookup or a typed correction survives the import.
+        // Autofill adds, never removes: anything already in a box stays put
         var grade = $('#f_grade').val() || '';
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
@@ -1115,8 +1071,7 @@ if ($authorized != "yes") {
         $('#gs-raw').text(raw ? JSON.stringify(raw, null, 2) : 'No data returned.');
     }
 
-    // the reference card: GreySheet's key facts and copyrighted text, there to
-    // read while writing your own copy - none of it enters the listing itself
+    // the reference card: GreySheet facts and copyrighted text to read from - none enters the listing
     function sblRenderGsRef(raw){
         var c = raw && raw.collectible ? raw.collectible : {};
         var box = $('#gsref-body').empty();
@@ -1194,8 +1149,7 @@ if ($authorized != "yes") {
     }
 
     function sblGsHandle(res, hint){
-        // no catalog entry: say so and stop. The AI is not asked to invent a
-        // listing for a coin nothing has been read about.
+        // no catalog entry: say so and stop - the AI is not asked to invent a listing
         if (res.returnClass === 'notfound'){
             swal("GreySheet doesn't have this coin", 'Fill the listing in by hand.', 'info');
             return;
@@ -1207,7 +1161,7 @@ if ($authorized != "yes") {
                type: res.returnClass === 'success' ? 'success' : 'warning', timer:1800, showConfirmButton:false });
     }
 
-    /* ---- live recompute (mirrors the spreadsheet formulas) ---- */
+    // ---- live recompute (mirrors the spreadsheet formulas) ----
     function sblRecompute(){
         var data = sblFormSerialize() + '&action=compute';
         $.post('SellbriteBulkLoader_ajax.php', data, function(res){
@@ -1254,7 +1208,7 @@ if ($authorized != "yes") {
         if (!any) $('<li>').addClass('ok').text('All checks passed.').appendTo(list);
     }
 
-    /* ---- document ready: spinner + live recompute binding ---- */
+    // ---- document ready: spinner + live recompute binding ----
     var sblTimer = null;
     jQuery(document).ready(function(){
         $('#sbl-spinner').ajaxStart(function(){ $(this).addClass('progress'); })

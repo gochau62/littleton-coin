@@ -33,8 +33,7 @@ function dspBulkLoader(&$screenData)
     // One form control.
     $renderField = function (array $col) use ($textareas): string {
         $name = $col['name']; $auto = !empty($col['auto']); $req = !empty($col['required']);
-        // no formula badge any more - tags are only the green LCC / blue GREY
-        // source marks that land when a box is filled
+        // no formula badge - only the green LCC / blue GREY source tags that land as a box fills
         $badge = false;
         $opts = Schema::optionsFor($col);
         $cls = 'field' . ($badge ? ' is-auto' : '');
@@ -91,10 +90,9 @@ function dspBulkLoader(&$screenData)
 ?>
 
 <style>
-/* ----- modern neutral work area, one green accent (shell header/footer come from LCC) ----- */
+/* modern neutral work area, one green accent (shell header/footer come from LCC) */
 #stdPage { background:#f8f8f8; padding:20px 28px 32px; font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif; color:#344054; position:relative; }
-/* the time-payment header, same colors and sizes as that screen - only the
-   title sits centered instead of left */
+/* the time-payment header, same colors and sizes; only the title sits centered */
 .sbl-topbar { display:flex; align-items:center; background:#1C4532; color:#fff;
               padding:.6rem 1.25rem; margin:-20px -28px 18px; position:relative; }
 .sbl-topbar h1 { font-size:1.15rem; font-weight:600; color:#fff; margin:0; flex:1; text-align:center; }
@@ -113,8 +111,7 @@ function dspBulkLoader(&$screenData)
 .gs-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:#fff;
           border:1px solid #e4e7ec; border-radius:10px; padding:10px 14px; margin-bottom:16px;
           box-shadow:0 1px 3px rgba(16,24,40,.06); }
-/* LCC item bar: the SKU shortcut above the GreySheet finder. Start from
-   the coin's own tag and the finder fills itself in; skip it and nothing changes. */
+/* LCC item bar: the SKU shortcut above the GreySheet finder */
 .lcc-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff;
            border:1px solid #e4e7ec; border-radius:10px;
            padding:10px 14px; margin-bottom:10px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
@@ -127,8 +124,7 @@ function dspBulkLoader(&$screenData)
                  color:#1e6e43; white-space:nowrap; margin-right:2px; }
 .lcc-bar .lcc-grow { flex:0 0 300px; width:300px; min-width:0; }
 
-/* same caret the valid-value combos use, so the box reads as a menu.
-   background-image only - the shorthand would erase it on focus. */
+/* same caret the valid-value combos use, so the box reads as a menu */
 .lcc-bar input.has-menu { padding-right:34px;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23667085'/%3E%3C/svg%3E");
     background-repeat:no-repeat; background-position:right 14px center; }
@@ -185,8 +181,7 @@ function dspBulkLoader(&$screenData)
 .btn-grey { background:#fff; color:#475467; border:1px solid #d0d5dd; } .btn-grey:hover { background:#f8f8f8; color:#101828; }
 
 
-/* table - plain and simple; the hard character cut on the title is what
-   keeps the rows short */
+/* table: plain and simple; the hard character cut keeps the rows short */
 .table-card { background:#fff; border:1px solid #e4e7ec; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,.06); }
 table.grid { width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
 .grid thead th { text-align:left; padding:11px 14px; font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; color:#475467; background:#f2f7f3; border-bottom:1px solid #e4e7ec; }
@@ -251,8 +246,7 @@ details.group summary::-webkit-details-marker { display:none; }
 .field.is-action input,.field.is-action select,.field.is-action textarea { border-color:#f0a71b; background-color:#fffaf0; } .field.is-action .field-msg { color:#93540b; }
 .field[data-field="name"],.field[data-field="description"],.field[data-field="search_terms"],.field[data-field="extended_description"],.field[data-field="condition_note"] { grid-column:1 / -1; }
 .preview-col { display:flex; flex-direction:column; gap:14px; }
-/* the Reference card: read-only source records, LCC green and GreySheet blue.
-   Compact rows; long passages clamp to two lines and open on a click. */
+/* the Reference card: read-only source records, LCC green and GreySheet blue */
 .gsref { font-size:11.5px; color:#475467; line-height:1.45; max-height:240px; overflow:auto; }
 .gsref .gsref-row { margin-bottom:2px; }
 .gsref b { color:#344054; font-weight:600; }
@@ -457,8 +451,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     echo '<details class="card group"' . (!empty($sec['open']) ? ' open' : '')
                        . (!empty($sec['id']) ? ' id="' . sbl_e($sec['id']) . '"' : '') . '>';
                     echo '<summary>' . sbl_e($title) . '</summary>';
-                    // no AI copy button - written listing text is a copyright risk,
-                    // so the wording is Des's sheet and the operator's
+                    // no AI copy button - written listing text is a copyright risk
                     echo '<div class="field-grid">';
                     $manual = !empty($sec['id']) && $sec['id'] === 'other-products-sec';   // GreySheet has nothing for these
                     // computed fields keep updating live even though required
@@ -506,7 +499,7 @@ details.group summary::-webkit-details-marker { display:none; }
                     <div><span class="pv-price" id="pv-price"></span><span class="pv-qty" id="pv-qty"></span></div>
                     <p class="pv-desc" id="pv-desc"></p>
                 </div>
-                <?php if (true) { /* the API-call log + raw GreySheet panel; false hides them for testing */ ?>
+                <?php if (true) { // the API-call log + raw GreySheet panel; false hides them for testing ?>
                 <div class="card apilog"><h3>API calls <span id="gs-total" class="gs-total"><?php
                     $__calls = (int) ($_SESSION['gs_api_calls'] ?? 0);
                     if ($__calls > 0) { echo '&middot; ' . number_format($__calls) . ' used this session'; }

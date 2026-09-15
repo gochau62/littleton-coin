@@ -16,8 +16,7 @@
 <!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 
-// DB2 data-access layer for the SBLPRODUCT table (list / find / save / delete)
-// blanks and "***" hints coerce to NULL; DB errors log and return false/[] so AJAX still answers
+// DB2 access for SBLPRODUCT; blanks coerce to NULL, DB errors log and return false so AJAX still answers
 require_once __DIR__ . '/SellbriteBulkLoader_logic.php';   // Schema (column list)
 
 if (!defined('SBL_TABLE')) {
@@ -232,9 +231,9 @@ function sbl_select($sql, array $params = [])
     return $rows;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Public API (called by SellbriteBulkLoader_ajax.php / _ctl.php)     */
-/* ------------------------------------------------------------------ */
+// 
+// Public API (called by SellbriteBulkLoader_ajax.php / _ctl.php)
+// 
 
 // list rows for the grid, optional search filter
 function sblGetAll($q = '')
@@ -258,8 +257,7 @@ function sblGetAll($q = '')
     return sbl_select($sql, $params);
 }
 
-// run the item master procedure; false when the call itself fails (not created, wrong
-// signature, no authority), [] when it ran and matched nothing - the caller needs both
+// run the item master procedure; false when the call fails, [] when it ran and matched nothing
 function sbl_lcc_call($type, $key)
 {
     $conn = sbl_conn();
@@ -286,8 +284,7 @@ function sblLccItem($sku)
 // PROGRAM NAME SBLITEM001S type SEARCH: item numbers starting with what has been typed, for the SKU box menu
 function sblLccSearch($prefix)
 {
-    // an empty prefix is allowed: the procedure's LIKE '%' lists the first items,
-    // which is what the box shows when it is clicked before anything is typed
+    // an empty prefix is allowed: the LIKE '%' lists the first items when the box is clicked empty
     $rows = sbl_lcc_call('SEARCH', strtoupper(trim((string) $prefix)));
     return $rows === false ? false : $rows;
 }

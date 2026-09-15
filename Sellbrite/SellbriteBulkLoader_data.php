@@ -16,9 +16,7 @@
 <!--  * Project   - 260064                              *  -->
 <!--  ***************************************************   */
 
-// 'values' = dropdown valid values, 'schema' = one row per Sellbrite column,
-// 'lookups' = packaging weights, 'category_copy' = Des's listing copy per store category
-// everything per-coin (denomination, composition, weight, country...) comes from GreySheet / the path, never from here
+// 'values' dropdowns, 'schema' one row per column, 'lookups' weights, 'category_copy' Des's copy
 return [
     'values' => [
         // designation abbreviations (RD, DCAM, FB...) from the Valid Values tab
@@ -406,8 +404,7 @@ return [
             ],
         ],
     ],
-    // Des's per-category listing copy (SellbriteBulkNew.ods VLOOKUP sheet);
-    // the Extended Description fills from these, admin overrides win
+    // Des's per-category copy from the ODS VLOOKUP sheet; fills Extended Description, overrides win
     'category_copy' => [
         'Draped Bust Half Cent' => ['copy' => 'Struck over 200 years ago, this scarce copper half cent bears Robert Scot\'s classic Draped Bust design. The obverse shows Liberty with a ribbon in her flowing hair and a plunging neckline draped with linen. The reverse bears UNITED STATES OF AMERICA and the fraction 1/200 beneath a laurel wreath and HALF CENT.',
             'alt1' => '', 'alt2' => ''],
