@@ -75,6 +75,13 @@ SELECT TPITEM, TPSRCD, TPPLAN, TPEXDATE
  WHERE TPITEM IN ('1638.60', '1738.40')
  ORDER BY TPITEM, TPSRCD;
 
+-- 6a. everything the Holiday Gift upload put on file under the GIO source
+--     code, sorted so the two decimal skus show up together if present
+SELECT TPITEM, TPSRCD, TPPLAN, TPEXDATE
+  FROM LSCPRDLIB.TPITEMSP
+ WHERE TPSRCD = 'GIO'
+ ORDER BY TPITEM;
+
 -- 7. the one case the upload cannot tell apart: an all-digit sku with a
 --    one digit extension AND its two digit twin both on the master, so a
 --    number cell holding the twin lands on the one digit item instead.
