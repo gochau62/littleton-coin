@@ -604,13 +604,9 @@ if ($authorized != "yes") {
                 sblCurPath = ui.item.path || '';
                 $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
                 
-                // strip date ranges from the series name right at pick time
-                var cat = sblCleanCategory(ui.item.value);
-                var cel = document.getElementById('f_category_name');
-                if (cel && cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(cat) + '"]')){
-                    var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
-                }
-                $('#f_category_name').val(cat).trigger('change');
+                // Non-Coin Type is never filled from a pick - the series only drives
+                // the year list and the section rules below
+                sblFieldVisibility();
                 
                  // country from the memory path: world = 2nd node, U.S. = United States
                 var seg = (sblCurPath || '').split(' > ');
@@ -814,7 +810,7 @@ if ($authorized != "yes") {
                      quantity:           sblLccData.quantity };         // IIQTOH - Retail stays blank for the operator
         sblLccCard(sblLccData);
         // whatever the AI read out of the inventory description, under the same rule
-        $.each(sblLccFields || {}, function(name, val){ if (!fill[name]) fill[name] = val; });
+        $.each(sblLccFields || {}, function(name, val){ if (!fill[name] && name !== 'category_name') fill[name] = val; });
         $.each(fill, function(name, val){
             if (!val) return;
             var el = document.getElementById('f_' + name);
@@ -971,14 +967,6 @@ if ($authorized != "yes") {
         $('#gs-series').prop('disabled', false)
                        .data('sblPicked', 1)
                        .val(seg[seg.length - 1] || '');
-        var cat = sblCleanCategory(seg[seg.length - 1] || '');
-        var cel = document.getElementById('f_category_name');
-        if (cat && cel && String(cel.value || '').trim() === ''){
-            if (cel.tagName === 'SELECT' && !cel.querySelector('option[value="' + CSS.escape(cat) + '"]')){
-                var co = document.createElement('option'); co.value = co.textContent = cat; cel.appendChild(co);
-            }
-            $('#f_category_name').val(cat).trigger('change');
-        }
 
         // country from the path, into an empty box only
         var country = '';
