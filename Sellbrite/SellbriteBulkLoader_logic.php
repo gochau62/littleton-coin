@@ -327,21 +327,24 @@ final class Computer
             if ($txt !== '') { $row['extended_description'] = $txt; }
         }
 
-        // Search Terms are Amazon-specific: only auto-build when amazon
+        // Search Terms are Amazon-specific, and a formula column: rebuilt every
+        // pass from what is on the form now, so a changed coin type or year
+        // changes the terms instead of leaving the first answer standing
         $mkt = strtolower($g('marketplace'));
         if ($mkt === '' || $mkt === 'all' || $mkt === 'amazon') {
-            $row['search_terms'] = self::lookupValue($meta['search_terms'] ?? '', $g('search_terms'));
-            // Deterministic fallback so search terms always fill (even if the AI didn't).
-            if (trim((string) $row['search_terms']) === '') {
-                $words = [];
-                foreach ([$g('coin_type'), $g('composition'),
-                          $g('denomination'), 'coin', 'numismatics', 'collectible'] as $src) {
-                    foreach (preg_split('/[^a-z0-9]+/', strtolower(trim((string) $src))) as $w) {
-                        if ($w !== '' && !in_array($w, $words, true)) { $words[] = $w; }
-                    }
+            $words = [];
+            foreach ([$g('year'), $g('mint_mark') !== 'No Mint Mark' ? $g('mint_mark') : '',
+                      $g('coin_type'), $g('coin_variety_1'), $g('denomination'), $g('composition'),
+                      $g('grade'), $g('certification') !== 'Uncertified' ? $g('certification') : '',
+                      'coin', 'numismatics', 'collectible'] as $src) {
+                foreach (preg_split('/[^a-z0-9]+/', strtolower(trim((string) $src))) as $w) {
+                    if ($w !== '' && !in_array($w, $words, true)) { $words[] = $w; }
                 }
-                $row['search_terms'] = implode(' ', $words);
             }
+            $row['search_terms'] = implode(' ', $words);
+        } else {
+            // an eBay or Walmart row carries none
+            $row['search_terms'] = '';
         }
 
         // Mint location follows the mint mark, so a mark typed or changed by hand
