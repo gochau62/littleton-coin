@@ -30,7 +30,9 @@ if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    200); }
 
 // gemini 2.5 flash model current usage for free testing
 if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
-if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-2.5-flash'); }
+if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-3.5-flash-lite'); }
+// used once when the key cannot see the model above (HTTP 404)
+if (!defined('GEMINI_MODEL_FALLBACK')) { define('GEMINI_MODEL_FALLBACK', 'gemini-2.5-flash-lite'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
@@ -140,15 +142,26 @@ function gsData($resp): array
 // if no gemini key configured skip
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 
-// JSON answer, backup model when busy; $think caps Gemini's reasoning tokens (the latency)
+// JSON answer; $think caps Gemini's reasoning tokens - 0 for these lookups, they are not reasoning jobs
 function geminiJson($system, $user, &$meta = [], int $think = 0)
+{
+    $data = geminiCall(GEMINI_MODEL, $system, $user, $meta, $think);
+    // a key that cannot see the model gets one retry on the older tier
+    if ($data === null && $meta['status'] === 404 && GEMINI_MODEL_FALLBACK !== GEMINI_MODEL) {
+        gsLog('gemini ' . GEMINI_MODEL . ' not available - retrying on ' . GEMINI_MODEL_FALLBACK);
+        $data = geminiCall(GEMINI_MODEL_FALLBACK, $system, $user, $meta, $think);
+    }
+    return $data;
+}
+
+// one generateContent call to a named model
+function geminiCall(string $model, $system, $user, &$meta, int $think)
 {
     // if not key set return error 
     $meta = ['status' => 0, 'error' => '', 'tokens' => 0, 'ms' => 0];
     if (!geminiConfigured()) { $meta['error'] = 'GEMINI_API_KEY not set'; return null; }
 
-    // The generateContent gemini endpoint, free gemini 2.5 flash model usage
-    $url  = rtrim(GEMINI_BASE, '/') . '/models/' . rawurlencode(GEMINI_MODEL) . ':generateContent';
+    $url  = rtrim(GEMINI_BASE, '/') . '/models/' . rawurlencode($model) . ':generateContent';
 
     // request using system instructions, user input, and the settings
     $body = json_encode([
@@ -1050,7 +1063,7 @@ function gsAiMap(array $coin): array
           . json_encode(gs_coin_facts($coin), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT)
           . ($ctOpts ? "\n\nCOIN TYPE OPTIONS (pick ONE exactly, or leave coin_type empty):\n" . implode(' | ', $ctOpts) : '');
     // Ask Gemini; keep only real schema fields from the answer.
-    $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 512));
+    $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 0));
     $row = $base;
     foreach ($ai as $k => $v) { if ($v !== '' && ($base[$k] ?? '') === '') { $row[$k] = $v; } }
     // The guard only accepts words already in the original, so the AI can remove but never invent.
@@ -1112,7 +1125,7 @@ function gsListingFill(array $post): array
         $user = "FIELDS TO WRITE (only these):\n" . $spec
               . "\nPRODUCT FACTS (from the entry form):\n"
               . json_encode($facts, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-        $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 512));
+        $ai = sbl_clean_ai_row(geminiJson($sys, $user, $m, 0));
         foreach ($want as $f) {
             if (trim((string) ($ai[$f] ?? '')) !== '') { $row[$f] = trim((string) $ai[$f]); }
         }
@@ -1490,7 +1503,7 @@ function gsGenerate(array $params): array
          . '"options:", use one of those exact options. Write accurate professional copy for description, '
          . 'features and search terms. Leave uncertain facts empty rather than guessing. '
          . 'Return ONLY a JSON object keyed by field machine-name.';
-    $row = sbl_clean_ai_row(geminiJson($sys, "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nCOIN TO LIST:\n" . $hint, $m, 512));
+    $row = sbl_clean_ai_row(geminiJson($sys, "TARGET FIELDS:\n" . sbl_field_spec() . "\n\nCOIN TO LIST:\n" . $hint, $m, 0));
     if (!$row) { return array_merge($base, ['error' => 'The AI did not return a usable listing.']); }
     return gs_finalize($row, null, 'ai-generated');
 }

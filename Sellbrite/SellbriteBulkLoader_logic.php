@@ -298,13 +298,8 @@ final class Computer
         }
 
         // Des's per-category copy fills the Extended Description when empty; coins match on coin type
+        $dc = self::categoryRecord($row);
         if ($g('extended_description') === '') {
-            $dc = [];
-            foreach ([$category, $g('coin_type'),
-                      trim($g('coin_type') . ' ' . $g('denomination'))] as $ck) {
-                if ($ck !== '') { $dc = Schema::categoryCopy($ck); }
-                if ($dc) { break; }
-            }
             $txt = trim((string) ($dc['copy'] ?? ''));
             if ($txt === '') { $txt = trim((string) ($dc['alt1'] ?? '')); }
             if ($txt === '') { $txt = trim((string) ($dc['alt2'] ?? '')); }
@@ -438,15 +433,11 @@ final class Computer
             // nothing left to describe - our own bullet goes with it
             $row['feature_1'] = '';
         }
-        // CONDITION bullet derives from grade/circulated directly
+        // the CONDITION line, placed below once the bullet order is known
         $condBits = $g('grade') !== '' && strcasecmp($g('grade'), 'Ungraded') !== 0
                   ? $g('grade') : $g('circulated_or_uncirculated');
-        if ($condBits !== '') {
-            if (!preg_match('/condition$/i', $condBits)) { $condBits .= ' Condition'; }
-            $row['feature_2'] = 'CONDITION: ' . $condBits;
-        } elseif (strncmp(trim((string) ($row['feature_2'] ?? '')), 'CONDITION:', 10) === 0) {
-            $row['feature_2'] = '';
-        }
+        if ($condBits !== '' && !preg_match('/condition$/i', $condBits)) { $condBits .= ' Condition'; }
+        $condLine = $condBits !== '' ? 'CONDITION: ' . $condBits : '';
         // eBay condition fields derive from certification + grade: slabbed = Graded, raw = Ungraded
         $cert   = $g('certification');
         $grade  = $g('grade');
@@ -474,13 +465,20 @@ final class Computer
             }
         }
 
-        $exact = trim((string) ($row['exact_image'] ?? ''));
-        if ($exact !== '') { $row['feature_3'] = 'IMAGES: ' . $exact; }
-        // feature_4 = the agent's category COLLECTOR'S NOTE; make sure it carries the label.
-        $note = trim((string) ($row['feature_4'] ?? ''));
-        if ($note !== '' && stripos($note, "COLLECTOR'S NOTE") !== 0) { $row['feature_4'] = "COLLECTOR'S NOTE: " . $note; }
-        // already begins "ABOUT PROFILE COINS & COLLECTIBLES:"
-        $row['feature_5'] = SBL_ABOUT_SELLER; 
+        // the sheet's bullet order: graded = CONDITION, IMAGES, NOTE, ABOUT; no grade drops CONDITION and moves the rest up
+        $circ = $g('circulated_or_uncirculated');
+        $hasGrade = $grade !== '' && strcasecmp($grade, 'Various Grades') !== 0
+            && !(strcasecmp($grade, 'Ungraded') === 0
+                 && (strcasecmp($circ, 'Circulated') !== 0 || strcasecmp($cert, 'Uncertified') !== 0));
+        $exact   = trim((string) ($row['exact_image'] ?? ''));
+        $imgLine = $exact !== '' ? 'IMAGES: ' . $exact : '';
+        $noteTxt = trim((string) ($dc['note'] ?? ''));
+        $noteLine = $noteTxt !== '' ? "COLLECTOR'S NOTE: " . $noteTxt : '';
+        // no note for the category: the ABOUT line takes its slot, as the sheet does
+        $lines = $hasGrade || $g('title_suffix') !== ''
+            ? [$condLine, $imgLine, $noteLine ?: SBL_ABOUT_SELLER, $noteLine !== '' ? SBL_ABOUT_SELLER : '']
+            : [$imgLine, $noteLine ?: SBL_ABOUT_SELLER, $noteLine !== '' ? SBL_ABOUT_SELLER : '', ''];
+        foreach (['feature_2', 'feature_3', 'feature_4', 'feature_5'] as $i => $f) { $row[$f] = $lines[$i]; }
         return $row;
     }
 
@@ -490,6 +488,18 @@ final class Computer
         $value = trim($value);
         if ($value === '' || str_starts_with($value, '***')) { return $fallback; }
         return $value;
+    }
+
+    // Des's record for this coin: Non-Coin Type, else coin type, else coin type + denomination
+    private static function categoryRecord(array $row): array
+    {
+        $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));
+        foreach ([$g('category_name'), $g('coin_type'), trim($g('coin_type') . ' ' . $g('denomination'))] as $ck) {
+            if ($ck === '') { continue; }
+            $dc = Schema::categoryCopy($ck);
+            if ($dc) { return $dc; }
+        }
+        return [];
     }
 
     // grade letter codes, two-letter ones first so MS is matched before M
