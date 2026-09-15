@@ -429,8 +429,9 @@ final class Computer
 
         // keep whatever is in the box when there is not enough yet to compose a title,
         // so the LCC inventory description stands in until the parts arrive
-        $builtTitle = self::buildTitle($row);
-        if ($builtTitle !== '') { $row['name'] = $builtTitle; }
+        // the title is a formula column: it follows its inputs both ways, so
+        // clearing what built it clears the title instead of leaving it stale
+        $row['name'] = self::buildTitle($row);
         // The description REBUILDS while it still has the standard house shape
 
         $curDesc = trim((string) ($row['description'] ?? ''));
@@ -456,6 +457,9 @@ final class Computer
             $core  = preg_replace('/^A genuine\s+/i', '', $first);
             $bits  = preg_split('/,\s*(?:in|graded and certified|from|with)\s+/i', $core, 2);
             $row['feature_1'] = 'DETAILS: ' . rtrim(trim($bits[0]), ' .,');
+        } elseif (strncmp(trim((string) ($row['feature_1'] ?? '')), 'DETAILS:', 8) === 0) {
+            // nothing left to describe - our own bullet goes with it
+            $row['feature_1'] = '';
         }
         // CONDITION bullet derives from grade/circulated directly
         $condBits = $g('grade') !== '' && strcasecmp($g('grade'), 'Ungraded') !== 0
@@ -463,6 +467,8 @@ final class Computer
         if ($condBits !== '') {
             if (!preg_match('/condition$/i', $condBits)) { $condBits .= ' Condition'; }
             $row['feature_2'] = 'CONDITION: ' . $condBits;
+        } elseif (strncmp(trim((string) ($row['feature_2'] ?? '')), 'CONDITION:', 10) === 0) {
+            $row['feature_2'] = '';
         }
         // Sellbrite Condition (new/used/reconditioned): collectible coins list
         // eBay condition fields, derived from certification + grade:
