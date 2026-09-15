@@ -290,10 +290,10 @@ final class Computer
         // Product image URLs are NOT auto-generated; the operator pastes the real uploaded photo URLs.
         if ($g('creation_date') === '') { $row['creation_date'] = date('Y-m-d'); }
 
-        // money boxes: strip thousands commas, then round to cents - a third decimal of 5 or more rounds up
-        foreach (['price', 'cost', 'original_retail'] as $pf) {
+        // money boxes round half up the way the sheet's cell formats do: retail to cents, cost to 4 places
+        foreach (['price' => 2, 'original_retail' => 2, 'cost' => 4] as $pf => $places) {
             $mv = str_replace(',', '', $g($pf));
-            if ($mv !== '' && is_numeric($mv)) { $mv = number_format(round((float) $mv, 2), 2, '.', ''); }
+            if ($mv !== '' && is_numeric($mv)) { $mv = number_format(round((float) $mv, $places), $places, '.', ''); }
             if ($mv !== $g($pf)) { $row[$pf] = $mv; }
         }
 
