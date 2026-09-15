@@ -31,8 +31,6 @@ $user     = $_SESSION['username'] ?? '';
 $password = $_SESSION['password'] ?? '';
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
-// the loader's Fast / Safe pick applies to every Gemini call in this request
-geminiMode((string) ($_POST['ai_mode'] ?? ''));
 
 // export streams a file (XLSX when PhpSpreadsheet exists, else CSV) - handled before JSON
 if ($action === 'export') {

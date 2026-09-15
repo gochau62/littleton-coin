@@ -28,12 +28,11 @@ if (!defined('GS_API_LEVEL'))  { define('GS_API_LEVEL',  'advanced'); }
 if (!defined('GS_ROOT_NODE'))  { define('GS_ROOT_NODE',  1); } 
 if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    200); }
 
-// two Gemini choices: Fast answers in about a second, Safe thinks first
+// Gemini 3.5 Flash-Lite answers in about a second; no thinking for these lookups
 if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
-if (!defined('GEMINI_MODEL_FAST')) { define('GEMINI_MODEL_FAST', 'gemini-3.5-flash-lite'); }
-if (!defined('GEMINI_MODEL_SAFE')) { define('GEMINI_MODEL_SAFE', 'gemini-3.5-flash'); }
-// used once when the chosen model rejects the call (HTTP 400/404)
-if (!defined('GEMINI_MODEL_FALLBACK')) { define('GEMINI_MODEL_FALLBACK', 'gemini-3.1-flash-lite'); }
+if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-3.5-flash-lite'); }
+// used once when the model above rejects the call (HTTP 400/404)
+if (!defined('GEMINI_MODEL_FALLBACK')) { define('GEMINI_MODEL_FALLBACK', 'gemini-3.5-flash'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
@@ -143,26 +142,13 @@ function gsData($resp): array
 // if no gemini key configured skip
 function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 
-// the loader's Fast / Safe pick for this request; Fast unless told otherwise
-function geminiMode(string $set = ''): string
-{
-    static $mode = 'fast';
-    if ($set !== '') { $mode = strtolower($set) === 'safe' ? 'safe' : 'fast'; }
-    return $mode;
-}
-
-// model behind the current pick
-function geminiModel(): string { return geminiMode() === 'safe' ? GEMINI_MODEL_SAFE : GEMINI_MODEL_FAST; }
-
 // JSON answer; $think caps Gemini's reasoning tokens - 0 for these lookups, they are not reasoning jobs
 function geminiJson($system, $user, &$meta = [], int $think = 0)
 {
-    // Safe lets the model think before it answers
-    if (geminiMode() === 'safe') { $think = max($think, 1); }
-    $data = geminiCall(geminiModel(), $system, $user, $meta, $think);
-    // a rejected or unknown model gets one retry on the older tier
-    if ($data === null && in_array($meta['status'], [400, 404], true) && GEMINI_MODEL_FALLBACK !== geminiModel()) {
-        gsLog('gemini ' . geminiModel() . ' not available - retrying on ' . GEMINI_MODEL_FALLBACK);
+    $data = geminiCall(GEMINI_MODEL, $system, $user, $meta, $think);
+    // a rejected or unknown model gets one retry on the backup
+    if ($data === null && in_array($meta['status'], [400, 404], true) && GEMINI_MODEL_FALLBACK !== GEMINI_MODEL) {
+        gsLog('gemini ' . GEMINI_MODEL . ' not available - retrying on ' . GEMINI_MODEL_FALLBACK);
         $data = geminiCall(GEMINI_MODEL_FALLBACK, $system, $user, $meta, $think);
     }
     return $data;
@@ -1484,7 +1470,7 @@ function gsImport(array $params): array
 
     // Gemini writes the category-level copy fresh from the GreySheet notes
     $row = gsAiMap($coin);
-    if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . ucfirst(geminiMode()) . ': ' . geminiModel() . ')', 'got' => count($row) . ' fields filled']; }
+    if (geminiConfigured()) { $calls[] = ['call' => 'Gemini map (' . GEMINI_MODEL . ')', 'got' => count($row) . ' fields filled']; }
     // strip commas etc. from whatever landed in price/cost
     foreach (['price', 'cost'] as $pf) { if (($row[$pf] ?? '') !== '') { $row[$pf] = gsPriceNum($row[$pf]); } }
     $row['price'] = '';   // the Retail box stays empty - the operator types the price
