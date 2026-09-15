@@ -46,7 +46,7 @@ function dspBulkLoader(&$screenData)
         if ($name === 'category_name') {
             // opens the non-coin sections and nothing else - a plain select, never exported
             $h .= '<select id="f_' . sbl_e($name) . '" name="' . sbl_e($name) . '"' . $da . '>';
-            $h .= '<option value="">&mdash; none (regular coin) &mdash;</option>';
+            $h .= '<option value="">None</option>';
             foreach ($opts as $o) {
                 if (preg_match('/^-{2,}/', $o)) { continue; }
                 $h .= '<option value="' . sbl_e($o) . '">' . sbl_e($o) . '</option>';

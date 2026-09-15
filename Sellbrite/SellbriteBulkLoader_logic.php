@@ -117,7 +117,7 @@ final class Schema
             }
         }
         if ($col['dropdown'] === 'store_category') {
-            // Non-Coin Type only opens the non-coin sections; coin names live in coin_type
+            // Non-Currency Type only opens the non-coin sections; coin names live in coin_type
             return ['Advent Calendar', 'Challenge Coin', 'United States Postage Stamp',
                     'Wristwatches', 'Coin Album', 'Other Exonumia', 'Nativity'];
         }
@@ -224,7 +224,7 @@ final class Schema
     // required boxes (the red stars). Add a name here to require a field everywhere.
     public static function requiredNames(): array
     {
-        // category_name (Non-Coin Type) is not required - a regular coin leaves it blank
+        // category_name (Non-Currency Type) is not required - a regular coin leaves it blank
         return ['sku', 'price', 'condition', 'certification', 'name', 'description', 'extended_description',
                 'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5',
                 'package_weight', 'package_length', 'package_width', 'package_height',
@@ -490,7 +490,7 @@ final class Computer
         return $value;
     }
 
-    // Des's record for this coin: Non-Coin Type, else coin type, else coin type + denomination
+    // Des's record for this coin: Non-Currency Type, else coin type, else coin type + denomination
     private static function categoryRecord(array $row): array
     {
         $g = static fn(string $k): string => trim((string) ($row[$k] ?? ''));

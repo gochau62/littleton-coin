@@ -588,7 +588,7 @@ if ($authorized != "yes") {
                 sblCurPath = ui.item.path || '';
                 $('#gs-series').data('sblPicked', 1).val(ui.item.value).autocomplete('close').blur();
                 
-                // Non-Coin Type is never filled from a pick - the series only drives the year list and sections
+                // Non-Currency Type is never filled from a pick - the series only drives the year list and sections
                 sblFieldVisibility();
                 
                  // country from the memory path: world = 2nd node, U.S. = United States
