@@ -1058,7 +1058,7 @@ if ($authorized != "yes") {
         $('#sku-form .field').removeClass('is-ok is-error is-action');
         $('#sku-form .field-msg').text('');
         sblResetAutoBadges();
-        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:grade }, function(res){
+        $.post('SellbriteBulkLoader_ajax.php', { action:'gsImport', gs_id:sblPendingGsId, grade:grade, ai_mode:$('#gs-ai-mode').val() || 'fast' }, function(res){
             sblRenderCalls(res.calls, res.total_calls);
             sblRenderRaw(res.raw);
             sblRenderGsRef(res.raw);

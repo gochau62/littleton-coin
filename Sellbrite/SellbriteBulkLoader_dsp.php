@@ -152,6 +152,7 @@ function dspBulkLoader(&$screenData)
 .export-group .tg-lbl { color:#1e6e43; }
 .gs-dd { padding:9px 12px; border-radius:8px; border:1px solid #d0d5dd; font-size:13px; background:#fff; box-shadow:0 1px 2px rgba(16,24,40,.05); outline:none; max-width:170px; }
 .gs-dd:focus { border-color:#1e6e43; }
+.gs-mode { max-width:80px; }
 .mkt-pick { font-size:12px; font-weight:700; color:#344054; display:inline-flex; align-items:center; gap:6px; }
 .mkt-pick .gs-dd { width:auto; max-width:none; padding:6px 8px; }
 .ui-autocomplete { max-height:340px; overflow-y:auto; overflow-x:hidden; z-index:9999; font-size:13px; background:#fff; }
@@ -380,6 +381,9 @@ details.group summary::-webkit-details-marker { display:none; }
                    placeholder="3. Year" disabled>
             <input type="text" id="gs-coin" class="sbl-search gs-grow" autocomplete="off"
                    placeholder="4. Coin" disabled>
+            <select id="gs-ai-mode" class="gs-dd gs-mode"
+                    title="Fast answers in about a second. Safe thinks first and takes a few seconds.">
+                <option value="fast">Fast</option><option value="safe">Safe</option></select>
             <button type="button" class="btn btn-blue" id="gs-autofill" onclick="sblGsAutofill()" disabled
                     title="Fill the highlighted fields from GreySheet">Autofill</button>
         </div>
