@@ -31,8 +31,8 @@ if (!defined('GS_TIMEOUT'))    { define('GS_TIMEOUT',    200); }
 // gemini 2.5 flash model current usage for free testing
 if (!defined('GEMINI_API_KEY')) { define('GEMINI_API_KEY', ''); }
 if (!defined('GEMINI_MODEL'))   { define('GEMINI_MODEL',   'gemini-3.5-flash-lite'); }
-// used once when the key cannot see the model above (HTTP 404)
-if (!defined('GEMINI_MODEL_FALLBACK')) { define('GEMINI_MODEL_FALLBACK', 'gemini-2.5-flash-lite'); }
+// used once when the model above rejects the call (HTTP 400/404)
+if (!defined('GEMINI_MODEL_FALLBACK')) { define('GEMINI_MODEL_FALLBACK', 'gemini-3.1-flash-lite'); }
 if (!defined('GEMINI_BASE'))    { define('GEMINI_BASE',    'https://generativelanguage.googleapis.com/v1beta'); }
 if (!defined('GEMINI_TIMEOUT')) { define('GEMINI_TIMEOUT', 400); }
 
@@ -146,8 +146,8 @@ function geminiConfigured() { return GEMINI_API_KEY !== ''; }
 function geminiJson($system, $user, &$meta = [], int $think = 0)
 {
     $data = geminiCall(GEMINI_MODEL, $system, $user, $meta, $think);
-    // a key that cannot see the model gets one retry on the older tier
-    if ($data === null && $meta['status'] === 404 && GEMINI_MODEL_FALLBACK !== GEMINI_MODEL) {
+    // a rejected or unknown model gets one retry on the older tier
+    if ($data === null && in_array($meta['status'], [400, 404], true) && GEMINI_MODEL_FALLBACK !== GEMINI_MODEL) {
         gsLog('gemini ' . GEMINI_MODEL . ' not available - retrying on ' . GEMINI_MODEL_FALLBACK);
         $data = geminiCall(GEMINI_MODEL_FALLBACK, $system, $user, $meta, $think);
     }
@@ -163,13 +163,16 @@ function geminiCall(string $model, $system, $user, &$meta, int $think)
 
     $url  = rtrim(GEMINI_BASE, '/') . '/models/' . rawurlencode($model) . ':generateContent';
 
+    // 2.x models take a token budget, 3.x models take a level and reject the budget
+    $thinkCfg = strpos($model, 'gemini-2') === 0 ? ['thinkingBudget' => $think]
+                                                 : ['thinkingLevel' => $think > 0 ? 'low' : 'minimal'];
+
     // request using system instructions, user input, and the settings
     $body = json_encode([
         'systemInstruction' => ['parts' => [['text' => (string) $system]]],
         'contents'          => [['role' => 'user', 'parts' => [['text' => (string) $user]]]],
         'generationConfig'  => ['temperature' => 0.2, 'responseMimeType' => 'application/json',
-                                'maxOutputTokens' => 8192,
-                                'thinkingConfig' => ['thinkingBudget' => $think]],
+                                'maxOutputTokens' => 8192, 'thinkingConfig' => $thinkCfg],
     ], JSON_UNESCAPED_SLASHES);
 
     $ch = curl_init($url);
