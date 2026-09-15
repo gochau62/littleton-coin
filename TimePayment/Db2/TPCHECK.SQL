@@ -74,3 +74,30 @@ SELECT TPITEM, TPSRCD, TPPLAN, TPEXDATE
   FROM LSCPRDLIB.TPITEMSP
  WHERE TPITEM IN ('1638.60', '1738.40')
  ORDER BY TPITEM, TPSRCD;
+
+-- 7. the one case the upload cannot tell apart: an all-digit sku with a
+--    one digit extension AND its two digit twin both on the master, so a
+--    number cell holding the twin lands on the one digit item instead.
+--    Zero rows here means the fix can never pick a wrong item.
+SELECT COUNT(*) AS TWINS
+  FROM LSCPRDLIB.ITMMSTL1 A
+  JOIN LSCPRDLIB.ITMMSTL1 B
+    ON B.IISKU# = RTRIM(A.IISKU#) || '0'
+ WHERE POSSTR(A.IISKU#, '.') > 0
+   AND LENGTH(RTRIM(SUBSTR(RTRIM(A.IISKU#),
+                           POSSTR(RTRIM(A.IISKU#), '.') + 1))) = 1
+   AND RTRIM(TRANSLATE(RTRIM(A.IISKU#), ' ', '0123456789.')) = '';
+
+-- 8. the same pairs listed, with both descriptions, to judge how alike
+--    the two items are and whether Marketing would ever key the short one
+SELECT RTRIM(A.IISKU#) AS ONE_DIGIT, RTRIM(A.IIDESC) AS ONE_DESC,
+       RTRIM(B.IISKU#) AS TWO_DIGIT, RTRIM(B.IIDESC) AS TWO_DESC
+  FROM LSCPRDLIB.ITMMSTL1 A
+  JOIN LSCPRDLIB.ITMMSTL1 B
+    ON B.IISKU# = RTRIM(A.IISKU#) || '0'
+ WHERE POSSTR(A.IISKU#, '.') > 0
+   AND LENGTH(RTRIM(SUBSTR(RTRIM(A.IISKU#),
+                           POSSTR(RTRIM(A.IISKU#), '.') + 1))) = 1
+   AND RTRIM(TRANSLATE(RTRIM(A.IISKU#), ' ', '0123456789.')) = ''
+ ORDER BY A.IISKU#
+ FETCH FIRST 200 ROWS ONLY;

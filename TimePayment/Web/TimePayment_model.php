@@ -102,7 +102,8 @@ function tpyCleanPlan($plan) {
 
 
 // an item number Excel treated as a number comes back short a trailing zero, so the sku 1638.60 arrives as 1638.6
-// this is K Rainville's rule from the order file import (WO#64700): one digit after the point means one was dropped
+// this is K Rainville's rule from the order file import (WO#64700): a lone digit after the point gets its zero back
+// some real items do carry a one digit extension, which is why this only runs after the typed spelling has missed
 // it returns '' when there is nothing to put back, and never pads past the width of the item master key
 function tpyPadItem($item) {
     if (!preg_match('/^.+\.\d$/', $item) || strlen($item) >= TPY_ITEM_LEN) { return ''; }
