@@ -1,34 +1,7 @@
 <?php
-/*
- * One-time seed crawl: populate the GreySheet catalog memory.
- *
- * The catalog has NO single root node - four trees sit side by side at the top:
- *   1 = U.S. Coins    2 = U.S. Currency    6 = World Coins    12 = World Currency
- * Walks each requested tree breadth-first, storing every folder and every coin
- * (name, GsId, path, date, mint mark). Where it stores:
- *
- *   - DB2 available (the IBM i, signed in to LCCOnline): writes SBLMEMORYT
- *     through the agent's memory functions. THIS is the production run.
- *   - No DB2 (XAMPP): writes SellbriteBulkLoader_memory.dev.json itself, the
- *     same file/shape the standalone test page reads - so the crawl can be
- *     tested locally even though the DB2 screen won't use that file.
- *
- * COST: calls scale with the number of NODES, not coins (one call lists a
- * whole leaf). Full U.S. Coins run is roughly 1,000-2,500 calls. The crawl
- * is budget-capped and RESUMABLE: nodes already marked done are re-expanded
- * from storage at 0 API calls, so just run it again to continue.
- *
- * RUN
- *   Browser: SellbriteBulkLoader_seed.php?maxcalls=1200&delay=150
- *            (on the i: be signed in to LCCOnline in the same browser)
- *   Default tree is root=1 (U.S. Coins). The other trees when you want them:
- *     ?root=2   U.S. Currency      ?root=6    World Coins
- *     ?root=12  World Currency     ?root=1,2  several in one run
- *   Mini test first: ?root=8243&maxcalls=10&delay=250   (Half Cents, ~7 calls)
- */
+// one-time seed crawl: walks the four GreySheet trees breadth-first into the memory table
 
-// Framework helpers (getDB2PConn) + the signed-in user's DB2 credentials,
-// same as the AJAX endpoint. Both are optional off the i.
+// framework helpers + the signed-in user's DB2 credentials, optional off the i
 foreach (['Utils/common_functions.php', 'Utils/default_values.php'] as $f) {
     if (file_exists($f)) { require_once $f; }
 }
@@ -141,10 +114,7 @@ function seed_children_of(int $id): array
     }
     return $out;
 }
-/* Real name/path for a starting node, so stored paths label the right tree
- * (U.S. Coins vs World Currency...). Known top-level roots cost 0 calls;
- * a node we've crawled before comes from storage; anything else (e.g. a
- * mini-test sub-tree) spends ONE GetNodeRequest call on its name. */
+// real name and path for a starting node, so stored paths label the right tree
 function seed_root_entry(int $id, array &$stat): array
 {
     global $HAS_DB2, $JSON;

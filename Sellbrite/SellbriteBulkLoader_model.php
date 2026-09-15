@@ -231,9 +231,7 @@ function sbl_select($sql, array $params = [])
     return $rows;
 }
 
-// 
-// Public API (called by SellbriteBulkLoader_ajax.php / _ctl.php)
-// 
+// public API, called by SellbriteBulkLoader_ajax.php and _ctl.php
 
 // list rows for the grid, optional search filter
 function sblGetAll($q = '')
