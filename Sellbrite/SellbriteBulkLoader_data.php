@@ -258,7 +258,7 @@ return [
     // one row per Sellbrite column, workbook order; 'dropdown' names the values list
     'schema' => [
         ['name' => 'sku', 'label' => 'SKU', 'required' => true, 'auto' => false],
-        ['name' => 'category_name', 'label' => 'Non-Currency Type', 'dropdown' => 'store_category', 'required' => false, 'auto' => false],
+        ['name' => 'category_name', 'label' => 'Other Product Type', 'dropdown' => 'store_category', 'required' => false, 'auto' => false],
         ['name' => 'year', 'label' => 'Year', 'required' => false, 'auto' => false],
         ['name' => 'mint_mark', 'label' => 'Mint Mark', 'required' => false, 'auto' => false, 'dropdown' => 'mint_mark'],
         ['name' => 'mint_location', 'label' => 'Mint Location', 'required' => false, 'auto' => false, 'dropdown' => 'mint_location'],

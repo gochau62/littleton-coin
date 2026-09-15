@@ -869,7 +869,7 @@ function gsMapToProduct(array $c): array
     }
 
    if ($gsSeriesName !== '' || $gsPathNodes) {
-        // the series name still guides the coin type guess; Non-Currency Type is never filled
+        // the series name still guides the coin type guess; Other Product Type is never filled
         $gsSeries = $gsSeriesName !== '' ? sbl_norm_category($gsSeriesName) : '';
 
         // Country: only the full CatalogPath (when present) can name it directly.
@@ -1095,7 +1095,7 @@ function gsAiMap(array $coin): array
     // GreySheet notes and design text are copyrighted - they never land in the listing boxes
     $row['extended_description'] = '';
     $row['feature_4'] = '';
-    // Non-Currency Type is picked by the operator, never by the mapping
+    // Other Product Type is picked by the operator, never by the mapping
     $row['category_name'] = '';
     return sbl_snap_row($row);
 }
